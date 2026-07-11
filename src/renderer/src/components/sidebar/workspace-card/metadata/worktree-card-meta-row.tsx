@@ -35,6 +35,7 @@ export function WorktreeCardMetaRow({
   } = card
   const {
     showRepoBadgeInMetaRow,
+    missionName,
     showHostContextBadge,
     contextLabel,
     showIdentityInNewCard,
