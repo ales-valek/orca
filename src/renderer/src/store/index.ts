@@ -2,6 +2,7 @@ import { canOfferHttpLinkGroupAction } from '@/lib/http-link-in-group-availabili
 import { create, type StateCreator } from 'zustand'
 import type { AppState } from './types'
 import { createRepoSlice } from './slices/repos'
+import { createMissionsSlice } from './slices/missions'
 import { createSparsePresetsSlice } from './slices/sparse-presets'
 import { createWorktreeSlice } from './slices/worktrees'
 import { createTerminalSlice } from './slices/terminals'
@@ -94,6 +95,7 @@ export const useAppStore = create<AppState>()(
         installStoreListenerCensus(a[2])
         return {
           ...createRepoSlice(...a),
+          ...createMissionsSlice(...a),
           ...createSparsePresetsSlice(...a),
           ...createWorktreeSlice(...a),
           ...createTerminalSlice(...a),
