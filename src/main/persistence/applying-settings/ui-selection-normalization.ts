@@ -50,6 +50,12 @@ export function normalizeSortBy(sortBy: unknown): PersistedState['ui']['sortBy']
   return getDefaultUIState().sortBy
 }
 
+export function normalizeSidebarListMode(
+  sidebarListMode: unknown
+): NonNullable<PersistedState['ui']['sidebarListMode']> {
+  return sidebarListMode === 'missions' ? 'missions' : 'projects'
+}
+
 export function normalizeProjectOrderBy(
   projectOrderBy: unknown
 ): PersistedState['ui']['projectOrderBy'] {

@@ -155,6 +155,7 @@ export function usePersistedUIWriter(): void {
       groupBy: s.groupBy,
       sortBy: s.sortBy,
       projectOrderBy: s.projectOrderBy,
+      sidebarListMode: s.sidebarListMode,
       showSleepingWorkspaces: s.showSleepingWorkspaces,
       workspaceHostScope: s.workspaceHostScope,
       visibleWorkspaceHostIds: s.visibleWorkspaceHostIds,

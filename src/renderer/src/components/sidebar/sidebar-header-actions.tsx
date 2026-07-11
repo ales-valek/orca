@@ -79,25 +79,58 @@ function NewWorkspaceButton({
   )
 }
 
+function NewMissionButton(): React.JSX.Element {
+  const openModal = useAppStore((s) => s.openModal)
+  const label = translate('auto.components.sidebar.SidebarHeader.60c23631f0', 'New Mission')
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          type="button"
+          className="text-muted-foreground"
+          aria-label={label}
+          onClick={() => openModal('mission-create')}
+        >
+          <Plus className="size-3.5" strokeWidth={2.25} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function SidebarHeaderActions({
   onWorkspaceBoardMenuOpenChange,
-  agentsViewActive = false
+  agentsViewActive = false,
+  missionsListActive = false
 }: {
   onWorkspaceBoardMenuOpenChange: (open: boolean) => void
   agentsViewActive?: boolean
+  missionsListActive?: boolean
 }): React.JSX.Element {
   return (
     <div className="flex shrink-0 items-center gap-1" data-sidebar-header-actions="">
       {/* Why only options swap: the activity view portals its own options button into this slot
           (SidebarHeader), and keeping Add project means no header button shifts between views. */}
-      {agentsViewActive ? null : (
-        <SidebarWorkspaceOptionsMenu
-          preserveWorkspaceBoardOpen
-          onMenuOpenChange={onWorkspaceBoardMenuOpenChange}
-        />
+      {missionsListActive && !agentsViewActive ? (
+        <NewMissionButton />
+      ) : (
+        <>
+          {agentsViewActive ? null : (
+            <SidebarWorkspaceOptionsMenu
+              preserveWorkspaceBoardOpen
+              onMenuOpenChange={onWorkspaceBoardMenuOpenChange}
+            />
+          )}
+          <AddProjectButton preserveWorkspaceBoardOpen />
+          <NewWorkspaceButton preserveWorkspaceBoardOpen />
+        </>
       )}
-      <AddProjectButton preserveWorkspaceBoardOpen />
-      <NewWorkspaceButton preserveWorkspaceBoardOpen />
     </div>
   )
 }

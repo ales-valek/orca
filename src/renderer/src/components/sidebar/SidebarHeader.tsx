@@ -36,6 +36,8 @@ const SidebarHeader = React.memo(function SidebarHeader({
   const acknowledgeIntro = React.useCallback(() => {
     void updateSettings?.({ agentsSidebarIntroShown: true })
   }, [updateSettings])
+  const sidebarListMode = useAppStore((s) => s.sidebarListMode ?? 'projects')
+  const setSidebarListMode = useAppStore((s) => s.setSidebarListMode)
   const sidebarTitle =
     groupBy === 'repo'
       ? translate('dashboard.sidebar.projects', 'Projects')
@@ -47,15 +49,37 @@ const SidebarHeader = React.memo(function SidebarHeader({
 
   return (
     <div className="mt-2 flex h-8 min-w-0 items-center justify-between gap-1.5 px-2">
-      <div className="flex min-w-0 items-center gap-1">
-        <span
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
           // Why truncate: the action cluster is shrink-0, so a long localized title
           // (es "Espacios de trabajo") otherwise wraps out of the h-8 row.
-          className="min-w-0 truncate select-none pl-2 pr-0.5 text-xs font-semibold text-muted-foreground/80"
+          className={cn(
+            'min-w-0 truncate pl-2 text-xs font-semibold select-none',
+            sidebarListMode === 'projects'
+              ? 'text-muted-foreground/80'
+              : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+          )}
+          aria-pressed={sidebarListMode === 'projects'}
           data-sidebar-section-title={groupBy === 'repo' ? 'projects' : 'workspaces'}
+          onClick={() => setSidebarListMode('projects')}
         >
           {sidebarTitle}
-        </span>
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'min-w-0 truncate text-xs font-semibold select-none',
+            sidebarListMode === 'missions'
+              ? 'text-muted-foreground/80'
+              : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+          )}
+          aria-pressed={sidebarListMode === 'missions'}
+          data-sidebar-section-title="missions"
+          onClick={() => setSidebarListMode('missions')}
+        >
+          {translate('auto.components.sidebar.SidebarHeader.ea1ec23452', 'Missions')}
+        </button>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <Popover
@@ -128,6 +152,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
         <SidebarHeaderActions
           onWorkspaceBoardMenuOpenChange={onWorkspaceBoardMenuOpenChange}
           agentsViewActive={agentsViewActive}
+          missionsListActive={sidebarListMode === 'missions'}
         />
       </div>
     </div>
