@@ -19,6 +19,8 @@ export function registerProjectCatalogIpcBridge(
           await state.fetchRepos(localOwner)
           await state.fetchProjectGroups(localOwner)
           await state.fetchFolderWorkspaces(localOwner)
+          // Why: missions are local-owned; their mutations broadcast on this
+          // channel and must refresh even while a runtime host is focused.
           await state.fetchMissions()
           remountTerminalTabsAwaitingHostHydration()
         })()
