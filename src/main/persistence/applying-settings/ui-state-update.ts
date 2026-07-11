@@ -34,6 +34,7 @@ import {
 import {
   normalizeGroupBy,
   normalizeProjectOrderBy,
+  normalizeSidebarListMode,
   normalizeRightSidebarExplorerView,
   normalizeRightSidebarTab,
   normalizeShowDotfilesByWorktree,
@@ -121,6 +122,9 @@ export function updatePersistedUI(
     projectOrderBy: sanitizedUpdates.projectOrderBy
       ? normalizeProjectOrderBy(sanitizedUpdates.projectOrderBy)
       : normalizeProjectOrderBy(operations.state.ui?.projectOrderBy),
+    sidebarListMode: normalizeSidebarListMode(
+      sanitizedUpdates.sidebarListMode ?? operations.state.ui?.sidebarListMode
+    ),
     activeView: currentUI.activeView,
     rightSidebarTab: nextRightSidebarTab,
     rightSidebarExplorerView: nextRightSidebarExplorerView,
