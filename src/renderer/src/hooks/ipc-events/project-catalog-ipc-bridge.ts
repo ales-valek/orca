@@ -20,6 +20,7 @@ export function registerProjectCatalogIpcBridge(
           await state.fetchRepos(localOwner)
           await state.fetchProjectGroups(localOwner)
           await state.fetchFolderWorkspaces(localOwner)
+          await state.fetchMissions()
           remountTerminalTabsAwaitingHostHydration()
         })()
         return
@@ -28,6 +29,7 @@ export function registerProjectCatalogIpcBridge(
       const localOwner = { runtimeEnvironmentId: null }
       void state.fetchProjectGroups(localOwner)
       void state.fetchFolderWorkspaces(localOwner)
+      void state.fetchMissions()
       void state.fetchRepos(localOwner).then(remountTerminalTabsAwaitingHostHydration)
     })
   )

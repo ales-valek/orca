@@ -2,6 +2,7 @@ import { create, type StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { createRepoSlice } from './repos'
+import { createMissionsSlice } from './missions'
 import { createSparsePresetsSlice } from './sparse-presets'
 import { createWorktreeSlice } from './worktrees'
 import { createTerminalSlice } from './terminals'
@@ -76,6 +77,7 @@ export function createTestStore(
     withTestStorePolicies(
       (...a) => ({
         ...createRepoSlice(...a),
+        ...createMissionsSlice(...a),
         ...createSparsePresetsSlice(...a),
         ...createWorktreeSlice(...a),
         ...createTerminalSlice(...a, isClaudeAgent),
