@@ -43,6 +43,7 @@ export function normalizeLoadedProfileState(
   const { defaults, migratedExternalVisibility, osc52ClipboardNoticePending } = terminal
   const { normalizedOnboarding, normalizedProjectGroups, loadedCompactWorktreeCards } = profile
   const projectCatalog = normalizeLoadedProjectCatalog(parsed, markNeedsSave)
+  const normalizedMissions = normalizeMissions(parsed.missions)
   // Normalize local first; host partitions drop global fields already owned here.
   const workspaceSession = normalizeLoadedLocalSession(parsed, defaults, markNeedsSave)
   const workspaceLineageByChildKey = normalizeWorkspaceLineageByChildKey(
@@ -65,8 +66,12 @@ export function normalizeLoadedProfileState(
     ),
     projects: projectCatalog.projects,
     projectHostSetups: projectCatalog.projectHostSetups,
-    folderWorkspaces: normalizeFolderWorkspaces(parsed.folderWorkspaces, normalizedProjectGroups),
-    missions: normalizeMissions(parsed.missions),
+    missions: normalizedMissions,
+    folderWorkspaces: normalizeFolderWorkspaces(
+      parsed.folderWorkspaces,
+      normalizedProjectGroups,
+      normalizedMissions
+    ),
     folderWorkspaceDiffComments: normalizeFolderWorkspaceDiffComments(
       parsed.folderWorkspaceDiffComments
     ),
