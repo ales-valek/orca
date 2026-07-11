@@ -5,6 +5,7 @@ import {
   CircleX,
   Ellipsis,
   Eye,
+  Flag,
   FolderInput,
   FolderTree,
   Plus,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { useAppStore } from '@/store'
 import { getRepositoryIconSectionId } from '@/components/settings/repository/repository-settings-targets'
 import { WslMoveProjectMenuItem } from '@/components/wsl-move/WslMoveProjectMenuItem'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
@@ -94,6 +96,8 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
 }): React.JSX.Element {
   // Memoized: subscribe so a language change still repaints its labels.
   useTranslation()
+  const missions = useAppStore((s) => s.missions)
+  const addMissionMembers = useAppStore((s) => s.addMissionMembers)
   return (
     <DropdownMenu modal={false}>
       <Tooltip>
@@ -181,6 +185,27 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
           </DropdownMenuItem>
         ) : null}
         <WslMoveProjectMenuItem repo={repo} />
+        {missions.length > 0 ? (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Flag className="size-3.5" />
+              {translate('auto.components.sidebar.WorktreeList.3a2edfac81', 'Add to mission')}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {missions.map((mission) => (
+                <DropdownMenuItem
+                  key={mission.id}
+                  disabled={mission.members.some((member) => member.repoId === repo.id)}
+                  onSelect={() => {
+                    void addMissionMembers(mission.id, [repo.id])
+                  }}
+                >
+                  <span className="max-w-48 truncate">{mission.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => actions.onRemoveProject(repo)}>
           <Trash2 className="size-3.5" />
