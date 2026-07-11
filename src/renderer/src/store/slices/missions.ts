@@ -5,6 +5,7 @@ import type {
   MissionDeleteResult,
   MissionMemberResult
 } from '../../../../shared/mission-types'
+import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { AppState } from '../types'
 
 export type MissionsSlice = {
@@ -27,15 +28,13 @@ export type MissionsSlice = {
   addMissionMembers: (missionId: string, repoIds: string[]) => Promise<MissionCreateResult | null>
   removeMissionMember: (missionId: string, repoId: string, deleteWorktree: boolean) => Promise<void>
   recreateMissionMemberWorktree: (missionId: string, repoId: string) => Promise<void>
+  ensureMissionSession: (missionId: string) => Promise<FolderWorkspace | null>
 }
 
 export const missionMemberErrorKey = (missionId: string, repoId: string): string =>
   `${missionId}:${repoId}`
 
-export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> = (
-  set,
-  get
-) => {
+export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> = (set, get) => {
   function applyMemberResults(missionId: string, memberResults: MissionMemberResult[]): void {
     set((state) => {
       const next = { ...state.missionMemberErrors }
@@ -126,6 +125,20 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         await get().fetchMissions()
       } catch (err) {
         console.error('Failed to recreate mission worktree:', err)
+      }
+    },
+
+    ensureMissionSession: async (missionId) => {
+      try {
+        const workspace = await window.api.missions.ensureSession({ missionId })
+        // Why: the session is a folder workspace; both collections must refresh
+        // before the caller activates the returned workspace key.
+        await get().fetchFolderWorkspaces()
+        await get().fetchMissions()
+        return workspace
+      } catch (err) {
+        console.error('Failed to ensure mission session:', err)
+        return null
       }
     }
   }
