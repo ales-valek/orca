@@ -42,6 +42,8 @@ const SidebarHeader = React.memo(function SidebarHeader({
   const acknowledgeIntro = React.useCallback(() => {
     void updateSettings?.({ agentsSidebarIntroShown: true })
   }, [updateSettings])
+  const sidebarListMode = useAppStore((s) => s.sidebarListMode ?? 'projects')
+  const setSidebarListMode = useAppStore((s) => s.setSidebarListMode)
   const sidebarTitle =
     groupBy === 'repo'
       ? t('dashboard.sidebar.projects', 'Projects')
@@ -54,16 +56,38 @@ const SidebarHeader = React.memo(function SidebarHeader({
   return (
     <div className="group/sidebar-header mt-2 flex h-8 min-w-0 shrink-0 items-center justify-between gap-1.5 px-2">
       <div
-        className="flex min-w-0 items-center"
+        className="flex min-w-0 items-center gap-2"
         data-contextual-tour-target={groupBy === 'repo' ? 'projects-collapse-all' : undefined}
       >
-        <span
+        <button
+          type="button"
           // Truncate localized titles because fixed-width actions cannot shrink inside the short header row.
-          className="min-w-0 truncate select-none pl-2 pr-0.5 text-xs font-semibold text-muted-foreground/80"
+          className={cn(
+            'min-w-0 truncate select-none pl-2 pr-0.5 text-xs font-semibold',
+            sidebarListMode === 'projects'
+              ? 'text-muted-foreground/80'
+              : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+          )}
+          aria-pressed={sidebarListMode === 'projects'}
           data-sidebar-section-title={groupBy === 'repo' ? 'projects' : 'workspaces'}
+          onClick={() => setSidebarListMode('projects')}
         >
           {sidebarTitle}
-        </span>
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'min-w-0 truncate text-xs font-semibold select-none',
+            sidebarListMode === 'missions'
+              ? 'text-muted-foreground/80'
+              : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+          )}
+          aria-pressed={sidebarListMode === 'missions'}
+          data-sidebar-section-title="missions"
+          onClick={() => setSidebarListMode('missions')}
+        >
+          {translate('auto.components.sidebar.SidebarHeader.ea1ec23452', 'Missions')}
+        </button>
         {/* WorktreeList portals the collapse-all toggle here; it owns the rendered project rows. */}
         <div ref={projectsCollapseTarget} className="flex shrink-0 items-center empty:hidden" />
       </div>
@@ -145,6 +169,7 @@ const SidebarHeader = React.memo(function SidebarHeader({
           onWorkspaceBoardMenuOpenChange={onWorkspaceBoardMenuOpenChange}
           agentsViewActive={agentsViewActive}
           activityOptionsTarget={activityOptionsTarget}
+          missionsListActive={sidebarListMode === 'missions'}
         />
       </div>
     </div>

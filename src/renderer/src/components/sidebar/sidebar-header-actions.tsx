@@ -78,27 +78,62 @@ function NewWorkspaceButton({
   )
 }
 
+function NewMissionButton(): React.JSX.Element {
+  const openModal = useAppStore((s) => s.openModal)
+  const label = translate('auto.components.sidebar.SidebarHeader.60c23631f0', 'New Mission')
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          type="button"
+          className="text-muted-foreground"
+          aria-label={label}
+          onClick={() => openModal('mission-create')}
+        >
+          <Plus className="size-3.5" strokeWidth={2.25} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function SidebarHeaderActions({
   onWorkspaceBoardMenuOpenChange,
   agentsViewActive = false,
-  activityOptionsTarget
+  activityOptionsTarget,
+  missionsListActive = false
 }: {
   onWorkspaceBoardMenuOpenChange: (open: boolean) => void
   agentsViewActive?: boolean
   activityOptionsTarget?: React.Ref<HTMLDivElement>
+  missionsListActive?: boolean
 }): React.JSX.Element {
+  const missionsMode = missionsListActive && !agentsViewActive
   return (
     <div className="flex shrink-0 items-center gap-1" data-sidebar-header-actions="">
+      {/* The slot stays mounted so the activity view can portal its options button into it. */}
       <div ref={activityOptionsTarget} className="flex size-6 shrink-0 items-center">
-        {agentsViewActive ? null : (
+        {agentsViewActive || missionsMode ? null : (
           <SidebarWorkspaceOptionsMenu
             preserveWorkspaceBoardOpen
             onMenuOpenChange={onWorkspaceBoardMenuOpenChange}
           />
         )}
       </div>
-      <AddProjectButton preserveWorkspaceBoardOpen />
-      <NewWorkspaceButton preserveWorkspaceBoardOpen />
+      {missionsMode ? (
+        <NewMissionButton />
+      ) : (
+        <>
+          <AddProjectButton preserveWorkspaceBoardOpen />
+          <NewWorkspaceButton preserveWorkspaceBoardOpen />
+        </>
+      )}
     </div>
   )
 }
