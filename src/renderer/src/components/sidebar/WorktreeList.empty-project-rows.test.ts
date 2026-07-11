@@ -39,6 +39,7 @@ function setEmptyUngroupedProjectState(filterRepoIds: string[] = []): void {
   }
 
   mockStore.state = {
+    missions: [],
     ...makeFolderWorkspacePathStatusMockState(),
     startupWorktreeRefreshCompleted: true,
     activeModal: '',

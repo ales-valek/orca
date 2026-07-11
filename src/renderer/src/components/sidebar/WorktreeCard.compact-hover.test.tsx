@@ -40,6 +40,7 @@ vi.mock('@/store', () => {
     agentActivityDisplayMode,
     createBrowserTab: vi.fn(),
     deleteStateByWorktreeId: {},
+    missions: [],
     fetchHostedReviewForBranch,
     fetchIssue,
     fetchLinearIssue,

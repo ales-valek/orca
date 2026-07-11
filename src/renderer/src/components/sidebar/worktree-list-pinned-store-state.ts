@@ -26,6 +26,7 @@ export function setPinnedFixtureState(): void {
   })
 
   mockStore.state = {
+    missions: [],
     ...makeFolderWorkspacePathStatusMockState(),
     activeModal: '',
     activeView: 'terminal',

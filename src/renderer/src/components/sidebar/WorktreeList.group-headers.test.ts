@@ -57,6 +57,7 @@ function setProjectGroupWithoutWorktreeRowsState(
   }
 
   mockStore.state = {
+    missions: [],
     ...makeFolderWorkspacePathStatusMockState(),
     startupWorktreeRefreshCompleted: true,
     activeModal: '',
