@@ -98,6 +98,7 @@ function setFolderWorkspaceFixtureState(
   const folderWorkspace = makeFolderWorkspace(group.id)
 
   mockStore.state = {
+    missions: [],
     ...makeFolderWorkspacePathStatusMockState(),
     activeModal: '',
     activeView: 'terminal',
