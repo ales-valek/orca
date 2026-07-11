@@ -14,6 +14,7 @@ function makeActions(): StartupActions {
     awaitLocalRepoCatalogSettlement: vi.fn(),
     fetchProjectGroupsForAllHosts: vi.fn(),
     fetchFolderWorkspacesForAllHosts: vi.fn(),
+    fetchMissions: vi.fn(),
     fetchAllWorktrees: vi.fn(),
     fetchWorktrees: vi.fn(),
     fetchWorktreeLineage: vi.fn(),
