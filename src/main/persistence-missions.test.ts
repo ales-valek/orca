@@ -125,3 +125,70 @@ describe('missions persistence', () => {
     expect(missions[0].members).toEqual([{ repoId: 'r1', worktreeId: null, addedAt: 1 }])
   })
 })
+
+describe('mission session workspaces', () => {
+  beforeEach(() => {
+    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+    trackMock.mockReset()
+    getCohortAtEmitMock.mockReset()
+    getCohortAtEmitMock.mockReturnValue({ nth_repo_added: 2 })
+  })
+
+  afterEach(async () => {
+    await closeTestStores()
+    rmSync(testState.dir, { recursive: true, force: true })
+  })
+
+  it('ensures, renames with the mission, and cleans up on mission delete', () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [{ id: 'r1', path: '/tmp/r1', displayName: 'R1', badgeColor: '#000', addedAt: 1 }],
+      worktreeMeta: {},
+      settings: {},
+      ui: {},
+      githubCache: { pr: {}, issue: {} }
+    })
+    const store = createStore()
+    const mission = store.createMission({ name: 'Referral', repoIds: ['r1'] })
+
+    expect(() => store.ensureMissionSessionWorkspace(mission.id)).toThrow('mission_root_not_ready')
+    store.setMissionRootPath(mission.id, '/tmp/orca/missions/referral')
+
+    const workspace = store.ensureMissionSessionWorkspace(mission.id)
+    expect(workspace.missionId).toBe(mission.id)
+    expect(workspace.projectGroupId).toBe(`mission:${mission.id}`)
+    expect(workspace.folderPath).toBe('/tmp/orca/missions/referral')
+    expect(store.ensureMissionSessionWorkspace(mission.id).id).toBe(workspace.id)
+    expect(store.getMissionSessionWorkspace(mission.id)?.id).toBe(workspace.id)
+
+    store.updateMission(mission.id, { name: 'Referral v2' })
+    expect(store.getMissionSessionWorkspace(mission.id)?.name).toBe('Referral v2')
+
+    store.deleteMission(mission.id)
+    expect(store.getMissionSessionWorkspace(mission.id)).toBeNull()
+    expect(store.getFolderWorkspaces()).toHaveLength(0)
+  })
+
+  it('drops mission session workspaces whose mission disappeared on load', () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {},
+      ui: {},
+      githubCache: { pr: {}, issue: {} },
+      missions: [],
+      folderWorkspaces: [
+        {
+          id: 'fw-orphan',
+          projectGroupId: 'mission:ghost',
+          missionId: 'ghost',
+          name: 'Ghost session',
+          folderPath: '/tmp/orca/missions/ghost'
+        }
+      ]
+    })
+    const store = createStore()
+    expect(store.getFolderWorkspaces()).toHaveLength(0)
+  })
+})
