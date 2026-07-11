@@ -6377,7 +6377,12 @@
         },
         "SidebarHeader": {
           "92154beb7e": "New workspace",
-          "addProject": "Add project"
+          "addProject": "Add project",
+          "ca6f729da2": "New workspace ({{value0}})",
+          "d2a0089e45": "Projects",
+          "b6cd1198f2": "Workspaces",
+          "ea1ec23452": "Missions",
+          "60c23631f0": "New Mission"
         },
         "SidebarNav": {
           "80611a8b10": "Search",
@@ -6569,7 +6574,8 @@
           "runtimeHostDisconnectedNamed": "{{hostName}} disconnected",
           "runtimeHostProject": "Project on Orca server",
           "runtimeHostProjectNamed": "Project on {{hostName}}",
-          "ef18787206": "Queued for deletion"
+          "ef18787206": "Queued for deletion",
+          "0c5bd538d7": "Mission: {{value0}}"
         },
         "WorktreeCardAgents": {
           "1b0a156717": "Agents",
@@ -6695,6 +6701,7 @@
           "sidebarRowMissing": "Target no longer exists",
           "failedUnnestWorkspace": "Failed to unnest workspace",
           "hostRepairRequired": "Re-pair required",
+          "3a2edfac81": "Add to mission",
           "showChildWorkspaces_one": "Show {{count}} child workspace",
           "hideChildWorkspaces_one": "Hide {{count}} child workspace",
           "showChildWorkspaces_other": "Show {{count}} child workspaces",
@@ -7310,6 +7317,48 @@
           "title": "Sort changed to Manual",
           "description": "Manual keeps workspaces where you drop them.",
           "restore": "Back to {{label}}"
+        },
+        "MissionAddProjectsDialog": {
+          "6ec97cd26f": "Add Projects",
+          "02449d01cc": "Each added project gets a workspace on {{value0}}.",
+          "eb3a71b1fd": "All projects are already in this mission.",
+          "d5aae76bca": "Cancel",
+          "e81ed87ddd": "Adding...",
+          "36cc45b3fb": "Add"
+        },
+        "MissionCreateDialog": {
+          "0655a02f86": "New Mission",
+          "4608f14ade": "Each selected project gets a workspace on a shared mission branch.",
+          "48ec5c5b11": "Mission Name",
+          "0c9fe9ce6d": "Branch",
+          "bcea32d392": "Projects",
+          "741e98ec23": "Cancel",
+          "131ac9a3ca": "Creating...",
+          "470b9ba02f": "Create Mission"
+        },
+        "MissionDeleteDialog": {
+          "7c84ee0d7d": "Delete Mission",
+          "3a89f8d9b8": "Delete \"{{value0}}\"?",
+          "cef9382dc6": "Also delete member workspaces",
+          "b74a531d8d": "Some workspaces could not be deleted. Resolve the errors and try again.",
+          "e0a412c615": "Cancel",
+          "fd82d0130a": "Deleting...",
+          "9ce0f98166": "Delete"
+        },
+        "MissionList": {
+          "280576fc92": "Workspace missing",
+          "d241d824cb": "Recreate",
+          "edb3b75817": "Remove from mission",
+          "745def31cd": "{{value0}} projects",
+          "28833b5212": "Add projects",
+          "d12c29d655": "Rename",
+          "b32972019a": "Delete mission",
+          "c9de5b6d5a": "No missions yet",
+          "d5d9aa29fa": "Group projects per task. Each project gets a workspace on a shared mission branch.",
+          "e4cb2a2294": "New Mission",
+          "d56fdff6c8": "Rename Mission",
+          "8d3abfb48a": "Mission Name",
+          "7f94e6c670": "Save"
         },
         "AddWslHostDialogBody": {
           "added": "{{value0}} added."
