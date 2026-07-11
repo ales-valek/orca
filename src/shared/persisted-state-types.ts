@@ -14,6 +14,7 @@ import type { DiffComment } from './diff-comment-types'
 import type { FolderWorkspace, WorkspaceKey } from './folder-workspace-types'
 import type { GlobalSettings } from './global-settings-types'
 import type { IssueInfo, PRInfo } from './github/pull-request-types'
+import type { Mission } from './mission-types'
 import type { OnboardingState } from './onboarding-state-types'
 import type { PersistedUIState } from './persisted-ui-state-types'
 import type { ProjectGroup } from './project-group-types'
@@ -61,6 +62,7 @@ export type PersistedState = {
   projectHostSetups: ProjectHostSetup[]
   projectGroups: ProjectGroup[]
   folderWorkspaces: FolderWorkspace[]
+  missions: Mission[]
   /** Folder-workspace review notes, keyed by FolderWorkspace.id. Top-level, NOT nested in
    *  folderWorkspaces[]: normalizeFolderWorkspaces rebuilds each record field-by-field, so an
    *  older build drops nested fields, while unknown top-level keys round-trip untouched.
