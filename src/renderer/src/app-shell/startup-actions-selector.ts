@@ -6,6 +6,7 @@ export type StartupActions = Pick<
   | 'awaitLocalRepoCatalogSettlement'
   | 'fetchProjectGroupsForAllHosts'
   | 'fetchFolderWorkspacesForAllHosts'
+  | 'fetchMissions'
   | 'fetchAllWorktrees'
   | 'fetchWorktrees'
   | 'fetchWorktreeLineage'
@@ -42,6 +43,7 @@ export function selectStartupActions(state: StartupActions): StartupActions {
     cachedStartupActions.fetchProjectGroupsForAllHosts === state.fetchProjectGroupsForAllHosts &&
     cachedStartupActions.fetchFolderWorkspacesForAllHosts ===
       state.fetchFolderWorkspacesForAllHosts &&
+    cachedStartupActions.fetchMissions === state.fetchMissions &&
     cachedStartupActions.fetchAllWorktrees === state.fetchAllWorktrees &&
     cachedStartupActions.fetchWorktrees === state.fetchWorktrees &&
     cachedStartupActions.fetchWorktreeLineage === state.fetchWorktreeLineage &&
@@ -77,6 +79,7 @@ export function selectStartupActions(state: StartupActions): StartupActions {
     awaitLocalRepoCatalogSettlement: state.awaitLocalRepoCatalogSettlement,
     fetchProjectGroupsForAllHosts: state.fetchProjectGroupsForAllHosts,
     fetchFolderWorkspacesForAllHosts: state.fetchFolderWorkspacesForAllHosts,
+    fetchMissions: state.fetchMissions,
     fetchAllWorktrees: state.fetchAllWorktrees,
     fetchWorktrees: state.fetchWorktrees,
     fetchWorktreeLineage: state.fetchWorktreeLineage,

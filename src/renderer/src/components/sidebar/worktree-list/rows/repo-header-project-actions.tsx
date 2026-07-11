@@ -31,6 +31,7 @@ import { getRepositoryIconSectionId } from '@/components/settings/repository-set
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeVisibilityDefaults } from '../../../../../../shared/global-settings-types'
+import { isMissionEligibleRepo } from '../../../../../../shared/missions'
 import { isGitRepoKind } from '../../../../../../shared/repo-kind'
 import {
   effectiveExternalWorktreeVisibility,
@@ -169,7 +170,7 @@ export function RepoHeaderProjectActionsMenu({
             {translate('auto.components.sidebar.WorktreeList.64e55f7f01', 'Remove from group')}
           </DropdownMenuItem>
         ) : null}
-        {missions.length > 0 ? (
+        {missions.length > 0 && isMissionEligibleRepo(repo) ? (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Flag className="size-3.5" />
