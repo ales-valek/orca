@@ -16,6 +16,7 @@ import type { FolderWorkspace } from './folder-workspaces/folder-workspace-types
 import type { WorkspaceKey } from './workspace-scope'
 import type { GlobalSettings } from './global-settings-types'
 import type { IssueInfo, PRInfo } from './github/pull-request-types'
+import type { Mission } from './mission-types'
 import type { OnboardingState } from './onboarding-state-types'
 import type { PersistedUIState } from './persisted-ui-state-types'
 import type { ProjectGroup } from './project-group-types'
@@ -65,6 +66,7 @@ export type PersistedState = {
   projectHostSetups: ProjectHostSetup[]
   projectGroups: ProjectGroup[]
   folderWorkspaces: FolderWorkspace[]
+  missions: Mission[]
   /** Keep folder review notes top-level: older normalizers strip nested fields but round-trip unknown top-level keys.
    * Write-only projection: load hydrates FolderWorkspace.diffComments and deletes this key from Store state;
    * only buildStateToSave produces it. Never read Store.state.folderWorkspaceDiffComments outside load. */
