@@ -16,6 +16,7 @@ import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import { isMissionEligibleRepo, slugifyMissionBranch } from '../../../../shared/missions'
 import type { MissionMemberResult } from '../../../../shared/mission-types'
+import { formatMissionMemberError } from './mission-member-error-copy'
 
 export type MissionCreateMemberStatus = {
   repoId: string
@@ -83,7 +84,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
         repoId: result.repoId,
         repoName: repoNameById.get(result.repoId) ?? result.repoId,
         state: result.error ? 'failed' : 'created',
-        error: result.error
+        error: result.error ? formatMissionMemberError(result.error) : undefined
       }))
     : selectedIds.map((repoId) => ({
         repoId,
