@@ -8,6 +8,7 @@ import { setSidebarLiveWidth } from './sidebar-live-width'
 import SetupScriptPromptCard from './SetupScriptPromptCard'
 import WorktreeList from './worktree-list/listing/WorktreeList'
 import WslMovedProjectsSection from './WslMovedProjectsSection'
+import MissionList from './MissionList'
 import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './workspace-board/surface/WorkspaceKanbanDrawer'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
@@ -42,6 +43,7 @@ const ForgetSshWorkspaceDialog = lazyWithRetry(
   () => import('./workspace-actions/deletion/ForgetSshWorkspaceDialog')
 )
 const AgentDashboardSidebarHost = lazyWithRetry(() => import('./AgentDashboardSidebarHost'))
+const MissionCreateDialog = lazyWithRetry(() => import('./MissionCreateDialog'))
 
 const MIN_WIDTH = 220
 const MAX_WIDTH = 500
@@ -105,6 +107,7 @@ function Sidebar({
   )
   const fetchAllWorktrees = useAppStore((s) => s.fetchAllWorktrees)
   const activeModal = useAppStore((s) => s.activeModal)
+  const sidebarListMode = useAppStore((s) => s.sidebarListMode)
   const statusBarVisible = useAppStore((s) => s.statusBarVisible)
   const leftSidebarStyle = useMemo(() => resolveLeftSidebarStyleVariables(settings), [settings])
   const { dropOwnerRef, dropHandlers, affordance } = useSidebarProjectDrop()
@@ -207,7 +210,8 @@ function Sidebar({
                   />
                 </ActivityThreadCollapseContext.Provider>
               </React.Suspense>
-              {sidebarBody !== 'agents' && (
+              {sidebarBody !== 'agents' && sidebarListMode === 'missions' && <MissionList />}
+              {sidebarBody !== 'agents' && sidebarListMode !== 'missions' && (
                 <>
                   <LocalGitToolchainScanBanner />
                   <StartupWorktreeRefreshStatus />
@@ -286,6 +290,7 @@ function Sidebar({
         {activeModal === 'worktree-visibility' ? <WorktreeVisibilityDialog /> : null}
         {activeModal === 'confirm-orca-yaml-hooks' ? <OrcaYamlTrustDialog /> : null}
         {activeModal === 'forget-ssh-workspace' ? <ForgetSshWorkspaceDialog /> : null}
+        {activeModal === 'mission-create' ? <MissionCreateDialog /> : null}
       </React.Suspense>
       {sidebarOpen ? (
         <WorkspaceKanbanDrawer
