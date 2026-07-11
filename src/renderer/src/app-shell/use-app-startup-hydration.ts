@@ -320,6 +320,7 @@ export function useAppStartupHydration(onOnboardingLoaded: (state: OnboardingSta
                   await actions.fetchReposForAllHosts()
                   await actions.fetchProjectGroupsForAllHosts()
                   await actions.fetchFolderWorkspacesForAllHosts()
+                  await useAppStore.getState().fetchMissions()
                 })
               } catch (err) {
                 console.warn('Remote startup catalog refresh failed:', err)
