@@ -1,5 +1,5 @@
 import { ipcMain, type BrowserWindow } from 'electron'
-import { z } from 'zod'
+import type { FolderWorkspace } from '../../shared/folder-workspace-types'
 import type {
   Mission,
   MissionCreateResult,
@@ -7,52 +7,24 @@ import type {
   MissionMemberResult
 } from '../../shared/mission-types'
 import { getMissionWorktreeName } from '../../shared/missions'
-import { notifyReposChanged } from './repos/repos-changed-notification'
+import {
+  ensureMissionRootStrict,
+  removeMissionRootIfPresent,
+  syncMissionRootIfPresent
+} from '../missions/mission-root-sync'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-
-const MissionCreateArgs = z.object({
-  name: z.string().min(1),
-  branchName: z.string().min(1).optional(),
-  repoIds: z.array(z.string().min(1)).min(1)
-})
-
-const MissionUpdateArgs = z.object({
-  missionId: z.string().min(1),
-  updates: z.object({
-    name: z.string().optional(),
-    tabOrder: z.number().finite().optional()
-  })
-})
-
-const MissionDeleteArgs = z.object({
-  missionId: z.string().min(1),
-  deleteWorktrees: z.boolean()
-})
-
-const MissionAddMembersArgs = z.object({
-  missionId: z.string().min(1),
-  repoIds: z.array(z.string().min(1)).min(1)
-})
-
-const MissionRemoveMemberArgs = z.object({
-  missionId: z.string().min(1),
-  repoId: z.string().min(1),
-  deleteWorktree: z.boolean()
-})
-
-const MissionMemberSelectorArgs = z.object({
-  missionId: z.string().min(1),
-  repoId: z.string().min(1)
-})
-
-function parseMissionIpcArgs<T>(schema: z.ZodType<T>, value: unknown, errorCode: string): T {
-  const result = schema.safeParse(value)
-  if (result.success) {
-    return result.data
-  }
-  throw new Error(errorCode)
-}
+import {
+  MissionAddMembersArgs,
+  MissionCreateArgs,
+  MissionDeleteArgs,
+  MissionMemberSelectorArgs,
+  MissionRemoveMemberArgs,
+  MissionSelectorArgs,
+  MissionUpdateArgs,
+  parseMissionIpcArgs
+} from './mission-ipc-args'
+import { notifyReposChanged } from './repos/repos-changed-notification'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -65,7 +37,8 @@ const MISSION_CHANNELS = [
   'missions:delete',
   'missions:addMembers',
   'missions:removeMember',
-  'missions:recreateMemberWorktree'
+  'missions:recreateMemberWorktree',
+  'missions:ensureSession'
 ] as const
 
 export function registerMissionHandlers(
@@ -144,6 +117,7 @@ export function registerMissionHandlers(
       })
       notifyReposChanged(mainWindow)
       const memberResults = await createMemberWorktrees(mission, repoIds)
+      syncMissionRootIfPresent(store, mission.id)
       notifyReposChanged(mainWindow)
       return { mission: store.getMission(mission.id) ?? mission, memberResults }
     }
@@ -168,6 +142,9 @@ export function registerMissionHandlers(
       }
       if (!args.deleteWorktrees) {
         const deleted = store.deleteMission(mission.id)
+        if (deleted) {
+          removeMissionRootIfPresent(mission)
+        }
         notifyReposChanged(mainWindow)
         return { deleted, memberResults: [] }
       }
@@ -185,6 +162,11 @@ export function registerMissionHandlers(
         remaining !== null && remaining.members.length === 0
           ? store.deleteMission(mission.id)
           : false
+      if (deleted) {
+        removeMissionRootIfPresent(mission)
+      } else {
+        syncMissionRootIfPresent(store, mission.id)
+      }
       notifyReposChanged(mainWindow)
       return { deleted, memberResults }
     }
@@ -212,6 +194,7 @@ export function registerMissionHandlers(
         store.getMission(mission.id) ?? mission,
         repoIds
       )
+      syncMissionRootIfPresent(store, mission.id)
       notifyReposChanged(mainWindow)
       return { mission: store.getMission(mission.id) ?? mission, memberResults }
     }
@@ -240,6 +223,7 @@ export function registerMissionHandlers(
         store.removeMissionMember(mission.id, member.repoId)
         result = { repoId: member.repoId, worktreeId: null }
       }
+      syncMissionRootIfPresent(store, mission.id)
       notifyReposChanged(mainWindow)
       return { deleted: false, memberResults: [result] }
     }
@@ -258,8 +242,27 @@ export function registerMissionHandlers(
         throw new Error('mission_member_not_found')
       }
       const result = await createMemberWorktree(mission, args.repoId)
+      syncMissionRootIfPresent(store, mission.id)
       notifyReposChanged(mainWindow)
       return result
     }
   )
+
+  ipcMain.handle('missions:ensureSession', (_event, rawArgs: unknown): FolderWorkspace => {
+    const args = parseMissionIpcArgs(
+      MissionSelectorArgs,
+      rawArgs,
+      'invalid_mission_ensure_session_args'
+    )
+    const mission = store.getMission(args.missionId)
+    if (!mission) {
+      throw new Error('mission_not_found')
+    }
+    // Why: strict (throwing) ensure — opening the session must surface a
+    // root that cannot be created, unlike best-effort member-change syncs.
+    const ensured = ensureMissionRootStrict(store, mission)
+    const workspace = store.ensureMissionSessionWorkspace(ensured.id)
+    notifyReposChanged(mainWindow)
+    return workspace
+  })
 }
