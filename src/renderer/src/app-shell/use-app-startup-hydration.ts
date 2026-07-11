@@ -127,6 +127,8 @@ export function useAppStartupHydration(onOnboardingLoaded: (state: OnboardingSta
           await timeRendererStartupStep('fetch-folder-workspaces-local', () =>
             actions.fetchFolderWorkspacesForAllHosts({ remoteHosts: 'skip' })
           )
+          // Why: missions are local-host persisted state; load them with the local catalog for first paint.
+          await timeRendererStartupStep('fetch-missions-local', () => actions.fetchMissions())
         })()
         const sessionReadPromise = Promise.all([
           runtimeHostsPromise,
