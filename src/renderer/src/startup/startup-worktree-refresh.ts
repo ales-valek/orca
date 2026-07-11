@@ -63,9 +63,6 @@ export async function refreshStartupWorktrees(
         if (!isCancelled()) {
           await actions.fetchFolderWorkspacesForAllHosts()
         }
-        if (!isCancelled()) {
-          await useAppStore.getState().fetchMissions()
-        }
       }),
       localRefresh
     ])

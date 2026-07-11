@@ -34,6 +34,7 @@ import { WslMoveProjectMenuItem } from '@/components/wsl-move/WslMoveProjectMenu
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeVisibilityDefaults } from '../../../../../../shared/global-settings-types'
+import { isMissionEligibleRepo } from '../../../../../../shared/missions'
 import { isGitRepoKind } from '../../../../../../shared/repo-kind'
 import {
   effectiveExternalWorktreeVisibility,
@@ -185,7 +186,7 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
           </DropdownMenuItem>
         ) : null}
         <WslMoveProjectMenuItem repo={repo} />
-        {missions.length > 0 ? (
+        {missions.length > 0 && isMissionEligibleRepo(repo) ? (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Flag className="size-3.5" />
