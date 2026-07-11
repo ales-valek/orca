@@ -1,11 +1,8 @@
 import type { Mission, MissionMember } from './mission-types'
+import { createNonSecureContextUuid } from './non-secure-context-uuid'
 
 function createMissionInstanceId(): string {
-  const randomUUID = globalThis.crypto?.randomUUID
-  if (randomUUID) {
-    return randomUUID.call(globalThis.crypto)
-  }
-  return `mission-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return createNonSecureContextUuid()
 }
 
 export function normalizeMissionName(name: string, fallback = 'Untitled mission'): string {
@@ -26,6 +23,26 @@ export function slugifyMissionBranch(name: string): string {
 
 export function getMissionWorktreeName(branchName: string): string {
   return branchName.replace(/[\\/]+/g, '-')
+}
+
+/** Directory-safe name for the mission root (and its member links). */
+export function getMissionRootDirName(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-._]+|[-._]+$/g, '')
+  return slug || 'mission'
+}
+
+/** Sentinel projectGroupId carried by mission session folder workspaces.
+ *  Namespaced so it can never collide with a real project-group id. */
+export function missionSentinelGroupId(missionId: string): string {
+  return `mission:${missionId}`
+}
+
+export function isMissionOwnedFolderWorkspace(workspace: { missionId?: string | null }): boolean {
+  return typeof workspace.missionId === 'string' && workspace.missionId.length > 0
 }
 
 function normalizeMissionBranchName(branchName: string | null | undefined, name: string): string {
@@ -113,6 +130,7 @@ export function normalizeMissions(value: unknown): Mission[] {
       members: normalizeMissionMembers(raw.members, now),
       tabOrder:
         typeof raw.tabOrder === 'number' && Number.isFinite(raw.tabOrder) ? raw.tabOrder : 0,
+      rootPath: typeof raw.rootPath === 'string' && raw.rootPath.length > 0 ? raw.rootPath : null,
       createdAt:
         typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : now,
       updatedAt:

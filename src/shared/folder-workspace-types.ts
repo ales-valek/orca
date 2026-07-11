@@ -17,7 +17,12 @@ export type WorkspaceKey = `worktree:${string}` | `folder:${string}`
 
 export type FolderWorkspace = {
   id: string
+  /** Owning folder-scan project group, or the sentinel `mission:<missionId>`
+   *  for mission session workspaces (never a real group id, so group lookups
+   *  degrade to null everywhere). */
   projectGroupId: string
+  /** Set when this workspace is a mission session rooted at Mission.rootPath. */
+  missionId?: string
   name: string
   folderPath: string
   /** SSH target ID for folder workspaces whose folder path lives remotely. */

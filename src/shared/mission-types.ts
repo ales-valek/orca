@@ -14,6 +14,9 @@ export type Mission = {
   branchName: string
   members: MissionMember[]
   tabOrder: number
+  /** Physical mission root holding symlinks to local member worktrees.
+   *  Resolved lazily on first session ensure; stable afterwards. */
+  rootPath?: string | null
   createdAt: number
   updatedAt: number
 }
