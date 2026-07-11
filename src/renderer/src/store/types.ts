@@ -1,3 +1,4 @@
+import type { MissionsSlice } from './slices/missions'
 import type { RepoSlice } from './repos/repo-state'
 import type { SparsePresetsSlice } from './slices/sparse-presets'
 import type { WorktreeSlice } from './slices/worktrees'
@@ -51,6 +52,7 @@ import type { StructuredChatSleptAtSlice } from './slices/structured-chat-slept-
 import type { WorkspaceAttentionSlice } from './slices/workspace-attention/workspace-attention-contract'
 
 export type AppState = RepoSlice &
+  MissionsSlice &
   SparsePresetsSlice &
   WorktreeSlice &
   TerminalSlice &
