@@ -37,6 +37,7 @@ import type { GitLabApi } from './api/gitlab-api'
 import type { BitbucketApi, HostedReviewApi } from './api/hosted-review-api'
 import type { JiraApi } from './api/jira-api'
 import type { LinearApi } from './api/linear-api'
+import type { MissionsApi } from './api/missions-api'
 import type { MobileApi } from './api/mobile-api'
 import type { NativeChatApi } from './api/native-chat-api'
 import type { OnboardingApi, StarNagApi } from './api/onboarding-api'
@@ -84,6 +85,7 @@ export type PreloadApi = {
   repos: RepositoryApi
   projects: ProjectsApi
   projectGroups: ProjectGroupsApi
+  missions: MissionsApi
   folderWorkspaces: FolderWorkspacesApi
   sparsePresets: SparsePresetsApi
   worktrees: WorktreeApi
