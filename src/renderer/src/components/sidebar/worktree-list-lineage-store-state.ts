@@ -94,6 +94,7 @@ export function setLineageFixtureState(
   grandchild.isUnread = unreadWorktreeIds.has(grandchild.id)
 
   mockStore.state = {
+    missions: [],
     ...makeFolderWorkspacePathStatusMockState(),
     activeModal: '',
     activeView: 'terminal',
