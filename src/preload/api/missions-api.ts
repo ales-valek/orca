@@ -1,3 +1,4 @@
+import type { FolderWorkspace } from '../../shared/folder-workspace-types'
 import type {
   Mission,
   MissionCreateResult,
@@ -27,4 +28,5 @@ export type MissionsApi = {
     missionId: string
     repoId: string
   }) => Promise<MissionMemberResult>
+  ensureSession: (args: { missionId: string }) => Promise<FolderWorkspace>
 }
