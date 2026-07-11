@@ -26,6 +26,7 @@ import { normalizeFeatureInteractions } from '../../../shared/feature-interactio
 import {
   normalizeGroupBy,
   normalizeProjectOrderBy,
+  normalizeSidebarListMode,
   normalizeRightSidebarExplorerView,
   normalizeRightSidebarTab,
   normalizeShowDotfilesByWorktree,
@@ -44,6 +45,7 @@ export function getPersistedUI(
     groupBy: normalizeGroupBy(state.ui?.groupBy),
     sortBy: normalizeSortBy(state.ui?.sortBy),
     projectOrderBy: normalizeProjectOrderBy(state.ui?.projectOrderBy),
+    sidebarListMode: normalizeSidebarListMode(state.ui?.sidebarListMode),
     rightSidebarTab: normalizeRightSidebarTab(state.ui?.rightSidebarTab),
     rightSidebarExplorerView: normalizeRightSidebarExplorerView(
       state.ui?.rightSidebarExplorerView,

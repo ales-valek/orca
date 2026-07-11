@@ -34,6 +34,8 @@ export type UISlicePreferences = {
   setSortBy: (s: UISlicePreferences['sortBy']) => void
   projectOrderBy: ProjectOrderBy
   setProjectOrderBy: (p: ProjectOrderBy) => void
+  sidebarListMode: 'projects' | 'missions'
+  setSidebarListMode: (mode: UISlicePreferences['sidebarListMode']) => void
   showActiveOnly: boolean
   setShowActiveOnly: (v: boolean) => void
   showSleepingWorkspaces: boolean
