@@ -1,9 +1,10 @@
 import React from 'react'
-import { GitMerge } from 'lucide-react'
+import { Flag, GitMerge } from 'lucide-react'
 
 import { DetachedHeadBadge } from '@/components/DetachedHeadBadge'
 import { RepoBadgeMark } from '@/components/repo/RepoBadgeLabel'
 import { Badge } from '@/components/ui/badge'
+import { translate } from '@/i18n/i18n'
 import CacheTimer from './CacheTimer'
 import { WorktreeHostContextBadge } from './WorktreeHostContextBadge'
 import { CONFLICT_OPERATION_LABELS } from './WorktreeCardHelpers'
@@ -34,6 +35,7 @@ export function WorktreeCardMetaRow({
   } = card
   const {
     showRepoBadgeInMetaRow,
+    missionName,
     showHostContextBadge,
     showIdentityInNewCard,
     hasHoverDetails,
@@ -54,6 +56,23 @@ export function WorktreeCardMetaRow({
               {repo.displayName}
             </span>
           </div>
+        )}
+
+        {missionName && (
+          <Badge
+            variant="secondary"
+            className="h-[16px] max-w-[7rem] shrink-0 rounded border border-border bg-accent px-1.5 text-[10px] font-medium leading-none text-muted-foreground dark:bg-accent/80 dark:border-border/50"
+            title={translate(
+              'auto.components.sidebar.WorktreeCard.0c5bd538d7',
+              'Mission: {{value0}}',
+              {
+                value0: missionName
+              }
+            )}
+          >
+            <Flag className="size-2.5 shrink-0" />
+            <span className="truncate">{missionName}</span>
+          </Badge>
         )}
 
         {showHostContextBadge && <WorktreeHostContextBadge label={hostContextLabel!} />}

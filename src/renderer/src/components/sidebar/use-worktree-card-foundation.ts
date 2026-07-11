@@ -44,6 +44,14 @@ export function useWorktreeCardFoundation({
   const agentActivityDisplayMode =
     useAppStore((s) => s.agentActivityDisplayMode) ?? DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE
   const projectGroups = useAppStore((s) => s.projectGroups)
+  // Why: mission worktrees also appear under their repo in the Projects view;
+  // the badge keeps the two sidebar views mutually legible.
+  const missionName = useAppStore(
+    (s) =>
+      s.missions.find((mission) =>
+        mission.members.some((member) => member.worktreeId === worktree.id)
+      )?.name ?? null
+  )
   const newCardStyle = settings?.experimentalNewWorktreeCardStyle === true
   const compactCards = !newCardStyle && settings?.compactWorktreeCards === true
   const handleEditIssue = useCallback(
@@ -232,6 +240,7 @@ export function useWorktreeCardFoundation({
     cardProps,
     agentActivityDisplayMode,
     projectGroups,
+    missionName,
     newCardStyle,
     compactCards,
     handleEditIssue,
