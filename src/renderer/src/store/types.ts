@@ -1,3 +1,4 @@
+import type { MissionsSlice } from './slices/missions'
 import type { RepoSlice } from './repos/repo-state'
 import type { SparsePresetsSlice } from './slices/worktrees/create/sparse-presets'
 import type { WorktreeSlice } from './slices/worktrees/worktree-slice-contract'
@@ -53,6 +54,7 @@ import type { EphemeralVmLifecycleSlice } from './slices/ephemeral-vm/ephemeral-
 import type { WorkspaceAttentionSlice } from './slices/workspace-attention/workspace-attention-contract'
 
 export type AppState = RepoSlice &
+  MissionsSlice &
   SparsePresetsSlice &
   WorktreeSlice &
   TerminalSlice &

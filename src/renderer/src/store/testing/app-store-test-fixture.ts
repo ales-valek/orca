@@ -1,6 +1,5 @@
 import { create, type StateCreator } from 'zustand'
 import type { AppState } from '../types'
-
 import { createRepoSlice } from '../repos/create-repo-slice'
 import { createSparsePresetsSlice } from '../slices/worktrees/create/sparse-presets'
 import { createWorktreeSlice } from '../slices/worktrees/create-worktree-slice'
@@ -18,6 +17,7 @@ import { createEditorSlice } from '../slices/editor/create-editor-slice'
 import { createStatsSlice } from '../slices/process-stats/stats'
 import { createMemorySlice } from '../slices/process-stats/memory'
 import { createWorkspaceSpaceSlice } from '../slices/workspace-cleanup/workspace-space'
+import { createMissionsSlice } from './missions'
 import {
   createClaudeUsageSlice,
   createCodexUsageSlice,
@@ -70,6 +70,7 @@ export function createTestStore(
     withTestStorePolicies(
       (...a) => ({
         ...createRepoSlice(...a),
+        ...createMissionsSlice(...a),
         ...createSparsePresetsSlice(...a),
         ...createWorktreeSlice(...a),
         ...createTerminalSlice(...a, isClaudeAgent),
