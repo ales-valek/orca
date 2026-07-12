@@ -58,9 +58,19 @@ export function computeVisibleWorktrees(
     opts.missionMemberWorktreeIds.size > 0
       ? rows.filter((worktree) => !opts.missionMemberWorktreeIds.has(worktree.id))
       : rows
+  // Mission members belong to the Missions tab and must not resurface as lineage parents.
+  const lineageAncestorIndex = getLineageAncestorIndex(worktreesByRepo)
+  const ancestorByIdentity =
+    opts.missionMemberWorktreeIds.size === 0
+      ? lineageAncestorIndex
+      : new Map(
+          [...lineageAncestorIndex].filter(
+            ([, worktree]) => !opts.missionMemberWorktreeIds.has(worktree.id)
+          )
+        )
   return selectVisibleSidebarWorktrees({
     rows: visibleRows,
-    ancestorByIdentity: getLineageAncestorIndex(worktreesByRepo),
+    ancestorByIdentity,
     rankOf: (worktree) => rankByKey.get(keyOf(worktree)),
     filters: sidebarWorkspaceRowFilters(opts),
     facts: buildDesktopWorkspaceRowFactReader(opts),
