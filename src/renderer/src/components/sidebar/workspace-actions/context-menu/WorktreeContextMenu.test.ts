@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   getSharedWorkspaceStatus,
+  getSingleContextDeleteRestriction,
   planWorkspaceStatusAssignment
 } from './worktree-context-menu-policy'
 import { getDeleteStateForWorktreeHost } from '../deletion/worktree-delete-state-host-match'
@@ -49,5 +50,42 @@ describe('planWorkspaceStatusAssignment (context-menu "Move to Status" routing)'
       kind: 'local-only',
       localWriteIds: ['b']
     })
+  })
+})
+
+describe('single-context delete restriction (drives the Delete item disabled state)', () => {
+  const base = {
+    isMultiContext: false,
+    isMissionSessionWorkspace: false,
+    isMainWorktree: false,
+    removesProject: false
+  }
+
+  it('blocks a mission session workspace and names the mission as the delete surface', () => {
+    expect(getSingleContextDeleteRestriction({ ...base, isMissionSessionWorkspace: true })).toBe(
+      'mission-session'
+    )
+  })
+
+  it('blocks a primary checkout whose project cannot be resolved', () => {
+    expect(getSingleContextDeleteRestriction({ ...base, isMainWorktree: true })).toBe(
+      'project-missing'
+    )
+    expect(
+      getSingleContextDeleteRestriction({ ...base, isMainWorktree: true, removesProject: true })
+    ).toBe(null)
+  })
+
+  it('leaves ordinary workspaces and multi-selections unrestricted', () => {
+    expect(getSingleContextDeleteRestriction(base)).toBe(null)
+    // Multi-select delete is governed by the batch pool, which never contains
+    // folder workspaces — the single-context restriction must not apply there.
+    expect(
+      getSingleContextDeleteRestriction({
+        ...base,
+        isMultiContext: true,
+        isMissionSessionWorkspace: true
+      })
+    ).toBe(null)
   })
 })
