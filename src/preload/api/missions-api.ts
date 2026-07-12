@@ -5,6 +5,7 @@ import type {
   MissionDeleteResult,
   MissionMemberResult
 } from '../../shared/mission-types'
+import type { TuiAgent } from '../../shared/tui-agent'
 
 export type MissionsApi = {
   list: () => Promise<Mission[]>
@@ -12,6 +13,9 @@ export type MissionsApi = {
     name: string
     branchName?: string
     repoIds: string[]
+    baseBranch?: string
+    setupDecision?: 'run' | 'skip' | 'inherit'
+    sessionAgent?: TuiAgent
   }) => Promise<MissionCreateResult>
   update: (args: {
     missionId: string
