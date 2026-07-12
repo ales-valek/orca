@@ -10,6 +10,7 @@ import type { Repo } from '../../../../../../shared/repo-types'
 import type { AppState } from '@/store/types'
 import { getFolderPathStatusRouteOptionsForRows } from './folder-path-status-routing'
 import { recomputeOn } from '@/lib/recompute-on'
+import { isMissionOwnedFolderWorkspace } from '../../../../../../shared/missions'
 
 type FolderPathStatusRequest = Parameters<AppState['fetchFolderWorkspacePathStatus']>[0]
 
@@ -139,6 +140,11 @@ export function useFolderWorkspacePathStatusRows(args: {
       }
     }
     for (const workspace of folderWorkspaces) {
+      // Why: mission session workspaces render in the Missions tab, so no row
+      // here ever reads their path status — skip the wasted IPC round-trips.
+      if (isMissionOwnedFolderWorkspace(workspace)) {
+        continue
+      }
       addRequest({ scope: 'folder-workspace' as const, folderWorkspaceId: workspace.id })
     }
     return requests
