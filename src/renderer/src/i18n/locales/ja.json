@@ -5744,8 +5744,7 @@
           "runtimeHostDisconnectedNamed": "{{hostName}} が切断されました",
           "runtimeHostProject": "Orca サーバー上のプロジェクト",
           "runtimeHostProjectNamed": "{{hostName}} 上のプロジェクト",
-          "ef18787206": "削除待ち",
-          "0c5bd538d7": "ミッション: {{value0}}"
+          "ef18787206": "削除待ち"
         },
         "WorktreeCardAgents": {
           "1b0a156717": "Agent",
