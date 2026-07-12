@@ -75,6 +75,9 @@ export type VisibleWorktreeOptions = {
   hideDefaultBranchWorkspace: boolean
   hideAutomationGeneratedWorkspaces: boolean
   hideCliCreatedWorkspaces: boolean
+  // Why required: mission member worktrees belong to the Missions tab; a
+  // caller that forgets this set would silently resurface them here.
+  missionMemberWorktreeIds: ReadonlySet<string>
   hideDetachedHeadWorkspaces: boolean
   hideWorkspacesFromOtherDevices: boolean
   pairedDeviceIdsByEnvironment: ReadonlyMap<string, string>
@@ -119,6 +122,10 @@ export function computeVisibleWorktrees(
 
   if (opts.hideCliCreatedWorkspaces) {
     all = all.filter((w) => !isCliCreatedWorkspace(w))
+  }
+
+  if (opts.missionMemberWorktreeIds.size > 0) {
+    all = all.filter((w) => !opts.missionMemberWorktreeIds.has(w.id))
   }
 
   if (opts.hideDetachedHeadWorkspaces) {

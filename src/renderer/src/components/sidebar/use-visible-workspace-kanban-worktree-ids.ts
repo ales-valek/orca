@@ -5,6 +5,7 @@ import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { computeVisibleWorktrees } from './visible-worktrees'
 import { getWorktreeIdsWithLiveAgent } from '@/lib/worktree-activity-state'
+import { getMissionMemberWorktreeIds } from '../../../../shared/missions'
 import { getSettingsFocusedExecutionHostId } from '../../../../shared/execution-host'
 import type { AppState } from '@/store/types'
 import {
@@ -55,6 +56,8 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
   const worktreeIdsWithStructuredChat = useAppStore((s) =>
     getStructuredChatWorktreeIds(showSleepingWorkspaces, s.unifiedTabsByWorktree)
   )
+  const missions = useAppStore((s) => s.missions)
+  const missionMemberWorktreeIds = useMemo(() => getMissionMemberWorktreeIds(missions), [missions])
   const agentStatusEpoch = useAppStore((s) => (!showSleepingWorkspaces ? s.agentStatusEpoch : 0))
   // Why: skip the clock entirely when the epoch is the opt-out sentinel, so a
   // sleeping-workspaces board cannot evict the sample the live boards share.
@@ -91,6 +94,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
         hideAutomationGeneratedWorkspaces,
         hideCliCreatedWorkspaces,
         hideDetachedHeadWorkspaces,
+        missionMemberWorktreeIds,
         hideWorkspacesFromOtherDevices,
         pairedDeviceIdsByEnvironment: hideWorkspacesFromOtherDevices
           ? getPairedDeviceIdsByEnvironment(runtimeEnvironments, runtimeStatusByEnvironmentId)
@@ -114,6 +118,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces,
+    missionMemberWorktreeIds,
     hideWorkspacesFromOtherDevices,
     alwaysShowDefaultBranchWorkspace,
     workspaceHostScope,

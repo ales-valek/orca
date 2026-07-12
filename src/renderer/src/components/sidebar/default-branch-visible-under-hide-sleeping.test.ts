@@ -54,6 +54,7 @@ function visibleOptions(overrides: Partial<VisibleOptions> = {}): VisibleOptions
     worktreeIdsWithLiveAgent: new Set(),
     hideDefaultBranchWorkspace: false,
     hideAutomationGeneratedWorkspaces: false,
+    missionMemberWorktreeIds: new Set<string>(),
     hideCliCreatedWorkspaces: false,
     hideDetachedHeadWorkspaces: false,
     hideWorkspacesFromOtherDevices: false,

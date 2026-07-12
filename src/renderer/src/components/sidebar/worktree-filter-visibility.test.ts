@@ -51,6 +51,7 @@ function stateWithLocalScopedTwins(): unknown {
     hideDetachedHeadWorkspaces: false,
     hideWorkspacesFromOtherDevices: false,
     alwaysShowDefaultBranchWorkspace: true,
+    missions: [],
     workspaceHostScope: 'local',
     visibleWorkspaceHostIds: ['local'],
     settings: null,

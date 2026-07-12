@@ -6,6 +6,7 @@ import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeLineage } from '../../../../../../shared/worktree/lineage-types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import { computeVisibleWorktrees } from '../../visible-worktrees'
+import { getMissionMemberWorktreeIds } from '../../../../../../shared/missions'
 import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,
   getPairedDeviceIdsByEnvironment
@@ -74,6 +75,8 @@ export function useVisibleSidebarWorktrees(args: {
   const worktreeIdsWithStructuredChat = useAppStore((s) =>
     getStructuredChatWorktreeIds(showSleepingWorkspaces, s.unifiedTabsByWorktree)
   )
+  const missions = useAppStore((s) => s.missions)
+  const missionMemberWorktreeIds = useMemo(() => getMissionMemberWorktreeIds(missions), [missions])
 
   const recomputedVisibleWorktrees = useMemo(() => {
     // Keyed on the epoch, not `agentStatusNow`: two bumps in one millisecond
@@ -98,6 +101,7 @@ export function useVisibleSidebarWorktrees(args: {
       hideAutomationGeneratedWorkspaces,
       hideCliCreatedWorkspaces,
       hideDetachedHeadWorkspaces,
+      missionMemberWorktreeIds,
       hideWorkspacesFromOtherDevices,
       pairedDeviceIdsByEnvironment,
       alwaysShowDefaultBranchWorkspace,
@@ -121,6 +125,7 @@ export function useVisibleSidebarWorktrees(args: {
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces,
+    missionMemberWorktreeIds,
     hideWorkspacesFromOtherDevices,
     alwaysShowDefaultBranchWorkspace,
     workspaceHostScope,
