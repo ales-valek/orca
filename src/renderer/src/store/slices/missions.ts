@@ -6,6 +6,7 @@ import type {
   MissionMemberResult
 } from '../../../../shared/mission-types'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
+import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { AppState } from '../types'
 
 export type MissionsSlice = {
@@ -19,6 +20,9 @@ export type MissionsSlice = {
     name: string
     branchName?: string
     repoIds: string[]
+    baseBranch?: string
+    setupDecision?: 'run' | 'skip' | 'inherit'
+    sessionAgent?: TuiAgent
   }) => Promise<MissionCreateResult | null>
   renameMission: (missionId: string, name: string) => Promise<void>
   deleteMission: (
