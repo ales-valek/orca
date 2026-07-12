@@ -42,7 +42,13 @@ export class MissionPersistence {
     )
   }
 
-  createMission(input: { name: string; branchName?: string | null; repoIds: string[] }): Mission {
+  createMission(input: {
+    name: string
+    branchName?: string | null
+    repoIds: string[]
+    baseRef?: string | null
+    setupDecision?: Mission['setupDecision']
+  }): Mission {
     const mission = createMission({
       ...input,
       tabOrder: getNextMissionTabOrder(this[missionPersistenceContext].runtime.state.missions ?? [])
@@ -111,7 +117,10 @@ export class MissionPersistence {
     )
   }
 
-  ensureMissionSessionWorkspace(missionId: string): FolderWorkspace {
+  ensureMissionSessionWorkspace(
+    missionId: string,
+    options: { createdWithAgent?: FolderWorkspace['createdWithAgent'] } = {}
+  ): FolderWorkspace {
     const existing = this.getMissionSessionWorkspace(missionId)
     if (existing) {
       return existing
@@ -137,6 +146,9 @@ export class MissionPersistence {
       isUnread: false,
       isPinned: false,
       sortOrder: now,
+      // Why: the session's first activation auto-launches this agent at the
+      // mission root, mirroring the New Workspace composer's agent pick.
+      ...(options.createdWithAgent ? { createdWithAgent: options.createdWithAgent } : {}),
       lastActivityAt: now,
       createdAt: now,
       updatedAt: now
