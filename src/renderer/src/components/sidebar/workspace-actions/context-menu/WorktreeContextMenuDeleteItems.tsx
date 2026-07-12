@@ -3,8 +3,6 @@ import { Trash2 } from 'lucide-react'
 import { DropdownMenuItem, DropdownMenuShortcut } from '@/components/ui/dropdown-menu'
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useTranslate } from '@/i18n/use-translate'
-import { useAppStore } from '@/store'
-import { isListedMissionSessionWorkspace } from '../../../../../../shared/missions'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 
 export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeContextMenuModel }) {
@@ -20,13 +18,8 @@ export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeConte
     isMultiContext,
     lineageDescendantCount,
     removesProject,
-    worktree
+    singleContextDeleteRestriction
   } = model
-  // Why: a mission session is deleted with its mission; this menu must not offer a generic delete.
-  const isMissionSession = useAppStore(
-    (s) => !isMultiContext && isListedMissionSessionWorkspace(s.folderWorkspaces, folderWorkspaceId)
-  )
-  const projectMissing = !isMultiContext && worktree.isMainWorktree && !removesProject
   const label = contextDeletePending
     ? t('auto.components.sidebar.WorktreeContextMenu.b42391d8bf', 'Deleting…')
     : isMultiContext
@@ -70,17 +63,16 @@ export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeConte
         onSelect={handleDelete}
         disabled={
           contextDeletePending ||
-          isMissionSession ||
-          projectMissing ||
+          singleContextDeleteRestriction !== null ||
           (isMultiContext && batchDeleteWorktrees.length === 0)
         }
         title={
-          isMissionSession
+          singleContextDeleteRestriction === 'mission-session'
             ? t(
                 'auto.components.sidebar.WorktreeContextMenu.80a3c0efc8',
                 'Mission session — delete the mission instead.'
               )
-            : projectMissing
+            : singleContextDeleteRestriction === 'project-missing'
             ? t(
                 'auto.components.sidebar.WorktreeContextMenu.e091caab15',
                 'The project could not be found'

@@ -64,6 +64,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
     setDeveloperMenuRevealed,
     setMenuOpenState,
     setMenuPoint,
+    singleContextDeleteRestriction,
     sleepLabel,
     sleepableWorktrees,
     subtreeSleepableWorktrees,
