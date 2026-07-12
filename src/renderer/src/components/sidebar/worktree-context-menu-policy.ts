@@ -138,6 +138,29 @@ export function isContextWorktreeDeletable(
   return repo != null && !worktree.isMainWorktree
 }
 
+export type SingleContextDeleteRestriction = 'mission-session' | 'project-missing' | null
+
+// Why: mission sessions are owned by their mission (deleting one here would
+// orphan the mission record and the sidebar would respawn an empty session),
+// and a primary checkout without a resolvable project has nothing to remove.
+export function getSingleContextDeleteRestriction(args: {
+  isMultiContext: boolean
+  isMissionSessionWorkspace: boolean
+  isMainWorktree: boolean
+  removesProject: boolean
+}): SingleContextDeleteRestriction {
+  if (args.isMultiContext) {
+    return null
+  }
+  if (args.isMissionSessionWorkspace) {
+    return 'mission-session'
+  }
+  if (args.isMainWorktree && !args.removesProject) {
+    return 'project-missing'
+  }
+  return null
+}
+
 function findSidebarVirtualRowByKey(sidebar: Element, rowKey: string): HTMLElement | null {
   return (
     Array.from(sidebar.querySelectorAll<HTMLElement>('[data-worktree-virtual-row]')).find(

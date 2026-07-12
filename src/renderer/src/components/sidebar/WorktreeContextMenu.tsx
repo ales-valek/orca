@@ -20,6 +20,7 @@ export {
   getWorktreeParentPickerLabel,
   hasWorktreeParentLink,
   isContextWorktreeDeletable,
+  getSingleContextDeleteRestriction,
   isWorktreeParentPickerDisabled,
   planWorkspaceStatusAssignment,
   selectMenuScopedMap,
