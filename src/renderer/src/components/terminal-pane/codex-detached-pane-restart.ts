@@ -10,6 +10,7 @@
  */
 import { isTerminalLeafId, makePaneKey } from '../../../../shared/stable-pane-id'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
+import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
 import type { TerminalLayoutSnapshot, TerminalTab } from '../../../../shared/terminal-tab-types'
 import type { AppState } from '@/store'
 import { useAppStore } from '@/store'
@@ -150,7 +151,7 @@ function buildPaneIdentityEnv(
     ORCA_WORKSPACE_ID: worktreeId,
     ...(folderWorkspace
       ? {
-          ORCA_PROJECT_GROUP_ID: folderWorkspace.projectGroupId,
+          ...getFolderWorkspaceOwnerEnv(folderWorkspace),
           ORCA_WORKSPACE_ROOT: folderWorkspace.folderPath
         }
       : {}),
