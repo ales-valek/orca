@@ -61,6 +61,7 @@ function visibleWithHideDefault(repos: Repo[], worktrees: Worktree[]): string[] 
       worktreeIdsWithLiveAgent: new Set(),
       hideDefaultBranchWorkspace: true,
       hideAutomationGeneratedWorkspaces: false,
+      missionMemberWorktreeIds: new Set<string>(),
       hideCliCreatedWorkspaces: false,
       hideDetachedHeadWorkspaces: false,
       hideWorkspacesFromOtherDevices: false,

@@ -21,7 +21,8 @@ export function useWorktreeCardController(props: ResolvedWorktreeCardProps) {
     settings: foundation.settings,
     projectGroups: foundation.projectGroups,
     cardProps: foundation.cardProps,
-    newCardStyle: foundation.newCardStyle
+    newCardStyle: foundation.newCardStyle,
+    hideFolderPathLabel: props.hideFolderPathLabel
   })
   const linked = useWorktreeCardLinkedDetails({
     worktree,

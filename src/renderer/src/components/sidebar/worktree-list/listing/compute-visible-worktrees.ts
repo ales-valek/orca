@@ -23,6 +23,9 @@ export type VisibleWorktreeOptions = {
   hideDefaultBranchWorkspace: boolean
   hideAutomationGeneratedWorkspaces: boolean
   hideCliCreatedWorkspaces: boolean
+  // Why required: mission member worktrees belong to the Missions tab; a
+  // caller that forgets this set would silently resurface them here.
+  missionMemberWorktreeIds: ReadonlySet<string>
   hideDetachedHeadWorkspaces: boolean
   hideWorkspacesFromOtherDevices: boolean
   pairedDeviceIdsByEnvironment: ReadonlyMap<string, string>
@@ -50,8 +53,13 @@ export function computeVisibleWorktrees(
   const keyOf = opts.sortedByHostIdentity
     ? getWorktreeHostIdentity
     : (worktree: Worktree) => worktree.id
+  const rows = getIndexedAllWorktrees(worktreesByRepo)
+  const visibleRows =
+    opts.missionMemberWorktreeIds.size > 0
+      ? rows.filter((worktree) => !opts.missionMemberWorktreeIds.has(worktree.id))
+      : rows
   return selectVisibleSidebarWorktrees({
-    rows: getIndexedAllWorktrees(worktreesByRepo),
+    rows: visibleRows,
     ancestorByIdentity: getLineageAncestorIndex(worktreesByRepo),
     rankOf: (worktree) => rankByKey.get(keyOf(worktree)),
     filters: sidebarWorkspaceRowFilters(opts),

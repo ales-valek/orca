@@ -25,6 +25,9 @@ export type WorktreeCardProps = {
   revealHighlightTone?: 'default' | 'ai'
   selectedWorktrees?: readonly Worktree[]
   hideRepoBadge?: boolean
+  /** Mission session cards suppress the folder-name meta label (it repeats
+   *  the card title, since the mission root is named after the mission). */
+  hideFolderPathLabel?: boolean
   hostContextLabel?: string
   /** Reuse the normal project badge for a nested child owned by another repo. */
   showProjectName?: boolean

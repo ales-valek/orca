@@ -68,7 +68,7 @@ export function WorktreeCardMetaRow({
             className="text-[11px] text-muted-foreground leading-none"
             tooltipEnabled={!hasHoverDetails}
           />
-        ) : isFolder && !newCardStyle ? (
+        ) : isFolder && !newCardStyle && !card.hideFolderPathLabel ? (
           <WorktreeCardFolderPath path={worktree.path} />
         ) : showBranch ? (
           <TruncatedSidebarLabel
