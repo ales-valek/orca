@@ -24,6 +24,7 @@ import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ResolvedWorktree } from '../../runtime-worktree-path-identity'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspace-worktree'
+import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
 import type { TerminalWorkspaceLaunchScope } from '../../runtime-legacy-worker-terminal-recovery-types'
 import { resolveTerminalStartupCwd } from '../../../../shared/terminal-startup-cwd'
 import type { ResolvedTerminalWorkspaceLaunchTarget } from '../../orca-runtime-core'
@@ -203,16 +204,11 @@ export abstract class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktr
     if (!scope.folderWorkspace) {
       return env
     }
-    const workspaceEnv = {
+    return {
       ...env,
+      ...getFolderWorkspaceOwnerEnv(scope.folderWorkspace),
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
-    // Why: mission sessions carry a sentinel projectGroupId no real group
-    // owns; scripts keying on ORCA_PROJECT_GROUP_ID must not receive it.
-    if (scope.folderWorkspace.missionId) {
-      return { ...workspaceEnv, ORCA_MISSION_ID: scope.folderWorkspace.missionId }
-    }
-    return { ...workspaceEnv, ORCA_PROJECT_GROUP_ID: scope.folderWorkspace.projectGroupId }
   }
 
   protected getValidatedExplicitWorktreeIdSelector(selector: string | undefined): string | null {
