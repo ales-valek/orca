@@ -81,6 +81,7 @@ function visibleOptions(overrides: Partial<VisibleOptions> = {}): VisibleOptions
     worktreeIdsWithLiveAgent: new Set(),
     hideDefaultBranchWorkspace: false,
     hideAutomationGeneratedWorkspaces: false,
+    missionMemberWorktreeIds: new Set<string>(),
     hideCliCreatedWorkspaces: false,
     hideDetachedHeadWorkspaces: false,
     hideWorkspacesFromOtherDevices: false,
@@ -892,5 +893,20 @@ describe('computeVisibleWorktreeIds', () => {
     )
 
     expect(result).toEqual([parent.id, child.id])
+  })
+})
+
+describe('mission member visibility', () => {
+  it('hides mission member worktrees from the projects pipeline', () => {
+    const missionWt = makeWorktree('repo1::/wt/mission')
+    const plainWt = makeWorktree('repo1::/wt/plain')
+    const result = computeVisibleWorktreeIds(
+      { repo1: [missionWt, plainWt] },
+      [missionWt.id, plainWt.id],
+      visibleOptions({
+        missionMemberWorktreeIds: new Set([missionWt.id])
+      })
+    )
+    expect(result).toEqual([plainWt.id])
   })
 })

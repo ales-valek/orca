@@ -5,6 +5,7 @@ import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { computeVisibleWorktrees } from './visible-worktrees'
 import { getWorktreeIdsWithLiveAgent } from '@/lib/worktree-activity-state'
+import { getMissionMemberWorktreeIds } from '../../../../shared/missions'
 import { getSettingsFocusedExecutionHostId } from '../../../../shared/execution-host'
 import type { AppState } from '@/store/types'
 import {
@@ -60,6 +61,8 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
       s.structuredChatSleptAtByPaneKey
     )
   )
+  const missions = useAppStore((s) => s.missions)
+  const missionMemberWorktreeIds = useMemo(() => getMissionMemberWorktreeIds(missions), [missions])
   const agentStatusEpoch = useAppStore((s) => (!showSleepingWorkspaces ? s.agentStatusEpoch : 0))
   // Skip the shared clock for opt-out boards so they cannot evict the live-board sample.
   const agentStatusNow = showSleepingWorkspaces ? 0 : getAgentStatusEpochNow(agentStatusEpoch)
@@ -91,6 +94,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
         hideAutomationGeneratedWorkspaces,
         hideCliCreatedWorkspaces,
         hideDetachedHeadWorkspaces,
+        missionMemberWorktreeIds,
         hideWorkspacesFromOtherDevices,
         pairedDeviceIdsByEnvironment: hideWorkspacesFromOtherDevices
           ? getPairedDeviceIdsByEnvironment(runtimeEnvironments, runtimeStatusByEnvironmentId)
@@ -113,6 +117,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces,
+    missionMemberWorktreeIds,
     hideWorkspacesFromOtherDevices,
     alwaysShowDefaultBranchWorkspace,
     workspaceHostScope,
