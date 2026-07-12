@@ -2,6 +2,7 @@ import { resolveTerminalPaneOwnerContext } from '../host-state/terminal-pane-own
 import { useAppStore } from '@/store'
 import { resolveTerminalWorktreeRoute } from '@/lib/terminal-worktree-route'
 import { parseWorkspaceKey } from '../../../../../shared/workspace-scope'
+import { getFolderWorkspaceOwnerEnv } from '../../../../../shared/missions'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../../shared/constants'
 import { isEphemeralSetupTerminalWorktreeId } from '../../../../../shared/ephemeral-setup-terminal-worktree-id'
 import { isLocalExecutionHost } from '../../../../../shared/execution-host'
@@ -30,7 +31,7 @@ export function initializePaneConnectionContext(session: ConnectPanePtySession):
   session.folderWorkspace = session.ownerContext.folderWorkspace
   session.workspaceEnv = { ORCA_WORKSPACE_ID: session.deps.worktreeId }
   if (session.folderWorkspace) {
-    session.workspaceEnv.ORCA_PROJECT_GROUP_ID = session.folderWorkspace.projectGroupId
+    Object.assign(session.workspaceEnv, getFolderWorkspaceOwnerEnv(session.folderWorkspace))
     session.workspaceEnv.ORCA_WORKSPACE_ROOT = session.folderWorkspace.folderPath
   }
   session.paneIdentityEnv = {

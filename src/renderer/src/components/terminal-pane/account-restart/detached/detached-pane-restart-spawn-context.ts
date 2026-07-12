@@ -6,6 +6,7 @@ import type { AppState } from '@/store/types'
 import { getIndexedWorktreeMap } from '@/store/slices/worktrees/listing/worktree-catalog-index'
 import { makePaneKey } from '../../../../../../shared/workspace-layout/stable-pane-id'
 import { parseWorkspaceKey } from '../../../../../../shared/workspace-scope'
+import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
 
 export function getWorkspacePath(state: AppState, worktreeId: string): string | null {
   const parsed = parseWorkspaceKey(worktreeId)
@@ -30,7 +31,7 @@ export function buildPaneIdentityEnv(
     ORCA_WORKSPACE_ID: worktreeId,
     ...(folderWorkspace
       ? {
-          ORCA_PROJECT_GROUP_ID: folderWorkspace.projectGroupId,
+          ...getFolderWorkspaceOwnerEnv(folderWorkspace),
           ORCA_WORKSPACE_ROOT: folderWorkspace.folderPath
         }
       : {}),
