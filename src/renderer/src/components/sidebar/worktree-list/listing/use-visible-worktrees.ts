@@ -10,6 +10,7 @@ import type { WorktreeLineage } from '../../../../../../shared/worktree/lineage-
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import './visible-worktrees'
 import { computeVisibleWorktrees } from './compute-visible-worktrees'
+import { getMissionMemberWorktreeIds } from '../../../../../../shared/missions'
 import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,
   getPairedDeviceIdsByEnvironment
@@ -105,6 +106,8 @@ export function useVisibleSidebarWorktrees(args: {
       s.structuredChatSleptAtByPaneKey
     )
   )
+  const missions = useAppStore((s) => s.missions)
+  const missionMemberWorktreeIds = useMemo(() => getMissionMemberWorktreeIds(missions), [missions])
 
   // Recompute on epoch, not every hook ping; key on the epoch too since ticks can share a millisecond sample.
   const [selectLiveAgentWorktreeIds] = useState(createLiveAgentWorktreeIdsSelector)
@@ -138,6 +141,7 @@ export function useVisibleSidebarWorktrees(args: {
       hideAutomationGeneratedWorkspaces,
       hideCliCreatedWorkspaces,
       hideDetachedHeadWorkspaces,
+      missionMemberWorktreeIds,
       hideWorkspacesFromOtherDevices,
       pairedDeviceIdsByEnvironment,
       alwaysShowDefaultBranchWorkspace,
@@ -166,6 +170,7 @@ export function useVisibleSidebarWorktrees(args: {
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,
     hideDetachedHeadWorkspaces,
+    missionMemberWorktreeIds,
     hideWorkspacesFromOtherDevices,
     alwaysShowDefaultBranchWorkspace,
     workspaceHostScope,

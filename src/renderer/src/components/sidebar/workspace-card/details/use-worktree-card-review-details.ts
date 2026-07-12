@@ -29,8 +29,9 @@ export function useWorktreeCardReviewDetails({
   settings,
   projectGroups,
   cardProps,
-  newCardStyle
-}: Pick<WorktreeCardProps, 'worktree' | 'repo'> &
+  newCardStyle,
+  hideFolderPathLabel
+}: Pick<WorktreeCardProps, 'worktree' | 'repo' | 'hideFolderPathLabel'> &
   Pick<Foundation, 'settings' | 'projectGroups' | 'cardProps' | 'newCardStyle'>) {
   const t = useTranslate()
   const gitIdentityDisplay = getWorktreeGitIdentityDisplay(worktree)
@@ -44,13 +45,15 @@ export function useWorktreeCardReviewDetails({
   const hasProjectGroups = projectGroups.length > 0
   const branchIdentityDisplay = !isFolder && branch.length > 0 ? branch : undefined
   const folderPathIdentityDisplay =
-    isFolder && hasProjectGroups && worktree.path.trim().length > 0 ? worktree.path : undefined
+    isFolder && !hideFolderPathLabel && hasProjectGroups && worktree.path.trim().length > 0
+      ? worktree.path
+      : undefined
   const identityDisplay = branchIdentityDisplay ?? folderPathIdentityDisplay
   const hasPathIdentityEnabled = cardProps.includes('branch')
   const showIdentityInNewCard = newCardStyle && hasPathIdentityEnabled && Boolean(identityDisplay)
   const folderMetaRowContent = newCardStyle
     ? hasPathIdentityEnabled && Boolean(folderPathIdentityDisplay)
-    : isFolder
+    : isFolder && !hideFolderPathLabel
   const hostedReviewExactKey = getDetachedWorkspaceReviewRequest(worktree, repo)?.key
   const hostedReviewCacheKey =
     hostedReviewExactKey ??
