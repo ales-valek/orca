@@ -1,6 +1,8 @@
 import { useWorkspaceReferenceDetails } from './use-workspace-reference-details'
 import { getWorkspaceAttachments } from '../../../../shared/workspace-attachments'
 import { summarizeWorkspaceReviewChecks } from '../../../../shared/workspace-review-checks'
+import { useAppStore } from '@/store'
+import { isListedMissionSessionWorkspace } from '../../../../shared/missions'
 import { canShowWorkspaceDeleteQuickAction } from './workspace-delete-quick-action'
 import { useWorktreeCardDetailsHoverControl } from './worktree-card-details-hover-state'
 import type { ResolvedWorktreeCardProps } from './worktree-card-model'
@@ -102,12 +104,17 @@ export function useWorktreeCardController(props: ResolvedWorktreeCardProps) {
   })
 
   // Why: delete is destructive, so it only appears while holding Option/Alt, not in the ordinary hover chrome.
+  // Mission sessions are deleted with their mission (row menu), so the generic quick-delete must not offer them.
+  const isMissionSessionWorkspace = useAppStore((s) =>
+    isListedMissionSessionWorkspace(s.folderWorkspaces, review.folderWorkspaceId)
+  )
   const showDeleteQuickAction =
     !props.affiliateListMode &&
     canShowWorkspaceDeleteQuickAction({
       deleteModifierPressed: linked.deleteModifierPressed,
       isDeleting: linked.isDeleting,
-      isMainWorktree: worktree.isMainWorktree
+      isMainWorktree: worktree.isMainWorktree,
+      isMissionSessionWorkspace
     })
   const workspaceActions = useWorktreeCardWorkspaceActions({
     worktree,
