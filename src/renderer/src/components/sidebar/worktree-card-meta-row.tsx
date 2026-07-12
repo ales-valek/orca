@@ -84,7 +84,7 @@ export function WorktreeCardMetaRow({
             className="text-[11px] text-muted-foreground leading-none"
             tooltipEnabled={!hasHoverDetails}
           />
-        ) : isFolder && !newCardStyle ? (
+        ) : isFolder && !newCardStyle && !card.hideFolderPathLabel ? (
           <span
             className="min-w-0 truncate font-mono text-[11px] leading-none text-muted-foreground"
             title={worktree.path}
