@@ -85,6 +85,8 @@ export function useWorktreeJumpPaletteWorktrees({
     unifiedTabsByWorktree,
     structuredChatSleptAtByPaneKey
   )
+  // Mission member worktrees stay reachable here: the Projects sidebar hides them,
+  // so the palette is how you jump into one workspace of a mission.
   const emptyQueryVisibleWorktrees = useMemo(() => {
     // Why no project or host scope: the palette ignores the sidebar's scope; filterPredicate scopes it.
     const visible = filterWorkspaceRows(

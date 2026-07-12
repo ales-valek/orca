@@ -32,6 +32,8 @@ import { WorktreeDeveloperMenu } from './WorktreeDeveloperMenu'
 import { WorkspaceSleepMenuItems } from './WorkspaceSleepMenuItems'
 import { isEventTargetInsideCurrentTarget } from './worktree-card-dom-events'
 import { translate } from '@/i18n/i18n'
+import { useAppStore } from '@/store'
+import { isListedMissionSessionWorkspace } from '../../../../shared/missions'
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 import { WorktreeStatusMenuItems } from './WorktreeStatusMenuItems'
@@ -103,6 +105,10 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
     workspaceStatuses
   } = model
   const deleteShortcut = useOptionalShortcutLabel('workspace.delete')
+  // Why: a mission session is deleted with its mission; this menu must not offer a generic delete.
+  const isMissionSessionWorkspace = useAppStore((s) =>
+    isListedMissionSessionWorkspace(s.folderWorkspaces, folderWorkspaceId)
+  )
   return (
     <div
       ref={scopeRef}
@@ -343,16 +349,22 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
             onSelect={handleDelete}
             disabled={
               contextDeletePending ||
+              (!isMultiContext && isMissionSessionWorkspace) ||
               (!isMultiContext && worktree.isMainWorktree && !removesProject) ||
               (isMultiContext && batchDeleteWorktrees.length === 0)
             }
             title={
-              !isMultiContext && worktree.isMainWorktree && !removesProject
+              !isMultiContext && isMissionSessionWorkspace
                 ? translate(
-                    'auto.components.sidebar.WorktreeContextMenu.e091caab15',
-                    'The project could not be found'
+                    'auto.components.sidebar.WorktreeContextMenu.80a3c0efc8',
+                    'Mission session — delete the mission instead.'
                   )
-                : undefined
+                : !isMultiContext && worktree.isMainWorktree && !removesProject
+                  ? translate(
+                      'auto.components.sidebar.WorktreeContextMenu.e091caab15',
+                      'The project could not be found'
+                    )
+                  : undefined
             }
           >
             <Trash2 className="size-3.5" />

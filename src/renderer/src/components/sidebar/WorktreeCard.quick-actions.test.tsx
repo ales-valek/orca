@@ -27,6 +27,8 @@ let WorktreeCard: typeof WorktreeCardComponent
 vi.mock('@/store', () => {
   const getState = () => ({
     deleteStateByWorktreeId: {},
+    missions: [],
+    folderWorkspaces: [],
     fetchHostedReviewForBranch,
     fetchIssue,
     gitConflictOperationByWorktree,
