@@ -48,6 +48,7 @@ export class MissionPersistence {
     repoIds: string[]
     baseRef?: string | null
     setupDecision?: Mission['setupDecision']
+    sessionAgent?: Mission['sessionAgent']
   }): Mission {
     const mission = createMission({
       ...input,
@@ -117,10 +118,7 @@ export class MissionPersistence {
     )
   }
 
-  ensureMissionSessionWorkspace(
-    missionId: string,
-    options: { createdWithAgent?: FolderWorkspace['createdWithAgent'] } = {}
-  ): FolderWorkspace {
+  ensureMissionSessionWorkspace(missionId: string): FolderWorkspace {
     const existing = this.getMissionSessionWorkspace(missionId)
     if (existing) {
       return existing
@@ -147,8 +145,9 @@ export class MissionPersistence {
       isPinned: false,
       sortOrder: now,
       // Why: the session's first activation auto-launches this agent at the
-      // mission root, mirroring the New Workspace composer's agent pick.
-      ...(options.createdWithAgent ? { createdWithAgent: options.createdWithAgent } : {}),
+      // mission root. Read from the mission record so a failed eager ensure
+      // still honors the pick when the sidebar retries lazily.
+      ...(mission.sessionAgent ? { createdWithAgent: mission.sessionAgent } : {}),
       lastActivityAt: now,
       createdAt: now,
       updatedAt: now
