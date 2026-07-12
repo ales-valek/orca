@@ -1,7 +1,7 @@
 import { closeTestStores, testState, createStore, writeDataFile } from './persistence-test-harness'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { rmSync, mkdtempSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const { loadUserSshConfigMock, sshConfigHostsToTargetsMock } = vi.hoisted(() => ({
@@ -61,8 +61,20 @@ describe('missions persistence', () => {
     writeDataFile({
       schemaVersion: 1,
       repos: [
-        { id: 'r1', path: '/tmp/r1', displayName: 'R1', badgeColor: '#000', addedAt: 1 },
-        { id: 'r2', path: '/tmp/r2', displayName: 'R2', badgeColor: '#000', addedAt: 1 }
+        {
+          id: 'r1',
+          path: join(sep, 'tmp', 'r1'),
+          displayName: 'R1',
+          badgeColor: '#000',
+          addedAt: 1
+        },
+        {
+          id: 'r2',
+          path: join(sep, 'tmp', 'r2'),
+          displayName: 'R2',
+          badgeColor: '#000',
+          addedAt: 1
+        }
       ],
       worktreeMeta: {},
       settings: {},
@@ -94,7 +106,15 @@ describe('missions persistence', () => {
   it('normalizes and sanitizes persisted missions on load', () => {
     writeDataFile({
       schemaVersion: 1,
-      repos: [{ id: 'r1', path: '/tmp/r1', displayName: 'R1', badgeColor: '#000', addedAt: 1 }],
+      repos: [
+        {
+          id: 'r1',
+          path: join(sep, 'tmp', 'r1'),
+          displayName: 'R1',
+          badgeColor: '#000',
+          addedAt: 1
+        }
+      ],
       worktreeMeta: {},
       settings: {},
       ui: {},
@@ -142,7 +162,15 @@ describe('mission session workspaces', () => {
   it('ensures, renames with the mission, and cleans up on mission delete', () => {
     writeDataFile({
       schemaVersion: 1,
-      repos: [{ id: 'r1', path: '/tmp/r1', displayName: 'R1', badgeColor: '#000', addedAt: 1 }],
+      repos: [
+        {
+          id: 'r1',
+          path: join(sep, 'tmp', 'r1'),
+          displayName: 'R1',
+          badgeColor: '#000',
+          addedAt: 1
+        }
+      ],
       worktreeMeta: {},
       settings: {},
       ui: {},
@@ -156,12 +184,12 @@ describe('mission session workspaces', () => {
     })
 
     expect(() => store.ensureMissionSessionWorkspace(mission.id)).toThrow('mission_root_not_ready')
-    store.setMissionRootPath(mission.id, '/tmp/orca/missions/referral')
+    store.setMissionRootPath(mission.id, join(sep, 'tmp', 'orca', 'missions', 'referral'))
 
     const workspace = store.ensureMissionSessionWorkspace(mission.id)
     expect(workspace.missionId).toBe(mission.id)
     expect(workspace.projectGroupId).toBe(`mission:${mission.id}`)
-    expect(workspace.folderPath).toBe('/tmp/orca/missions/referral')
+    expect(workspace.folderPath).toBe(join(sep, 'tmp', 'orca', 'missions', 'referral'))
     // Why: the persisted mission agent drives first-open auto-launch even when
     // the session is created on the lazy retry path.
     expect(workspace.createdWithAgent).toBe('claude')
@@ -191,7 +219,7 @@ describe('mission session workspaces', () => {
           projectGroupId: 'mission:ghost',
           missionId: 'ghost',
           name: 'Ghost session',
-          folderPath: '/tmp/orca/missions/ghost'
+          folderPath: join(sep, 'tmp', 'orca', 'missions', 'ghost')
         }
       ]
     })

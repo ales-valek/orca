@@ -1,7 +1,10 @@
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { normalizeFolderWorkspaces } from './folder-workspaces'
 import type { FolderWorkspace } from './folder-workspace-types'
 import type { ProjectGroup } from './project-group-types'
+
+const missionRootPath = path.join(path.sep, 'home', 'orca', 'missions', 'referral')
 
 const folderGroup = {
   id: 'group-1',
@@ -86,7 +89,7 @@ describe('normalizeFolderWorkspaces (mission-owned)', () => {
     const result = normalizeFolderWorkspaces(
       [makeWorkspace({ id: 'fw1', projectGroupId: 'mission:m1', missionId: 'm1' })],
       [],
-      [{ id: 'm1', rootPath: '/home/orca/missions/referral' }]
+      [{ id: 'm1', rootPath: missionRootPath }]
     )
     expect(result).toHaveLength(1)
     expect(result[0].missionId).toBe('m1')
@@ -113,9 +116,9 @@ describe('normalizeFolderWorkspaces (mission-owned)', () => {
         })
       ],
       [],
-      [{ id: 'm1', rootPath: '/home/orca/missions/referral' }]
+      [{ id: 'm1', rootPath: missionRootPath }]
     )
-    expect(result[0].folderPath).toBe('/home/orca/missions/referral')
+    expect(result[0].folderPath).toBe(missionRootPath)
   })
 
   it('keeps group-owned behavior unchanged (orphans still drop)', () => {

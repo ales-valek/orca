@@ -29,6 +29,7 @@ vi.mock('@/store', () => ({
     selector({
       deleteStateByWorktreeId: {},
       missions: [],
+      folderWorkspaces: [],
       fetchHostedReviewForBranch,
       fetchIssue,
       gitConflictOperationByWorktree,

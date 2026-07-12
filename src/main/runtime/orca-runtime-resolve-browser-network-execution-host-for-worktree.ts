@@ -208,12 +208,17 @@ export class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktree extend
     if (!scope.folderWorkspace) {
       return env
     }
-    return {
+    const workspaceEnv = {
       ...env,
       ORCA_WORKSPACE_ID: scope.id,
-      ORCA_PROJECT_GROUP_ID: scope.folderWorkspace.projectGroupId,
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
+    // Why: mission sessions carry a sentinel projectGroupId no real group
+    // owns; scripts keying on ORCA_PROJECT_GROUP_ID must not receive it.
+    if (scope.folderWorkspace.missionId) {
+      return { ...workspaceEnv, ORCA_MISSION_ID: scope.folderWorkspace.missionId }
+    }
+    return { ...workspaceEnv, ORCA_PROJECT_GROUP_ID: scope.folderWorkspace.projectGroupId }
   }
 
   protected getValidatedExplicitWorktreeIdSelector(selector: string | undefined): string | null {

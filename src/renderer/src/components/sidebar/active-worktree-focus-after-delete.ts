@@ -2,6 +2,7 @@ import { useAppStore } from '@/store'
 import { getRepoMapFromState, getWorktreeMapFromState } from '@/store/selectors'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { isRuntimeOwnedSshTargetId, parseExecutionHostId } from '../../../../shared/execution-host'
+import { getMissionMemberWorktreeIds } from '../../../../shared/missions'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { getWorktreeVisitTimestamp } from '@/lib/worktree-visit-recency'
@@ -46,10 +47,14 @@ function pickNextWorktreeIdAfterDelete(
 ): string | null {
   const deleteState = state.deleteStateByWorktreeId
   const repoById = getRepoMapFromState(state)
+  // Why: mission member worktrees have no row in the Projects sidebar, so
+  // focusing one would leave the user on a workspace they cannot see selected.
+  const missionMemberWorktreeIds = getMissionMemberWorktreeIds(state.missions)
   const siblings = (state.worktreesByRepo[repoId] ?? []).filter(
     (worktree) =>
       worktree.id !== deletedWorktreeId &&
       !getDeleteStateForWorktreeHost(worktree, deleteState)?.isDeleting &&
+      !missionMemberWorktreeIds.has(worktree.id) &&
       // Skip siblings hosted on the now-destroyed runtime-owned SSH target (see helper).
       !isHostedOnRuntimeOwnedSshTarget(worktree, repoById)
   )
