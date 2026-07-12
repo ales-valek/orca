@@ -1,3 +1,5 @@
+import type { TuiAgent } from './tui-agent'
+
 export type MissionMember = {
   repoId: string
   /** Worktree created on the mission branch. `null` when creation failed or
@@ -22,6 +24,9 @@ export type Mission = {
   baseRef?: string | null
   /** Per-repo setup-script decision applied to member worktree creation. */
   setupDecision?: 'run' | 'skip' | 'inherit'
+  /** Agent auto-launched in the mission session on first open. Persisted so a
+   *  failed eager session ensure can still honor the pick on lazy retry. */
+  sessionAgent?: TuiAgent
   createdAt: number
   updatedAt: number
 }

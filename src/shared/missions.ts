@@ -1,5 +1,6 @@
 import type { Mission, MissionMember } from './mission-types'
 import { createNonSecureContextUuid } from './non-secure-context-uuid'
+import { isTuiAgent } from './tui-agent-config'
 
 function createMissionInstanceId(): string {
   return createNonSecureContextUuid()
@@ -57,6 +58,7 @@ export function createMission(input: {
   tabOrder: number
   baseRef?: string | null
   setupDecision?: Mission['setupDecision']
+  sessionAgent?: Mission['sessionAgent']
   now?: number
 }): Mission {
   const now = input.now ?? Date.now()
@@ -78,6 +80,7 @@ export function createMission(input: {
     tabOrder: input.tabOrder,
     baseRef: input.baseRef?.trim() ? input.baseRef.trim() : null,
     ...(input.setupDecision ? { setupDecision: input.setupDecision } : {}),
+    ...(input.sessionAgent ? { sessionAgent: input.sessionAgent } : {}),
     createdAt: now,
     updatedAt: now
   }
@@ -141,6 +144,7 @@ export function normalizeMissions(value: unknown): Mission[] {
       raw.setupDecision === 'inherit'
         ? { setupDecision: raw.setupDecision }
         : {}),
+      ...(isTuiAgent(raw.sessionAgent) ? { sessionAgent: raw.sessionAgent } : {}),
       createdAt:
         typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : now,
       updatedAt:
