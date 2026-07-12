@@ -36,7 +36,6 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     branch,
     identityDisplay,
     folderMetaRowContent,
-    missionName,
     showIdentityInNewCard,
     conflictOperation,
     cardProps,
@@ -91,7 +90,6 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
   // Why: grouped views can hide the repo badge; don't reserve a blank metadata lane unless there's real content.
   const hasDetailedMetaRowContent = Boolean(
     (showRepoBadgeInMetaRow && repo) ||
-    missionName ||
     showHostContextBadge ||
     folderMetaRowContent ||
     showBranch ||
@@ -166,7 +164,6 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     showPinnedRepoIcon,
     showInlineRepoBadge,
     showRepoBadgeInMetaRow,
-    missionName,
     showHostContextBadge,
     contextLabel,
     showIdentityInNewCard,

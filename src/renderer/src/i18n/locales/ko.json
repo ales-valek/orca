@@ -5742,8 +5742,7 @@
           "runtimeHostDisconnectedNamed": "{{hostName}} 연결 끊김",
           "runtimeHostProject": "Orca 서버의 프로젝트",
           "runtimeHostProjectNamed": "{{hostName}}의 프로젝트",
-          "ef18787206": "삭제 대기 중",
-          "0c5bd538d7": "미션: {{value0}}"
+          "ef18787206": "삭제 대기 중"
         },
         "WorktreeCardAgents": {
           "1b0a156717": "에이전트",

@@ -5742,8 +5742,7 @@
           "runtimeHostDisconnectedNamed": "{{hostName}} 已断开连接",
           "runtimeHostProject": "Orca 服务器上的项目",
           "runtimeHostProjectNamed": "{{hostName}} 上的项目",
-          "ef18787206": "已排队删除",
-          "0c5bd538d7": "任务组：{{value0}}"
+          "ef18787206": "已排队删除"
         },
         "WorktreeCardAgents": {
           "1b0a156717": "智能体",
