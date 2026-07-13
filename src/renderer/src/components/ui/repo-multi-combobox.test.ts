@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { getVisibleComboboxGroups, toggleComboboxGroupSelection } from './repo-multi-combobox'
+import {
+  getComboboxGroupSelection,
+  getVisibleComboboxGroups,
+  toggleComboboxGroupSelection
+} from './repo-multi-combobox'
 
 describe('getVisibleComboboxGroups', () => {
   const repos = [{ id: 'r1' }, { id: 'r2' }, { id: 'r3' }]
@@ -38,5 +42,22 @@ describe('toggleComboboxGroupSelection', () => {
 
   it('blocks a deselect that would empty the selection', () => {
     expect(toggleComboboxGroupSelection(new Set(['r1', 'r2']), ['r1', 'r2'])).toBeNull()
+  })
+})
+
+describe('getComboboxGroupSelection', () => {
+  it('mirrors child selection as an aggregate state with a count', () => {
+    expect(getComboboxGroupSelection(new Set(), ['r1', 'r2'])).toEqual({
+      state: 'none',
+      selectedCount: 0
+    })
+    expect(getComboboxGroupSelection(new Set(['r1']), ['r1', 'r2'])).toEqual({
+      state: 'partial',
+      selectedCount: 1
+    })
+    expect(getComboboxGroupSelection(new Set(['r1', 'r2', 'r9']), ['r1', 'r2'])).toEqual({
+      state: 'all',
+      selectedCount: 2
+    })
   })
 })
