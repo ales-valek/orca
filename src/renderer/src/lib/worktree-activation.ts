@@ -38,6 +38,7 @@ import { gateAndReseedEmptyWorkspace } from './worktree-activation-gated-empty-r
 import { liftSidebarFiltersHidingWorktree } from './worktree-activation-sidebar-filters'
 import { isFloatingWorkspaceId } from '../../../shared/floating-workspace-worktree'
 import { revealFloatingWorkspacePanel } from './floating-workspace-panel-reveal'
+import { buildFolderWorkspaceAgentReopenStartup } from './folder-workspace-agent-reopen'
 
 /**
  * Shared activation sequence used by the worktree palette and add-repo/worktree dialogs.
@@ -118,9 +119,13 @@ export function activateAndRevealFolderWorkspace(
   if (!state.isNavigatingHistory) {
     state.recordWorktreeVisit(workspaceKey)
   }
+  // Why: mirror the worktree path — when no explicit startup is passed, a
+  // folder workspace created with an agent (mission session, composer
+  // reopen) must relaunch it instead of opening a bare shell.
+  const startup = opts?.startup ?? buildFolderWorkspaceAgentReopenStartup(folderWorkspace)
   // Why: same ordering as the worktree path — gate first, then resume only when not deferring.
   const shouldGateAgentActivation =
-    !opts?.startup &&
+    !startup &&
     (workspaceHasSleepingAgentSessions(state, workspaceKey) ||
       (canInspectAgentActivationInventory() &&
         shouldAutoCreateInitialTerminal(
@@ -140,7 +145,7 @@ export function activateAndRevealFolderWorkspace(
     ? null
     : ensureFolderWorkspaceInitialTerminal(
         folderWorkspace,
-        opts?.startup,
+        startup,
         providesInitialSurface,
         seedUserDefaultSurface
       )
@@ -159,7 +164,7 @@ export function activateAndRevealFolderWorkspace(
   if (opts?.providesInitialSurface !== true) {
     ensureWebRuntimeWorktreeTerminalAfterWake(workspaceKey, {
       runtimeEnvironmentId,
-      startup: opts?.startup,
+      startup,
       agent: opts?.agent
     })
   }
