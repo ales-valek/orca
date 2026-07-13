@@ -41,6 +41,7 @@ import {
   recordShownTabFocus
 } from './worktree-activation-visit'
 import { selectFolderWorkspaces } from '@/store/workspaces/catalog/workspace-record-fields'
+import { buildFolderWorkspaceAgentReopenStartup } from './folder-workspace-agent-reopen'
 
 import {
   workspaceActivationResult,
@@ -100,9 +101,13 @@ export function activateAndRevealFolderWorkspaceWithOutcome(
   if (!state.isNavigatingHistory) {
     state.recordWorktreeVisit(workspaceKey)
   }
+  // Why: mirror the worktree path — when no explicit startup is passed, a
+  // folder workspace created with an agent (mission session, composer
+  // reopen) must relaunch it instead of opening a bare shell.
+  const startup = opts?.startup ?? buildFolderWorkspaceAgentReopenStartup(folderWorkspace)
   // Why: same ordering as the worktree path — gate first, then resume only when not deferring.
   const shouldGateAgentActivation =
-    !opts?.startup &&
+    !startup &&
     (workspaceHasSleepingAgentSessions(state, workspaceKey) ||
       (canInspectAgentActivationInventory() &&
         shouldAutoCreateInitialTerminal(
@@ -119,7 +124,7 @@ export function activateAndRevealFolderWorkspaceWithOutcome(
   }
   const primaryTabId = shouldGateAgentActivation
     ? null
-    : ensureFolderWorkspaceInitialTerminal(folderWorkspace, opts?.startup, providesInitialSurface, {
+    : ensureFolderWorkspaceInitialTerminal(folderWorkspace, startup, providesInitialSurface, {
         seedUserDefaultSurface
       })
 
@@ -137,7 +142,7 @@ export function activateAndRevealFolderWorkspaceWithOutcome(
   if (opts?.providesInitialSurface !== true) {
     ensureWebRuntimeWorktreeTerminalAfterWake(workspaceKey, {
       runtimeEnvironmentId,
-      startup: opts?.startup,
+      startup,
       agent: opts?.agent
     })
   }
