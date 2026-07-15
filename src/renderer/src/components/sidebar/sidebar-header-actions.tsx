@@ -81,7 +81,12 @@ function NewWorkspaceButton({
 
 function NewMissionButton(): React.JSX.Element {
   const openModal = useAppStore((s) => s.openModal)
+  const canCreateMission = useAppStore((s) => s.repos.length > 0)
   const label = translate('auto.components.sidebar.SidebarHeader.60c23631f0', 'New Mission')
+  const disabledLabel = translate(
+    'auto.components.sidebar.SidebarHeader.52cff41bb2',
+    'Add a project to create a mission'
+  )
 
   return (
     <Tooltip>
@@ -92,13 +97,19 @@ function NewMissionButton(): React.JSX.Element {
           type="button"
           className="text-muted-foreground"
           aria-label={label}
-          onClick={() => openModal('mission-create')}
+          disabled={!canCreateMission}
+          onClick={() => {
+            if (!canCreateMission) {
+              return
+            }
+            openModal('mission-create')
+          }}
         >
           <Plus className="size-3.5" strokeWidth={2.25} />
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6}>
-        {label}
+        {canCreateMission ? label : disabledLabel}
       </TooltipContent>
     </Tooltip>
   )
