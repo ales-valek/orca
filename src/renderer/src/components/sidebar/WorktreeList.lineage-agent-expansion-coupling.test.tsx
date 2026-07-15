@@ -312,6 +312,7 @@ function setAgentLineageState(options: {
     gitConflictOperationByWorktree: {},
     groupBy: 'none',
     hideDefaultBranchWorkspace: false,
+    missions: [],
     hostedReviewCache: {},
     issueCache: {},
     linearIssueCache: {},
