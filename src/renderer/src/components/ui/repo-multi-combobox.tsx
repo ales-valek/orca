@@ -56,19 +56,24 @@ function renderTriggerLabel(
       </span>
     )
   }
-  const selectedRepos = repos.filter((r) => selected.has(r.id))
-  const [first, second, ...rest] = selectedRepos
+  const first = repos.find((r) => selected.has(r.id))
+  const extraCount = repos.filter((r) => selected.has(r.id)).length - 1
+  // Why: show the first repo (name truncates) plus a fixed "+N" count rather
+  // than inlining every selected name — long names would otherwise overflow the
+  // fixed-width trigger and shove the chevron/padding out of place.
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
+    <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
       {first ? (
         <RepoBadgeLabel
           name={first.displayName}
           color={first.badgeColor}
           badgeClassName="size-1.5"
+          className="min-w-0"
         />
       ) : null}
-      {second ? <span className="text-muted-foreground">, {second.displayName}</span> : null}
-      {rest.length > 0 ? <span className="text-muted-foreground">+{rest.length}</span> : null}
+      {extraCount > 0 ? (
+        <span className="shrink-0 text-muted-foreground">+{extraCount}</span>
+      ) : null}
     </span>
   )
 }
@@ -241,10 +246,13 @@ export default function RepoMultiCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn('h-8 w-full justify-between px-3 text-xs font-normal', triggerClassName)}
+          className={cn(
+            'h-8 w-full justify-between gap-2 px-3 text-xs font-normal',
+            triggerClassName
+          )}
         >
           {renderTriggerLabel(repos, selected)}
-          <ChevronsUpDown className="size-3.5 opacity-50" />
+          <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       {/* Use trigger width as a minimum, allowing search and repo paths to fit even when the trigger is short. */}
