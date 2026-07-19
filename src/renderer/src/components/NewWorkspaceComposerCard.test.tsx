@@ -440,6 +440,18 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     expect(runTargetPicker).toBeTruthy()
   })
 
+  it('shows the shared-checkout notice only when the folder target supplies it', () => {
+    const notice = 'Uses the existing checkouts in this folder.'
+    current = renderCard({ showSharedFolderCheckoutNotice: true })
+
+    expect(current.container.textContent).toContain(notice)
+
+    unmountCurrent()
+
+    current = renderCard({ showSharedFolderCheckoutNotice: false })
+    expect(current.container.textContent).not.toContain(notice)
+  })
+
   it('keeps the reuse-branch row collapsed until a local branch is reusable', () => {
     // Why: the row stays mounted (for the smooth height transition) but is
     // collapsed + aria-hidden when reuse isn't possible.

@@ -57,6 +57,7 @@ export type NewWorkspaceComposerCardProps = {
   ephemeralVmRecipeError?: string | null
   repoBackedSearchRepos?: readonly RepoOption[]
   repoBackedSourcesDisabled?: boolean
+  showSharedFolderCheckoutNotice?: boolean
   allowSmartNameAddProject?: boolean
   smartNameRepoSwitchTarget?: 'project' | 'task-source'
   primaryActionLabel: string
