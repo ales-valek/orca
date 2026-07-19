@@ -66,6 +66,7 @@ export type ComposerCardActionProps = {
   onEphemeralVmRecipeChange: ComposerModel['setSelectedEphemeralVmRecipeId']
   repoBackedSearchRepos?: ComposerModel['eligibleRepos']
   repoBackedSourcesDisabled?: boolean
+  showSharedFolderCheckoutNotice?: boolean
   allowSmartNameAddProject?: boolean
   smartNameRepoSwitchTarget?: 'project' | 'task-source'
   onNameValueChange: ComposerModel['handleNameValueChange']

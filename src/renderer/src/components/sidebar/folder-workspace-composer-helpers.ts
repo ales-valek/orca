@@ -23,7 +23,6 @@ import type { LinearIssue } from '../../../../shared/linear/issue-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { SmartWorkspaceNameSelection } from '@/components/new-workspace/smart-workspace-name-field-model'
-import { translate } from '@/i18n/i18n'
 
 const EMPTY_REPOS: Repo[] = []
 
@@ -94,11 +93,4 @@ export function toGitLabLinkedWorkItem(item: GitLabWorkItem): LinkedWorkItemSumm
 
 export function toLinearLinkedWorkItem(issue: LinearIssue): LinkedWorkItemSummary {
   return buildLinearWorkspaceSource(issue)
-}
-
-export function getFolderWorkspacePrimaryActionLabel(): string {
-  return translate(
-    'auto.components.sidebar.FolderWorkspaceComposerDialog.create',
-    'Create workspace'
-  )
 }
