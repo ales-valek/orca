@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import ProjectCombobox from '@/components/new-workspace/ProjectCombobox'
 import RunTargetCombobox from '@/components/new-workspace/RunTargetCombobox'
+import { getFolderWorkspaceCheckoutNotice } from '@/components/sidebar/folder-workspace-composer-copy'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type {
@@ -32,6 +33,7 @@ type NewWorkspaceComposerProjectSectionProps = Pick<
   | 'onEphemeralVmRecipeChange'
   | 'selectedEphemeralVmRecipeId'
   | 'ephemeralVmRecipeError'
+  | 'showSharedFolderCheckoutNotice'
 > & {
   disabled?: boolean
   projectDescriptionId: string
@@ -82,7 +84,8 @@ export function NewWorkspaceComposerProjectSection({
   onConnectSelectedRepo,
   sshStatusLabel,
   connectButtonLabel,
-  selectedProjectName
+  selectedProjectName,
+  showSharedFolderCheckoutNotice = false
 }: NewWorkspaceComposerProjectSectionProps): React.JSX.Element {
   return (
     <fieldset disabled={disabled} className="space-y-1">
@@ -172,6 +175,11 @@ export function NewWorkspaceComposerProjectSection({
           </div>
         ) : null}
       </div>
+      {showSharedFolderCheckoutNotice ? (
+        <p className="rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-2xs text-muted-foreground">
+          {getFolderWorkspaceCheckoutNotice()}
+        </p>
+      ) : null}
       {!shouldShowRunTargetPicker && ephemeralVmRecipeError ? (
         <p className="whitespace-pre-line text-2xs text-destructive">{ephemeralVmRecipeError}</p>
       ) : null}

@@ -6442,8 +6442,9 @@
           "modalInstallDescription": "Instala la habilidad de Linear para tus agentes."
         },
         "FolderWorkspaceComposerDialog": {
-          "title": "Crear espacio de trabajo de carpeta",
-          "create": "Crear espacio de trabajo"
+          "title": "Abrir espacio de trabajo de carpeta compartida",
+          "create": "Abrir espacio de trabajo compartido",
+          "sharedCheckoutNotice": "Usa las copias de trabajo existentes en esta carpeta. Las ramas y los cambios en archivos se comparten con otros espacios de trabajo; Orca no crea worktrees aislados para cada repositorio."
         },
         "AddRepoHostSelector": {
           "host": "Host",

@@ -6996,8 +6996,9 @@
           "modalInstallDescription": "Install the Linear skill for your agents."
         },
         "FolderWorkspaceComposerDialog": {
-          "title": "Create Folder Workspace",
-          "create": "Create workspace"
+          "title": "Open Shared Folder Workspace",
+          "create": "Open shared workspace",
+          "sharedCheckoutNotice": "Uses the existing checkouts in this folder. Branches and file changes are shared with other workspaces; Orca does not create isolated worktrees for each repository."
         },
         "WorkspaceKanbanDrawer": {
           "1975a4e480": "Task status sync failed",
