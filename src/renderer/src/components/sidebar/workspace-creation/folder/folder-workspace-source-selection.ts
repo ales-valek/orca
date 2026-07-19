@@ -11,7 +11,6 @@ import '../../../../../../shared/repo-kind'
 import type { FolderWorkspace } from '../../../../../../shared/folder-workspaces/folder-workspace-types'
 
 import type { SmartWorkspaceNameSelection } from '@/components/new-workspace/smart-workspace-name-field-model'
-import { translate } from '@/i18n/i18n'
 import './folder-workspace-source-repos'
 
 export function toFolderWorkspaceLinkedTask(
@@ -41,11 +40,4 @@ export function getSmartNameSelection(
 
 export function getLinkedItemDisplayName(item: LinkedWorkItemSummary): string | null {
   return getWorkspaceSourceName(item).displayName || null
-}
-
-export function getFolderWorkspacePrimaryActionLabel(): string {
-  return translate(
-    'auto.components.sidebar.FolderWorkspaceComposerDialog.create',
-    'Create workspace'
-  )
 }
