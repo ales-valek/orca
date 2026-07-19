@@ -41,7 +41,7 @@ import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { getWorkspaceComposerInitialFocusTarget } from '@/lib/workspace-composer-initial-focus'
 import '@/components/sidebar/workspace-creation/folder/folder-workspace-source-repos'
-import { getFolderWorkspacePrimaryActionLabel } from '@/components/sidebar/workspace-creation/folder/folder-workspace-source-selection'
+import { getFolderWorkspacePrimaryActionLabel } from '@/components/sidebar/folder-workspace-composer-copy'
 import { useAgentMenuObservation } from '@/components/tab-bar/use-new-tab-agent-menu-rows'
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/app-keyboard-router'
 
@@ -361,7 +361,7 @@ function QuickTabBody({
           {isFolderWorkspaceTarget
             ? t(
                 'auto.components.sidebar.FolderWorkspaceComposerDialog.title',
-                'Create Folder Workspace'
+                'Open Shared Folder Workspace'
               )
             : primaryActionLabel}
         </DialogTitle>
