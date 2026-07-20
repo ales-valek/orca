@@ -265,6 +265,7 @@ function setStatusLaneState(): void {
     linearIssueCache: {},
     linearStatus: null,
     migrationUnsupportedByPtyId: {},
+    missions: [],
     openModal: mockStore.openModal,
     openSettingsPage: vi.fn(),
     openSettingsTarget: null,
