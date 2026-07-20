@@ -92,6 +92,7 @@ export function useWorktreeCardController(props: ResolvedWorktreeCardProps) {
     isActive: props.isActive,
     activationRowKey: props.activationRowKey,
     onActivate: props.onActivate,
+    useCustomActivationOnly: props.useCustomActivationOnly,
     onWorktreeCardClick: props.onWorktreeCardClick,
     onImmediateActivate: props.onImmediateActivate,
     isDeleting: linked.isDeleting,

@@ -2,6 +2,7 @@ import type { Repo } from '../../shared/repo-types'
 import { getRepoExecutionHostId, type ExecutionHostId } from '../../shared/execution-host'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { GitPushTarget } from '../../shared/worktree/types'
+import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
 
 export type RuntimeWorktreeRemovalTarget = {
   id: string
@@ -41,12 +42,14 @@ export type RemoveManagedWorktreeOptions = {
   hostId?: string
   /** Reply with the finished delete's result; otherwise a background delete replies on acceptance. */
   waitForBackgroundRemoval?: boolean
+  /** Mission lifecycle deletion proves this exact checkout before Git removes it. */
+  expectedOwnership?: MissionWorktreeOwnershipProof
 }
 
 export function getRuntimeWorktreeRemovalOptionsKey(
   options: Pick<
     RemoveManagedWorktreeOptions,
-    'force' | 'runHooks' | 'allowUnverifiedPtyStop' | 'allowFailedArchiveHook'
+    'force' | 'runHooks' | 'allowUnverifiedPtyStop' | 'allowFailedArchiveHook' | 'expectedOwnership'
   >
 ): string {
   // Why: a forced retry must not coalesce onto the in-flight attempt that just
@@ -56,7 +59,10 @@ export function getRuntimeWorktreeRemovalOptionsKey(
   // onto the in-flight attempt that is about to refuse on it.
   const archiveKey = options.allowFailedArchiveHook ? 'allow-failed-archive' : 'require-archive'
   const hooksKey = options.runHooks ? 'run-hooks' : 'skip-hooks'
-  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}`
+  const ownershipKey = options.expectedOwnership
+    ? `:mission:${options.expectedOwnership.missionId}:${options.expectedOwnership.worktreeInstanceId}`
+    : ''
+  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}${ownershipKey}`
 }
 
 // Null executionHostId means host-unaware: path-only callers match any repo, and the first runtime

@@ -34,6 +34,7 @@ import {
   getPreservedBranchCleanupTarget,
   preservedBranchCleanupByScope
 } from './preserved-branch-cleanup'
+import { assertWorktreeIsNotMissionManaged } from '../../../missions/mission-removal-boundary'
 import type { WorktreeIpcContext } from '../worktree-ipc-context'
 
 export function registerWorktreeForgetHandlers(context: WorktreeIpcContext): void {
@@ -45,7 +46,7 @@ export function registerWorktreeForgetHandlers(context: WorktreeIpcContext): voi
       _event,
       args: Pick<RemoveWorktreeArgs, 'worktreeId' | 'hostId' | 'snapshotPruneBatchId'>
     ): Promise<RemoveWorktreeResult> => {
-      const { repoId } = parseWorktreeId(args.worktreeId)
+      const { repoId, worktreePath } = parseWorktreeId(args.worktreeId)
       const repoOwner = resolveWorktreeRemovalRepoOwner(store, repoId, args.hostId)
       if (!args.hostId && repoOwner.kind === 'ambiguous') {
         throw new Error(
@@ -53,6 +54,13 @@ export function registerWorktreeForgetHandlers(context: WorktreeIpcContext): voi
         )
       }
       const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
+      assertWorktreeIsNotMissionManaged(
+        store,
+        args.worktreeId,
+        repo && !repo.connectionId && !isFolderRepo(repo)
+          ? { repoPath: repo.path, worktreePath }
+          : undefined
+      )
       // Repo-first (unlike owner resolution below) so this key matches worktrees:remove's; meta only covers ownerless forgets.
       const inFlightKey = getWorktreeRemovalInFlightKey(
         args.worktreeId,

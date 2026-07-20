@@ -1,4 +1,5 @@
 import type { Repo } from '../../shared/repo-types'
+import { basename, dirname, join } from 'node:path'
 import { WorktreeCreateCollisionError } from '../../shared/new-workspace/worktree-create-collision'
 import type { CreateWorktreeArgs } from '../../shared/worktree/create-types'
 import type { getPRForBranch } from '../github/client'
@@ -60,6 +61,7 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
   baseBranch: string
   localWorktreeGitOptions: { wslDistro?: string }
   hostedReviewExecutionContext?: HostedReviewExecutionOptions
+  missionWorktreePath?: string | null
 }): Promise<RuntimeLocalWorktreeCreateCandidate> {
   const sanitizedName = sanitizeWorktreeName(args.request.name)
   let effectiveRequestedName = args.request.name
@@ -105,7 +107,11 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
     branchName = await resolveCreateBranchName(
       args.repo.path,
       selectedExistingLocalBranchName ??
-        getBranchNameOverrideCandidate(args.request.branchNameOverride, suffix),
+        // Why: Missions require one branch across every member repo; only the
+        // filesystem path may receive a collision suffix in exact mode.
+        (args.request.requireExactBranchName
+          ? args.request.branchNameOverride
+          : getBranchNameOverrideCandidate(args.request.branchNameOverride, suffix)),
       effectiveSanitizedName,
       args.settings,
       args.username,
@@ -170,6 +176,11 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
         }
       }
       if (branchConflictKind) {
+        if (args.request.requireExactBranchName) {
+          throw new Error(
+            `Branch "${branchName}" already exists ${branchConflictKind === 'local' ? 'locally' : 'on a remote'}.`
+          )
+        }
         continue
       }
     }
@@ -183,13 +194,21 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
         )
       } catch {}
       if (existingPR && !isMatchingSelectedGitHubPr(existingPR, args.request, branchName)) {
+        if (args.request.requireExactBranchName) {
+          throw new Error(`Branch "${branchName}" is already associated with an existing review.`)
+        }
         continue
       }
     }
-    worktreePath = ensurePathWithinWorkspace(
-      computeWorktreePath(effectiveSanitizedName, args.repo.path, args.worktreePathSettings),
-      args.workspaceRoot
-    )
+    worktreePath = args.missionWorktreePath
+      ? join(
+          dirname(args.missionWorktreePath),
+          getWorktreeCreateCandidate(basename(args.missionWorktreePath), suffix)
+        )
+      : ensurePathWithinWorkspace(
+          computeWorktreePath(effectiveSanitizedName, args.repo.path, args.worktreePathSettings),
+          args.workspaceRoot
+        )
     // Why the pending check: Orca still owns this path until its background removal settles.
     if (
       !findPendingWorktreeRemovalConflict(args.repo.path, { worktreePath }) &&

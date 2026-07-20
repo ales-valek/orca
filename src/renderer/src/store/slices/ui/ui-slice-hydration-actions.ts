@@ -274,7 +274,10 @@ export function createUiHydrationActions(set: UISliceSet, _get: UISliceGet): Par
         // non-numeric input (numbers are clamped in place), so a captured width can differ
         // from what main holds only for garbage payloads; at worst main keeps an
         // out-of-range width until the next drag re-writes it.
-        const nextWriteBaseline = capturePersistedUIWriteBaseline(hydrated)
+        const nextWriteBaseline = capturePersistedUIWriteBaseline(
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sidebarListMode is assigned the projects|missions union above; spreading hydrateAgentReadState widens that field to string in the inferred object.
+          hydrated as PersistedUIWriteBaseline
+        )
         const previousBaseline = s.persistedUIWriteBaseline
         if (previousBaseline) {
           const pendingLocalEdits = diffPersistedUIWriteFields(

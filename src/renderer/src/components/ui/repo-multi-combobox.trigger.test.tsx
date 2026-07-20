@@ -3,7 +3,7 @@
 import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { Repo } from '../../../../shared/types'
+import type { Repo } from '../../../../shared/repo-types'
 import RepoMultiCombobox from './repo-multi-combobox'
 
 // Shallow popover/command mocks (same pattern as the groups render test) so the
