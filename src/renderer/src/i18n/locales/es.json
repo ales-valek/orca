@@ -6127,7 +6127,7 @@
           "hostDisconnected": "Desconectado",
           "failedNestWorkspace": "No se pudo anidar el espacio de trabajo",
           "sidebarRowMissing": "El destino ya no existe",
-          "failedUnnestWorkspace": "Error al expandir el espacio de trabajo",
+          "failedUnnestWorkspace": "No se pudo desanidar el espacio de trabajo",
           "groupRenameFailed": "No se pudo cambiar el nombre del grupo",
           "groupRenameFailedDesc": "Orca no pudo confirmar el nuevo nombre con el anfitrión del grupo. Vuelva a verificar el grupo después de volver a conectarse.",
           "hostRepairRequired": "Re-pair required",
