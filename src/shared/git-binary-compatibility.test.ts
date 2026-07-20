@@ -30,6 +30,7 @@ import {
 import { isForEachRefExcludeUnsupportedError } from './git-ref-command-capabilities'
 import { isNoWriteFetchHeadUnsupportedError } from './git-fetch-head-capability'
 import { gitCredentialPromptGuardEnv } from './git-credential-prompt-env'
+import { registerGitBranchNameBinaryCompatibilityCases } from './git-branch-name-binary-compatibility.test-cases'
 import { buildGitGrepArgs } from './text-search'
 import { parseGitRemoteFetchUrls } from './git-remote-url-index'
 import { GIT_HISTORY_COMMIT_FORMAT, parseGitHistoryLog } from './git-history-log-parser'
@@ -746,6 +747,8 @@ describeBinaryCompatibility('real Git binary compatibility', () => {
     })
     await runGit(['-C', worktree, 'update-ref', '-d', backupRef, backupOid])
   })
+
+  registerGitBranchNameBinaryCompatibilityCases(runGit)
 
   it('degrades indexed credential config safely at the Git 2.31 boundary', async () => {
     const guardEnv = gitCredentialPromptGuardEnv({}, 'linux')
