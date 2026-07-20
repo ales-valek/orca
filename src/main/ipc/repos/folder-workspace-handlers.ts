@@ -78,6 +78,8 @@ export function registerFolderWorkspaceHandlers(
         'invalid_folder_workspace_update_args'
       )
       const ownedWorkspace = store.getFolderWorkspace(args.folderWorkspaceId)
+      // Why: Mission identity and root path are lifecycle-owned, so generic edits
+      // would desynchronize the Mission and its workspace.
       if (
         ownedWorkspace?.missionId &&
         (args.updates.name !== undefined || args.updates.folderPath !== undefined)
@@ -119,6 +121,7 @@ export function registerFolderWorkspaceHandlers(
       rawArgs,
       'invalid_folder_workspace_delete_args'
     )
+    // Why: generic folder deletion would orphan the owning Mission record.
     if (store.getFolderWorkspace(args.folderWorkspaceId)?.missionId) {
       throw new Error('mission_workspace_managed_by_mission')
     }

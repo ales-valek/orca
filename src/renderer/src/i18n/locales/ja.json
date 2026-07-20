@@ -5814,7 +5814,7 @@
           "hostDisconnected": "切断済み",
           "failedNestWorkspace": "ワークスペースをネストできませんでした",
           "sidebarRowMissing": "対象はもう存在しません",
-          "failedUnnestWorkspace": "ワークスペースの展開に失敗しました",
+          "failedUnnestWorkspace": "ワークスペースのネスト解除に失敗しました",
           "groupRenameFailed": "グループ名の変更に失敗しました",
           "groupRenameFailedDesc": "Orca はグループのホストに新規名前を確認できませんでした。再接続後、グループを再確認してください。",
           "3a2edfac81": "ミッションに追加"
