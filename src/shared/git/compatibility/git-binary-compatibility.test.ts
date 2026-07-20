@@ -75,4 +75,6 @@ describeBinaryCompatibility('real Git binary compatibility', () => {
   })
 
   registerGitResolutionBinaryCompatibilityCases(runGit)
+  registerGitBranchNameBinaryCompatibilityCases(runGit)
+
 })
