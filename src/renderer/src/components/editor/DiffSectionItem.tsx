@@ -20,6 +20,7 @@ import type { DiffSectionItemProps } from './diff-section-item-props'
 import { useDiffSectionModelLifecycle } from './use-diff-section-model-lifecycle'
 import { hasLayoutBox } from '@/hooks/virtualized-hidden-row-measurement'
 import { DiffSectionSaveConflictBar } from './DiffSectionSaveConflictBar'
+import { useMonacoLspForDiff } from './use-monaco-lsp-for-diff'
 
 export function DiffSectionItem({
   section,
@@ -75,6 +76,13 @@ export function DiffSectionItem({
   )
 
   const [modifiedEditor, setModifiedEditor] = useState<monacoEditor.ICodeEditor | null>(null)
+  useMonacoLspForDiff({
+    modifiedEditor,
+    relativePath: section.path,
+    worktreeId,
+    language,
+    modelIdentity: modelPathBase
+  })
   const diffEditorRef = useRef<monacoEditor.IStandaloneDiffEditor | null>(null)
   const lineNumberOptionsSubRef = useRef<{ dispose: () => void } | null>(null)
   const hasLineCommentAction = Boolean(worktreeId || onAddLineComment)

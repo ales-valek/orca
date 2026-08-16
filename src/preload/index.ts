@@ -11,6 +11,7 @@ import { wslMoveApi } from './api/wsl-move-bridge'
 import { pwshApi } from './api/pwsh-bridge'
 import { gitBashApi } from './api/git-bash-bridge'
 import { pluginsApi } from './api/plugins-bridge'
+import { lspApi } from './api/lsp-bridge'
 import { reposApi } from './api/repos-bridge'
 import { projectsApi } from './api/projects-bridge'
 import { projectGroupsApi } from './api/project-groups-bridge'
@@ -151,6 +152,7 @@ const api = {
   macosTccPrompts: macosTccPromptsApi,
   developerPermissions: developerPermissionsApi,
   computerUsePermissions: computerUsePermissionsApi,
+  lsp: lspApi,
   shell: shellApi,
   skills: skillsApi,
   pet: petApi,
