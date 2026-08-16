@@ -1,41 +1,51 @@
 // @vitest-environment happy-dom
-import React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { renderToStaticMarkup } from 'react-dom/server'
-import { fireEvent, render } from '@testing-library/react'
-import { CommitArea } from './source-control/commit/commit-area'
+import React from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { fireEvent, render } from "@testing-library/react";
+import { CommitArea } from "./source-control/commit/commit-area";
 import {
   ConflictSummaryCard,
-  OperationBanner
-} from './source-control/listing/conflict-status-cards'
-import { handleSourceControlCommitShortcut } from './source-control/commit/commit-shortcut'
+  OperationBanner,
+} from "./source-control/listing/conflict-status-cards";
+import { handleSourceControlCommitShortcut } from "./source-control/commit/commit-shortcut";
 import {
   resolveCommitAreaPrimaryAction,
-  type PrimaryActionInputs
-} from './source-control-primary-action'
-import { resolveDropdownItems } from './source-control-dropdown-items'
-import type { DropdownActionKind } from './source-control-dropdown-item-types'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import { deriveSourceControlPushRecovery } from './source-control/sync/push-recovery'
+  type PrimaryActionInputs,
+} from "./source-control-primary-action";
+import { resolveDropdownItems } from "./source-control-dropdown-items";
+import type { DropdownActionKind } from "./source-control-dropdown-item-types";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { deriveSourceControlPushRecovery } from "./source-control/sync/push-recovery";
 
-vi.mock('@/components/ui/tooltip', () => ({
+vi.mock("@/components/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div className={className}>{children}</div>
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
   ),
-  TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
-}))
+  TooltipContent: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <div className={className}>{children}</div>,
+  TooltipProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
 
 afterEach(() => {
-  vi.unstubAllGlobals()
-})
+  vi.unstubAllGlobals();
+});
 
 function setUserAgent(userAgent: string): void {
-  vi.stubGlobal('navigator', { userAgent })
+  vi.stubGlobal("navigator", { userAgent });
 }
 
-function buildInputs(overrides: Partial<PrimaryActionInputs> = {}): PrimaryActionInputs {
+function buildInputs(
+  overrides: Partial<PrimaryActionInputs> = {},
+): PrimaryActionInputs {
   return {
     stagedCount: 1,
     hasUnstagedChanges: false,
@@ -46,16 +56,16 @@ function buildInputs(overrides: Partial<PrimaryActionInputs> = {}): PrimaryActio
     isCommitting: false,
     isRemoteOperationActive: false,
     upstreamStatus: { hasUpstream: true, ahead: 0, behind: 0 },
-    ...overrides
-  }
+    ...overrides,
+  };
 }
 
 function baseProps(overrides: Partial<PrimaryActionInputs> = {}) {
-  const inputs = buildInputs(overrides)
+  const inputs = buildInputs(overrides);
   return {
-    worktreeId: 'wt-1',
-    groupId: 'group-1',
-    commitMessage: 'feat: add commit area',
+    worktreeId: "wt-1",
+    groupId: "group-1",
+    commitMessage: "feat: add commit area",
     commitError: null as string | null,
     commitFailureRecoveryPrompt: null as string | null,
     pushRecovery: null as ReturnType<typeof deriveSourceControlPushRecovery>,
@@ -80,165 +90,187 @@ function baseProps(overrides: Partial<PrimaryActionInputs> = {}) {
     onFixCommitFailureWithAI: vi.fn(),
     onFixPushFailureWithAI: vi.fn(),
     onPrimaryAction: vi.fn(),
-    onDropdownAction: vi.fn() as (kind: DropdownActionKind) => void
-  }
+    onDropdownAction: vi.fn() as (kind: DropdownActionKind) => void,
+  };
 }
 
 function buildPushRecovery(
-  rawError: string
+  rawError: string,
 ): NonNullable<ReturnType<typeof deriveSourceControlPushRecovery>> {
   const recovery = deriveSourceControlPushRecovery({
     actionError: {
-      kind: 'push',
-      message: 'Push blocked',
+      kind: "push",
+      message: "Push blocked",
       rawError,
-      branchName: 'main',
-      worktreePath: '/repo',
+      branchName: "main",
+      worktreePath: "/repo",
       entriesSnapshot: [],
       entriesSnapshotTotalCount: 0,
-      sequence: 1
+      sequence: 1,
     },
-    currentBranchName: 'main',
-    currentSequence: 1
-  })
+    currentBranchName: "main",
+    currentSequence: 1,
+  });
   if (!recovery) {
-    throw new Error('push recovery was not derived')
+    throw new Error("push recovery was not derived");
   }
-  return recovery
+  return recovery;
 }
 
 function renderCommitArea(props: Parameters<typeof CommitArea>[0]): string {
   return renderToStaticMarkup(
     <TooltipProvider>
       <CommitArea {...props} />
-    </TooltipProvider>
-  )
+    </TooltipProvider>,
+  );
 }
 
 function firstButton(markup: string): string {
   const button = [...markup.matchAll(/<button\b[\s\S]*?<\/button>/g)]
     .map((match) => match[0])
-    .find((entry) => entry.includes('data-slot="button"'))
+    .find((entry) => entry.includes('data-slot="button"'));
   if (!button) {
-    throw new Error('button not found')
+    throw new Error("button not found");
   }
-  return button
+  return button;
 }
 
 function buttonContaining(markup: string, label: string): string {
-  const buttons = markup.match(/<button\b[\s\S]*?<\/button>/g) ?? []
-  const button = buttons.find((candidate) => candidate.includes(label))
+  const buttons = markup.match(/<button\b[\s\S]*?<\/button>/g) ?? [];
+  const button = buttons.find((candidate) => candidate.includes(label));
   if (!button) {
-    throw new Error(`button not found: ${label}`)
+    throw new Error(`button not found: ${label}`);
   }
-  return button
+  return button;
 }
 
 function textarea(markup: string): string {
-  const match = markup.match(/<textarea\b[\s\S]*?<\/textarea>/)
+  const match = markup.match(/<textarea\b[\s\S]*?<\/textarea>/);
   if (!match) {
-    throw new Error('textarea not found')
+    throw new Error("textarea not found");
   }
-  return match[0]
+  return match[0];
 }
 
 function hasDisabledAttribute(markup: string): boolean {
-  return markup.includes(' disabled=""')
+  return markup.includes(' disabled=""');
 }
 
-describe('CommitArea', () => {
-  it('disables the primary button when no staged files', () => {
-    expect(hasDisabledAttribute(firstButton(renderCommitArea(baseProps({ stagedCount: 0 }))))).toBe(
-      true
-    )
-  })
-
-  it('disables the primary button when the commit message is empty', () => {
-    const props = baseProps({ hasMessage: false })
-    expect(
-      hasDisabledAttribute(firstButton(renderCommitArea({ ...props, commitMessage: '   ' })))
-    ).toBe(true)
-  })
-
-  it('disables the primary button when unresolved conflicts exist', () => {
+describe("CommitArea", () => {
+  it("disables the primary button when no staged files", () => {
     expect(
       hasDisabledAttribute(
-        firstButton(renderCommitArea(baseProps({ hasUnresolvedConflicts: true })))
-      )
-    ).toBe(true)
-  })
+        firstButton(renderCommitArea(baseProps({ stagedCount: 0 }))),
+      ),
+    ).toBe(true);
+  });
 
-  it('enables the primary button when staged + message + no conflicts', () => {
-    expect(hasDisabledAttribute(firstButton(renderCommitArea(baseProps())))).toBe(false)
-  })
+  it("disables the primary button when the commit message is empty", () => {
+    const props = baseProps({ hasMessage: false });
+    expect(
+      hasDisabledAttribute(
+        firstButton(renderCommitArea({ ...props, commitMessage: "   " })),
+      ),
+    ).toBe(true);
+  });
 
-  it('renders the Commit shortcut key indicator (⌘Enter) in primary button tooltip on macOS', () => {
-    const props = baseProps()
-    setUserAgent('Macintosh')
+  it("disables the primary button when unresolved conflicts exist", () => {
+    expect(
+      hasDisabledAttribute(
+        firstButton(
+          renderCommitArea(baseProps({ hasUnresolvedConflicts: true })),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("enables the primary button when staged + message + no conflicts", () => {
+    expect(
+      hasDisabledAttribute(firstButton(renderCommitArea(baseProps()))),
+    ).toBe(false);
+  });
+
+  it("renders the Commit shortcut key indicator (⌘Enter) in primary button tooltip on macOS", () => {
+    const props = baseProps();
+    setUserAgent("Macintosh");
     const markupMac = renderCommitArea({
       ...props,
-      primaryAction: { kind: 'commit', disabled: false, label: 'Commit', title: 'Commit changes' }
-    })
-    expect(markupMac).toContain('Commit changes')
-    expect(markupMac).toContain('⌘')
-    expect(markupMac).toContain('Enter')
-  })
+      primaryAction: {
+        kind: "commit",
+        disabled: false,
+        label: "Commit",
+        title: "Commit changes",
+      },
+    });
+    expect(markupMac).toContain("Commit changes");
+    expect(markupMac).toContain("⌘");
+    expect(markupMac).toContain("Enter");
+  });
 
-  it('renders the Commit shortcut key indicator (Ctrl+Enter) in primary button tooltip on Windows/Linux', () => {
-    const props = baseProps()
-    setUserAgent('Windows NT')
+  it("renders the Commit shortcut key indicator (Ctrl+Enter) in primary button tooltip on Windows/Linux", () => {
+    const props = baseProps();
+    setUserAgent("Windows NT");
     const markupWin = renderCommitArea({
       ...props,
-      primaryAction: { kind: 'commit', disabled: false, label: 'Commit', title: 'Commit changes' }
-    })
-    expect(markupWin).toContain('Commit changes')
-    expect(markupWin).toContain('Ctrl')
-    expect(markupWin).toContain('+')
-    expect(markupWin).toContain('Enter')
-  })
-
-  it('renders no tooltip on enabled Stage All — the label already states the action', () => {
-    const props = baseProps()
-    const markup = renderCommitArea({
-      ...props,
       primaryAction: {
-        kind: 'stage',
+        kind: "commit",
         disabled: false,
-        label: 'Stage All',
-        title: 'Stage all changes'
-      }
-    })
-    expect(firstButton(markup)).not.toContain('title=')
-    expect(markup).not.toContain('Stage all changes')
-  })
+        label: "Commit",
+        title: "Commit changes",
+      },
+    });
+    expect(markupWin).toContain("Commit changes");
+    expect(markupWin).toContain("Ctrl");
+    expect(markupWin).toContain("+");
+    expect(markupWin).toContain("Enter");
+  });
 
-  it('renders the disabled reason in the primary button tooltip', () => {
-    const props = baseProps()
+  it("renders no tooltip on enabled Stage All — the label already states the action", () => {
+    const props = baseProps();
     const markup = renderCommitArea({
       ...props,
       primaryAction: {
-        kind: 'commit',
-        disabled: true,
-        label: 'Commit',
-        title: 'Enter a commit message to commit'
-      }
-    })
-    expect(markup).toContain('Enter a commit message to commit')
-  })
+        kind: "stage",
+        disabled: false,
+        label: "Stage All",
+        title: "Stage all changes",
+      },
+    });
+    expect(firstButton(markup)).not.toContain("title=");
+    expect(markup).not.toContain("Stage all changes");
+  });
 
-  it('only handles Cmd+Enter when focus is within the Source Control sidebar', () => {
-    setUserAgent('Macintosh')
-    const onPrimaryAction = vi.fn()
+  it("renders the disabled reason in the primary button tooltip", () => {
+    const props = baseProps();
+    const markup = renderCommitArea({
+      ...props,
+      primaryAction: {
+        kind: "commit",
+        disabled: true,
+        label: "Commit",
+        title: "Enter a commit message to commit",
+      },
+    });
+    expect(markup).toContain("Enter a commit message to commit");
+  });
+
+  it("only handles Cmd+Enter when focus is within the Source Control sidebar", () => {
+    setUserAgent("Macintosh");
+    const onPrimaryAction = vi.fn();
     const primaryAction = {
-      kind: 'commit' as const,
-      disabled: false
-    }
+      kind: "commit" as const,
+      disabled: false,
+    };
     const { getByTestId } = render(
       <>
         <div
           data-testid="source-control-sidebar"
           onKeyDown={(event) =>
-            handleSourceControlCommitShortcut(event, primaryAction, onPrimaryAction)
+            handleSourceControlCommitShortcut(
+              event,
+              primaryAction,
+              onPrimaryAction,
+            )
           }
         >
           <button type="button" data-testid="inside-sidebar">
@@ -248,334 +280,363 @@ describe('CommitArea', () => {
         <button type="button" data-testid="outside-sidebar">
           Outside
         </button>
-      </>
-    )
+      </>,
+    );
 
-    const outside = getByTestId('outside-sidebar')
-    outside.focus()
-    fireEvent.keyDown(outside, { key: 'Enter', metaKey: true })
-    expect(onPrimaryAction).not.toHaveBeenCalled()
+    const outside = getByTestId("outside-sidebar");
+    outside.focus();
+    fireEvent.keyDown(outside, { key: "Enter", metaKey: true });
+    expect(onPrimaryAction).not.toHaveBeenCalled();
 
-    const inside = getByTestId('inside-sidebar')
-    inside.focus()
-    fireEvent.keyDown(inside, { key: 'Enter', metaKey: true })
-    expect(onPrimaryAction).toHaveBeenCalledTimes(1)
-  })
+    const inside = getByTestId("inside-sidebar");
+    inside.focus();
+    fireEvent.keyDown(inside, { key: "Enter", metaKey: true });
+    expect(onPrimaryAction).toHaveBeenCalledTimes(1);
+  });
 
-  it('handles Ctrl+Enter, but not Cmd+Enter, inside the sidebar on Windows/Linux', () => {
-    setUserAgent('Linux')
-    const onPrimaryAction = vi.fn()
+  it("handles Ctrl+Enter, but not Cmd+Enter, inside the sidebar on Windows/Linux", () => {
+    setUserAgent("Linux");
+    const onPrimaryAction = vi.fn();
     const primaryAction = {
-      kind: 'commit' as const,
-      disabled: false
-    }
+      kind: "commit" as const,
+      disabled: false,
+    };
     const { getByRole } = render(
       <button
         type="button"
         onKeyDown={(event) =>
-          handleSourceControlCommitShortcut(event, primaryAction, onPrimaryAction)
+          handleSourceControlCommitShortcut(
+            event,
+            primaryAction,
+            onPrimaryAction,
+          )
         }
       >
         Commit scope
-      </button>
-    )
-    const target = getByRole('button', { name: 'Commit scope' })
+      </button>,
+    );
+    const target = getByRole("button", { name: "Commit scope" });
 
-    fireEvent.keyDown(target, { key: 'Enter', metaKey: true })
-    expect(onPrimaryAction).not.toHaveBeenCalled()
+    fireEvent.keyDown(target, { key: "Enter", metaKey: true });
+    expect(onPrimaryAction).not.toHaveBeenCalled();
 
-    fireEvent.keyDown(target, { key: 'Enter', ctrlKey: true })
-    expect(onPrimaryAction).toHaveBeenCalledTimes(1)
-  })
+    fireEvent.keyDown(target, { key: "Enter", ctrlKey: true });
+    expect(onPrimaryAction).toHaveBeenCalledTimes(1);
+  });
 
-  it('does not render the Commit shortcut keys inside the primary button tooltip when the action is not commit', () => {
-    const props = baseProps()
+  it("does not render the Commit shortcut keys inside the primary button tooltip when the action is not commit", () => {
+    const props = baseProps();
     const markup = renderCommitArea({
       ...props,
-      primaryAction: { kind: 'push', disabled: false, label: 'Push', title: 'Push changes' }
-    })
-    expect(markup).not.toContain('Enter')
-  })
+      primaryAction: {
+        kind: "push",
+        disabled: false,
+        label: "Push",
+        title: "Push changes",
+      },
+    });
+    expect(markup).not.toContain("Enter");
+  });
 
-  it('disables the textarea while the commit is in flight', () => {
+  it("disables the textarea while the commit is in flight", () => {
     const markup = renderCommitArea({
       ...baseProps({ isCommitting: true }),
-      isCommitting: true
-    })
-    expect(hasDisabledAttribute(textarea(markup))).toBe(true)
-  })
+      isCommitting: true,
+    });
+    expect(hasDisabledAttribute(textarea(markup))).toBe(true);
+  });
 
-  it('disables the textarea when no files are staged', () => {
-    expect(hasDisabledAttribute(textarea(renderCommitArea(baseProps({ stagedCount: 0 }))))).toBe(
-      true
-    )
-  })
-
-  it('disables the textarea when unresolved conflicts exist', () => {
+  it("disables the textarea when no files are staged", () => {
     expect(
-      hasDisabledAttribute(textarea(renderCommitArea(baseProps({ hasUnresolvedConflicts: true }))))
-    ).toBe(true)
-  })
+      hasDisabledAttribute(
+        textarea(renderCommitArea(baseProps({ stagedCount: 0 }))),
+      ),
+    ).toBe(true);
+  });
 
-  it('keeps the textarea enabled when staged files need a commit message', () => {
-    const props = baseProps({ hasMessage: false })
-    expect(hasDisabledAttribute(textarea(renderCommitArea({ ...props, commitMessage: '' })))).toBe(
-      false
-    )
-  })
+  it("disables the textarea when unresolved conflicts exist", () => {
+    expect(
+      hasDisabledAttribute(
+        textarea(renderCommitArea(baseProps({ hasUnresolvedConflicts: true }))),
+      ),
+    ).toBe(true);
+  });
 
-  it('clears the message and keeps error hidden after a successful commit lifecycle', () => {
-    const markup = renderCommitArea({ ...baseProps(), commitMessage: '' })
-    expect(textarea(markup)).toContain('></textarea>')
-    expect(markup).not.toContain('commit-area-error')
-  })
+  it("keeps the textarea enabled when staged files need a commit message", () => {
+    const props = baseProps({ hasMessage: false });
+    expect(
+      hasDisabledAttribute(
+        textarea(renderCommitArea({ ...props, commitMessage: "" })),
+      ),
+    ).toBe(false);
+  });
 
-  it('preserves the message and shows the summary after a failed commit lifecycle', () => {
+  it("clears the message and keeps error hidden after a successful commit lifecycle", () => {
+    const markup = renderCommitArea({ ...baseProps(), commitMessage: "" });
+    expect(textarea(markup)).toContain("></textarea>");
+    expect(markup).not.toContain("commit-area-error");
+  });
+
+  it("preserves the message and shows the summary after a failed commit lifecycle", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      commitError: 'pre-commit hook failed'
-    })
-    expect(textarea(markup)).toContain('feat: add commit area')
-    expect(markup).toContain('Pre-commit hook failed.')
-  })
+      commitError: "pre-commit hook failed",
+    });
+    expect(textarea(markup)).toContain("feat: add commit area");
+    expect(markup).toContain("Pre-commit hook failed.");
+  });
 
-  it('locks the primary button while the commit is in flight', () => {
-    const props = baseProps({ isCommitting: true })
+  it("locks the primary button while the commit is in flight", () => {
+    const props = baseProps({ isCommitting: true });
     expect(
-      hasDisabledAttribute(firstButton(renderCommitArea({ ...props, isCommitting: true })))
-    ).toBe(true)
-  })
+      hasDisabledAttribute(
+        firstButton(renderCommitArea({ ...props, isCommitting: true })),
+      ),
+    ).toBe(true);
+  });
 
-  it('shows a compact summary and not raw multiline text when the commit fails', () => {
-    const raw = 'husky - pre-commit hook\neslint found 2 errors\nfull lint output line'
-    const markup = renderCommitArea({ ...baseProps(), commitError: raw })
+  it("shows a compact summary and not raw multiline text when the commit fails", () => {
+    const raw =
+      "husky - pre-commit hook\neslint found 2 errors\nfull lint output line";
+    const markup = renderCommitArea({ ...baseProps(), commitError: raw });
 
-    expect(markup).toContain('id="commit-area-error"')
-    expect(markup).toContain('role="alert"')
-    expect(markup).toContain('aria-live="polite"')
-    expect(markup).toContain('Lint failed during commit.')
-    expect(markup).not.toContain('full lint output line')
-    expect(markup).toContain('Fix')
-    expect(markup).toContain('aria-label="Choose agent to fix commit failure"')
-    expect(markup).toContain('Details')
-  })
+    expect(markup).toContain('id="commit-area-error"');
+    expect(markup).toContain('role="alert"');
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain("Lint failed during commit.");
+    expect(markup).not.toContain("full lint output line");
+    expect(markup).toContain("Fix");
+    expect(markup).toContain('aria-label="Choose agent to fix commit failure"');
+    expect(markup).toContain("Details");
+  });
 
-  it('disables the commit failure fix action while an AI launch is in progress', () => {
+  it("disables the commit failure fix action while an AI launch is in progress", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      commitError: 'husky - pre-commit hook failed',
-      commitFailureRecoveryPrompt: 'Fix this commit failure.',
-      isFixingCommitFailureWithAI: true
-    })
+      commitError: "husky - pre-commit hook failed",
+      commitFailureRecoveryPrompt: "Fix this commit failure.",
+      isFixingCommitFailureWithAI: true,
+    });
 
     const button = [...markup.matchAll(/<button\b[\s\S]*?<\/button>/g)]
       .map((match) => match[0])
-      .find((entry) => entry.includes('aria-label="Fix commit failure with AI"'))
+      .find((entry) =>
+        entry.includes('aria-label="Fix commit failure with AI"'),
+      );
 
-    expect(button).toBeDefined()
-    expect(button).toContain('disabled=""')
-    expect(button).toContain('animate-spin')
-  })
+    expect(button).toBeDefined();
+    expect(button).toContain('disabled=""');
+    expect(button).toContain("animate-spin");
+  });
 
-  it('hides commit failure AI actions when Source Control AI actions are hidden', () => {
+  it("hides commit failure AI actions when Source Control AI actions are hidden", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      commitError: 'husky - pre-commit hook failed',
-      commitFailureRecoveryPrompt: 'Fix this commit failure.',
-      sourceControlAiActionsVisible: false
-    })
+      commitError: "husky - pre-commit hook failed",
+      commitFailureRecoveryPrompt: "Fix this commit failure.",
+      sourceControlAiActionsVisible: false,
+    });
 
-    expect(markup).not.toContain('AI Fix')
-    expect(markup).not.toContain('Fix commit failure with AI')
-    expect(markup).toContain('Commit blocked')
-  })
+    expect(markup).not.toContain("AI Fix");
+    expect(markup).not.toContain("Fix commit failure with AI");
+    expect(markup).toContain("Commit blocked");
+  });
 
-  it('enables the agent picker when commit failure context is available', () => {
+  it("enables the agent picker when commit failure context is available", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      commitError: 'husky - pre-commit hook failed',
-      commitFailureRecoveryPrompt: 'Fix this commit failure.'
-    })
+      commitError: "husky - pre-commit hook failed",
+      commitFailureRecoveryPrompt: "Fix this commit failure.",
+    });
 
     const picker = [...markup.matchAll(/<button\b[\s\S]*?<\/button>/g)]
       .map((match) => match[0])
-      .find((entry) => entry.includes('aria-label="Choose agent to fix commit failure"'))
+      .find((entry) =>
+        entry.includes('aria-label="Choose agent to fix commit failure"'),
+      );
 
-    expect(picker).toBeDefined()
-    expect(picker).not.toContain('disabled=""')
-    expect(picker).toContain('lucide-chevron-down')
-  })
+    expect(picker).toBeDefined();
+    expect(picker).not.toContain('disabled=""');
+    expect(picker).toContain("lucide-chevron-down");
+  });
 
-  it('omits the details trigger when the raw error matches the summary', () => {
-    const markup = renderCommitArea({ ...baseProps(), commitError: 'nothing to commit' })
-    expect(markup).toContain('nothing to commit')
-    expect(markup).not.toContain('Details')
-  })
-
-  it('shows an inline error message when a remote action fails', () => {
+  it("omits the details trigger when the raw error matches the summary", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      remoteActionError: 'Fetch failed. network timeout'
-    })
-    expect(markup).toContain('Fetch failed. network timeout')
-    expect(markup).toContain('commit-area-remote-error')
-  })
+      commitError: "nothing to commit",
+    });
+    expect(markup).toContain("nothing to commit");
+    expect(markup).not.toContain("Details");
+  });
 
-  it('shows a compact push hook summary and AI fix action when push fails on a hook', () => {
+  it("shows an inline error message when a remote action fails", () => {
+    const markup = renderCommitArea({
+      ...baseProps(),
+      remoteActionError: "Fetch failed. network timeout",
+    });
+    expect(markup).toContain("Fetch failed. network timeout");
+    expect(markup).toContain("commit-area-remote-error");
+  });
+
+  it("shows a compact push hook summary and AI fix action when push fails on a hook", () => {
     const raw =
-      "error: failed to push some refs to 'origin'\nhusky - pre-push hook exited with code 1\neslint found 2 errors"
+      "error: failed to push some refs to 'origin'\nhusky - pre-push hook exited with code 1\neslint found 2 errors";
     const markup = renderCommitArea({
       ...baseProps(),
-      pushRecovery: buildPushRecovery(raw)
-    })
+      pushRecovery: buildPushRecovery(raw),
+    });
 
-    expect(markup).toContain('id="commit-area-push-error"')
-    expect(markup).toContain('Push blocked')
-    expect(markup).toContain('Lint failed during push.')
-    expect(markup).not.toContain('eslint found 2 errors')
-    expect(markup).toContain('aria-label="Fix push failure with AI"')
-    expect(markup).toContain('Details')
-  })
+    expect(markup).toContain('id="commit-area-push-error"');
+    expect(markup).toContain("Push blocked");
+    expect(markup).toContain("Lint failed during push.");
+    expect(markup).not.toContain("eslint found 2 errors");
+    expect(markup).toContain('aria-label="Fix push failure with AI"');
+    expect(markup).toContain("Details");
+  });
 
-  it('hides push failure AI actions when Source Control AI actions are hidden', () => {
+  it("hides push failure AI actions when Source Control AI actions are hidden", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      pushRecovery: buildPushRecovery('husky - pre-push hook failed'),
-      sourceControlAiActionsVisible: false
-    })
+      pushRecovery: buildPushRecovery("husky - pre-push hook failed"),
+      sourceControlAiActionsVisible: false,
+    });
 
-    expect(markup).not.toContain('Fix push failure with AI')
-    expect(markup).toContain('Push blocked')
-  })
+    expect(markup).not.toContain("Fix push failure with AI");
+    expect(markup).toContain("Push blocked");
+  });
 
-  it('formats pull policy errors with command options', () => {
+  it("formats pull policy errors with command options", () => {
     const markup = renderCommitArea({
       ...baseProps(),
       remoteActionError:
-        'Pull needs a Git pull policy for divergent branches. Configure one for this repository or host, then try again: git config pull.rebase false (merge), git config pull.rebase true (rebase), or git config pull.ff only (fast-forward only).'
-    })
+        "Pull needs a Git pull policy for divergent branches. Configure one for this repository or host, then try again: git config pull.rebase false (merge), git config pull.rebase true (rebase), or git config pull.ff only (fast-forward only).",
+    });
 
-    expect(markup).toContain('Pull needs a policy')
-    expect(markup).toContain('Diverged')
-    expect(markup).toContain('git config pull.rebase false')
-    expect(markup).toContain('git config pull.rebase true')
-    expect(markup).toContain('git config pull.ff only')
-    expect(markup).toContain('aria-label="Copy merge pull policy command"')
-    expect(markup).toContain('commit-area-remote-error')
-  })
+    expect(markup).toContain("Pull needs a policy");
+    expect(markup).toContain("Diverged");
+    expect(markup).toContain("git config pull.rebase false");
+    expect(markup).toContain("git config pull.rebase true");
+    expect(markup).toContain("git config pull.ff only");
+    expect(markup).toContain('aria-label="Copy merge pull policy command"');
+    expect(markup).toContain("commit-area-remote-error");
+  });
 
-  it('keeps generation errors separate from commit and remote errors', () => {
+  it("keeps generation errors separate from commit and remote errors", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      generateError: 'No staged changes to summarize.'
-    })
-    expect(markup).toContain('No staged changes to summarize.')
-    expect(markup).toContain('aria-describedby="commit-area-generate-error"')
-  })
+      generateError: "No staged changes to summarize.",
+    });
+    expect(markup).toContain("No staged changes to summarize.");
+    expect(markup).toContain('aria-describedby="commit-area-generate-error"');
+  });
 
-  it('keeps all visible errors linked to the textarea', () => {
+  it("keeps all visible errors linked to the textarea", () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      commitError: 'pre-commit hook failed',
-      remoteActionError: 'Fetch failed.',
-      generateError: 'No staged changes.'
-    })
+      commitError: "pre-commit hook failed",
+      remoteActionError: "Fetch failed.",
+      generateError: "No staged changes.",
+    });
     expect(markup).toContain(
-      'aria-describedby="commit-area-error commit-area-remote-error commit-area-generate-error"'
-    )
-  })
+      'aria-describedby="commit-area-error commit-area-remote-error commit-area-generate-error"',
+    );
+  });
 
-  it('keeps the primary button labelled Commit when the tree is staged, even with commits to push', () => {
+  it("keeps the primary button labelled Commit when the tree is staged, even with commits to push", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 1,
         hasMessage: true,
-        upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 }
-      })
-    )
-    expect(firstButton(markup)).toContain('Commit')
-    expect(firstButton(markup)).not.toContain('Commit &amp; Push')
-  })
+        upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 },
+      }),
+    );
+    expect(firstButton(markup)).toContain("Commit");
+    expect(firstButton(markup)).not.toContain("Commit &amp; Push");
+  });
 
-  it('does not show a spinner on a plain Commit primary when a dropdown remote op is running', () => {
+  it("does not show a spinner on a plain Commit primary when a dropdown remote op is running", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 1,
         hasMessage: false,
         upstreamStatus: { hasUpstream: true, ahead: 0, behind: 0 },
         isCommitting: false,
-        isRemoteOperationActive: true
-      })
-    )
-    expect(firstButton(markup)).not.toContain('animate-spin')
-  })
+        isRemoteOperationActive: true,
+      }),
+    );
+    expect(firstButton(markup)).not.toContain("animate-spin");
+  });
 
-  it('shows a spinner on a remote primary while the matching remote op is active', () => {
+  it("shows a spinner on a remote primary while the matching remote op is active", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 0,
         hasMessage: false,
         upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 },
         isRemoteOperationActive: true,
-        inFlightRemoteOpKind: 'push'
-      })
-    )
-    expect(firstButton(markup)).toContain('animate-spin')
-  })
+        inFlightRemoteOpKind: "push",
+      }),
+    );
+    expect(firstButton(markup)).toContain("animate-spin");
+  });
 
-  it('mirrors a dropdown-triggered Sync on the primary button while it runs', () => {
+  it("mirrors a dropdown-triggered Sync on the primary button while it runs", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 0,
         hasMessage: false,
         upstreamStatus: { hasUpstream: true, ahead: 3, behind: 0 },
         isRemoteOperationActive: true,
-        inFlightRemoteOpKind: 'sync'
-      })
-    )
-    expect(firstButton(markup)).toContain('Sync')
-    expect(firstButton(markup)).not.toContain('Push')
-    expect(firstButton(markup)).toContain('animate-spin')
-  })
+        inFlightRemoteOpKind: "sync",
+      }),
+    );
+    expect(firstButton(markup)).toContain("Sync");
+    expect(firstButton(markup)).not.toContain("Push");
+    expect(firstButton(markup)).toContain("animate-spin");
+  });
 
-  it('does not spin or relabel the primary when a dropdown Fetch is in flight', () => {
+  it("does not spin or relabel the primary when a dropdown Fetch is in flight", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 0,
         hasMessage: false,
         upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 },
         isRemoteOperationActive: true,
-        inFlightRemoteOpKind: 'fetch'
-      })
-    )
-    expect(firstButton(markup)).toContain('Push')
-    expect(hasDisabledAttribute(firstButton(markup))).toBe(true)
-    expect(firstButton(markup)).not.toContain('animate-spin')
-  })
+        inFlightRemoteOpKind: "fetch",
+      }),
+    );
+    expect(firstButton(markup)).toContain("Push");
+    expect(hasDisabledAttribute(firstButton(markup))).toBe(true);
+    expect(firstButton(markup)).not.toContain("animate-spin");
+  });
 
-  it('renders a leading checkmark on a Commit primary', () => {
-    expect(firstButton(renderCommitArea(baseProps()))).toContain('lucide-check')
-  })
+  it("renders a leading checkmark on a Commit primary", () => {
+    expect(firstButton(renderCommitArea(baseProps()))).toContain(
+      "lucide-check",
+    );
+  });
 
-  it('omits the checkmark when the primary is a remote action', () => {
+  it("omits the checkmark when the primary is a remote action", () => {
     const markup = renderCommitArea(
       baseProps({
         stagedCount: 0,
         hasMessage: false,
-        upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 }
-      })
-    )
-    expect(firstButton(markup)).not.toContain('lucide-check')
-  })
+        upstreamStatus: { hasUpstream: true, ahead: 1, behind: 0 },
+      }),
+    );
+    expect(firstButton(markup)).not.toContain("lucide-check");
+  });
 
-  it('replaces the checkmark with a spinner while the commit is in flight', () => {
-    const props = baseProps({ isCommitting: true })
-    const button = firstButton(renderCommitArea({ ...props, isCommitting: true }))
-    expect(button).toContain('animate-spin')
-    expect(button).not.toContain('lucide-check')
-  })
+  it("replaces the checkmark with a spinner while the commit is in flight", () => {
+    const props = baseProps({ isCommitting: true });
+    const button = firstButton(
+      renderCommitArea({ ...props, isCommitting: true }),
+    );
+    expect(button).toContain("animate-spin");
+    expect(button).not.toContain("lucide-check");
+  });
 
-  it('keeps Stage All as the commit-area primary when review prep can stage changes', () => {
+  it("keeps Stage All as the commit-area primary when review prep can stage changes", () => {
     const input = buildInputs({
       stagedCount: 0,
       hasUnstagedChanges: true,
@@ -584,32 +645,32 @@ describe('CommitArea', () => {
       hasMessage: false,
       upstreamStatus: { hasUpstream: true, ahead: 0, behind: 0 },
       hostedReviewCreation: {
-        provider: 'github',
+        provider: "github",
         review: null,
         canCreate: false,
-        blockedReason: 'dirty',
-        nextAction: 'commit',
-        reviewLookupOutcome: 'not_found'
-      }
-    })
-    const markup = renderCommitArea(baseProps(input))
+        blockedReason: "dirty",
+        nextAction: "commit",
+        reviewLookupOutcome: "not_found",
+      },
+    });
+    const markup = renderCommitArea(baseProps(input));
 
-    const stageAllButton = firstButton(markup)
-    expect(stageAllButton).toContain('Stage All')
-    expect(stageAllButton).toContain('data-variant="outline"')
-    expect(stageAllButton).not.toContain('disabled=""')
-    expect(stageAllButton).toContain('lucide-plus')
-    expect(stageAllButton).toContain('rounded-r-none')
-    expect(stageAllButton).not.toContain('title=')
-    expect(markup).toContain('aria-label="More commit and remote actions"')
+    const stageAllButton = firstButton(markup);
+    expect(stageAllButton).toContain("Stage All");
+    expect(stageAllButton).toContain('data-variant="outline"');
+    expect(stageAllButton).not.toContain('disabled=""');
+    expect(stageAllButton).toContain("lucide-plus");
+    expect(stageAllButton).toContain("rounded-r-none");
+    expect(stageAllButton).not.toContain("title=");
+    expect(markup).toContain('aria-label="More commit and remote actions"');
     expect(
       (markup.match(/<button\b[\s\S]*?<\/button>/g) ?? []).some((button) =>
-        button.includes('Commit</button>')
-      )
-    ).toBe(false)
-  })
+        button.includes("Commit</button>"),
+      ),
+    ).toBe(false);
+  });
 
-  it('keeps Push as the commit-area primary when review prep can create after pushing', () => {
+  it("keeps Push as the commit-area primary when review prep can create after pushing", () => {
     const input = buildInputs({
       stagedCount: 0,
       hasUnstagedChanges: false,
@@ -618,62 +679,64 @@ describe('CommitArea', () => {
       hasMessage: false,
       upstreamStatus: { hasUpstream: true, ahead: 2, behind: 0 },
       hostedReviewCreation: {
-        provider: 'github',
+        provider: "github",
         review: null,
         canCreate: false,
-        blockedReason: 'needs_push',
-        nextAction: 'push',
-        reviewLookupOutcome: 'not_found'
-      }
-    })
-    const markup = renderCommitArea(baseProps(input))
+        blockedReason: "needs_push",
+        nextAction: "push",
+        reviewLookupOutcome: "not_found",
+      },
+    });
+    const markup = renderCommitArea(baseProps(input));
 
-    const pushButton = firstButton(markup)
-    expect(pushButton).toContain('Push')
-    expect(pushButton).toContain('data-variant="outline"')
-    expect(pushButton).not.toContain('disabled=""')
-    expect(pushButton).toContain('lucide-arrow-up')
-    expect(pushButton).toContain('rounded-r-none')
-    expect(markup).toContain('aria-label="More commit and remote actions"')
-  })
+    const pushButton = firstButton(markup);
+    expect(pushButton).toContain("Push");
+    expect(pushButton).toContain('data-variant="outline"');
+    expect(pushButton).not.toContain('disabled=""');
+    expect(pushButton).toContain("lucide-arrow-up");
+    expect(pushButton).toContain("rounded-r-none");
+    expect(markup).toContain('aria-label="More commit and remote actions"');
+  });
 
-  it('hides the composer generate affordance while Create PR intent is in flight', () => {
+  it("hides the composer generate affordance while Create PR intent is in flight", () => {
     const markup = renderCommitArea({
       ...baseProps(),
       aiAgentConfigured: true,
       isGenerating: true,
       isCreatePrIntentInFlight: true,
       createPrIntentNotice: {
-        tone: 'muted',
-        message: 'Generating commit message…'
-      }
-    })
+        tone: "muted",
+        message: "Generating commit message…",
+      },
+    });
 
-    expect(markup).not.toContain('lucide-sparkles')
-    expect(markup).not.toContain('animate-spin')
-    expect(markup).toContain('Generating commit message…')
-  })
+    expect(markup).not.toContain("lucide-sparkles");
+    expect(markup).not.toContain("animate-spin");
+    expect(markup).toContain("Generating commit message…");
+  });
 
-  it('renders Create PR failures in the visible inline notice', () => {
+  it("renders Create PR failures in the visible inline notice", () => {
     const markup = renderCommitArea({
       ...baseProps(),
       createPrIntentNotice: {
-        tone: 'destructive',
-        message: 'Create PR failed: push this branch first.'
-      }
-    })
+        tone: "destructive",
+        message: "Create PR failed: push this branch first.",
+      },
+    });
 
-    expect(markup).toContain('id="commit-area-create-pr-intent"')
-    expect(markup).toContain('role="alert"')
-    expect(markup).toContain('Create PR failed: push this branch first.')
-    const notice = markup.match(/id="commit-area-create-pr-intent"[\s\S]*?<\/div>/)?.[0] ?? ''
-    expect(notice).toContain('break-words')
-    expect(notice).not.toContain('truncate')
-  })
-})
+    expect(markup).toContain('id="commit-area-create-pr-intent"');
+    expect(markup).toContain('role="alert"');
+    expect(markup).toContain("Create PR failed: push this branch first.");
+    const notice =
+      markup.match(/id="commit-area-create-pr-intent"[\s\S]*?<\/div>/)?.[0] ??
+      "";
+    expect(notice).toContain("break-words");
+    expect(notice).not.toContain("truncate");
+  });
+});
 
-describe('ConflictSummaryCard', () => {
-  it('shows Resolve with AI above Review conflicts', () => {
+describe("ConflictSummaryCard", () => {
+  it("shows Resolve with AI above Review conflicts", () => {
     const markup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="rebase"
@@ -682,13 +745,15 @@ describe('ConflictSummaryCard', () => {
         isResolvingWithAI={false}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(markup.indexOf('Resolve with AI')).toBeLessThan(markup.indexOf('Review conflicts'))
-  })
+    expect(markup.indexOf("Resolve with AI")).toBeLessThan(
+      markup.indexOf("Review conflicts"),
+    );
+  });
 
-  it('shows the matching abort action for merge and rebase conflicts only', () => {
+  it("shows the matching abort action for merge and rebase conflicts only", () => {
     const mergeMarkup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="merge"
@@ -698,8 +763,8 @@ describe('ConflictSummaryCard', () => {
         onAbortOperation={vi.fn()}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
     const rebaseMarkup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="rebase"
@@ -709,8 +774,8 @@ describe('ConflictSummaryCard', () => {
         onAbortOperation={vi.fn()}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
     const cherryPickMarkup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="cherry-pick"
@@ -720,18 +785,18 @@ describe('ConflictSummaryCard', () => {
         onAbortOperation={vi.fn()}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(mergeMarkup).toContain('Abort merge')
-    expect(mergeMarkup).not.toContain('Abort rebase')
-    expect(rebaseMarkup).toContain('Abort rebase')
-    expect(rebaseMarkup).not.toContain('Abort merge')
-    expect(cherryPickMarkup).not.toContain('Abort merge')
-    expect(cherryPickMarkup).not.toContain('Abort rebase')
-  })
+    expect(mergeMarkup).toContain("Abort merge");
+    expect(mergeMarkup).not.toContain("Abort rebase");
+    expect(rebaseMarkup).toContain("Abort rebase");
+    expect(rebaseMarkup).not.toContain("Abort merge");
+    expect(cherryPickMarkup).not.toContain("Abort merge");
+    expect(cherryPickMarkup).not.toContain("Abort rebase");
+  });
 
-  it('renders abort actions with the quiet outline review-conflicts button treatment', () => {
+  it("renders abort actions with the quiet outline review-conflicts button treatment", () => {
     const mergeMarkup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="merge"
@@ -741,8 +806,8 @@ describe('ConflictSummaryCard', () => {
         onAbortOperation={vi.fn()}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
     const rebaseMarkup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="rebase"
@@ -752,16 +817,24 @@ describe('ConflictSummaryCard', () => {
         onAbortOperation={vi.fn()}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(buttonContaining(mergeMarkup, 'Review conflicts')).toContain('data-variant="outline"')
-    expect(buttonContaining(mergeMarkup, 'Abort merge')).toContain('data-variant="outline"')
-    expect(buttonContaining(rebaseMarkup, 'Review conflicts')).toContain('data-variant="outline"')
-    expect(buttonContaining(rebaseMarkup, 'Abort rebase')).toContain('data-variant="outline"')
-  })
+    expect(buttonContaining(mergeMarkup, "Review conflicts")).toContain(
+      'data-variant="outline"',
+    );
+    expect(buttonContaining(mergeMarkup, "Abort merge")).toContain(
+      'data-variant="outline"',
+    );
+    expect(buttonContaining(rebaseMarkup, "Review conflicts")).toContain(
+      'data-variant="outline"',
+    );
+    expect(buttonContaining(rebaseMarkup, "Abort rebase")).toContain(
+      'data-variant="outline"',
+    );
+  });
 
-  it('renders the Sparkles icon on the idle Resolve with AI button', () => {
+  it("renders the Sparkles icon on the idle Resolve with AI button", () => {
     const markup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="merge"
@@ -770,15 +843,15 @@ describe('ConflictSummaryCard', () => {
         isResolvingWithAI={false}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(markup).toContain('Resolve with AI')
-    expect(markup).toContain('lucide-sparkles')
-    expect(markup).not.toMatch(/\blucide-sparkle(?!s)\b/)
-  })
+    expect(markup).toContain("Resolve with AI");
+    expect(markup).toContain("lucide-sparkles");
+    expect(markup).not.toMatch(/\blucide-sparkle(?!s)\b/);
+  });
 
-  it('hides Resolve with AI when Source Control AI actions are hidden', () => {
+  it("hides Resolve with AI when Source Control AI actions are hidden", () => {
     const markup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="merge"
@@ -787,41 +860,48 @@ describe('ConflictSummaryCard', () => {
         isResolvingWithAI={false}
         onResolveWithAI={vi.fn()}
         onReview={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(markup).not.toContain('Resolve with AI')
-    expect(markup).toContain('Review conflicts')
-  })
-})
+    expect(markup).not.toContain("Resolve with AI");
+    expect(markup).toContain("Review conflicts");
+  });
+});
 
-describe('OperationBanner', () => {
-  it('shows abort actions for merge and rebase but not cherry-pick', () => {
+describe("OperationBanner", () => {
+  it("shows abort actions for merge and rebase but not cherry-pick", () => {
     const mergeMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />
-    )
+      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />,
+    );
     const rebaseMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />
-    )
+      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />,
+    );
     const cherryPickMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="cherry-pick" onAbortOperation={vi.fn()} />
-    )
+      <OperationBanner
+        conflictOperation="cherry-pick"
+        onAbortOperation={vi.fn()}
+      />,
+    );
 
-    expect(mergeMarkup).toContain('Abort merge')
-    expect(rebaseMarkup).toContain('Abort rebase')
-    expect(cherryPickMarkup).not.toContain('Abort merge')
-    expect(cherryPickMarkup).not.toContain('Abort rebase')
-  })
+    expect(mergeMarkup).toContain("Abort merge");
+    expect(rebaseMarkup).toContain("Abort rebase");
+    expect(cherryPickMarkup).not.toContain("Abort merge");
+    expect(cherryPickMarkup).not.toContain("Abort rebase");
+  });
 
-  it('renders abort actions with the quiet outline button treatment', () => {
+  it("renders abort actions with the quiet outline button treatment", () => {
     const mergeMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />
-    )
+      <OperationBanner conflictOperation="merge" onAbortOperation={vi.fn()} />,
+    );
     const rebaseMarkup = renderToStaticMarkup(
-      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />
-    )
+      <OperationBanner conflictOperation="rebase" onAbortOperation={vi.fn()} />,
+    );
 
-    expect(buttonContaining(mergeMarkup, 'Abort merge')).toContain('data-variant="outline"')
-    expect(buttonContaining(rebaseMarkup, 'Abort rebase')).toContain('data-variant="outline"')
-  })
-})
+    expect(buttonContaining(mergeMarkup, "Abort merge")).toContain(
+      'data-variant="outline"',
+    );
+    expect(buttonContaining(rebaseMarkup, "Abort rebase")).toContain(
+      'data-variant="outline"',
+    );
+  });
+});

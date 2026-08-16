@@ -1,81 +1,85 @@
-import React, { type ReactNode } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
-import { SourceControlAgentActionDialogForm } from './SourceControlAgentActionDialogForm'
-import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import type { Repo } from '../../../../shared/repo-types'
+import React, { type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { SourceControlAgentActionDialogForm } from "./SourceControlAgentActionDialogForm";
+import type { GlobalSettings } from "../../../../shared/global-settings-types";
+import type { Repo } from "../../../../shared/repo-types";
 
-vi.mock('@/components/agent/AgentCombobox', () => ({
+vi.mock("@/components/agent/AgentCombobox", () => ({
   default: ({
     value,
-    allowBlankTerminal
+    allowBlankTerminal,
   }: {
-    value: string | null
-    allowBlankTerminal?: boolean
+    value: string | null;
+    allowBlankTerminal?: boolean;
   }) =>
-    React.createElement('div', {
-      'data-agent-value': value ?? '',
-      'data-allow-blank': String(allowBlankTerminal === true)
-    })
-}))
+    React.createElement("div", {
+      "data-agent-value": value ?? "",
+      "data-allow-blank": String(allowBlankTerminal === true),
+    }),
+}));
 
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock("@/components/ui/dialog", () => ({
   DialogFooter: ({ children }: { children?: ReactNode }) =>
-    React.createElement('div', null, children)
-}))
+    React.createElement("div", null, children),
+}));
 
-vi.mock('@/components/ui/select', () => ({
-  Select: ({ children }: { children?: ReactNode }) => React.createElement('div', null, children),
+vi.mock("@/components/ui/select", () => ({
+  Select: ({ children }: { children?: ReactNode }) =>
+    React.createElement("div", null, children),
   SelectContent: ({ children }: { children?: ReactNode }) =>
-    React.createElement('div', null, children),
+    React.createElement("div", null, children),
   SelectItem: ({ children, value }: { children?: ReactNode; value: string }) =>
-    React.createElement('div', { 'data-select-item': value }, children),
+    React.createElement("div", { "data-select-item": value }, children),
   SelectTrigger: ({ children }: { children?: ReactNode }) =>
-    React.createElement('button', null, children),
-  SelectValue: () => React.createElement('span')
-}))
+    React.createElement("button", null, children),
+  SelectValue: () => React.createElement("span"),
+}));
 
-vi.mock('../source-control/SourceControlActionVariableChips', () => ({
+vi.mock("../source-control/SourceControlActionVariableChips", () => ({
   SourceControlActionVariableChips: ({
-    variablePreviews
+    variablePreviews,
   }: {
-    variablePreviews?: Partial<Record<string, string>>
+    variablePreviews?: Partial<Record<string, string>>;
   }) =>
-    React.createElement('div', {
-      'data-variable-previews': JSON.stringify(variablePreviews ?? {})
-    })
-}))
+    React.createElement("div", {
+      "data-variable-previews": JSON.stringify(variablePreviews ?? {}),
+    }),
+}));
 
 function renderForm(
-  overrides: Partial<React.ComponentProps<typeof SourceControlAgentActionDialogForm>> = {}
+  overrides: Partial<
+    React.ComponentProps<typeof SourceControlAgentActionDialogForm>
+  > = {},
 ): string {
   return renderToStaticMarkup(
     React.createElement(SourceControlAgentActionDialogForm, {
-      actionId: 'resolveConflicts',
-      baseCommandInput: 'Resolve the merge conflicts reported for this pull request.',
+      actionId: "resolveConflicts",
+      baseCommandInput:
+        "Resolve the merge conflicts reported for this pull request.",
       agentScopeNote: null,
       agentOptions: [],
-      selectedAgent: 'codex',
+      selectedAgent: "codex",
       hasEnabledAgents: true,
       detecting: false,
       statusCopy: null,
-      agentArgs: '',
+      agentArgs: "",
       agentArgsApply: true,
-      commandTemplate: '{basePrompt}',
-      savedCommandInputTemplate: '{basePrompt}',
+      commandTemplate: "{basePrompt}",
+      savedCommandInputTemplate: "{basePrompt}",
       saveLaunchRecipe: true,
-      saveTargetValue: 'global',
+      saveTargetValue: "global",
       saveTargets: [
-        { value: 'none', label: "Don't save" },
-        { value: 'global', label: 'All repositories' }
+        { value: "none", label: "Don't save" },
+        { value: "global", label: "All repositories" },
       ],
       settings: null,
       repo: null,
       canSaveAgentDefault: true,
-      deliveryPlan: { status: 'idle' },
+      deliveryPlan: { status: "idle" },
       canStart: true,
       isStarting: false,
-      startLabel: 'Start agent',
+      startLabel: "Start agent",
       onSelectedAgentChange: () => {},
       onAgentArgsChange: () => {},
       onCommandTemplateChange: () => {},
@@ -83,112 +87,120 @@ function renderForm(
       onSaveAgentDefaultChange: () => {},
       onCancel: () => {},
       onStart: () => {},
-      ...overrides
-    })
-  )
+      ...overrides,
+    }),
+  );
 }
 
 function settingsWithSavedGlobalRecipe(): GlobalSettings {
   return {
     sourceControlAi: {
       enabled: true,
-      agentId: 'codex',
+      agentId: "codex",
       selectedModelByAgent: {},
       selectedThinkingByModel: {},
-      customAgentCommand: '',
+      customAgentCommand: "",
       instructionsByOperation: {},
       actions: {
         resolveConflicts: {
-          agentId: 'codex',
-          commandInputTemplate: '{basePrompt}'
-        }
-      }
-    }
-  } as unknown as GlobalSettings
+          agentId: "codex",
+          commandInputTemplate: "{basePrompt}",
+        },
+      },
+    },
+  } as unknown as GlobalSettings;
 }
 
 const repoWithoutSavedRecipe = {
-  id: 'repo-1',
-  sourceControlAi: { enabled: true }
-} satisfies Pick<Repo, 'id' | 'sourceControlAi'>
+  id: "repo-1",
+  sourceControlAi: { enabled: true },
+} satisfies Pick<Repo, "id" | "sourceControlAi">;
 
-describe('SourceControlAgentActionDialogForm', () => {
-  it('passes the base prompt preview to the variable chip hover content', () => {
-    const markup = renderForm()
+describe("SourceControlAgentActionDialogForm", () => {
+  it("passes the base prompt preview to the variable chip hover content", () => {
+    const markup = renderForm();
 
-    expect(markup).toContain('Resolve the merge conflicts reported for this pull request.')
-  })
+    expect(markup).toContain(
+      "Resolve the merge conflicts reported for this pull request.",
+    );
+  });
 
-  it('offers agents only, since an action cannot start without one', () => {
-    expect(renderForm()).toContain('data-allow-blank="false"')
-  })
+  it("offers agents only, since an action cannot start without one", () => {
+    expect(renderForm()).toContain('data-allow-blank="false"');
+  });
 
-  it('checks already-saved copy against the selected save target', () => {
-    const settings = settingsWithSavedGlobalRecipe()
+  it("checks already-saved copy against the selected save target", () => {
+    const settings = settingsWithSavedGlobalRecipe();
     const saveTargets = [
-      { value: 'none', label: "Don't save" },
-      { value: 'repo', label: 'This repository' },
-      { value: 'global', label: 'All repositories' }
-    ]
+      { value: "none", label: "Don't save" },
+      { value: "repo", label: "This repository" },
+      { value: "global", label: "All repositories" },
+    ];
 
     const globalMarkup = renderForm({
       settings,
       repo: repoWithoutSavedRecipe,
       saveTargets,
-      saveTargetValue: 'global'
-    })
+      saveTargetValue: "global",
+    });
     const repoMarkup = renderForm({
       settings,
       repo: repoWithoutSavedRecipe,
       saveTargets,
-      saveTargetValue: 'repo'
-    })
+      saveTargetValue: "repo",
+    });
 
-    expect(globalMarkup).toContain('Launch recipe already saved')
-    expect(globalMarkup).not.toContain('Save &amp; start agent')
-    expect(repoMarkup).not.toContain('Launch recipe already saved')
-    expect(repoMarkup).toContain('Save &amp; start agent')
-  })
+    expect(globalMarkup).toContain("Launch recipe already saved");
+    expect(globalMarkup).not.toContain("Save &amp; start agent");
+    expect(repoMarkup).not.toContain("Launch recipe already saved");
+    expect(repoMarkup).toContain("Save &amp; start agent");
+  });
 
-  it('surfaces a diverging repo override alongside the save controls', () => {
+  it("surfaces a diverging repo override alongside the save controls", () => {
     const markup = renderForm({
-      agentScopeNote: { effectiveAgentLabel: 'Codex', globalAgentLabel: 'Claude' }
-    })
+      agentScopeNote: {
+        effectiveAgentLabel: "Codex",
+        globalAgentLabel: "Claude",
+      },
+    });
 
-    expect(markup).toContain('overrides your global default (Claude)')
-    expect(markup).toContain('currently runs Codex')
-  })
+    expect(markup).toContain("overrides your global default (Claude)");
+    expect(markup).toContain("currently runs Codex");
+  });
 
-  it('omits the scope note when there is no diverging repo override', () => {
-    const markup = renderForm({ agentScopeNote: null })
+  it("omits the scope note when there is no diverging repo override", () => {
+    const markup = renderForm({ agentScopeNote: null });
 
-    expect(markup).not.toContain('overrides your global default')
-  })
+    expect(markup).not.toContain("overrides your global default");
+  });
 
-  it('omits the scope note when the save controls are hidden', () => {
+  it("omits the scope note when the save controls are hidden", () => {
     const markup = renderForm({
-      agentScopeNote: { effectiveAgentLabel: 'Codex', globalAgentLabel: 'Claude' },
-      canSaveAgentDefault: false
-    })
+      agentScopeNote: {
+        effectiveAgentLabel: "Codex",
+        globalAgentLabel: "Claude",
+      },
+      canSaveAgentDefault: false,
+    });
 
-    expect(markup).not.toContain('overrides your global default')
-  })
-})
+    expect(markup).not.toContain("overrides your global default");
+  });
+});
 
-describe('CLI arguments field applicability', () => {
-  it('offers the field when the launch would apply the arguments', () => {
-    const markup = renderForm({ agentArgsApply: true })
+describe("CLI arguments field applicability", () => {
+  it("offers the field when the launch would apply the arguments", () => {
+    const markup = renderForm({ agentArgsApply: true });
 
-    expect(markup).toContain('source-control-agent-cli-args')
-    expect(markup).toContain('CLI arguments')
-  })
+    expect(markup).toContain("source-control-agent-cli-args");
+    expect(markup).toContain("CLI arguments");
+  });
 
   // Why: absent, not disabled — a structured native chat session reads no CLI arguments,
   // so the dialog must not show a control that launch would drop.
-  it('leaves the field out entirely when they would not apply', () => {
-    const markup = renderForm({ agentArgsApply: false })
+  it("leaves the field out entirely when they would not apply", () => {
+    const markup = renderForm({ agentArgsApply: false });
 
-    expect(markup).not.toContain('source-control-agent-cli-args')
-    expect(markup).not.toContain('CLI arguments')
-  })
-})
+    expect(markup).not.toContain("source-control-agent-cli-args");
+    expect(markup).not.toContain("CLI arguments");
+  });
+});

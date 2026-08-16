@@ -1,8 +1,8 @@
-import React from 'react'
-import { ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { WorkspacePort } from '../../../../shared/workspace-ports'
-import { LocalPortRow } from './local-port-row'
+import React from "react";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { WorkspacePort } from "../../../../shared/workspace-ports";
+import { LocalPortRow } from "./local-port-row";
 
 export function LocalPortSection({
   id,
@@ -13,20 +13,23 @@ export function LocalPortSection({
   onToggle,
   onStopPort,
   onShowDetails,
-  onOpenInBrowser
+  onOpenInBrowser,
 }: {
-  id: string
-  title: string
-  ports: WorkspacePort[]
-  emptyText?: string
-  collapsed: boolean
-  onToggle: () => void
-  onStopPort: (port: WorkspacePort) => void
-  onShowDetails: (port: WorkspacePort) => void
-  onOpenInBrowser?: (port: WorkspacePort, event?: React.MouseEvent<HTMLButtonElement>) => void
+  id: string;
+  title: string;
+  ports: WorkspacePort[];
+  emptyText?: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  onStopPort: (port: WorkspacePort) => void;
+  onShowDetails: (port: WorkspacePort) => void;
+  onOpenInBrowser?: (
+    port: WorkspacePort,
+    event?: React.MouseEvent<HTMLButtonElement>,
+  ) => void;
 }): React.JSX.Element | null {
   if (ports.length === 0 && !emptyText) {
-    return null
+    return null;
   }
 
   return (
@@ -40,13 +43,18 @@ export function LocalPortSection({
       >
         <ChevronRight
           size={12}
-          className={cn('shrink-0 transition-transform', !collapsed && 'rotate-90')}
+          className={cn(
+            "shrink-0 transition-transform",
+            !collapsed && "rotate-90",
+          )}
         />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
         {ports.length > 0 && (
-          <span className="text-[10px] text-muted-foreground/60 ml-1">{ports.length}</span>
+          <span className="text-[10px] text-muted-foreground/60 ml-1">
+            {ports.length}
+          </span>
         )}
       </button>
       {!collapsed && (
@@ -61,9 +69,13 @@ export function LocalPortSection({
                   onOpenInBrowser={onOpenInBrowser}
                 />
               ))
-            : emptyText && <div className="py-1 text-xs text-muted-foreground">{emptyText}</div>}
+            : emptyText && (
+                <div className="py-1 text-xs text-muted-foreground">
+                  {emptyText}
+                </div>
+              )}
         </div>
       )}
     </div>
-  )
+  );
 }

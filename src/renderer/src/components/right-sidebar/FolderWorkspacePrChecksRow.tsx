@@ -1,59 +1,68 @@
-import { ChevronRight, ExternalLink, GitMerge } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
-import { openHttpLink } from '@/lib/http-link-routing'
-import { translate } from '@/i18n/i18n'
-import type { PRCheckDetail, PRCheckRunDetails } from '../../../../shared/github/check-types'
+import { ChevronRight, ExternalLink, GitMerge } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { openHttpLink } from "@/lib/http-link-routing";
+import { translate } from "@/i18n/i18n";
+import type {
+  PRCheckDetail,
+  PRCheckRunDetails,
+} from "../../../../shared/github/check-types";
 import {
   CHECK_COLOR,
   CHECK_ICON,
   prStateColor,
-  PullRequestIcon
-} from './checks-panel/check-presentation'
-import { ChecksList } from './checks-panel/checks-list'
-import type { ParentPrChecksRow } from './parent-pr-checks-row-types'
+  PullRequestIcon,
+} from "./checks-panel/check-presentation";
+import { ChecksList } from "./checks-panel/checks-list";
+import type { ParentPrChecksRow } from "./parent-pr-checks-row-types";
 
 type FolderWorkspacePrChecksRowProps = {
-  row: ParentPrChecksRow
-  expanded: boolean
-  onToggle: () => void
-  onLoadCheckDetails: (check: PRCheckDetail) => Promise<PRCheckRunDetails | null>
-}
+  row: ParentPrChecksRow;
+  expanded: boolean;
+  onToggle: () => void;
+  onLoadCheckDetails: (
+    check: PRCheckDetail,
+  ) => Promise<PRCheckRunDetails | null>;
+};
 
 export function FolderWorkspacePrChecksRow({
   row,
   expanded,
   onToggle,
-  onLoadCheckDetails
+  onLoadCheckDetails,
 }: FolderWorkspacePrChecksRowProps): React.JSX.Element {
-  const ReviewIcon = row.provider === 'gitlab' ? GitMerge : PullRequestIcon
-  const StatusIcon = CHECK_ICON[row.checkTone] ?? CHECK_ICON.neutral
+  const ReviewIcon = row.provider === "gitlab" ? GitMerge : PullRequestIcon;
+  const StatusIcon = CHECK_ICON[row.checkTone] ?? CHECK_ICON.neutral;
   // Why: match the regular PR checks header; the review identity leads,
   // while aggregate check state stays with the summary metadata.
-  const showStatusIcon = row.checkTone !== 'neutral'
-  const animateStatusIcon = row.checkTone === 'pending'
-  const reviewProviderLabel = row.provider === 'gitlab' ? 'MR' : 'PR'
+  const showStatusIcon = row.checkTone !== "neutral";
+  const animateStatusIcon = row.checkTone === "pending";
+  const reviewProviderLabel = row.provider === "gitlab" ? "MR" : "PR";
   const toggleDetailsLabel = expanded
     ? translate(
-        'auto.components.rightSidebar.FolderWorkspacePrChecksPanel.hideDetails',
-        'Hide {{value0}} PR check details',
-        { value0: row.worktree.displayName }
+        "auto.components.rightSidebar.FolderWorkspacePrChecksPanel.hideDetails",
+        "Hide {{value0}} PR check details",
+        { value0: row.worktree.displayName },
       )
     : translate(
-        'auto.components.rightSidebar.FolderWorkspacePrChecksPanel.showDetails',
-        'Show {{value0}} PR check details',
-        { value0: row.worktree.displayName }
-      )
+        "auto.components.rightSidebar.FolderWorkspacePrChecksPanel.showDetails",
+        "Show {{value0}} PR check details",
+        { value0: row.worktree.displayName },
+      );
   const openExternalLabel = translate(
-    'auto.components.rightSidebar.FolderWorkspacePrChecksPanel.openReviewExternally',
-    'Open {{value0}} externally',
-    { value0: reviewProviderLabel }
-  )
+    "auto.components.rightSidebar.FolderWorkspacePrChecksPanel.openReviewExternally",
+    "Open {{value0}} externally",
+    { value0: reviewProviderLabel },
+  );
   return (
     <div
       className={cn(
-        'group rounded-md border border-transparent',
-        expanded ? 'border-border bg-card' : 'hover:bg-accent'
+        "group rounded-md border border-transparent",
+        expanded ? "border-border bg-card" : "hover:bg-accent",
       )}
     >
       <div
@@ -62,42 +71,48 @@ export function FolderWorkspacePrChecksRow({
         className="flex w-full min-w-0 items-start gap-2 rounded-md px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         onClick={onToggle}
         onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') {
-            return
+          if (event.key !== "Enter" && event.key !== " ") {
+            return;
           }
-          event.preventDefault()
-          onToggle()
+          event.preventDefault();
+          onToggle();
         }}
         aria-expanded={expanded}
         aria-label={toggleDetailsLabel}
       >
         <ChevronRight
           className={cn(
-            'mt-0.5 size-3 shrink-0 text-muted-foreground transition-transform',
-            expanded && 'rotate-90'
+            "mt-0.5 size-3 shrink-0 text-muted-foreground transition-transform",
+            expanded && "rotate-90",
           )}
         />
         <ReviewIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <PrChecksRowHeader row={row} />
-          <div className="mt-1 truncate text-[12px] text-foreground/90">{row.title}</div>
+          <div className="mt-1 truncate text-[12px] text-foreground/90">
+            {row.title}
+          </div>
           <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
             {showStatusIcon ? (
               <StatusIcon
                 className={cn(
-                  'size-3 shrink-0',
+                  "size-3 shrink-0",
                   CHECK_COLOR[row.checkTone],
-                  animateStatusIcon && 'animate-spin'
+                  animateStatusIcon && "animate-spin",
                 )}
               />
             ) : null}
             <span className="truncate">{row.summary}</span>
-            {row.repo ? <span className="shrink-0">· {row.repo.displayName}</span> : null}
-            {row.branch ? <span className="truncate">· {row.branch}</span> : null}
+            {row.repo ? (
+              <span className="shrink-0">· {row.repo.displayName}</span>
+            ) : null}
+            {row.branch ? (
+              <span className="truncate">· {row.branch}</span>
+            ) : null}
           </div>
           {row.detailNames.length > 0 ? (
             <div className="mt-1 truncate text-[11px] text-muted-foreground">
-              {row.detailNames.join(', ')}
+              {row.detailNames.join(", ")}
             </div>
           ) : null}
         </div>
@@ -109,8 +124,8 @@ export function FolderWorkspacePrChecksRow({
                 className="rounded p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground group-hover:opacity-100"
                 aria-label={openExternalLabel}
                 onClick={(event) => {
-                  event.stopPropagation()
-                  void openHttpLink(row.reviewUrl!)
+                  event.stopPropagation();
+                  void openHttpLink(row.reviewUrl!);
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
               >
@@ -135,10 +150,14 @@ export function FolderWorkspacePrChecksRow({
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
-function PrChecksRowHeader({ row }: { row: ParentPrChecksRow }): React.JSX.Element {
+function PrChecksRowHeader({
+  row,
+}: {
+  row: ParentPrChecksRow;
+}): React.JSX.Element {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <span className="truncate text-[13px] font-medium text-foreground">
@@ -152,13 +171,13 @@ function PrChecksRowHeader({ row }: { row: ParentPrChecksRow }): React.JSX.Eleme
       {row.reviewState ? (
         <span
           className={cn(
-            'shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
-            prStateColor(row.reviewState)
+            "shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
+            prStateColor(row.reviewState),
           )}
         >
           {row.reviewState}
         </span>
       ) : null}
     </div>
-  )
+  );
 }

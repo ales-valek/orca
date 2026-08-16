@@ -1,43 +1,48 @@
-import type React from 'react'
+import type React from "react";
 import {
   ChevronDown,
   LocateFixed,
   MessageSquarePlus,
   MoreHorizontal,
   PanelTopOpen,
-  Play
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+  Play,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
-import type { AiVaultSession } from '../../../../shared/ai-vault-types'
-import { agentLabel } from './ai-vault-session-filters'
-import { translate } from '@/i18n/i18n'
-import { SessionActionMenuItems } from './AiVaultSessionActionMenuItems'
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import type { AiVaultSession } from "../../../../shared/ai-vault-types";
+import { agentLabel } from "./ai-vault-session-filters";
+import { translate } from "@/i18n/i18n";
+import { SessionActionMenuItems } from "./AiVaultSessionActionMenuItems";
 import {
   aiVaultWorktreeJumpTooltip,
-  type AiVaultSessionWorktreeInfo
-} from './ai-vault-session-worktree'
+  type AiVaultSessionWorktreeInfo,
+} from "./ai-vault-session-worktree";
 
 // Why: hover-only actions live on the title row and collapse on hover-capable
 // devices so the prompt keeps the full width until the row is hovered.
 // Layout and animation classes for the hover-reveal group.
-const HOVER_ACTION_GROUP_BASE = 'flex items-center gap-1 transition-[max-width,margin,opacity]'
+const HOVER_ACTION_GROUP_BASE =
+  "flex items-center gap-1 transition-[max-width,margin,opacity]";
 
 // Touch devices: always visible. Hover-capable devices: collapsed until hovered.
 const HOVER_ACTION_GROUP_COLLAPSED =
-  'can-hover:max-w-0 can-hover:-ml-1 can-hover:overflow-hidden can-hover:opacity-0 [@media(hover:none)]:opacity-100'
+  "can-hover:max-w-0 can-hover:-ml-1 can-hover:overflow-hidden can-hover:opacity-0 [@media(hover:none)]:opacity-100";
 
 // Revealed state on hover or focus-within.
 const HOVER_ACTION_GROUP_REVEALED =
-  'group-hover/session-row:max-w-none group-hover/session-row:ml-0 group-hover/session-row:overflow-visible group-hover/session-row:opacity-100 group-focus-within/session-row:max-w-none group-focus-within/session-row:ml-0 group-focus-within/session-row:overflow-visible group-focus-within/session-row:opacity-100'
+  "group-hover/session-row:max-w-none group-hover/session-row:ml-0 group-hover/session-row:overflow-visible group-hover/session-row:opacity-100 group-focus-within/session-row:max-w-none group-focus-within/session-row:ml-0 group-focus-within/session-row:overflow-visible group-focus-within/session-row:opacity-100";
 
-const HOVER_ACTION_GROUP_CLASS = `${HOVER_ACTION_GROUP_BASE} ${HOVER_ACTION_GROUP_COLLAPSED} ${HOVER_ACTION_GROUP_REVEALED}`
+const HOVER_ACTION_GROUP_CLASS = `${HOVER_ACTION_GROUP_BASE} ${HOVER_ACTION_GROUP_COLLAPSED} ${HOVER_ACTION_GROUP_REVEALED}`;
 
 export function SessionRowTrailingActions({
   session,
@@ -63,36 +68,36 @@ export function SessionRowTrailingActions({
   onRevealLog,
   onOpenCwd,
   deleteBlockedReason,
-  onRequestDelete
+  onRequestDelete,
 }: {
-  session: AiVaultSession
-  detailsExpanded: boolean
-  detailsId: string
-  detailsTooltip: string
-  resumeDisabled: boolean
-  resumeHidden?: boolean
-  resumeLabel: string
-  worktreeInfo: AiVaultSessionWorktreeInfo | null
-  onToggleDetails: () => void
-  onJumpToOriginalPane?: () => void
-  showJumpToWorktree: boolean
-  onJumpToWorktree?: () => void
-  onResume: () => void
-  onContinueInNewSession?: () => void
+  session: AiVaultSession;
+  detailsExpanded: boolean;
+  detailsId: string;
+  detailsTooltip: string;
+  resumeDisabled: boolean;
+  resumeHidden?: boolean;
+  resumeLabel: string;
+  worktreeInfo: AiVaultSessionWorktreeInfo | null;
+  onToggleDetails: () => void;
+  onJumpToOriginalPane?: () => void;
+  showJumpToWorktree: boolean;
+  onJumpToWorktree?: () => void;
+  onResume: () => void;
+  onContinueInNewSession?: () => void;
   /** Passed through to the overflow menu only; the resting row keeps its two-icon budget. */
-  onResumeInNewChat?: () => void
-  onResumeInNewCli?: () => void
-  onCopyResume?: () => void
-  onCopyId: () => void
-  onCopyPath?: () => void
-  onOpenLog?: () => void
-  onRevealLog?: () => void
-  onOpenCwd?: () => void
+  onResumeInNewChat?: () => void;
+  onResumeInNewCli?: () => void;
+  onCopyResume?: () => void;
+  onCopyId: () => void;
+  onCopyPath?: () => void;
+  onOpenLog?: () => void;
+  onRevealLog?: () => void;
+  onOpenCwd?: () => void;
   // Null when Delete is offered; otherwise the tooltip explaining why it isn't.
-  deleteBlockedReason: string | null
-  onRequestDelete?: () => void
+  deleteBlockedReason: string | null;
+  onRequestDelete?: () => void;
 }) {
-  const jumpToWorktreeTooltip = aiVaultWorktreeJumpTooltip(worktreeInfo)
+  const jumpToWorktreeTooltip = aiVaultWorktreeJumpTooltip(worktreeInfo);
 
   return (
     <div
@@ -110,13 +115,13 @@ export function SessionRowTrailingActions({
                 variant="ghost"
                 size="icon-xs"
                 aria-label={translate(
-                  'auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane',
-                  'Jump to Original Pane'
+                  "auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane",
+                  "Jump to Original Pane",
                 )}
                 draggable={false}
                 onClick={(event) => {
-                  event.stopPropagation()
-                  onJumpToOriginalPane()
+                  event.stopPropagation();
+                  onJumpToOriginalPane();
                 }}
                 data-testid="ai-vault-session-jump-original-pane"
                 className="can-hover:pointer-events-none group-hover/session-row:pointer-events-auto group-focus-within/session-row:pointer-events-auto focus-visible:pointer-events-auto"
@@ -126,8 +131,8 @@ export function SessionRowTrailingActions({
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
               {translate(
-                'auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane',
-                'Jump to Original Pane'
+                "auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane",
+                "Jump to Original Pane",
               )}
             </TooltipContent>
           </Tooltip>
@@ -155,8 +160,8 @@ export function SessionRowTrailingActions({
                 disabled={resumeDisabled}
                 draggable={false}
                 onClick={(event) => {
-                  event.stopPropagation()
-                  onResume()
+                  event.stopPropagation();
+                  onResume();
                 }}
                 data-testid="ai-vault-session-resume"
                 // Why: on touch (no hover) these controls stay visible and
@@ -180,13 +185,13 @@ export function SessionRowTrailingActions({
                 variant="ghost"
                 size="icon-xs"
                 aria-label={translate(
-                  'components.agentSessionContinuation.handOffToAnotherAgent',
-                  'Hand Off to Another Agent'
+                  "components.agentSessionContinuation.handOffToAnotherAgent",
+                  "Hand Off to Another Agent",
                 )}
                 draggable={false}
                 onClick={(event) => {
-                  event.stopPropagation()
-                  onContinueInNewSession()
+                  event.stopPropagation();
+                  onContinueInNewSession();
                 }}
                 data-testid="ai-vault-session-continue-in-new-session"
                 className="can-hover:pointer-events-none group-hover/session-row:pointer-events-auto group-focus-within/session-row:pointer-events-auto focus-visible:pointer-events-auto"
@@ -196,8 +201,8 @@ export function SessionRowTrailingActions({
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
               {translate(
-                'components.agentSessionContinuation.handOffToAnotherAgent',
-                'Hand Off to Another Agent'
+                "components.agentSessionContinuation.handOffToAnotherAgent",
+                "Hand Off to Another Agent",
               )}
             </TooltipContent>
           </Tooltip>
@@ -210,21 +215,24 @@ export function SessionRowTrailingActions({
             variant="ghost"
             size="icon-xs"
             aria-label={translate(
-              'auto.components.right.sidebar.AiVaultSessionRow.toggleSessionDetails',
-              '{{value0}} session details',
-              { value0: agentLabel(session.agent) }
+              "auto.components.right.sidebar.AiVaultSessionRow.toggleSessionDetails",
+              "{{value0}} session details",
+              { value0: agentLabel(session.agent) },
             )}
             aria-expanded={detailsExpanded}
             aria-controls={detailsId}
             draggable={false}
             onClick={(event) => {
-              event.stopPropagation()
-              onToggleDetails()
+              event.stopPropagation();
+              onToggleDetails();
             }}
             data-testid="ai-vault-session-toggle-details"
           >
             <ChevronDown
-              className={cn('size-3.5 transition-transform', detailsExpanded && 'rotate-180')}
+              className={cn(
+                "size-3.5 transition-transform",
+                detailsExpanded && "rotate-180",
+              )}
             />
           </Button>
         </TooltipTrigger>
@@ -241,8 +249,8 @@ export function SessionRowTrailingActions({
                 variant="ghost"
                 size="icon-xs"
                 aria-label={translate(
-                  'auto.components.right.sidebar.AiVaultSessionRow.moreSessionActions',
-                  'More Session Actions'
+                  "auto.components.right.sidebar.AiVaultSessionRow.moreSessionActions",
+                  "More Session Actions",
                 )}
                 draggable={false}
                 data-testid="ai-vault-session-more-actions"
@@ -254,8 +262,8 @@ export function SessionRowTrailingActions({
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
             {translate(
-              'auto.components.right.sidebar.AiVaultSessionRow.moreActions',
-              'More Actions'
+              "auto.components.right.sidebar.AiVaultSessionRow.moreActions",
+              "More Actions",
             )}
           </TooltipContent>
         </Tooltip>
@@ -284,17 +292,17 @@ export function SessionRowTrailingActions({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }
 
 function WorktreeJumpTooltipTrigger({
   disabled,
   ariaLabel,
-  onJumpToWorktree
+  onJumpToWorktree,
 }: {
-  disabled: boolean
-  ariaLabel: string
-  onJumpToWorktree?: () => void
+  disabled: boolean;
+  ariaLabel: string;
+  onJumpToWorktree?: () => void;
 }): React.JSX.Element {
   const button = (
     <Button
@@ -305,21 +313,21 @@ function WorktreeJumpTooltipTrigger({
       disabled={disabled}
       draggable={false}
       onClick={(event) => {
-        event.stopPropagation()
-        onJumpToWorktree?.()
+        event.stopPropagation();
+        onJumpToWorktree?.();
       }}
       data-testid="ai-vault-session-jump-worktree"
       className={cn(
         !disabled &&
-          'can-hover:pointer-events-none group-hover/session-row:pointer-events-auto group-focus-within/session-row:pointer-events-auto focus-visible:pointer-events-auto'
+          "can-hover:pointer-events-none group-hover/session-row:pointer-events-auto group-focus-within/session-row:pointer-events-auto focus-visible:pointer-events-auto",
       )}
     >
       <PanelTopOpen className="size-3.5" />
     </Button>
-  )
+  );
 
   if (!disabled) {
-    return <TooltipTrigger asChild>{button}</TooltipTrigger>
+    return <TooltipTrigger asChild>{button}</TooltipTrigger>;
   }
 
   return (
@@ -331,5 +339,5 @@ function WorktreeJumpTooltipTrigger({
         {button}
       </span>
     </TooltipTrigger>
-  )
+  );
 }

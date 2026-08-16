@@ -1,19 +1,27 @@
-import React, { useMemo } from 'react'
-import { ChevronRight, Copy } from 'lucide-react'
-import { basename, dirname } from '@/lib/path'
-import { cn } from '@/lib/utils'
-import { getFileTypeIcon } from '@/lib/file-type-icons'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
+import React, { useMemo } from "react";
+import { ChevronRight, Copy } from "lucide-react";
+import { basename, dirname } from "@/lib/path";
+import { cn } from "@/lib/utils";
+import { getFileTypeIcon } from "@/lib/file-type-icons";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
-  ContextMenuItem
-} from '@/components/ui/context-menu'
-import { normalizeSearchFileMatchCount } from '../../../../shared/search-match-count'
-import type { SearchFileResult, SearchMatch } from '../../../../shared/code-search-types'
-import { translate } from '@/i18n/i18n'
+  ContextMenuItem,
+} from "@/components/ui/context-menu";
+import { normalizeSearchFileMatchCount } from "../../../../shared/search-match-count";
+import type {
+  SearchFileResult,
+  SearchMatch,
+} from "../../../../shared/code-search-types";
+import { translate } from "@/i18n/i18n";
 
 // ─── Toggle Button ────────────────────────────────────────
 export function ToggleButton({
@@ -21,13 +29,13 @@ export function ToggleButton({
   onClick,
   title,
   children,
-  ariaExpanded
+  ariaExpanded,
 }: {
-  active: boolean
-  onClick: () => void
-  title: string
-  children: React.ReactNode
-  ariaExpanded?: boolean
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  ariaExpanded?: boolean;
 }): React.JSX.Element {
   return (
     <Button
@@ -35,10 +43,10 @@ export function ToggleButton({
       variant="ghost"
       size="icon-xs"
       className={cn(
-        'h-auto w-auto rounded-sm p-0.5 flex-shrink-0',
+        "h-auto w-auto rounded-sm p-0.5 flex-shrink-0",
         active
-          ? 'bg-accent text-accent-foreground'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
       )}
       onClick={onClick}
       title={title}
@@ -48,24 +56,24 @@ export function ToggleButton({
     >
       {children}
     </Button>
-  )
+  );
 }
 
 // ─── File Result ──────────────────────────────────────────
 export function FileResultRow({
   fileResult,
   onToggleCollapse,
-  collapsed
+  collapsed,
 }: {
-  fileResult: SearchFileResult
-  onToggleCollapse: () => void
-  collapsed: boolean
+  fileResult: SearchFileResult;
+  onToggleCollapse: () => void;
+  collapsed: boolean;
 }): React.JSX.Element {
-  const fileName = basename(fileResult.relativePath)
-  const parentDir = dirname(fileResult.relativePath)
-  const dirPath = parentDir === '.' ? '' : parentDir
-  const FileIcon = getFileTypeIcon(fileResult.relativePath)
-  const matchCount = normalizeSearchFileMatchCount(fileResult)
+  const fileName = basename(fileResult.relativePath);
+  const parentDir = dirname(fileResult.relativePath);
+  const dirPath = parentDir === "." ? "" : parentDir;
+  const FileIcon = getFileTypeIcon(fileResult.relativePath);
+  const matchCount = normalizeSearchFileMatchCount(fileResult);
 
   return (
     <div className="pt-1.5">
@@ -83,18 +91,20 @@ export function FileResultRow({
                 >
                   <ChevronRight
                     className={cn(
-                      'size-3 flex-shrink-0 text-muted-foreground transition-transform',
-                      !collapsed && 'rotate-90'
+                      "size-3 flex-shrink-0 text-muted-foreground transition-transform",
+                      !collapsed && "rotate-90",
                     )}
                   />
                   {React.createElement(FileIcon, {
-                    className: 'size-3.5 flex-shrink-0 text-muted-foreground'
+                    className: "size-3.5 flex-shrink-0 text-muted-foreground",
                   })}
                   <div className="min-w-0 flex-1 text-xs">
                     <span className="min-w-0 block truncate">
                       <span className="text-foreground">{fileName}</span>
                       {dirPath && (
-                        <span className="ml-1.5 text-[11px] text-muted-foreground">{dirPath}</span>
+                        <span className="ml-1.5 text-[11px] text-muted-foreground">
+                          {dirPath}
+                        </span>
                       )}
                     </span>
                   </div>
@@ -106,12 +116,14 @@ export function FileResultRow({
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem
-                onClick={() => window.api.ui.writeClipboardText(fileResult.relativePath)}
+                onClick={() =>
+                  window.api.ui.writeClipboardText(fileResult.relativePath)
+                }
               >
                 <Copy className="size-3.5" />
                 {translate(
-                  'auto.components.right.sidebar.SearchResultItems.3596b9668d',
-                  'Copy Path'
+                  "auto.components.right.sidebar.SearchResultItems.3596b9668d",
+                  "Copy Path",
                 )}
               </ContextMenuItem>
             </ContextMenuContent>
@@ -125,52 +137,52 @@ export function FileResultRow({
         </Tooltip>
       </TooltipProvider>
     </div>
-  )
+  );
 }
 
 // ─── Match Item ───────────────────────────────────────────
 export function MatchResultRow({
   match,
   relativePath,
-  onClick
+  onClick,
 }: {
-  match: SearchMatch
-  relativePath: string
-  onClick: () => void
+  match: SearchMatch;
+  relativePath: string;
+  onClick: () => void;
 }): React.JSX.Element {
   // Highlight the matched text within the line
   const parts = useMemo(() => {
-    const content = match.lineContent
-    const col = (match.displayColumn ?? match.column) - 1 // convert to 0-indexed
-    const len = match.displayMatchLength ?? match.matchLength
+    const content = match.lineContent;
+    const col = (match.displayColumn ?? match.column) - 1; // convert to 0-indexed
+    const len = match.displayMatchLength ?? match.matchLength;
 
     if (col >= 0 && col + len <= content.length) {
       // Why: left-truncate the pre-match text so the highlight stays visible at
       // narrow sidebar widths. Without this, a long `before` pushes the match
       // off the right edge even with overflow ellipsis. Mirrors VS Code's
       // search view (see searchTreeModel/match.ts#preview → lcut).
-      const BEFORE_MAX = 26
-      const rawBefore = content.slice(0, col).trimStart()
+      const BEFORE_MAX = 26;
+      const rawBefore = content.slice(0, col).trimStart();
       const before =
         rawBefore.length > BEFORE_MAX
           ? `…${rawBefore.slice(rawBefore.length - BEFORE_MAX)}`
-          : rawBefore
+          : rawBefore;
       return {
         before,
         match: content.slice(col, col + len),
-        after: content.slice(col + len)
-      }
+        after: content.slice(col + len),
+      };
     }
 
     // Fallback
-    return { before: content, match: '', after: '' }
+    return { before: content, match: "", after: "" };
   }, [
     match.lineContent,
     match.column,
     match.matchLength,
     match.displayColumn,
-    match.displayMatchLength
-  ])
+    match.displayMatchLength,
+  ]);
 
   return (
     <ContextMenu>
@@ -184,7 +196,7 @@ export function MatchResultRow({
             // If the sidebar button takes focus first, the browser can restore
             // it after the click and make the initial reveal feel flaky.
             if (event.button === 0) {
-              event.preventDefault()
+              event.preventDefault();
             }
           }}
           onClick={onClick}
@@ -193,27 +205,33 @@ export function MatchResultRow({
             {match.line}
           </span>
           <span className="text-xs flex min-w-0 items-baseline whitespace-pre">
-            <span className="text-muted-foreground flex-shrink-0">{parts.before}</span>
+            <span className="text-muted-foreground flex-shrink-0">
+              {parts.before}
+            </span>
             {parts.match && (
               <span className="bg-amber-500/30 text-foreground rounded-sm flex-shrink-0">
                 {parts.match}
               </span>
             )}
-            <span className="text-muted-foreground min-w-0 truncate">{parts.after}</span>
+            <span className="text-muted-foreground min-w-0 truncate">
+              {parts.after}
+            </span>
           </span>
         </Button>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem
-          onClick={() => window.api.ui.writeClipboardText(`${relativePath}#L${match.line}`)}
+          onClick={() =>
+            window.api.ui.writeClipboardText(`${relativePath}#L${match.line}`)
+          }
         >
           <Copy className="size-3.5" />
           {translate(
-            'auto.components.right.sidebar.SearchResultItems.cc06595a3b',
-            'Copy Line Path'
+            "auto.components.right.sidebar.SearchResultItems.cc06595a3b",
+            "Copy Line Path",
           )}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  )
+  );
 }

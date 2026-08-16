@@ -1,24 +1,31 @@
-import { ImeInput } from '@/lib/ime-text-field'
-import React from 'react'
-import { Search as SearchIcon, CaseSensitive, WholeWord, Regex, X, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ToggleButton } from './SearchResultItems'
-import { translate } from '@/i18n/i18n'
+import { ImeInput } from "@/lib/ime-text-field";
+import React from "react";
+import {
+  Search as SearchIcon,
+  CaseSensitive,
+  WholeWord,
+  Regex,
+  X,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ToggleButton } from "./SearchResultItems";
+import { translate } from "@/i18n/i18n";
 
 export type SearchQueryRowProps = {
-  inputRef: React.Ref<HTMLInputElement>
-  query: string
-  loading: boolean
-  caseSensitive: boolean
-  wholeWord: boolean
-  useRegex: boolean
-  onQueryChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-  onClearSearch: () => void
-  onToggleCaseSensitive: () => void
-  onToggleWholeWord: () => void
-  onToggleRegex: () => void
-}
+  inputRef: React.Ref<HTMLInputElement>;
+  query: string;
+  loading: boolean;
+  caseSensitive: boolean;
+  wholeWord: boolean;
+  useRegex: boolean;
+  onQueryChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  onClearSearch: () => void;
+  onToggleCaseSensitive: () => void;
+  onToggleWholeWord: () => void;
+  onToggleRegex: () => void;
+};
 
 export function SearchQueryRow({
   inputRef,
@@ -32,7 +39,7 @@ export function SearchQueryRow({
   onClearSearch,
   onToggleCaseSensitive,
   onToggleWholeWord,
-  onToggleRegex
+  onToggleRegex,
 }: SearchQueryRowProps): React.JSX.Element {
   return (
     <div
@@ -46,16 +53,21 @@ export function SearchQueryRow({
         data-file-search-input="true"
         className="min-w-0 flex-1 bg-transparent py-1 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
         aria-label={translate(
-          'auto.components.right.sidebar.SearchQueryRow.queryLabel',
-          'Search files'
+          "auto.components.right.sidebar.SearchQueryRow.queryLabel",
+          "Search files",
         )}
-        placeholder={translate('auto.components.right.sidebar.SearchHeader.693cbeadd0', 'Search')}
+        placeholder={translate(
+          "auto.components.right.sidebar.SearchHeader.693cbeadd0",
+          "Search",
+        )}
         value={query}
         onChange={onQueryChange}
         onKeyDown={onKeyDown}
         spellCheck={false}
       />
-      {loading ? <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" /> : null}
+      {loading ? (
+        <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
+      ) : null}
       {query ? (
         <Button
           type="button"
@@ -63,8 +75,8 @@ export function SearchQueryRow({
           size="icon-xs"
           className="h-auto w-auto rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
           aria-label={translate(
-            'auto.components.right.sidebar.SearchQueryRow.clearLabel',
-            'Clear search'
+            "auto.components.right.sidebar.SearchQueryRow.clearLabel",
+            "Clear search",
           )}
           onClick={onClearSearch}
         >
@@ -74,7 +86,10 @@ export function SearchQueryRow({
       <ToggleButton
         active={caseSensitive}
         onClick={onToggleCaseSensitive}
-        title={translate('auto.components.right.sidebar.SearchHeader.464ae3974f', 'Match Case')}
+        title={translate(
+          "auto.components.right.sidebar.SearchHeader.464ae3974f",
+          "Match Case",
+        )}
       >
         <CaseSensitive className="size-3.5" />
       </ToggleButton>
@@ -82,8 +97,8 @@ export function SearchQueryRow({
         active={wholeWord}
         onClick={onToggleWholeWord}
         title={translate(
-          'auto.components.right.sidebar.SearchHeader.4567e6e0b6',
-          'Match Whole Word'
+          "auto.components.right.sidebar.SearchHeader.4567e6e0b6",
+          "Match Whole Word",
         )}
       >
         <WholeWord className="size-3.5" />
@@ -92,12 +107,12 @@ export function SearchQueryRow({
         active={useRegex}
         onClick={onToggleRegex}
         title={translate(
-          'auto.components.right.sidebar.SearchHeader.6234a5ef85',
-          'Use Regular Expression'
+          "auto.components.right.sidebar.SearchHeader.6234a5ef85",
+          "Use Regular Expression",
         )}
       >
         <Regex className="size-3.5" />
       </ToggleButton>
     </div>
-  )
+  );
 }

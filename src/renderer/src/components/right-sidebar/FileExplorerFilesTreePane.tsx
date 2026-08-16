@@ -1,46 +1,50 @@
-import type React from 'react'
-import { getExplorerDisplayDepth } from './file-explorer-display-root'
-import { Button } from '@/components/ui/button'
-import { dirname } from '@/lib/path'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
-import { translate } from '@/i18n/i18n'
-import type { RuntimeFileListState } from '@/components/quick-open-file-list'
-import type { Repo } from '../../../../shared/repo-types'
-import type { RightSidebarExplorerView } from '../../../../shared/ui-chrome-types'
-import { FileExplorerTreeStatus } from './FileExplorerTreeStatus'
-import { FileExplorerVirtualRows } from './FileExplorerVirtualRows'
-import { canShowAddAsProjectAction } from './file-explorer-add-project-action'
-import type { FileExplorerNameFilterProjectionSource } from './file-explorer-name-filter-projection'
-import type { FileExplorerRowProjection } from './file-explorer-row-projection'
-import type { useFileExplorerSelection } from './useFileExplorerSelection'
-import type { useFileExplorerTree } from './useFileExplorerTree'
-import type { useFileExplorerTreePaneState } from './use-file-explorer-tree-pane-state'
-import type { WslHostUnavailableReason } from '../terminal-pane/use-wsl-host-unavailable-reason'
-import { useAppStore } from '@/store'
-import { usePluginIconThemes } from '@/store/plugin-icon-themes'
+import type React from "react";
+import { getExplorerDisplayDepth } from "./file-explorer-display-root";
+import { Button } from "@/components/ui/button";
+import { dirname } from "@/lib/path";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { translate } from "@/i18n/i18n";
+import type { RuntimeFileListState } from "@/components/quick-open-file-list";
+import type { Repo } from "../../../../shared/repo-types";
+import type { RightSidebarExplorerView } from "../../../../shared/ui-chrome-types";
+import { FileExplorerTreeStatus } from "./FileExplorerTreeStatus";
+import { FileExplorerVirtualRows } from "./FileExplorerVirtualRows";
+import { canShowAddAsProjectAction } from "./file-explorer-add-project-action";
+import type { FileExplorerNameFilterProjectionSource } from "./file-explorer-name-filter-projection";
+import type { FileExplorerRowProjection } from "./file-explorer-row-projection";
+import type { useFileExplorerSelection } from "./useFileExplorerSelection";
+import type { useFileExplorerTree } from "./useFileExplorerTree";
+import type { useFileExplorerTreePaneState } from "./use-file-explorer-tree-pane-state";
+import type { WslHostUnavailableReason } from "../terminal-pane/use-wsl-host-unavailable-reason";
+import { useAppStore } from "@/store";
+import { usePluginIconThemes } from "@/store/plugin-icon-themes";
 
 type FileExplorerFilesTreePaneProps = {
-  activeRepo: Repo | null
-  worktreePath: string | null
-  displayRootPath: string | null
-  explorerView: RightSidebarExplorerView
-  activeFileId: string | null
-  hasNameFilter: boolean
-  nameFilterSource: FileExplorerNameFilterProjectionSource | null
-  nameFilterFiles: RuntimeFileListState
-  handleExpandNameFilterDir: (dirPath: string) => void
-  tree: ReturnType<typeof useFileExplorerTree>
-  selection: ReturnType<typeof useFileExplorerSelection>
-  paneState: ReturnType<typeof useFileExplorerTreePaneState>
-  rowProjection: FileExplorerRowProjection
-  ignoredByRelativePath: Set<string>
-  rowExpandedPaths: Set<string>
-  visibleRowCount: number
-  handleExplorerBackgroundContextMenuCapture: (event: React.MouseEvent<HTMLDivElement>) => void
-  handleExplorerBackgroundDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => void
-  wslHostUnavailable?: WslHostUnavailableReason | null
-}
+  activeRepo: Repo | null;
+  worktreePath: string | null;
+  displayRootPath: string | null;
+  explorerView: RightSidebarExplorerView;
+  activeFileId: string | null;
+  hasNameFilter: boolean;
+  nameFilterSource: FileExplorerNameFilterProjectionSource | null;
+  nameFilterFiles: RuntimeFileListState;
+  handleExpandNameFilterDir: (dirPath: string) => void;
+  tree: ReturnType<typeof useFileExplorerTree>;
+  selection: ReturnType<typeof useFileExplorerSelection>;
+  paneState: ReturnType<typeof useFileExplorerTreePaneState>;
+  rowProjection: FileExplorerRowProjection;
+  ignoredByRelativePath: Set<string>;
+  rowExpandedPaths: Set<string>;
+  visibleRowCount: number;
+  handleExplorerBackgroundContextMenuCapture: (
+    event: React.MouseEvent<HTMLDivElement>,
+  ) => void;
+  handleExplorerBackgroundDoubleClick: (
+    event: React.MouseEvent<HTMLDivElement>,
+  ) => void;
+  wslHostUnavailable?: WslHostUnavailableReason | null;
+};
 
 /** Presentational tree pane: every effect it renders from lives in useFileExplorerTreePaneState. */
 export function FileExplorerFilesTreePane({
@@ -62,14 +66,20 @@ export function FileExplorerFilesTreePane({
   visibleRowCount,
   handleExplorerBackgroundContextMenuCapture,
   handleExplorerBackgroundDoubleClick,
-  wslHostUnavailable = null
+  wslHostUnavailable = null,
 }: FileExplorerFilesTreePaneProps): React.JSX.Element {
-  const selectedIconThemeId = useAppStore((state) => state.settings?.fileIconTheme ?? 'builtin')
-  const iconThemes = usePluginIconThemes()
-  const iconTheme = iconThemes.find((theme) => theme.id === selectedIconThemeId) ?? null
-  const { loadingDirPaths, rootError } = tree
-  const rootCache = displayRootPath ? tree.dirCache[displayRootPath] : undefined
-  const { selectedPaths, preserveSelectionForContextMenu, copyPathsForNode } = selection
+  const selectedIconThemeId = useAppStore(
+    (state) => state.settings?.fileIconTheme ?? "builtin",
+  );
+  const iconThemes = usePluginIconThemes();
+  const iconTheme =
+    iconThemes.find((theme) => theme.id === selectedIconThemeId) ?? null;
+  const { loadingDirPaths, rootError } = tree;
+  const rootCache = displayRootPath
+    ? tree.dirCache[displayRootPath]
+    : undefined;
+  const { selectedPaths, preserveSelectionForContextMenu, copyPathsForNode } =
+    selection;
   const {
     scrollRef,
     runtimeDownloadContext,
@@ -83,12 +93,17 @@ export function FileExplorerFilesTreePane({
     rowScrolling,
     handlers,
     nodeCommands,
-    fileDropOwnerRef
-  } = paneState
-  const { inlineInput, inlineInputIndex, startNew, dismissInlineInput, handleInlineSubmit } =
-    inlineInputState
-  const { virtualizer, flashingPath } = rowScrolling
-  const { handleClick, handleDoubleClick, handleWheelCapture } = handlers
+    fileDropOwnerRef,
+  } = paneState;
+  const {
+    inlineInput,
+    inlineInputIndex,
+    startNew,
+    dismissInlineInput,
+    handleInlineSubmit,
+  } = inlineInputState;
+  const { virtualizer, flashingPath } = rowScrolling;
+  const { handleClick, handleDoubleClick, handleWheelCapture } = handlers;
   const {
     handleMoveDrop,
     handleDragExpandDir,
@@ -102,8 +117,8 @@ export function FileExplorerFilesTreePane({
     setNativeDropTargetDir,
     handleNativeDragExpandDir,
     stopDragEdgeScroll,
-    rootDragHandlers
-  } = dragDrop
+    rootDragHandlers,
+  } = dragDrop;
   const {
     handleStartRename,
     handleContextMenuDelete,
@@ -112,45 +127,50 @@ export function FileExplorerFilesTreePane({
     handleCollapseFolderSubtree,
     handleFindInFolder,
     handleAddFolderAsProject,
-    handleOpenInTerminal
-  } = nodeCommands
+    handleOpenInTerminal,
+  } = nodeCommands;
 
   // Why: the root explorer container must stay mounted for loading, error,
   // and empty states so it always owns OS file drops; otherwise an empty,
   // loading or failed tree would have no drop target.
-  const isEmptyState = visibleRowCount === 0 && !inlineInput
-  const isNameFilterLoading = nameFilterSource?.relativePaths === null
-  const isRootLoading = !rootCache || (!!displayRootPath && loadingDirPaths.has(displayRootPath))
-  const isLoading = isEmptyState && (hasNameFilter ? isNameFilterLoading : isRootLoading)
+  const isEmptyState = visibleRowCount === 0 && !inlineInput;
+  const isNameFilterLoading = nameFilterSource?.relativePaths === null;
+  const isRootLoading =
+    !rootCache || (!!displayRootPath && loadingDirPaths.has(displayRootPath));
+  const isLoading =
+    isEmptyState && (hasNameFilter ? isNameFilterLoading : isRootLoading);
   const treeError = hasNameFilter
     ? nameFilterFiles.loadError
     : displayRootPath
       ? (rootCache?.error ?? null)
-      : rootError
-  const hasError = isEmptyState && !isLoading && treeError !== null
-  const showTree = !isEmptyState
+      : rootError;
+  const hasError = isEmptyState && !isLoading && treeError !== null;
+  const showTree = !isEmptyState;
   // Why: Retry cannot succeed while WSL hosts are off; the status offers the switch instead.
-  const wslHostsTurnedOff = hasError && wslHostUnavailable === 'turned-off'
+  const wslHostsTurnedOff = hasError && wslHostUnavailable === "turned-off";
   const emptyMessage =
     hasNameFilter && !nameFilterFiles.loadError
       ? translate(
-          'auto.components.right.sidebar.FileExplorer.2f4483d6c4',
-          'No files match this filter'
+          "auto.components.right.sidebar.FileExplorer.2f4483d6c4",
+          "No files match this filter",
         )
-      : undefined
+      : undefined;
 
   return (
     <ScrollArea
       className={cn(
         // Why: Radix ScrollArea.Root hard-sets inline `position: relative`,
         // defeating `absolute`; size by height so the viewport can overflow.
-        'h-full min-h-0',
-        explorerView !== 'files' && 'pointer-events-none invisible',
+        "h-full min-h-0",
+        explorerView !== "files" && "pointer-events-none invisible",
         isRootDragOver &&
-          explorerView === 'files' &&
+          explorerView === "files" &&
           !(dragSourcePath && dirname(dragSourcePath) === displayRootPath) &&
-          'bg-border',
-        isNativeDragOver && explorerView === 'files' && !nativeDropTargetDir && 'bg-border'
+          "bg-border",
+        isNativeDragOver &&
+          explorerView === "files" &&
+          !nativeDropTargetDir &&
+          "bg-border",
       )}
       ref={fileDropOwnerRef}
       viewportRef={scrollRef}
@@ -163,12 +183,12 @@ export function FileExplorerFilesTreePane({
       onDragLeave={rootDragHandlers.onDragLeave}
       onDrop={rootDragHandlers.onDrop}
       onDragEnd={() => {
-        stopDragEdgeScroll()
-        setDropTargetDir(null)
+        stopDragEdgeScroll();
+        setDropTargetDir(null);
       }}
       viewportProps={{
         onContextMenuCapture: handleExplorerBackgroundContextMenuCapture,
-        onDoubleClick: handleExplorerBackgroundDoubleClick
+        onDoubleClick: handleExplorerBackgroundDoubleClick,
       }}
     >
       {treeError !== null &&
@@ -176,10 +196,17 @@ export function FileExplorerFilesTreePane({
         !hasNameFilter &&
         displayRootPath &&
         !wslHostsTurnedOff && (
-          <div className="px-2 py-1 text-xs text-muted-foreground" role="status">
+          <div
+            className="px-2 py-1 text-xs text-muted-foreground"
+            role="status"
+          >
             {showTree && <p>{treeError}</p>}
-            <Button variant="ghost" size="xs" onClick={() => void tree.refreshDir(displayRootPath)}>
-              {translate('fileExplorer.root.retry', 'Retry')}
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => void tree.refreshDir(displayRootPath)}
+            >
+              {translate("fileExplorer.root.retry", "Retry")}
             </Button>
           </div>
         )}
@@ -195,7 +222,10 @@ export function FileExplorerFilesTreePane({
       )}
       {showTree && (
         <FileExplorerVirtualRows
-          displayDepthOffset={getExplorerDisplayDepth(worktreePath, displayRootPath)}
+          displayDepthOffset={getExplorerDisplayDepth(
+            worktreePath,
+            displayRootPath,
+          )}
           virtualizer={virtualizer}
           inlineInputIndex={inlineInputIndex}
           rowProjection={rowProjection}
@@ -228,7 +258,9 @@ export function FileExplorerFilesTreePane({
           onStartRename={handleStartRename}
           onDuplicate={handleDuplicate}
           onAddFolderAsProject={handleAddFolderAsProject}
-          canAddFolderAsProject={(node) => canShowAddAsProjectAction(node, activeRepo)}
+          canAddFolderAsProject={(node) =>
+            canShowAddAsProjectAction(node, activeRepo)
+          }
           onOpenInTerminal={handleOpenInTerminal}
           onRequestDelete={handleContextMenuDelete}
           onCollapseFolderSubtree={handleCollapseFolderSubtree}
@@ -236,10 +268,14 @@ export function FileExplorerFilesTreePane({
           onMoveDrop={handleMoveDrop}
           onDragTargetChange={setDropTargetDir}
           onDragSourceChange={setDragSourcePath}
-          onDragExpandDir={hasNameFilter ? handleExpandNameFilterDir : handleDragExpandDir}
+          onDragExpandDir={
+            hasNameFilter ? handleExpandNameFilterDir : handleDragExpandDir
+          }
           onNativeDragTargetChange={setNativeDropTargetDir}
           onNativeDragExpandDir={
-            hasNameFilter ? handleExpandNameFilterDir : handleNativeDragExpandDir
+            hasNameFilter
+              ? handleExpandNameFilterDir
+              : handleNativeDragExpandDir
           }
           dropTargetDir={dropTargetDir}
           dragSourcePath={dragSourcePath}
@@ -247,5 +283,5 @@ export function FileExplorerFilesTreePane({
         />
       )}
     </ScrollArea>
-  )
+  );
 }

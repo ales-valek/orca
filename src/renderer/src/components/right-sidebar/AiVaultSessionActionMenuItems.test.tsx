@@ -1,22 +1,22 @@
 // @vitest-environment happy-dom
-import type { ComponentProps } from 'react'
-import { cleanup, render } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ComponentProps } from "react";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import { SessionActionMenuItems } from './AiVaultSessionActionMenuItems'
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SessionActionMenuItems } from "./AiVaultSessionActionMenuItems";
 
-afterEach(cleanup)
+afterEach(cleanup);
 
-const HAND_OFF = 'Hand Off to Another Agent'
-const SEPARATOR = '---'
+const HAND_OFF = "Hand Off to Another Agent";
+const SEPARATOR = "---";
 
 function renderMenuOrder(
-  props: Partial<ComponentProps<typeof SessionActionMenuItems>> = {}
+  props: Partial<ComponentProps<typeof SessionActionMenuItems>> = {},
 ): string[] {
   render(
     <TooltipProvider>
@@ -35,43 +35,47 @@ function renderMenuOrder(
           />
         </DropdownMenuContent>
       </DropdownMenu>
-    </TooltipProvider>
-  )
-  return Array.from(document.querySelectorAll('[role="menuitem"], [role="separator"]')).map(
-    (node) => (node.getAttribute('role') === 'separator' ? SEPARATOR : (node.textContent ?? ''))
-  )
+    </TooltipProvider>,
+  );
+  return Array.from(
+    document.querySelectorAll('[role="menuitem"], [role="separator"]'),
+  ).map((node) =>
+    node.getAttribute("role") === "separator"
+      ? SEPARATOR
+      : (node.textContent ?? ""),
+  );
 }
 
-describe('SessionActionMenuItems hand-off placement', () => {
-  it('places Hand Off after Copy Resume Command, behind a separator', () => {
-    const order = renderMenuOrder({ onCopyResume: vi.fn() })
-    const handOff = order.indexOf(HAND_OFF)
+describe("SessionActionMenuItems hand-off placement", () => {
+  it("places Hand Off after Copy Resume Command, behind a separator", () => {
+    const order = renderMenuOrder({ onCopyResume: vi.fn() });
+    const handOff = order.indexOf(HAND_OFF);
 
     expect(order.slice(0, handOff + 1)).toEqual([
-      'Resume in New Tab',
-      'Copy Resume Command',
+      "Resume in New Tab",
+      "Copy Resume Command",
       SEPARATOR,
-      HAND_OFF
-    ])
-  })
+      HAND_OFF,
+    ]);
+  });
 
-  it('omits the separator when nothing renders above Hand Off', () => {
-    const order = renderMenuOrder({ resumeHidden: true })
+  it("omits the separator when nothing renders above Hand Off", () => {
+    const order = renderMenuOrder({ resumeHidden: true });
 
-    expect(order[0]).toBe(HAND_OFF)
-  })
-})
+    expect(order[0]).toBe(HAND_OFF);
+  });
+});
 
-describe('SessionActionMenuItems jump label', () => {
+describe("SessionActionMenuItems jump label", () => {
   it.each([
-    ['folder:folder-1', 'Jump to Folder'],
-    ['repo-1::/repo/orca', 'Jump to Worktree']
-  ])('names the jump by the workspace kind of %s', (jumpWorkspaceId, label) => {
+    ["folder:folder-1", "Jump to Folder"],
+    ["repo-1::/repo/orca", "Jump to Worktree"],
+  ])("names the jump by the workspace kind of %s", (jumpWorkspaceId, label) => {
     const order = renderMenuOrder({
       showJumpToWorktree: true,
       jumpWorkspaceId,
-      onJumpToWorktree: vi.fn()
-    })
-    expect(order[0]).toBe(label)
-  })
-})
+      onJumpToWorktree: vi.fn(),
+    });
+    expect(order[0]).toBe(label);
+  });
+});

@@ -6,17 +6,27 @@ import {
   MessageSquarePlus,
   PanelTopOpen,
   Play,
-  Trash2
-} from 'lucide-react'
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { translate } from '@/i18n/i18n'
-import { AiVaultSessionSurfaceSwitchMenuItems } from './AiVaultSessionSurfaceSwitchMenuItems'
-import { isAiVaultFolderWorkspaceId } from './ai-vault-session-worktree-affordances'
+  Trash2,
+} from "lucide-react";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { translate } from "@/i18n/i18n";
+import { AiVaultSessionSurfaceSwitchMenuItems } from "./AiVaultSessionSurfaceSwitchMenuItems";
+import { isAiVaultFolderWorkspaceId } from "./ai-vault-session-worktree-affordances";
 
 export function SessionActionMenuItems({
-  menuKind = 'dropdown',
+  menuKind = "dropdown",
   resumeDisabled,
   resumeLabel,
   resumeHidden = false,
@@ -35,36 +45,37 @@ export function SessionActionMenuItems({
   onRevealLog,
   onOpenCwd,
   deleteBlockedReason,
-  onDelete
+  onDelete,
 }: {
-  menuKind?: 'dropdown' | 'context'
-  resumeDisabled: boolean
-  resumeLabel: string
-  resumeHidden?: boolean
-  onResume: () => void
-  onContinueInNewSession?: () => void
-  onResumeInNewChat?: () => void
+  menuKind?: "dropdown" | "context";
+  resumeDisabled: boolean;
+  resumeLabel: string;
+  resumeHidden?: boolean;
+  onResume: () => void;
+  onContinueInNewSession?: () => void;
+  onResumeInNewChat?: () => void;
   // Offered only on rows native chat owns, where it forks: see ai-vault-session-cli-fork.
-  onResumeInNewCli?: () => void
-  onJumpToOriginalPane?: () => void
-  showJumpToWorktree: boolean
-  jumpWorkspaceId?: string | null
-  onJumpToWorktree?: () => void
+  onResumeInNewCli?: () => void;
+  onJumpToOriginalPane?: () => void;
+  showJumpToWorktree: boolean;
+  jumpWorkspaceId?: string | null;
+  onJumpToWorktree?: () => void;
   // Absent for zero-turn sessions: copying a resume command that lands in an
   // empty conversation would contradict the "not saved" state.
-  onCopyResume?: () => void
-  onCopyId: () => void
-  onCopyPath?: () => void
-  onOpenLog?: () => void
-  onRevealLog?: () => void
-  onOpenCwd?: () => void
+  onCopyResume?: () => void;
+  onCopyId: () => void;
+  onCopyPath?: () => void;
+  onOpenLog?: () => void;
+  onRevealLog?: () => void;
+  onOpenCwd?: () => void;
   // Null when Delete is offered; otherwise the tooltip explaining why it isn't.
-  deleteBlockedReason: string | null
-  onDelete?: () => void
+  deleteBlockedReason: string | null;
+  onDelete?: () => void;
 }) {
-  const Item = menuKind === 'context' ? ContextMenuItem : DropdownMenuItem
-  const Separator = menuKind === 'context' ? ContextMenuSeparator : DropdownMenuSeparator
-  const hasLocalPathActions = Boolean(onOpenLog || onRevealLog || onOpenCwd)
+  const Item = menuKind === "context" ? ContextMenuItem : DropdownMenuItem;
+  const Separator =
+    menuKind === "context" ? ContextMenuSeparator : DropdownMenuSeparator;
+  const hasLocalPathActions = Boolean(onOpenLog || onRevealLog || onOpenCwd);
   // Why: Jump/Resume items act on this conversation; the hand-off starts a new one, so it sits apart.
   const hasItemsAboveHandOff = Boolean(
     onJumpToOriginalPane ||
@@ -72,9 +83,12 @@ export function SessionActionMenuItems({
     !resumeHidden ||
     onResumeInNewChat ||
     onResumeInNewCli ||
-    onCopyResume
-  )
-  const deleteLabel = translate('auto.components.right.sidebar.AiVaultSessionRow.delete', 'Delete')
+    onCopyResume,
+  );
+  const deleteLabel = translate(
+    "auto.components.right.sidebar.AiVaultSessionRow.delete",
+    "Delete",
+  );
   const deleteItem = (
     <Item
       variant="destructive"
@@ -82,12 +96,16 @@ export function SessionActionMenuItems({
       onSelect={deleteBlockedReason ? undefined : onDelete}
       // Also on aria-label, so a screen-reader user hears why Delete is
       // disabled rather than only that it is.
-      aria-label={deleteBlockedReason ? `${deleteLabel}. ${deleteBlockedReason}` : undefined}
+      aria-label={
+        deleteBlockedReason
+          ? `${deleteLabel}. ${deleteBlockedReason}`
+          : undefined
+      }
     >
       <Trash2 className="size-3.5" />
       {deleteLabel}
     </Item>
-  )
+  );
 
   return (
     <>
@@ -95,8 +113,8 @@ export function SessionActionMenuItems({
         <Item onSelect={onJumpToOriginalPane}>
           <LocateFixed className="size-3.5" />
           {translate(
-            'auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane',
-            'Jump to Original Pane'
+            "auto.components.right.sidebar.AiVaultSessionRow.jumpToOriginalPane",
+            "Jump to Original Pane",
           )}
         </Item>
       ) : null}
@@ -105,12 +123,12 @@ export function SessionActionMenuItems({
           <PanelTopOpen className="size-3.5" />
           {isAiVaultFolderWorkspaceId(jumpWorkspaceId)
             ? translate(
-                'auto.components.right.sidebar.AiVaultSessionWorktree.jumpToFolder',
-                'Jump to Folder'
+                "auto.components.right.sidebar.AiVaultSessionWorktree.jumpToFolder",
+                "Jump to Folder",
               )
             : translate(
-                'auto.components.right.sidebar.AiVaultSessionRow.jumpToWorktree',
-                'Jump to Worktree'
+                "auto.components.right.sidebar.AiVaultSessionRow.jumpToWorktree",
+                "Jump to Worktree",
               )}
         </Item>
       ) : null}
@@ -122,7 +140,7 @@ export function SessionActionMenuItems({
       ) : null}
       <AiVaultSessionSurfaceSwitchMenuItems
         menuKind={menuKind}
-        tooltipSide={menuKind === 'context' ? 'right' : 'left'}
+        tooltipSide={menuKind === "context" ? "right" : "left"}
         onResumeInNewChat={onResumeInNewChat}
         onResumeInNewCli={onResumeInNewCli}
       />
@@ -130,8 +148,8 @@ export function SessionActionMenuItems({
         <Item onSelect={onCopyResume}>
           <Copy className="size-3.5" />
           {translate(
-            'auto.components.right.sidebar.AiVaultSessionRow.copyResumeCommand',
-            'Copy Resume Command'
+            "auto.components.right.sidebar.AiVaultSessionRow.copyResumeCommand",
+            "Copy Resume Command",
           )}
         </Item>
       ) : null}
@@ -141,8 +159,8 @@ export function SessionActionMenuItems({
           <Item onSelect={onContinueInNewSession}>
             <MessageSquarePlus className="size-3.5" />
             {translate(
-              'components.agentSessionContinuation.handOffToAnotherAgent',
-              'Hand Off to Another Agent'
+              "components.agentSessionContinuation.handOffToAnotherAgent",
+              "Hand Off to Another Agent",
             )}
           </Item>
         </>
@@ -153,21 +171,27 @@ export function SessionActionMenuItems({
           {onOpenLog ? (
             <Item onSelect={onOpenLog}>
               <FileJson className="size-3.5" />
-              {translate('auto.components.right.sidebar.AiVaultSessionRow.openLog', 'Open Log')}
+              {translate(
+                "auto.components.right.sidebar.AiVaultSessionRow.openLog",
+                "Open Log",
+              )}
             </Item>
           ) : null}
           {onRevealLog ? (
             <Item onSelect={onRevealLog}>
               <FolderOpen className="size-3.5" />
-              {translate('auto.components.right.sidebar.AiVaultSessionRow.revealLog', 'Reveal Log')}
+              {translate(
+                "auto.components.right.sidebar.AiVaultSessionRow.revealLog",
+                "Reveal Log",
+              )}
             </Item>
           ) : null}
           {onOpenCwd ? (
             <Item onSelect={onOpenCwd}>
               <FolderOpen className="size-3.5" />
               {translate(
-                'auto.components.right.sidebar.AiVaultSessionRow.openWorkingDirectory',
-                'Open Working Directory'
+                "auto.components.right.sidebar.AiVaultSessionRow.openWorkingDirectory",
+                "Open Working Directory",
               )}
             </Item>
           ) : null}
@@ -176,15 +200,15 @@ export function SessionActionMenuItems({
       <Separator />
       <Item onSelect={onCopyId}>
         {translate(
-          'auto.components.right.sidebar.AiVaultSessionRow.copySessionId',
-          'Copy Session ID'
+          "auto.components.right.sidebar.AiVaultSessionRow.copySessionId",
+          "Copy Session ID",
         )}
       </Item>
       {onCopyPath ? (
         <Item onSelect={onCopyPath}>
           {translate(
-            'auto.components.right.sidebar.AiVaultSessionRow.copyLogPath',
-            'Copy Log Path'
+            "auto.components.right.sidebar.AiVaultSessionRow.copyLogPath",
+            "Copy Log Path",
           )}
         </Item>
       ) : null}
@@ -199,7 +223,7 @@ export function SessionActionMenuItems({
                 <div>{deleteItem}</div>
               </TooltipTrigger>
               <TooltipContent
-                side={menuKind === 'context' ? 'right' : 'left'}
+                side={menuKind === "context" ? "right" : "left"}
                 sideOffset={8}
                 className="max-w-72"
               >
@@ -212,5 +236,5 @@ export function SessionActionMenuItems({
         </>
       ) : null}
     </>
-  )
+  );
 }

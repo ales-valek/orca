@@ -1,12 +1,16 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
-import { FileExplorerRow, type FileExplorerRowProps } from './FileExplorerRow'
-import { FileExplorerVirtualRows } from './FileExplorerVirtualRows'
-import { createFileExplorerRowProjection } from './file-explorer-row-projection'
-import { directoryNode } from './file-explorer-tree-node-test-fixtures'
-import { visit, type ReactElementLike } from './file-explorer-element-tree-test-harness'
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { FileExplorerRow, type FileExplorerRowProps } from "./FileExplorerRow";
+import { FileExplorerVirtualRows } from "./FileExplorerVirtualRows";
+import { createFileExplorerRowProjection } from "./file-explorer-row-projection";
+import { directoryNode } from "./file-explorer-tree-node-test-fixtures";
+import {
+  visit,
+  type ReactElementLike,
+} from "./file-explorer-element-tree-test-harness";
 
-const LOAD_ERROR = 'This folder has 80,000 entries, too many to list over a remote connection.'
+const LOAD_ERROR =
+  "This folder has 80,000 entries, too many to list over a remote connection.";
 
 function renderRow(overrides: Partial<FileExplorerRowProps>): string {
   const props: FileExplorerRowProps = {
@@ -19,7 +23,7 @@ function renderRow(overrides: Partial<FileExplorerRowProps>): string {
     nodeStatus: null,
     statusColor: null,
     isIgnored: false,
-    deleteShortcutLabel: 'Del',
+    deleteShortcutLabel: "Del",
     canOpenInOrcaBrowser: false,
     canCollapseFolderSubtree: true,
     targetDir: directoryNode.path,
@@ -45,27 +49,31 @@ function renderRow(overrides: Partial<FileExplorerRowProps>): string {
     onDragExpandDir: vi.fn(),
     onNativeDragTargetChange: vi.fn(),
     onNativeDragExpandDir: vi.fn(),
-    ...overrides
-  }
-  return renderToStaticMarkup(<FileExplorerRow {...props} />)
+    ...overrides,
+  };
+  return renderToStaticMarkup(<FileExplorerRow {...props} />);
 }
 
-describe('FileExplorerRow subfolder read failure', () => {
-  it('shows the read error on an expanded folder instead of an empty listing', () => {
-    expect(renderRow({ loadError: LOAD_ERROR })).toContain(LOAD_ERROR)
-  })
+describe("FileExplorerRow subfolder read failure", () => {
+  it("shows the read error on an expanded folder instead of an empty listing", () => {
+    expect(renderRow({ loadError: LOAD_ERROR })).toContain(LOAD_ERROR);
+  });
 
-  it('hides the error while collapsed or retrying', () => {
-    expect(renderRow({ loadError: LOAD_ERROR, isExpanded: false })).not.toContain(LOAD_ERROR)
-    expect(renderRow({ loadError: LOAD_ERROR, isLoading: true })).not.toContain(LOAD_ERROR)
-  })
+  it("hides the error while collapsed or retrying", () => {
+    expect(
+      renderRow({ loadError: LOAD_ERROR, isExpanded: false }),
+    ).not.toContain(LOAD_ERROR);
+    expect(renderRow({ loadError: LOAD_ERROR, isLoading: true })).not.toContain(
+      LOAD_ERROR,
+    );
+  });
 
-  it('passes the cached subfolder error to its row', () => {
+  it("passes the cached subfolder error to its row", () => {
     const virtualizerStub = {
       getTotalSize: () => 26,
-      getVirtualItems: () => [{ index: 0, key: 'src', start: 0 }],
-      measureElement: vi.fn()
-    }
+      getVirtualItems: () => [{ index: 0, key: "src", start: 0 }],
+      measureElement: vi.fn(),
+    };
     const element = FileExplorerVirtualRows({
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the rows read only getTotalSize/getVirtualItems/measureElement.
       virtualizer: virtualizerStub as never,
@@ -82,7 +90,7 @@ describe('FileExplorerRow subfolder read failure', () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: 'Del',
+      deleteShortcutLabel: "Del",
       dirCache: { [directoryNode.path]: { children: [], error: LOAD_ERROR } },
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
@@ -106,14 +114,14 @@ describe('FileExplorerRow subfolder read failure', () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null
-    })
-    const rows: ReactElementLike[] = []
+      nativeDropTargetDir: null,
+    });
+    const rows: ReactElementLike[] = [];
     visit(element, (entry) => {
       if (entry.type === FileExplorerRow) {
-        rows.push(entry)
+        rows.push(entry);
       }
-    })
-    expect(rows.map((row) => row.props.loadError)).toEqual([LOAD_ERROR])
-  })
-})
+    });
+    expect(rows.map((row) => row.props.loadError)).toEqual([LOAD_ERROR]);
+  });
+});

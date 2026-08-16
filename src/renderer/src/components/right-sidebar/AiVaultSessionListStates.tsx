@@ -1,5 +1,5 @@
-import { ArchiveRestore, LoaderCircle } from 'lucide-react'
-import { translate } from '@/i18n/i18n'
+import { ArchiveRestore, LoaderCircle } from "lucide-react";
+import { translate } from "@/i18n/i18n";
 
 export function SessionLoadingState(): React.JSX.Element {
   return (
@@ -8,8 +8,8 @@ export function SessionLoadingState(): React.JSX.Element {
         <LoaderCircle className="size-3.5 shrink-0 animate-spin" />
         <span>
           {translate(
-            'auto.components.right.sidebar.AiVaultPanelControls.scanningSessions',
-            'Scanning sessions'
+            "auto.components.right.sidebar.AiVaultPanelControls.scanningSessions",
+            "Scanning sessions",
           )}
         </span>
       </div>
@@ -26,7 +26,7 @@ export function SessionLoadingState(): React.JSX.Element {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function EmptyState({ title }: { title: string }): React.JSX.Element {
@@ -35,5 +35,5 @@ export function EmptyState({ title }: { title: string }): React.JSX.Element {
       <ArchiveRestore className="mb-3 size-7 opacity-50" />
       <p className="text-sm font-medium">{title}</p>
     </div>
-  )
+  );
 }

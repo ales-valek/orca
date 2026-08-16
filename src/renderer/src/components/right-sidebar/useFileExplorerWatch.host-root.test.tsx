@@ -1,80 +1,90 @@
 // @vitest-environment happy-dom
-import { act, cleanup, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { makeWorktree } from '@/store/slices/worktrees-slice-test-fixtures'
-import { buildEditorExternalWatchEventHandler } from '@/hooks/editor-external-watch-event-reconciliation'
-import { selectEditorExternalWatchTargets } from '@/hooks/editor-external-watch-targets'
-import { getDefaultSettings } from '../../../../shared/constants'
-import { useFileExplorerWatch } from './useFileExplorerWatch'
+import { act, cleanup, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { makeWorktree } from "@/store/slices/worktrees-slice-test-fixtures";
+import { buildEditorExternalWatchEventHandler } from "@/hooks/editor-external-watch-event-reconciliation";
+import { selectEditorExternalWatchTargets } from "@/hooks/editor-external-watch-targets";
+import { getDefaultSettings } from "../../../../shared/constants";
+import { useFileExplorerWatch } from "./useFileExplorerWatch";
 
-vi.mock('@/store', () => ({
-  useAppStore: Object.assign((selector: (state: unknown) => unknown) => selector({}), {
-    getState: () => ({ openFiles: [] })
-  })
-}))
-vi.mock('./file-explorer-operation-owner', () => {
-  const owner = { kind: 'runtime', environmentId: 'host-b', executionHostId: 'runtime:host-b' }
+vi.mock("@/store", () => ({
+  useAppStore: Object.assign(
+    (selector: (state: unknown) => unknown) => selector({}),
+    {
+      getState: () => ({ openFiles: [] }),
+    },
+  ),
+}));
+vi.mock("./file-explorer-operation-owner", () => {
+  const owner = {
+    kind: "runtime",
+    environmentId: "host-b",
+    executionHostId: "runtime:host-b",
+  };
   return {
     getFileExplorerOperationOwner: () => owner,
-    getFileExplorerOperationOwnerFromState: () => owner
-  }
-})
-vi.mock('@/runtime/runtime-file-watch-client', () => ({ subscribeRuntimeFileChanges: vi.fn() }))
+    getFileExplorerOperationOwnerFromState: () => owner,
+  };
+});
+vi.mock("@/runtime/runtime-file-watch-client", () => ({
+  subscribeRuntimeFileChanges: vi.fn(),
+}));
 
-const refreshDir = vi.fn(async () => {})
-const refreshTree = vi.fn(async () => 'refreshed' as const)
+const refreshDir = vi.fn(async () => {});
+const refreshTree = vi.fn(async () => "refreshed" as const);
 
 beforeEach(() => {
-  vi.useFakeTimers()
-  vi.clearAllMocks()
-  Object.defineProperty(window, 'api', {
+  vi.useFakeTimers();
+  vi.clearAllMocks();
+  Object.defineProperty(window, "api", {
     configurable: true,
-    value: { fs: { onFsChanged: vi.fn(() => vi.fn()) } }
-  })
-})
+    value: { fs: { onFsChanged: vi.fn(() => vi.fn()) } },
+  });
+});
 afterEach(() => {
-  cleanup()
-  vi.useRealTimers()
-})
+  cleanup();
+  vi.useRealTimers();
+});
 
-it('refreshes the selected host Explorer when another host publishes the same worktree id at a different root', async () => {
+it("refreshes the selected host Explorer when another host publishes the same worktree id at a different root", async () => {
   const { targets } = selectEditorExternalWatchTargets({
-    settings: getDefaultSettings('/home/me'),
+    settings: getDefaultSettings("/home/me"),
     openFiles: [],
-    activeWorktreeId: 'same-worktree',
-    activeWorkspaceExecutionHostId: 'runtime:host-b',
+    activeWorktreeId: "same-worktree",
+    activeWorkspaceExecutionHostId: "runtime:host-b",
     repos: [],
     worktreesByRepo: {
-      repo: (['host-a', 'host-b'] as const).map((host) =>
+      repo: (["host-a", "host-b"] as const).map((host) =>
         makeWorktree({
-          id: 'same-worktree',
-          repoId: 'repo',
+          id: "same-worktree",
+          repoId: "repo",
           path: `/${host}/repo`,
-          hostId: `runtime:${host}`
-        })
-      )
+          hostId: `runtime:${host}`,
+        }),
+      ),
     },
     folderWorkspaces: [],
     projectGroups: [],
     rightSidebarOpen: true,
-    rightSidebarTab: 'explorer',
-    rightSidebarExplorerView: 'files',
+    rightSidebarTab: "explorer",
+    rightSidebarExplorerView: "files",
     gitStatusHugeByWorktree: {},
-    sshConnectionStates: new Map()
-  })
-  const [target] = targets
-  const adapter = buildEditorExternalWatchEventHandler((worktreePath, runtimeEnvironmentId) =>
-    targets.find(
-      (candidate) =>
-        candidate.worktreePath === worktreePath &&
-        candidate.runtimeEnvironmentId === runtimeEnvironmentId
-    )
-  )
+    sshConnectionStates: new Map(),
+  });
+  const [target] = targets;
+  const adapter = buildEditorExternalWatchEventHandler(
+    (worktreePath, runtimeEnvironmentId) =>
+      targets.find(
+        (candidate) =>
+          candidate.worktreePath === worktreePath &&
+          candidate.runtimeEnvironmentId === runtimeEnvironmentId,
+      ),
+  );
   renderHook(() =>
     useFileExplorerWatch({
-      worktreePath: '/host-b/repo',
-      activeWorktreeId: 'same-worktree',
-      dirCache: { '/host-b/repo': { children: [] } },
+      worktreePath: "/host-b/repo",
+      activeWorktreeId: "same-worktree",
+      dirCache: { "/host-b/repo": { children: [] } },
       setDirCache: vi.fn(),
       expanded: new Set(),
       setSelectedPath: vi.fn(),
@@ -82,9 +92,9 @@ it('refreshes the selected host Explorer when another host publishes the same wo
       refreshTree,
       inlineInput: null,
       dragSourcePath: null,
-      isNativeDragOver: false
-    })
-  )
+      isNativeDragOver: false,
+    }),
+  );
   // The runtime watch client roots each batch at the watched target's path.
   act(() => {
     adapter.handleFsChanged(
@@ -92,18 +102,18 @@ it('refreshes the selected host Explorer when another host publishes the same wo
         worktreePath: target.worktreePath,
         events: [
           {
-            kind: 'create',
+            kind: "create",
             absolutePath: `${target.worktreePath}/new.ts`,
-            isDirectory: false
-          }
-        ]
+            isDirectory: false,
+          },
+        ],
       },
-      target.runtimeEnvironmentId
-    )
-  })
+      target.runtimeEnvironmentId,
+    );
+  });
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(0)
-  })
-  adapter.dispose()
-  expect(refreshDir).toHaveBeenCalledExactlyOnceWith('/host-b/repo')
-})
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  adapter.dispose();
+  expect(refreshDir).toHaveBeenCalledExactlyOnceWith("/host-b/repo");
+});

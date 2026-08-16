@@ -1,10 +1,10 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import type { AiVaultSession } from '../../../../shared/ai-vault-types'
-import { SessionRowTrailingActions } from './SessionRowTrailingActions'
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import type { AiVaultSession } from "../../../../shared/ai-vault-types";
+import { SessionRowTrailingActions } from "./SessionRowTrailingActions";
 
-const session = { agent: 'claude' } as AiVaultSession
+const session = { agent: "claude" } as AiVaultSession;
 
 function renderActions(onContinueInNewSession?: () => void): string {
   return renderToStaticMarkup(
@@ -26,23 +26,29 @@ function renderActions(onContinueInNewSession?: () => void): string {
         deleteBlockedReason={null}
         onRequestDelete={vi.fn()}
       />
-    </TooltipProvider>
-  )
+    </TooltipProvider>,
+  );
 }
 
-describe('SessionRowTrailingActions', () => {
-  it('renders the new-session action as a hover-revealed control when available', () => {
-    const markup = renderActions(vi.fn())
+describe("SessionRowTrailingActions", () => {
+  it("renders the new-session action as a hover-revealed control when available", () => {
+    const markup = renderActions(vi.fn());
 
-    expect(markup).toContain('data-testid="ai-vault-session-continue-in-new-session"')
-    expect(markup).toContain('aria-label="Hand Off to Another Agent"')
+    expect(markup).toContain(
+      'data-testid="ai-vault-session-continue-in-new-session"',
+    );
+    expect(markup).toContain('aria-label="Hand Off to Another Agent"');
     // Why: edge-usage action lives in the hover group; the gating class is what
     // keeps it click-proof while the row is unhovered.
-    const buttonMarkup = markup.split('data-testid="ai-vault-session-continue-in-new-session"')[0]
-    expect(buttonMarkup.slice(-600)).toContain('can-hover:pointer-events-none')
-  })
+    const buttonMarkup = markup.split(
+      'data-testid="ai-vault-session-continue-in-new-session"',
+    )[0];
+    expect(buttonMarkup.slice(-600)).toContain("can-hover:pointer-events-none");
+  });
 
-  it('omits the new-session action when the session has no valid target', () => {
-    expect(renderActions()).not.toContain('data-testid="ai-vault-session-continue-in-new-session"')
-  })
-})
+  it("omits the new-session action when the session has no valid target", () => {
+    expect(renderActions()).not.toContain(
+      'data-testid="ai-vault-session-continue-in-new-session"',
+    );
+  });
+});

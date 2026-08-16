@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   ChevronRight,
   CircleAlert,
@@ -6,91 +6,91 @@ import {
   Folder,
   FolderOpen,
   Link,
-  Loader2
-} from 'lucide-react'
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { cn } from '@/lib/utils'
-import { getFileTypeIcon } from '@/lib/file-type-icons'
+  Loader2,
+} from "lucide-react";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { cn } from "@/lib/utils";
+import { getFileTypeIcon } from "@/lib/file-type-icons";
 import {
   encodeWorkspaceFilePaths,
   WORKSPACE_FILE_PATH_MIME,
   WORKSPACE_FILE_PATHS_MIME,
   writeWorkspaceFileDragSourceIfResolved,
-  type WorkspaceFileDragSource
-} from '@/lib/workspace-file-drag'
-import type { GitFileStatus } from '../../../../shared/git-status-types'
-import { STATUS_LABELS } from './status-display'
-import { RENAME_HOTSPOT_ATTR } from './file-explorer-dir-toggle-timing'
-import type { TreeNode } from './file-explorer-types'
-import { useFileExplorerRowDrag } from './useFileExplorerRowDrag'
-import { translate } from '@/i18n/i18n'
-import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
-import { createMultiSelectDragGhost } from './file-explorer-multi-drag-image'
-import { FileExplorerRowContextMenu } from './file-explorer-row-context-menu'
-import type { PluginIconThemeRegistration } from '../../../../shared/plugins/plugin-icon-theme-artifact'
-import { resolveFileIconThemeAsset } from '@/lib/file-icon-theme'
-import { PluginFileIcon } from './PluginFileIcon'
-import { useAppStore } from '@/store'
+  type WorkspaceFileDragSource,
+} from "@/lib/workspace-file-drag";
+import type { GitFileStatus } from "../../../../shared/git-status-types";
+import { STATUS_LABELS } from "./status-display";
+import { RENAME_HOTSPOT_ATTR } from "./file-explorer-dir-toggle-timing";
+import type { TreeNode } from "./file-explorer-types";
+import { useFileExplorerRowDrag } from "./useFileExplorerRowDrag";
+import { translate } from "@/i18n/i18n";
+import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from "@/lib/close-all-context-menus";
+import type { RuntimeFileOperationArgs } from "@/runtime/runtime-file-client-types";
+import { createMultiSelectDragGhost } from "./file-explorer-multi-drag-image";
+import { FileExplorerRowContextMenu } from "./file-explorer-row-context-menu";
+import type { PluginIconThemeRegistration } from "../../../../shared/plugins/plugin-icon-theme-artifact";
+import { resolveFileIconThemeAsset } from "@/lib/file-icon-theme";
+import { PluginFileIcon } from "./PluginFileIcon";
+import { useAppStore } from "@/store";
 import {
   folderColorOverrideKey,
   resolveFolderColorOverride,
   setFolderColorOverride,
-  type FolderColorHex
-} from '../../../../shared/folder-color-palette'
-import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
+  type FolderColorHex,
+} from "../../../../shared/folder-color-palette";
+import { getFileExplorerOperationExecutionHostId } from "./file-explorer-operation-owner";
 
 // ─── File / Folder Row with Context Menu ─────────────────────────
 
 export type FileExplorerRowProps = {
-  node: TreeNode
-  displayDepthOffset?: number
-  iconTheme?: PluginIconThemeRegistration | null
-  isExpanded: boolean
-  isLoading: boolean
+  node: TreeNode;
+  displayDepthOffset?: number;
+  iconTheme?: PluginIconThemeRegistration | null;
+  isExpanded: boolean;
+  isLoading: boolean;
   /** Why: a failed read leaves no children, which otherwise reads as an empty folder. */
-  loadError?: string | null
-  isSelected: boolean
-  isFlashing: boolean
-  selectedPaths: Set<string>
-  nodeStatus: GitFileStatus | null
-  statusColor: string | null
-  isIgnored: boolean
-  deleteShortcutLabel: string
-  connectionId?: string | null
-  sourceWorkspaceId?: string | null
+  loadError?: string | null;
+  isSelected: boolean;
+  isFlashing: boolean;
+  selectedPaths: Set<string>;
+  nodeStatus: GitFileStatus | null;
+  statusColor: string | null;
+  isIgnored: boolean;
+  deleteShortcutLabel: string;
+  connectionId?: string | null;
+  sourceWorkspaceId?: string | null;
   /** Resolved at dragstart so the virtualized list pays nothing per render. */
   resolveDragSourceOwner?: (
-    paths: readonly string[]
-  ) => Omit<WorkspaceFileDragSource, 'workspaceId'> | null
-  runtimeDownloadContext?: RuntimeFileOperationArgs | null
-  supportsFolderDownload?: boolean
-  canOpenInOrcaBrowser: boolean
-  canCollapseFolderSubtree: boolean
-  targetDir: string
-  targetDepth: number
-  selectionSize: number
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
-  onDoubleClick: () => void
-  onViewFile: () => void
-  onContextMenuSelect: () => void
-  onCopyPaths: (pathKind: 'absolute' | 'relative') => void
-  onStartNew: (type: 'file' | 'folder', dir: string, depth: number) => void
-  onStartRename: (node: TreeNode) => void
-  onDuplicate: (node: TreeNode) => void
-  onAddFolderAsProject: () => void
-  canAddAsProject: boolean
-  onOpenInTerminal: () => void
-  onRequestDelete: () => void
-  onCollapseFolderSubtree: () => void
-  onFindInFolder: () => void
-  onMoveDrop: (sourcePath: string, destDir: string) => void
-  onDragTargetChange: (dir: string | null) => void
-  onDragSourceChange: (path: string | null) => void
-  onDragExpandDir: (dirPath: string) => void
-  onNativeDragTargetChange: (dir: string | null) => void
-  onNativeDragExpandDir: (dirPath: string) => void
-}
+    paths: readonly string[],
+  ) => Omit<WorkspaceFileDragSource, "workspaceId"> | null;
+  runtimeDownloadContext?: RuntimeFileOperationArgs | null;
+  supportsFolderDownload?: boolean;
+  canOpenInOrcaBrowser: boolean;
+  canCollapseFolderSubtree: boolean;
+  targetDir: string;
+  targetDepth: number;
+  selectionSize: number;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDoubleClick: () => void;
+  onViewFile: () => void;
+  onContextMenuSelect: () => void;
+  onCopyPaths: (pathKind: "absolute" | "relative") => void;
+  onStartNew: (type: "file" | "folder", dir: string, depth: number) => void;
+  onStartRename: (node: TreeNode) => void;
+  onDuplicate: (node: TreeNode) => void;
+  onAddFolderAsProject: () => void;
+  canAddAsProject: boolean;
+  onOpenInTerminal: () => void;
+  onRequestDelete: () => void;
+  onCollapseFolderSubtree: () => void;
+  onFindInFolder: () => void;
+  onMoveDrop: (sourcePath: string, destDir: string) => void;
+  onDragTargetChange: (dir: string | null) => void;
+  onDragSourceChange: (path: string | null) => void;
+  onDragExpandDir: (dirPath: string) => void;
+  onNativeDragTargetChange: (dir: string | null) => void;
+  onNativeDragExpandDir: (dirPath: string) => void;
+};
 
 /** Offsets visual indentation for a scoped tree without changing the node paths passed to file actions. */
 export function FileExplorerRow({
@@ -136,66 +136,80 @@ export function FileExplorerRow({
   onDragSourceChange,
   onDragExpandDir,
   onNativeDragTargetChange,
-  onNativeDragExpandDir
+  onNativeDragExpandDir,
 }: FileExplorerRowProps): React.JSX.Element {
-  const folderColorOverrides = useAppStore((state) => state.settings?.folderColorOverrides)
-  const updateSettings = useAppStore((state) => state.updateSettings)
+  const folderColorOverrides = useAppStore(
+    (state) => state.settings?.folderColorOverrides,
+  );
+  const updateSettings = useAppStore((state) => state.updateSettings);
   const folderColorKey = folderColorOverrideKey(
     node.path,
-    getFileExplorerOperationExecutionHostId(node.operationOwner)
-  )
+    getFileExplorerOperationExecutionHostId(node.operationOwner),
+  );
   const folderColor = node.isDirectory
     ? resolveFolderColorOverride(folderColorOverrides, folderColorKey)
-    : null
+    : null;
   const handleFolderColorChange = (color: FolderColorHex | null): void => {
     void updateSettings({
-      folderColorOverrides: setFolderColorOverride(folderColorOverrides, folderColorKey, color)
-    })
-  }
-  const FileIcon = getFileTypeIcon(node.relativePath || node.name)
-  const showLoadError = node.isDirectory && isExpanded && !isLoading && loadError !== null
+      folderColorOverrides: setFolderColorOverride(
+        folderColorOverrides,
+        folderColorKey,
+        color,
+      ),
+    });
+  };
+  const FileIcon = getFileTypeIcon(node.relativePath || node.name);
+  const showLoadError =
+    node.isDirectory && isExpanded && !isLoading && loadError !== null;
   const pluginIcon = iconTheme
     ? resolveFileIconThemeAsset(iconTheme, {
         name: node.name,
         isDirectory: node.isDirectory,
-        isExpanded
+        isExpanded,
       })
-    : null
-  const rowDropDir = node.isDirectory ? node.path : targetDir
-  const { setRowDragNode, handleDragOver, handleDragEnter, handleDragLeave, handleDrop } =
-    useFileExplorerRowDrag({
-      rowDropDir,
-      isDirectory: node.isDirectory,
-      nodePath: node.path,
-      isExpanded,
-      onDragTargetChange,
-      onDragExpandDir,
-      onNativeDragTargetChange,
-      onNativeDragExpandDir,
-      onMoveDrop
-    })
+    : null;
+  const rowDropDir = node.isDirectory ? node.path : targetDir;
+  const {
+    setRowDragNode,
+    handleDragOver,
+    handleDragEnter,
+    handleDragLeave,
+    handleDrop,
+  } = useFileExplorerRowDrag({
+    rowDropDir,
+    isDirectory: node.isDirectory,
+    nodePath: node.path,
+    isExpanded,
+    onDragTargetChange,
+    onDragExpandDir,
+    onNativeDragTargetChange,
+    onNativeDragExpandDir,
+    onMoveDrop,
+  });
 
   return (
     <ContextMenu
       onOpenChange={(open) => {
         if (!open) {
-          return
+          return;
         }
-        window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
-        onContextMenuSelect()
+        window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT));
+        onContextMenuSelect();
       }}
     >
       <ContextMenuTrigger asChild>
         <button
           data-file-explorer-row=""
-          data-selected={isSelected ? 'true' : undefined}
+          data-selected={isSelected ? "true" : undefined}
           className={cn(
-            'flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-xs transition-colors',
-            !isSelected && 'hover:bg-accent hover:text-foreground',
-            isSelected && 'text-accent-foreground',
-            isFlashing && 'bg-amber-400/20 ring-1 ring-inset ring-amber-400/70'
+            "flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-xs transition-colors",
+            !isSelected && "hover:bg-accent hover:text-foreground",
+            isSelected && "text-accent-foreground",
+            isFlashing && "bg-amber-400/20 ring-1 ring-inset ring-amber-400/70",
           )}
-          style={{ paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px` }}
+          style={{
+            paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px`,
+          }}
           ref={setRowDragNode}
           // Why: the explorer's OS-drop owner reads the target folder from this at drop time.
           data-file-explorer-drop-dir={rowDropDir}
@@ -207,29 +221,32 @@ export function FileExplorerRow({
             const paths =
               selectedPaths.has(node.path) && selectedPaths.size > 1
                 ? [...selectedPaths]
-                : [node.path]
-            event.dataTransfer.setData(WORKSPACE_FILE_PATH_MIME, node.path)
+                : [node.path];
+            event.dataTransfer.setData(WORKSPACE_FILE_PATH_MIME, node.path);
             if (paths.length > 1) {
-              event.dataTransfer.setData(WORKSPACE_FILE_PATHS_MIME, encodeWorkspaceFilePaths(paths))
+              event.dataTransfer.setData(
+                WORKSPACE_FILE_PATHS_MIME,
+                encodeWorkspaceFilePaths(paths),
+              );
             }
-            const sourceOwner = resolveDragSourceOwner?.(paths)
+            const sourceOwner = resolveDragSourceOwner?.(paths);
             writeWorkspaceFileDragSourceIfResolved(
               event.dataTransfer,
               sourceWorkspaceId,
               sourceOwner?.executionHostId,
-              sourceOwner?.runtimeEnvironmentId
-            )
-            event.dataTransfer.effectAllowed = 'copyMove'
-            onDragSourceChange(node.path)
+              sourceOwner?.runtimeEnvironmentId,
+            );
+            event.dataTransfer.effectAllowed = "copyMove";
+            onDragSourceChange(node.path);
 
             if (paths.length > 1) {
-              const btn = event.currentTarget
-              const rowW = btn.getBoundingClientRect().width
-              const ghost = createMultiSelectDragGhost(paths, rowW)
+              const btn = event.currentTarget;
+              const rowW = btn.getBoundingClientRect().width;
+              const ghost = createMultiSelectDragGhost(paths, rowW);
 
-              document.body.appendChild(ghost)
-              event.dataTransfer.setDragImage(ghost, 12, 12)
-              setTimeout(() => document.body.removeChild(ghost), 0)
+              document.body.appendChild(ghost);
+              event.dataTransfer.setDragImage(ghost, 12, 12);
+              setTimeout(() => document.body.removeChild(ghost), 0);
             }
           }}
           onDragEnd={() => onDragSourceChange(null)}
@@ -244,8 +261,8 @@ export function FileExplorerRow({
             <>
               <ChevronRight
                 className={cn(
-                  'size-3 shrink-0 text-muted-foreground transition-transform',
-                  isExpanded && 'rotate-90'
+                  "size-3 shrink-0 text-muted-foreground transition-transform",
+                  isExpanded && "rotate-90",
                 )}
               />
               {isLoading ? (
@@ -282,7 +299,7 @@ export function FileExplorerRow({
                 />
               ) : (
                 React.createElement(FileIcon, {
-                  className: 'size-3 shrink-0 text-muted-foreground'
+                  className: "size-3 shrink-0 text-muted-foreground",
                 })
               )}
             </>
@@ -290,33 +307,39 @@ export function FileExplorerRow({
           <span
             // Why: marks the rename hotspot so the row's click handler can drop
             // the directory toggle on the second click of a double-click rename.
-            {...{ [RENAME_HOTSPOT_ATTR]: '' }}
+            {...{ [RENAME_HOTSPOT_ATTR]: "" }}
             className={cn(
-              'truncate',
-              isSelected && !nodeStatus && !isIgnored && 'text-accent-foreground',
+              "truncate",
+              isSelected &&
+                !nodeStatus &&
+                !isIgnored &&
+                "text-accent-foreground",
               // Why: italic glyphs overhang their advance width; truncate's
               // overflow:hidden clips it, shaving the last char (".md" → ".ma").
               // pr-0.5 reserves room for the slant so the final letter survives.
-              isIgnored && 'italic pr-0.5'
+              isIgnored && "italic pr-0.5",
             )}
             style={
               nodeStatus
                 ? { color: statusColor ?? undefined }
                 : isIgnored
-                  ? { color: 'var(--git-decoration-ignored)' }
+                  ? { color: "var(--git-decoration-ignored)" }
                   : undefined
             }
             onDoubleClick={(e) => {
               // Why: scope rename to the filename text so "pin preview" and the
               // directory toggle stay reachable on the icon and empty row area.
-              e.stopPropagation()
-              onStartRename(node)
+              e.stopPropagation();
+              onStartRename(node);
             }}
           >
             {node.name}
           </span>
           {showLoadError ? (
-            <span className="w-0 flex-1 truncate text-destructive" title={loadError}>
+            <span
+              className="w-0 flex-1 truncate text-destructive"
+              title={loadError}
+            >
               {loadError}
             </span>
           ) : null}
@@ -330,11 +353,11 @@ export function FileExplorerRow({
           ) : isIgnored ? (
             <CircleSlash
               aria-label={translate(
-                'auto.components.right.sidebar.FileExplorerRow.e26010014a',
-                'Ignored by .gitignore'
+                "auto.components.right.sidebar.FileExplorerRow.e26010014a",
+                "Ignored by .gitignore",
               )}
               className="ml-auto size-3 shrink-0 mr-2"
-              style={{ color: 'var(--git-decoration-ignored)' }}
+              style={{ color: "var(--git-decoration-ignored)" }}
             />
           ) : null}
         </button>
@@ -366,5 +389,5 @@ export function FileExplorerRow({
         onFolderColorChange={handleFolderColorChange}
       />
     </ContextMenu>
-  )
+  );
 }

@@ -1,42 +1,50 @@
-import { ImeInput } from '@/lib/ime-text-field'
-import { useEffect, useRef } from 'react'
-import { LoaderCircle, RefreshCw, Search, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { translate } from '@/i18n/i18n'
-import type { AiVaultAgent, AiVaultGroup, AiVaultScope } from '../../../../shared/ai-vault-types'
-import type { ExecutionHostScope } from '../../../../shared/execution-host'
-import { VaultHostScopeMenu, VaultScopeSwitch, VaultViewMenu } from './AiVaultPanelControls'
-import type { AiVaultHostScopeOption } from './ai-vault-host-scope'
-import type { AiVaultSessionLimit } from './ai-vault-session-limit'
+import { ImeInput } from "@/lib/ime-text-field";
+import { useEffect, useRef } from "react";
+import { LoaderCircle, RefreshCw, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { translate } from "@/i18n/i18n";
+import type {
+  AiVaultAgent,
+  AiVaultGroup,
+  AiVaultScope,
+} from "../../../../shared/ai-vault-types";
+import type { ExecutionHostScope } from "../../../../shared/execution-host";
+import {
+  VaultHostScopeMenu,
+  VaultScopeSwitch,
+  VaultViewMenu,
+} from "./AiVaultPanelControls";
+import type { AiVaultHostScopeOption } from "./ai-vault-host-scope";
+import type { AiVaultSessionLimit } from "./ai-vault-session-limit";
 
 type AiVaultPanelHeaderProps = {
-  searching?: boolean
-  query: string
-  loading: boolean
-  hasScanResult: boolean
-  activeWorktreePath: string | null
-  activeProjectKey: string | null
-  scope: AiVaultScope
-  executionHostScope: ExecutionHostScope
-  hostScopeOptions: readonly AiVaultHostScopeOption[]
-  agents: readonly AiVaultAgent[]
-  group: AiVaultGroup
-  hideEmptySessions: boolean
-  sessionLimit: AiVaultSessionLimit
-  adjustmentCount: number
+  searching?: boolean;
+  query: string;
+  loading: boolean;
+  hasScanResult: boolean;
+  activeWorktreePath: string | null;
+  activeProjectKey: string | null;
+  scope: AiVaultScope;
+  executionHostScope: ExecutionHostScope;
+  hostScopeOptions: readonly AiVaultHostScopeOption[];
+  agents: readonly AiVaultAgent[];
+  group: AiVaultGroup;
+  hideEmptySessions: boolean;
+  sessionLimit: AiVaultSessionLimit;
+  adjustmentCount: number;
   /** Bumped by a caller that sent the user here, e.g. Settings; focuses the search box once. */
-  focusSearchRequestId?: number
-  onQueryChange: (query: string) => void
-  onScopeChange: (scope: AiVaultScope) => void
-  onExecutionHostScopeChange: (scope: ExecutionHostScope) => void
-  onAgentEnabledChange: (agent: AiVaultAgent, enabled: boolean) => void
-  onAllAgentsEnabledChange: (enabled: boolean) => void
-  onGroupChange: (group: AiVaultGroup) => void
-  onHideEmptySessionsChange: (hideEmptySessions: boolean) => void
-  onSessionLimitChange: (limit: AiVaultSessionLimit) => void
-  onReset: () => void
-  onRefresh: () => void
-}
+  focusSearchRequestId?: number;
+  onQueryChange: (query: string) => void;
+  onScopeChange: (scope: AiVaultScope) => void;
+  onExecutionHostScopeChange: (scope: ExecutionHostScope) => void;
+  onAgentEnabledChange: (agent: AiVaultAgent, enabled: boolean) => void;
+  onAllAgentsEnabledChange: (enabled: boolean) => void;
+  onGroupChange: (group: AiVaultGroup) => void;
+  onHideEmptySessionsChange: (hideEmptySessions: boolean) => void;
+  onSessionLimitChange: (limit: AiVaultSessionLimit) => void;
+  onReset: () => void;
+  onRefresh: () => void;
+};
 
 export function AiVaultPanelHeader({
   query,
@@ -63,15 +71,15 @@ export function AiVaultPanelHeader({
   onHideEmptySessionsChange,
   onSessionLimitChange,
   onReset,
-  onRefresh
+  onRefresh,
 }: AiVaultPanelHeaderProps): React.JSX.Element {
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focusSearchRequestId > 0) {
-      searchInputRef.current?.focus()
-      searchInputRef.current?.select()
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
     }
-  }, [focusSearchRequestId])
+  }, [focusSearchRequestId]);
   return (
     <div className="shrink-0 border-b border-sidebar-border px-2.5 py-2">
       <div className="flex items-center gap-1.5">
@@ -80,20 +88,26 @@ export function AiVaultPanelHeader({
             {/* Why: below 300px the header competes with fixed controls, so compact copy prevents overlap. */}
             <span className="@max-[300px]/ai-vault:hidden">
               {translate(
-                'auto.components.right.sidebar.AiVaultPanel.sessionHistory',
-                'Agent Session History'
+                "auto.components.right.sidebar.AiVaultPanel.sessionHistory",
+                "Agent Session History",
               )}
             </span>
             <span className="hidden @max-[300px]/ai-vault:inline">
-              {translate('auto.components.right.sidebar.AiVaultPanel.agents', 'Agents')}
+              {translate(
+                "auto.components.right.sidebar.AiVaultPanel.agents",
+                "Agents",
+              )}
             </span>
           </div>
           <div className="truncate text-[11px] text-muted-foreground">
             {searching || hasScanResult
-              ? translate('sessionSearch.panel.indexedHistory', 'Indexed history')
+              ? translate(
+                  "sessionSearch.panel.indexedHistory",
+                  "Indexed history",
+                )
               : translate(
-                  'auto.components.right.sidebar.AiVaultPanel.resumePastSessions',
-                  'Resume past sessions'
+                  "auto.components.right.sidebar.AiVaultPanel.resumePastSessions",
+                  "Resume past sessions",
                 )}
           </div>
         </div>
@@ -122,8 +136,8 @@ export function AiVaultPanelHeader({
             variant="ghost"
             size="icon-xs"
             aria-label={translate(
-              'auto.components.right.sidebar.AiVaultPanel.refreshSessionHistory',
-              'Refresh Session History'
+              "auto.components.right.sidebar.AiVaultPanel.refreshSessionHistory",
+              "Refresh Session History",
             )}
             onClick={onRefresh}
             disabled={loading}
@@ -155,33 +169,35 @@ export function AiVaultPanelHeader({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={translate(
-            'auto.components.right.sidebar.AiVaultPanel.searchSessions',
-            'Search sessions'
+            "auto.components.right.sidebar.AiVaultPanel.searchSessions",
+            "Search sessions",
           )}
           className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
           aria-label={translate(
-            'auto.components.right.sidebar.AiVaultPanel.searchSessions',
-            'Search sessions'
+            "auto.components.right.sidebar.AiVaultPanel.searchSessions",
+            "Search sessions",
           )}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.stopPropagation()
-              onQueryChange('')
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              onQueryChange("");
             }
           }}
           spellCheck={false}
         />
-        {loading ? <LoaderCircle className="size-3 animate-spin text-muted-foreground" /> : null}
+        {loading ? (
+          <LoaderCircle className="size-3 animate-spin text-muted-foreground" />
+        ) : null}
         {query ? (
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             className="size-5 rounded-sm text-muted-foreground hover:text-foreground"
-            onClick={() => onQueryChange('')}
+            onClick={() => onQueryChange("")}
             aria-label={translate(
-              'auto.components.right.sidebar.AiVaultPanel.clearSearch',
-              'Clear search'
+              "auto.components.right.sidebar.AiVaultPanel.clearSearch",
+              "Clear search",
             )}
           >
             <X className="size-3" />
@@ -189,5 +205,5 @@ export function AiVaultPanelHeader({
         ) : null}
       </div>
     </div>
-  )
+  );
 }
