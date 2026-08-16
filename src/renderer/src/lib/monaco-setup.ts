@@ -63,6 +63,23 @@ const diagnosticsOptions = {
 monacoTS.typescriptDefaults.setDiagnosticsOptions(diagnosticsOptions)
 monacoTS.javascriptDefaults.setDiagnosticsOptions(diagnosticsOptions)
 
+// The worker also collapses import types to `any` in hover/completion/definition; disable exactly what
+// the LSP bridge (lib/monaco-lsp) replaces and keep the rest (signature help, rename, code actions) on the worker.
+const tsWorkerModeConfiguration = {
+  completionItems: false,
+  hovers: false,
+  definitions: false,
+  references: false
+}
+monacoTS.typescriptDefaults.setModeConfiguration({
+  ...monacoTS.typescriptDefaults.modeConfiguration,
+  ...tsWorkerModeConfiguration
+})
+monacoTS.javascriptDefaults.setModeConfiguration({
+  ...monacoTS.javascriptDefaults.modeConfiguration,
+  ...tsWorkerModeConfiguration
+})
+
 // TSX/JSX share TypeScript/JavaScript defaults; preserve JSX parsing without emission to avoid TS17004 on tags.
 monacoTS.typescriptDefaults.setCompilerOptions({
   ...monacoTS.typescriptDefaults.getCompilerOptions(),

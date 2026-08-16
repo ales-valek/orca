@@ -20,6 +20,7 @@ import { getLargeDiffRenderLimit } from '../../../../../../shared/large-diff-ren
 import { useDiffViewerLargeDiffLifecycle } from '../large-files/useDiffViewerLargeDiffLifecycle'
 import { useDiffViewerFirstChangeAutoScroll } from './useDiffViewerFirstChangeAutoScroll'
 import { getDiffViewerLargeDiffSaveAction } from '../large-files/diff-viewer-large-diff-save-action'
+import { useMonacoLspForDiff } from './use-monaco-lsp-for-diff'
 import type { DiffViewerProps } from './diff-viewer-props'
 import { buildDiffEditorWhitespaceOptions } from './diff-editor-whitespace-options'
 import {
@@ -95,6 +96,13 @@ export default function DiffViewer({
     const models = diffEditorRef.current?.getModel()
     applyModelLanguage([models?.original, models?.modified], language)
   }, [modifiedEditor, language])
+  useMonacoLspForDiff({
+    modifiedEditor,
+    relativePath,
+    worktreeId,
+    language,
+    modelIdentity: modifiedModelKey ?? modelKey
+  })
 
   const renderLimit = useMemo(
     () => largeDiffRenderLimit ?? getLargeDiffRenderLimit({ originalContent, modifiedContent }),
