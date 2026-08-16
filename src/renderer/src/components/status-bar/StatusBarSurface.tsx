@@ -22,6 +22,7 @@ import { NativeChatResumeStatusSegment } from './NativeChatResumeStatusSegment'
 import { CaffeinateStatusSegment } from './CaffeinateStatusSegment'
 import { PluginsStatusSegment } from './PluginsStatusSegment'
 import { PluginStatusBarItems } from './PluginStatusBarItems'
+import { LspStatusSegment } from './LspStatusSegment'
 import { RemoteServerUpdateStatusSegment } from './RemoteServerUpdateStatusSegment'
 import { TOGGLE_FLOATING_TERMINAL_EVENT } from '@/lib/floating-terminal'
 import { FloatingTerminalIconContextMenu } from '@/components/floating-terminal/FloatingTerminalIconContextMenu'
@@ -309,6 +310,7 @@ export function StatusBarSurface({
         data-overflowing={overflowing}
       >
         <div ref={segmentsRef} className="flex w-max items-center gap-3">
+          <LspStatusSegment iconOnly={segmentsIconOnly} />
           {!isPairedWebClientWindow() ? (
             <>
               <PluginsStatusSegment />
