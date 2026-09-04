@@ -10,6 +10,7 @@ import type { OpenFile } from '@/store/slices/editor'
 import type { DiffComment } from '../../../../../../shared/diff-comment-types'
 import type { DiffCommentOwner } from '@/store/diff-comment-owner'
 import { DiffSectionItem } from '../../DiffSectionItem'
+import { getCombinedSectionBlameRevisions } from '../../diff-blame-revisions'
 import type { DiffSectionItemProps } from '../../diff-section-item-props'
 import { DiffNotesSendMenu } from '../../DiffNotesSendMenu'
 import { canOpenDiffSectionPreviewToSide } from '../../diff-section-preview'
@@ -100,6 +101,12 @@ export function CombinedDiffSectionList({
             if (!section) {
               return null
             }
+            const blameRevisions = getCombinedSectionBlameRevisions({
+              diffSource: file.diffSource,
+              sectionArea: section.area,
+              commitCompare: file.commitCompare,
+              branchCompare: file.branchCompare
+            })
 
             return (
               <div
@@ -121,6 +128,9 @@ export function CombinedDiffSectionList({
                   sectionHeight={sectionHeights[virtualItem.index]}
                   worktreeId={file.worktreeId}
                   noteSource={file}
+                  originalBlamePath={section.oldPath}
+                  originalBlameRevision={blameRevisions.originalRevision}
+                  modifiedBlameRevision={blameRevisions.modifiedRevision}
                   loadSection={loadSection}
                   loadDeferredSection={loadDeferredSection}
                   retrySection={retrySection}
