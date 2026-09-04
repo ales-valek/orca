@@ -16,7 +16,7 @@ import type {
   GitHistoryOptions,
   GitHistoryResult
 } from '../../shared/git/history/git-history-types'
-import type { GitBlameResult } from '../../shared/git-blame'
+import type { GitBlameContentsSource, GitBlameResult } from '../../shared/git-blame'
 import type {
   CommitMessageAgentCapability,
   CommitMessageModelCapability
@@ -102,6 +102,7 @@ export type GitInspectionApi = {
     worktreePath: string
     filePath: string
     revision?: string
+    contentsSource?: GitBlameContentsSource
     connectionId?: string
   }) => Promise<GitBlameResult>
   upstreamStatus: (args: {

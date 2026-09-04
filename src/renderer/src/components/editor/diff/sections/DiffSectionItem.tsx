@@ -34,7 +34,10 @@ export function DiffSectionItem({
   noteSource = NO_RESOURCE_EVIDENCE,
   originalBlamePath,
   originalBlameRevision,
+  originalContentsSource,
   modifiedBlameRevision,
+  modifiedContentsSource,
+  modifiedBufferDirty,
   loadSection,
   loadDeferredSection,
   retrySection,
@@ -84,7 +87,10 @@ export function DiffSectionItem({
     relativePath: section.path,
     originalBlamePath,
     originalBlameRevision,
+    originalContentsSource,
     modifiedBlameRevision,
+    modifiedContentsSource,
+    modifiedBufferDirty,
     widgetKeyPrefix: `diff:${section.key}`,
     extraEnabled: !section.collapsed
   })

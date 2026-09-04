@@ -90,6 +90,7 @@ export function ChangesModeView({
           worktreeId={activeFile.worktreeId}
           noteSource={activeFile}
           originalBlameRevision={GIT_BLAME_HEAD_REVISION}
+          modifiedBufferDirty={activeFile.isDirty}
           onContentChange={onContentChange}
           onSave={onSave}
         />

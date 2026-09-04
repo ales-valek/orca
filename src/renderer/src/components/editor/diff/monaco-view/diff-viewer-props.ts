@@ -1,5 +1,6 @@
 import type { WorkspaceResource } from '@/lib/workspace/ownership/workspace-copy-owner'
 import type { LargeDiffRenderLimit } from '../../../../../../shared/large-diff-render-limit'
+import type { GitBlameContentsSource } from '../../../../shared/git-blame'
 
 export type DiffViewerProps = {
   modelKey: string
@@ -33,5 +34,8 @@ export type DiffViewerProps = {
   largeDiffSaveContentAvailable?: boolean
   originalBlamePath?: string
   originalBlameRevision?: string
+  originalContentsSource?: GitBlameContentsSource
   modifiedBlameRevision?: string
+  modifiedContentsSource?: GitBlameContentsSource
+  modifiedBufferDirty?: boolean
 }
