@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import type { GitBlameResult } from '../../../shared/git-blame'
+import { GIT_BLAME_INDEX_CONTENTS, type GitBlameResult } from '../../../shared/git-blame'
 import { getFileBlame } from '../../git/blame'
 import { requireReachableGitRoute } from '../../providers/execution-host-provider-dispatch'
 import { getConnectionExecutionHostId } from '../../../shared/execution-host'
@@ -11,18 +11,31 @@ import {
 } from '../filesystem-path-containment'
 import type { FilesystemHandlerContext } from './filesystem-handler-context'
 
+function resolveBlameContentsSource(
+  contentsSource: string | undefined
+): typeof GIT_BLAME_INDEX_CONTENTS | undefined {
+  return contentsSource === GIT_BLAME_INDEX_CONTENTS ? GIT_BLAME_INDEX_CONTENTS : undefined
+}
+
 export function registerFilesystemGitBlameHandlers(context: FilesystemHandlerContext): void {
   const { store } = context
   ipcMain.handle(
     'git:blame',
     async (
       _event,
-      args: { worktreePath: string; filePath: string; connectionId?: string; revision?: string }
+      args: {
+        worktreePath: string
+        filePath: string
+        connectionId?: string
+        revision?: string
+        contentsSource?: string
+      }
     ): Promise<GitBlameResult> => {
       const revision =
         args.revision && args.revision !== 'HEAD'
           ? validateFullGitObjectId(args.revision, 'revision')
           : args.revision
+      const contentsSource = resolveBlameContentsSource(args.contentsSource)
       requireReachableGitRoute(getConnectionExecutionHostId(args.connectionId))
       const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
       const filePath = validateGitRelativeFilePath(worktreePath, args.filePath)
@@ -31,7 +44,7 @@ export function registerFilesystemGitBlameHandlers(context: FilesystemHandlerCon
         args.worktreePath,
         worktreePath
       )
-      return getFileBlame(worktreePath, filePath, gitOptions, revision)
+      return getFileBlame(worktreePath, filePath, gitOptions, revision, contentsSource)
     }
   )
 }

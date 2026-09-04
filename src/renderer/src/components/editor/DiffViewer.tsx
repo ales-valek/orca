@@ -63,7 +63,10 @@ export default function DiffViewer({
   largeDiffSaveContentAvailable,
   originalBlamePath,
   originalBlameRevision,
-  modifiedBlameRevision
+  originalContentsSource,
+  modifiedBlameRevision,
+  modifiedContentsSource,
+  modifiedBufferDirty
 }: DiffViewerProps): React.JSX.Element {
   const diffWordWrap = useAppStore((s) => s.settings?.diffWordWrap)
   const diffShowWhitespace = useAppStore((s) => s.settings?.diffShowWhitespace)
@@ -105,7 +108,10 @@ export default function DiffViewer({
     relativePath,
     originalBlamePath,
     originalBlameRevision,
+    originalContentsSource,
     modifiedBlameRevision,
+    modifiedContentsSource,
+    modifiedBufferDirty,
     widgetKeyPrefix: 'diff',
     extraEnabled: renderLimit.limited !== true
   })

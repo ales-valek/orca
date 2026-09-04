@@ -164,7 +164,10 @@ export function EditorDiffFileSurface({
       relativePath={activeFile.relativePath}
       originalBlamePath={activeFile.branchOldPath}
       originalBlameRevision={blameRevisions.originalRevision}
+      originalContentsSource={blameRevisions.originalContentsSource}
       modifiedBlameRevision={blameRevisions.modifiedRevision}
+      modifiedContentsSource={blameRevisions.modifiedContentsSource}
+      modifiedBufferDirty={activeFile.isDirty}
       sideBySide={sideBySide}
       editable={isEditable}
       worktreeId={activeFile.worktreeId}
