@@ -14,6 +14,9 @@ export type DiffSectionItemProps = {
   worktreeId?: string
   /** The combined diff's tab; its review notes belong to the copy it names. */
   noteSource?: WorkspaceResource
+  originalBlamePath?: string
+  originalBlameRevision?: string
+  modifiedBlameRevision?: string
   loadSection: (index: number) => void
   loadDeferredSection?: (index: number) => void
   retrySection: (index: number) => void

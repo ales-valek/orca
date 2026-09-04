@@ -86,6 +86,8 @@ export type GlobalSettings = GlobalSettingsBase & {
   updateDelayDays?: number
   editorAutoSaveDelayMs: number
   editorMinimapEnabled: boolean
+  /** Current-line git blame annotation. Absent on older profiles; treated as on. */
+  editorGitLineBlameEnabled?: boolean
   /** Defaults on for profiles saved before file-editor wrapping became configurable. */
   editorWordWrap?: boolean
   /** Persisted opt-out for browser spellcheck noise in rich Markdown editing surfaces. */
