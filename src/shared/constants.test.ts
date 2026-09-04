@@ -63,6 +63,96 @@ describe('getDefaultSettings', () => {
   it('asks before closing terminals with running processes by default', () => {
     expect(getDefaultSettings('/tmp').skipCloseTerminalWithRunningProcessConfirm).toBe(false)
   })
+
+  it('uses system language by default', () => {
+    expect(getDefaultSettings('/tmp').uiLanguage).toBe('system')
+  })
+
+  it('defaults the menu bar icon on so the value round-trips across platforms', () => {
+    expect(getDefaultSettings('/tmp').showMenuBarIcon).toBe(true)
+  })
+
+  it('shows terminal link actions by default', () => {
+    expect(getDefaultSettings('/tmp').terminalLinkActionPopoverEnabled).toBe(true)
+  })
+
+  it('confirms before closing pinned tabs by default', () => {
+    expect(getDefaultSettings('/tmp').confirmClosePinnedTab).toBe(true)
+  })
+
+  it('keeps file-editor word wrapping enabled by default', () => {
+    expect(getDefaultSettings('/tmp').editorWordWrap).toBe(true)
+  })
+
+  it('keeps editor git line blame enabled by default', () => {
+    expect(getDefaultSettings('/tmp').editorGitLineBlameEnabled).toBe(true)
+  })
+
+  it('keeps rich Markdown spellcheck enabled by default', () => {
+    expect(getDefaultSettings('/tmp').richMarkdownSpellcheckEnabled).toBe(true)
+  })
+
+  it('enables Source Control AI by default without pinning a separate agent', () => {
+    expect(getDefaultSettings('/tmp').commitMessageAi).toMatchObject({
+      enabled: true,
+      agentId: null,
+      selectedModelByAgent: {}
+    })
+    expect(getDefaultSettings('/tmp').sourceControlAi).toMatchObject({
+      enabled: true,
+      agentId: null,
+      selectedModelByAgent: {},
+      instructionsByOperation: {
+        commitMessage: '',
+        pullRequest: '',
+        branchName: ''
+      }
+    })
+  })
+
+  it('keeps compact worktree cards disabled by default', () => {
+    expect(getDefaultSettings('/tmp').compactWorktreeCards).toBe(false)
+  })
+
+  it('keeps per-workspace environments disabled by default', () => {
+    expect(getDefaultSettings('/tmp').experimentalEphemeralVms).toBe(false)
+  })
+
+  it('keeps the agent dashboard popout disabled by default', () => {
+    expect(getDefaultSettings('/tmp').experimentalAgentDashboardPopout).toBeUndefined()
+    expect(getDefaultSettings('/tmp').experimentalAgentDashboardShowIdle).toBeUndefined()
+  })
+
+  it('defaults local Windows projects to the host runtime', () => {
+    expect(getDefaultSettings('/tmp').localWindowsRuntimeDefault).toEqual({
+      kind: 'windows-host'
+    })
+  })
+
+  it('suppresses notifications for the focused worktree by default for new users', () => {
+    expect(getDefaultNotificationSettings().suppressWhenFocused).toBe(true)
+    expect(getDefaultSettings('/tmp').notifications.suppressWhenFocused).toBe(true)
+  })
+
+  it('defaults agent launch args to yolo mode where the CLI supports it', () => {
+    const settings = getDefaultSettings('/tmp')
+
+    expect(settings.agentDefaultArgs).toMatchObject({
+      claude: '--dangerously-skip-permissions',
+      codex: '--dangerously-bypass-approvals-and-sandbox',
+      gemini: '--yolo',
+      cursor: '--yolo',
+      muse: '--yolo',
+      copilot: '--yolo',
+      grok: '--permission-mode bypassPermissions'
+    })
+    expect(settings.agentDefaultArgs).not.toHaveProperty('opencode')
+    expect(settings.agentDefaultArgs).not.toHaveProperty('kilo')
+    expect(settings.agentDefaultEnv).toMatchObject({
+      goose: { GOOSE_MODE: 'auto' }
+    })
+    expect(settings.agentYoloDefaultsMigrated).toBe(true)
+  })
 })
 
 describe('getDefaultPrimarySelectionMiddleClickPaste', () => {
