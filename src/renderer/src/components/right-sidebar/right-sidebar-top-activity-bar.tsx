@@ -1,23 +1,17 @@
-import React from "react";
-import type {
-  ActiveRightSidebarTab,
-  ActivityBarPosition,
-} from "@/store/slices/editor";
-import type { CheckStatus } from "../../../../shared/github/pull-request-types";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
-import {
-  ActivityBarButton,
-  TopActivityOverflowMenu,
-} from "./activity-bar-buttons";
-import type { ActivityBarItem } from "./activity-bar-buttons";
-import { ActivityBarPositionMenu } from "./activity-bar-position-menu";
+import React from 'react'
+import type { ActiveRightSidebarTab, ActivityBarPosition } from '@/store/slices/editor'
+import type { CheckStatus } from '../../../../shared/github/pull-request-types'
+import { cn } from '@/lib/utils'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
+import { ActivityBarButton, TopActivityOverflowMenu } from './activity-bar-buttons'
+import type { ActivityBarItem } from './activity-bar-buttons'
+import { ActivityBarPositionMenu } from './activity-bar-position-menu'
 import {
   RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME,
   RIGHT_SIDEBAR_TOP_ACTIVITY_STRIP_CLASS_NAME,
-  RIGHT_SIDEBAR_WINDOWS_TOP_ACTIVITY_STRIP_CLASS_NAME,
-} from "./right-sidebar-titlebar-drag-regions";
+  RIGHT_SIDEBAR_WINDOWS_TOP_ACTIVITY_STRIP_CLASS_NAME
+} from './right-sidebar-titlebar-drag-regions'
 
 export function RightSidebarTopActivityBar({
   hasDesktopWindowChrome,
@@ -28,20 +22,17 @@ export function RightSidebarTopActivityBar({
   checksStatus,
   closeButton,
   activityBarPosition,
-  onChangeActivityBarPosition,
+  onChangeActivityBarPosition
 }: {
-  hasDesktopWindowChrome: boolean;
-  topActivityStripRef: (node: HTMLDivElement | null) => void;
-  topActivityLayout: {
-    visibleItems: ActivityBarItem[];
-    overflowItems: ActivityBarItem[];
-  };
-  effectiveTab: ActiveRightSidebarTab;
-  onSelectTab: (tab: ActiveRightSidebarTab) => void;
-  checksStatus: CheckStatus | null;
-  closeButton: React.ReactNode;
-  activityBarPosition: ActivityBarPosition;
-  onChangeActivityBarPosition: (pos: ActivityBarPosition) => void;
+  hasDesktopWindowChrome: boolean
+  topActivityStripRef: (node: HTMLDivElement | null) => void
+  topActivityLayout: { visibleItems: ActivityBarItem[]; overflowItems: ActivityBarItem[] }
+  effectiveTab: ActiveRightSidebarTab
+  onSelectTab: (tab: ActiveRightSidebarTab) => void
+  checksStatus: CheckStatus | null
+  closeButton: React.ReactNode
+  activityBarPosition: ActivityBarPosition
+  onChangeActivityBarPosition: (pos: ActivityBarPosition) => void
 }): React.JSX.Element {
   return (
     /* ── Top activity bar: horizontal icon row ── */
@@ -54,12 +45,7 @@ export function RightSidebarTopActivityBar({
                 ref={topActivityStripRef}
                 className={RIGHT_SIDEBAR_TOP_ACTIVITY_STRIP_CLASS_NAME}
               >
-                <div
-                  className={cn(
-                    "flex min-w-0 shrink",
-                    RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME,
-                  )}
-                >
+                <div className={cn('flex min-w-0 shrink', RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME)}>
                   {/* Why: the top strip shares a narrow titlebar with the close
                       button and desktop window controls. Overflow goes
                       behind More instead of creating a horizontally
@@ -72,9 +58,7 @@ export function RightSidebarTopActivityBar({
                         active={effectiveTab === item.id}
                         onClick={() => onSelectTab(item.id)}
                         layout="top"
-                        statusIndicator={
-                          item.id === "checks" ? checksStatus : null
-                        }
+                        statusIndicator={item.id === 'checks' ? checksStatus : null}
                       />
                     ))}
                   </div>
@@ -91,8 +75,8 @@ export function RightSidebarTopActivityBar({
             </ContextMenuTrigger>
             <div
               className={cn(
-                "flex shrink-0 items-center pr-1",
-                RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME,
+                'flex shrink-0 items-center pr-1',
+                RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME
               )}
             >
               {closeButton}
@@ -103,8 +87,8 @@ export function RightSidebarTopActivityBar({
           <TooltipProvider delayDuration={400}>
             <div
               className={cn(
-                "ml-auto flex shrink-0 items-center pr-1",
-                RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME,
+                'ml-auto flex shrink-0 items-center pr-1',
+                RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME
               )}
             >
               {closeButton}
@@ -131,7 +115,7 @@ export function RightSidebarTopActivityBar({
                     active={effectiveTab === item.id}
                     onClick={() => onSelectTab(item.id)}
                     layout="top"
-                    statusIndicator={item.id === "checks" ? checksStatus : null}
+                    statusIndicator={item.id === 'checks' ? checksStatus : null}
                   />
                 ))}
               </div>
@@ -152,5 +136,5 @@ export function RightSidebarTopActivityBar({
         onChangePosition={onChangeActivityBarPosition}
       />
     </ContextMenu>
-  );
+  )
 }

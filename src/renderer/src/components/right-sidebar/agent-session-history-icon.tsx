@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react'
 
 export function AgentSessionHistoryIcon({
   size = 16,
-  className,
+  className
 }: {
-  size?: number;
-  className?: string;
+  size?: number
+  className?: string
 }): React.JSX.Element {
   return (
     <svg
@@ -28,5 +28,5 @@ export function AgentSessionHistoryIcon({
       <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
       <path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
     </svg>
-  );
+  )
 }

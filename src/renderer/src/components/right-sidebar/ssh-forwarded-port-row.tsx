@@ -1,123 +1,121 @@
-import React, { useCallback, useState } from "react";
-import { Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useMountedRef } from "@/hooks/useMountedRef";
-import { getPortOpenBrowserTooltipLabel } from "@/lib/workspace-port-actions";
+import React, { useCallback, useState } from 'react'
+import { Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useMountedRef } from '@/hooks/useMountedRef'
+import { getPortOpenBrowserTooltipLabel } from '@/lib/workspace-port-actions'
 import {
   addressForPortForwardEntry,
-  advertisedBrowserUrlForForwardedRow,
-} from "@/lib/workspace-port-urls";
-import type { PortForwardEntry } from "../../../../shared/ssh-types";
-import { translate } from "@/i18n/i18n";
+  advertisedBrowserUrlForForwardedRow
+} from '@/lib/workspace-port-urls'
+import type { PortForwardEntry } from '../../../../shared/ssh-types'
+import { translate } from '@/i18n/i18n'
 
 export function SshForwardedPortRow({
   entry,
   onEdit,
-  onOpenInBrowser,
+  onOpenInBrowser
 }: {
-  entry: PortForwardEntry;
-  onEdit: () => void;
-  onOpenInBrowser: (event?: React.MouseEvent<HTMLButtonElement>) => void;
+  entry: PortForwardEntry
+  onEdit: () => void
+  onOpenInBrowser: (event?: React.MouseEvent<HTMLButtonElement>) => void
 }): React.JSX.Element {
-  const [removing, setRemoving] = useState(false);
-  const mountedRef = useMountedRef();
-  const forwardedAddress = addressForPortForwardEntry(entry);
+  const [removing, setRemoving] = useState(false)
+  const mountedRef = useMountedRef()
+  const forwardedAddress = addressForPortForwardEntry(entry)
 
   const handleRemove = useCallback(async () => {
-    setRemoving(true);
+    setRemoving(true)
     try {
-      await window.api.ssh.removePortForward({ id: entry.id });
+      await window.api.ssh.removePortForward({ id: entry.id })
     } catch {
       // broadcast will update state
     }
     if (mountedRef.current) {
-      setRemoving(false);
+      setRemoving(false)
     }
-  }, [entry.id, mountedRef]);
+  }, [entry.id, mountedRef])
 
   const handleCopy = useCallback(() => {
-    void window.api.ui.writeClipboardText(forwardedAddress);
-  }, [forwardedAddress]);
+    void window.api.ui.writeClipboardText(forwardedAddress)
+  }, [forwardedAddress])
 
   const handleOpenBrowser = useCallback(
     (event?: React.MouseEvent<HTMLButtonElement>) => {
-      onOpenInBrowser(event);
+      onOpenInBrowser(event)
     },
-    [onOpenInBrowser],
-  );
+    [onOpenInBrowser]
+  )
 
   const handleCopyButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
-      handleCopy();
+      handleCopy()
       if (event.detail > 0) {
-        event.currentTarget.blur();
+        event.currentTarget.blur()
       }
     },
-    [handleCopy],
-  );
+    [handleCopy]
+  )
 
   const handleOpenBrowserButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       // Why: keyboard activations have detail=0; only pointer clicks carry
       // the modifier intent for the system-browser escape hatch.
-      handleOpenBrowser(event.detail > 0 ? event : undefined);
+      handleOpenBrowser(event.detail > 0 ? event : undefined)
       if (event.detail > 0) {
-        event.currentTarget.blur();
+        event.currentTarget.blur()
       }
     },
-    [handleOpenBrowser],
-  );
+    [handleOpenBrowser]
+  )
 
   const handleEditButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
-      onEdit();
+      onEdit()
       if (event.detail > 0) {
-        event.currentTarget.blur();
+        event.currentTarget.blur()
       }
     },
-    [onEdit],
-  );
+    [onEdit]
+  )
 
   const handleRemoveButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
-      void handleRemove();
+      void handleRemove()
       if (event.detail > 0) {
-        event.currentTarget.blur();
+        event.currentTarget.blur()
       }
     },
-    [handleRemove],
-  );
+    [handleRemove]
+  )
 
-  const advertisedBrowserUrl = advertisedBrowserUrlForForwardedRow(entry);
+  const advertisedBrowserUrl = advertisedBrowserUrlForForwardedRow(entry)
   const openBrowserLabel = translate(
-    "auto.components.right.sidebar.PortsPanel.b22b128b2a",
-    "Open in Browser",
-  );
+    'auto.components.right.sidebar.PortsPanel.b22b128b2a',
+    'Open in Browser'
+  )
   const openBrowserTitle = getPortOpenBrowserTooltipLabel(
     advertisedBrowserUrl
       ? translate(
-          "auto.components.right.sidebar.PortsPanel.75aeea592f",
-          "Open {{value0}} in Browser",
+          'auto.components.right.sidebar.PortsPanel.75aeea592f',
+          'Open {{value0}} in Browser',
           {
-            value0: advertisedBrowserUrl,
-          },
+            value0: advertisedBrowserUrl
+          }
         )
-      : openBrowserLabel,
-  );
+      : openBrowserLabel
+  )
 
   return (
     <div className="group flex items-center gap-2 py-1 px-1 -mx-1 rounded hover:bg-accent/50 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           {entry.label && (
-            <span className="text-xs font-medium text-foreground truncate">
-              {entry.label}
-            </span>
+            <span className="text-xs font-medium text-foreground truncate">{entry.label}</span>
           )}
           <span
             className={cn(
-              "text-xs text-muted-foreground truncate",
-              !entry.label && "text-foreground",
+              'text-xs text-muted-foreground truncate',
+              !entry.label && 'text-foreground'
             )}
           >
             :{entry.localPort} → :{entry.remotePort}
@@ -125,13 +123,9 @@ export function SshForwardedPortRow({
         </div>
         {advertisedBrowserUrl && (
           <div className="text-[11px] text-muted-foreground/70 truncate">
-            {translate(
-              "auto.components.right.sidebar.PortsPanel.de349d4560",
-              "opens {{value0}}",
-              {
-                value0: advertisedBrowserUrl,
-              },
-            )}
+            {translate('auto.components.right.sidebar.PortsPanel.de349d4560', 'opens {{value0}}', {
+              value0: advertisedBrowserUrl
+            })}
           </div>
         )}
       </div>
@@ -149,9 +143,9 @@ export function SshForwardedPortRow({
           className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           onClick={handleCopyButtonClick}
           title={translate(
-            "auto.components.right.sidebar.PortsPanel.1004af16ab",
-            "Copy {{value0}}",
-            { value0: forwardedAddress },
+            'auto.components.right.sidebar.PortsPanel.1004af16ab',
+            'Copy {{value0}}',
+            { value0: forwardedAddress }
           )}
         >
           <Copy size={13} />
@@ -160,29 +154,23 @@ export function SshForwardedPortRow({
           type="button"
           className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           onClick={handleEditButtonClick}
-          title={translate(
-            "auto.components.right.sidebar.PortsPanel.b3548e59f4",
-            "Edit",
-          )}
+          title={translate('auto.components.right.sidebar.PortsPanel.b3548e59f4', 'Edit')}
         >
           <Pencil size={13} />
         </button>
         <button
           type="button"
           className={cn(
-            "p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground",
-            removing && "opacity-50",
+            'p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground',
+            removing && 'opacity-50'
           )}
           onClick={handleRemoveButtonClick}
           disabled={removing}
-          title={translate(
-            "auto.components.right.sidebar.PortsPanel.e740075063",
-            "Remove",
-          )}
+          title={translate('auto.components.right.sidebar.PortsPanel.e740075063', 'Remove')}
         >
           <Trash2 size={13} />
         </button>
       </div>
     </div>
-  );
+  )
 }

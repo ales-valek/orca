@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import { act } from "react";
-import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from 'react'
+import type { Root } from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getRuntimeGitBranchCompare: vi.fn(),
@@ -12,506 +12,477 @@ const mocks = vi.hoisted(() => ({
   gitBranchCompareSummaryByWorktree: {} as Record<
     string,
     { baseRef: string; status?: string } | undefined
-  >,
-}));
+  >
+}))
 
-vi.mock("@/runtime/runtime-git-diff-client", () => ({
-  getRuntimeGitBranchCompare: mocks.getRuntimeGitBranchCompare,
-}));
-vi.mock("@/lib/connection-context", () => ({
-  getConnectionId: () => undefined,
-}));
-vi.mock("@/store", () => {
+vi.mock('@/runtime/runtime-git-diff-client', () => ({
+  getRuntimeGitBranchCompare: mocks.getRuntimeGitBranchCompare
+}))
+vi.mock('@/lib/connection-context', () => ({ getConnectionId: () => undefined }))
+vi.mock('@/store', () => {
   const state = {
     beginGitBranchCompareRequest: mocks.beginGitBranchCompareRequest,
     setGitBranchCompareResult: mocks.setGitBranchCompareResult,
     clearGitBranchCompare: mocks.clearGitBranchCompare,
     get gitBranchCompareSummaryByWorktree() {
-      return mocks.gitBranchCompareSummaryByWorktree;
-    },
-  };
-  const useAppStore = <T,>(selector: (s: typeof state) => T): T =>
-    selector(state);
-  useAppStore.getState = (): typeof state => state;
-  return { useAppStore };
-});
+      return mocks.gitBranchCompareSummaryByWorktree
+    }
+  }
+  const useAppStore = <T,>(selector: (s: typeof state) => T): T => selector(state)
+  useAppStore.getState = (): typeof state => state
+  return { useAppStore }
+})
 
 import {
   BRANCH_REFRESH_INTERVAL_MS,
-  useSourceControlBranchCompare,
-} from "./source-control/sync/use-branch-compare";
-import {
-  deferred,
-  flush,
-  mountProbe,
-  unmountProbes,
-} from "./source-control-hook-test-harness";
-import type { GitBranchCompareResult } from "../../../../shared/git-diff-compare-types";
-import type { GitUpstreamStatus } from "../../../../shared/git-status-types";
+  useSourceControlBranchCompare
+} from './source-control/sync/use-branch-compare'
+import { deferred, flush, mountProbe, unmountProbes } from './source-control-hook-test-harness'
+import type { GitBranchCompareResult } from '../../../../shared/git-diff-compare-types'
+import type { GitUpstreamStatus } from '../../../../shared/git-status-types'
 
-type Api = ReturnType<typeof useSourceControlBranchCompare>;
+type Api = ReturnType<typeof useSourceControlBranchCompare>
 
-let latest: Api | null = null;
+let latest: Api | null = null
 
 function Probe(props: {
-  worktreeId?: string | null;
-  compareBaseRef?: string | null;
-  isFolder?: boolean;
-  isBranchVisible?: boolean;
-  statusHead?: string | null;
-  remoteStatus?: GitUpstreamStatus | undefined;
+  worktreeId?: string | null
+  compareBaseRef?: string | null
+  isFolder?: boolean
+  isBranchVisible?: boolean
+  statusHead?: string | null
+  remoteStatus?: GitUpstreamStatus | undefined
 }): null {
   latest = useSourceControlBranchCompare({
-    activeRepoTarget: { kind: "local" },
-    activeWorktreeId: props.worktreeId === undefined ? "A" : props.worktreeId,
-    worktreePath: "/a",
-    compareBaseRef:
-      props.compareBaseRef === undefined ? "origin/main" : props.compareBaseRef,
+    activeRepoTarget: { kind: 'local' },
+    activeWorktreeId: props.worktreeId === undefined ? 'A' : props.worktreeId,
+    worktreePath: '/a',
+    compareBaseRef: props.compareBaseRef === undefined ? 'origin/main' : props.compareBaseRef,
     isFolder: props.isFolder ?? false,
-    branchName: "feature",
+    branchName: 'feature',
     // Why: default off so only explicit refreshes run — effect-driven refreshes are exercised in their own cases.
     isBranchVisible: props.isBranchVisible ?? false,
     activeGitStatusHead: props.statusHead ?? null,
-    remoteStatus: props.remoteStatus,
-  });
-  return null;
+    remoteStatus: props.remoteStatus
+  })
+  return null
 }
 
 /** Mounts the probe; omitted props fall back to the defaults declared in `Probe`. */
 async function mount(props: Parameters<typeof Probe>[0] = {}): Promise<Root> {
-  return mountProbe(<Probe {...props} />);
+  return mountProbe(<Probe {...props} />)
 }
 
 const OK: GitBranchCompareResult = {
   summary: {
-    baseRef: "origin/main",
+    baseRef: 'origin/main',
     baseOid: null,
-    compareRef: "feature",
+    compareRef: 'feature',
     headOid: null,
     mergeBase: null,
     changedFiles: 0,
-    status: "ready",
+    status: 'ready'
   },
-  entries: [],
-};
+  entries: []
+}
 
 beforeEach(() => {
-  mocks.getRuntimeGitBranchCompare.mockResolvedValue(OK);
-});
+  mocks.getRuntimeGitBranchCompare.mockResolvedValue(OK)
+})
 
 afterEach(() => {
-  unmountProbes();
-  vi.useRealTimers();
+  unmountProbes()
+  vi.useRealTimers()
   // Why: resetAllMocks also drops unconsumed mockReturnValueOnce queues; beforeEach restores the default.
-  vi.resetAllMocks();
-  mocks.gitBranchCompareSummaryByWorktree = {};
-  latest = null;
-});
+  vi.resetAllMocks()
+  mocks.gitBranchCompareSummaryByWorktree = {}
+  latest = null
+})
 
-describe("useSourceControlBranchCompare scheduler", () => {
-  it("collapses every call made during an in-flight run into a single trailing refresh", async () => {
-    const first = deferred<typeof OK>();
-    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
-    await mount();
+describe('useSourceControlBranchCompare scheduler', () => {
+  it('collapses every call made during an in-flight run into a single trailing refresh', async () => {
+    const first = deferred<typeof OK>()
+    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
+    await mount()
 
-    void latest?.refreshBranchCompare();
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    void latest?.refreshBranchCompare()
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
 
     // Five skipped ticks must not stack five git subprocesses.
     for (let i = 0; i < 5; i += 1) {
-      void latest?.refreshBranchCompare();
+      void latest?.refreshBranchCompare()
     }
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
 
     await act(async () => {
-      first.resolve(OK);
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
+      first.resolve(OK)
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
 
-  it("chains another trailing run when a call lands during the trailing run", async () => {
-    const first = deferred<typeof OK>();
-    const second = deferred<typeof OK>();
+  it('chains another trailing run when a call lands during the trailing run', async () => {
+    const first = deferred<typeof OK>()
+    const second = deferred<typeof OK>()
     mocks.getRuntimeGitBranchCompare
       .mockReturnValueOnce(first.promise)
-      .mockReturnValueOnce(second.promise);
-    await mount();
+      .mockReturnValueOnce(second.promise)
+    await mount()
 
-    void latest?.refreshBranchCompare();
-    await flush();
-    void latest?.refreshBranchCompare();
+    void latest?.refreshBranchCompare()
+    await flush()
+    void latest?.refreshBranchCompare()
     await act(async () => {
-      first.resolve(OK);
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
+      first.resolve(OK)
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
 
     // A call during the trailing run schedules one more, not zero.
-    void latest?.refreshBranchCompare();
+    void latest?.refreshBranchCompare()
     await act(async () => {
-      second.resolve(OK);
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(3);
-  });
+      second.resolve(OK)
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(3)
+  })
 
-  it("keeps a coalesced caller awaiting the shared run promise until the trailing run finishes", async () => {
-    const first = deferred<typeof OK>();
-    const second = deferred<typeof OK>();
+  it('keeps a coalesced caller awaiting the shared run promise until the trailing run finishes', async () => {
+    const first = deferred<typeof OK>()
+    const second = deferred<typeof OK>()
     mocks.getRuntimeGitBranchCompare
       .mockReturnValueOnce(first.promise)
-      .mockReturnValueOnce(second.promise);
-    await mount();
+      .mockReturnValueOnce(second.promise)
+    await mount()
 
-    let leadSettled = false;
-    let coalescedSettled = false;
+    let leadSettled = false
+    let coalescedSettled = false
     void latest?.refreshBranchCompare().then(() => {
-      leadSettled = true;
-    });
-    await flush();
+      leadSettled = true
+    })
+    await flush()
     void latest?.refreshBranchCompare().then(() => {
-      coalescedSettled = true;
-    });
-    await flush();
-    expect(leadSettled).toBe(false);
-    expect(coalescedSettled).toBe(false);
+      coalescedSettled = true
+    })
+    await flush()
+    expect(leadSettled).toBe(false)
+    expect(coalescedSettled).toBe(false)
 
     await act(async () => {
-      first.resolve(OK);
-    });
-    await flush();
+      first.resolve(OK)
+    })
+    await flush()
     // Trailing run is still open, so neither caller may report completion yet.
-    expect(leadSettled).toBe(false);
-    expect(coalescedSettled).toBe(false);
+    expect(leadSettled).toBe(false)
+    expect(coalescedSettled).toBe(false)
 
     await act(async () => {
-      second.resolve(OK);
-    });
-    await flush();
-    expect(leadSettled).toBe(true);
-    expect(coalescedSettled).toBe(true);
-  });
+      second.resolve(OK)
+    })
+    await flush()
+    expect(leadSettled).toBe(true)
+    expect(coalescedSettled).toBe(true)
+  })
 
-  it("releases the single-flight lock after a failed run so later refreshes still fire", async () => {
-    mocks.getRuntimeGitBranchCompare.mockRejectedValueOnce(
-      new Error("git exploded"),
-    );
-    await mount();
+  it('releases the single-flight lock after a failed run so later refreshes still fire', async () => {
+    mocks.getRuntimeGitBranchCompare.mockRejectedValueOnce(new Error('git exploded'))
+    await mount()
 
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
+      await latest?.refreshBranchCompare()
+    })
     expect(mocks.setGitBranchCompareResult).toHaveBeenCalledWith(
-      "A",
+      'A',
       expect.any(String),
       expect.objectContaining({
-        summary: expect.objectContaining({
-          status: "error",
-          errorMessage: "git exploded",
-        }),
-      }),
-    );
+        summary: expect.objectContaining({ status: 'error', errorMessage: 'git exploded' })
+      })
+    )
 
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
+      await latest?.refreshBranchCompare()
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
 
-  it("runs sequential refreshes immediately once the chain has drained", async () => {
-    await mount();
+  it('runs sequential refreshes immediately once the chain has drained', async () => {
+    await mount()
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
+      await latest?.refreshBranchCompare()
+    })
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
+      await latest?.refreshBranchCompare()
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
 
-  it("coalesces M interval ticks into one trailing run after the slowTaskBackoff gap", async () => {
-    vi.useFakeTimers();
-    const first = deferred<typeof OK>();
-    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
+  it('coalesces M interval ticks into one trailing run after the slowTaskBackoff gap', async () => {
+    vi.useFakeTimers()
+    const first = deferred<typeof OK>()
+    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
     mocks.gitBranchCompareSummaryByWorktree = {
-      A: { baseRef: "origin/main", status: "ready" },
-    };
+      A: { baseRef: 'origin/main', status: 'ready' }
+    }
     // Visible mounts run once immediately through the visibility interval.
-    await mount({ isBranchVisible: true });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    await mount({ isBranchVisible: true })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
     expect(mocks.getRuntimeGitBranchCompare).toHaveBeenLastCalledWith(
-      expect.objectContaining({ worktreeId: "A" }),
-      "origin/main",
-      "background",
-    );
+      expect.objectContaining({ worktreeId: 'A' }),
+      'origin/main',
+      'background'
+    )
 
     await act(async () => {
-      vi.advanceTimersByTime(BRANCH_REFRESH_INTERVAL_MS * 3);
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(BRANCH_REFRESH_INTERVAL_MS * 3)
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
 
     await act(async () => {
-      first.resolve(OK);
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+      first.resolve(OK)
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
     // Three skipped ticks collapse into one pending run, but a 90s task must
     // idle for its own duration before the trailing run.
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(89_999);
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(89_999)
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1);
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1)
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
     expect(mocks.getRuntimeGitBranchCompare).toHaveBeenLastCalledWith(
-      expect.objectContaining({ worktreeId: "A" }),
-      "origin/main",
-      "background",
-    );
-  });
+      expect.objectContaining({ worktreeId: 'A' }),
+      'origin/main',
+      'background'
+    )
+  })
 
-  it("preserves the existing summary on a poll refresh but resets to loading on a base-ref change", async () => {
-    mocks.gitBranchCompareSummaryByWorktree = { A: { baseRef: "origin/main" } };
-    const root = await mount();
+  it('preserves the existing summary on a poll refresh but resets to loading on a base-ref change', async () => {
+    mocks.gitBranchCompareSummaryByWorktree = { A: { baseRef: 'origin/main' } }
+    const root = await mount()
 
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
+      await latest?.refreshBranchCompare()
+    })
     expect(mocks.beginGitBranchCompareRequest).toHaveBeenLastCalledWith(
-      "A",
+      'A',
       expect.any(String),
-      "origin/main",
-      { preserveExistingSummary: true },
-    );
+      'origin/main',
+      { preserveExistingSummary: true }
+    )
 
     await act(async () => {
-      root.render(<Probe compareBaseRef="origin/dev" />);
-    });
+      root.render(<Probe compareBaseRef="origin/dev" />)
+    })
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
+      await latest?.refreshBranchCompare()
+    })
     expect(mocks.beginGitBranchCompareRequest).toHaveBeenLastCalledWith(
-      "A",
+      'A',
       expect.any(String),
-      "origin/dev",
-      { preserveExistingSummary: false },
-    );
-  });
+      'origin/dev',
+      { preserveExistingSummary: false }
+    )
+  })
 
-  it("skips the git call for folder workspaces and when no compare base is resolved", async () => {
-    await mount({ isFolder: true, isBranchVisible: true });
+  it('skips the git call for folder workspaces and when no compare base is resolved', async () => {
+    await mount({ isFolder: true, isBranchVisible: true })
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
-    expect(mocks.getRuntimeGitBranchCompare).not.toHaveBeenCalled();
+      await latest?.refreshBranchCompare()
+    })
+    expect(mocks.getRuntimeGitBranchCompare).not.toHaveBeenCalled()
 
-    await mount({ compareBaseRef: null, isBranchVisible: true });
+    await mount({ compareBaseRef: null, isBranchVisible: true })
     await act(async () => {
-      await latest?.refreshBranchCompare();
-    });
-    expect(mocks.getRuntimeGitBranchCompare).not.toHaveBeenCalled();
-  });
+      await latest?.refreshBranchCompare()
+    })
+    expect(mocks.getRuntimeGitBranchCompare).not.toHaveBeenCalled()
+  })
 
-  it("keeps refreshBranchCompareRef pointed at the current closure across rerenders", async () => {
-    const root = await mount({ compareBaseRef: "origin/main" });
+  it('keeps refreshBranchCompareRef pointed at the current closure across rerenders', async () => {
+    const root = await mount({ compareBaseRef: 'origin/main' })
     await act(async () => {
-      root.render(<Probe compareBaseRef="origin/dev" />);
-    });
+      root.render(<Probe compareBaseRef="origin/dev" />)
+    })
 
     await act(async () => {
-      await latest?.refreshBranchCompareRef.current();
-    });
+      await latest?.refreshBranchCompareRef.current()
+    })
     expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledWith(
-      expect.objectContaining({ worktreeId: "A" }),
-      "origin/dev",
-      "interactive",
-    );
-  });
+      expect.objectContaining({ worktreeId: 'A' }),
+      'origin/dev',
+      'interactive'
+    )
+  })
 
-  it("refreshes when HEAD moves on a visible branch", async () => {
-    const root = await mount({ isBranchVisible: true, statusHead: "head-1" });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+  it('refreshes when HEAD moves on a visible branch', async () => {
+    const root = await mount({ isBranchVisible: true, statusHead: 'head-1' })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
 
     await act(async () => {
-      root.render(<Probe isBranchVisible statusHead="head-2" />);
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
+      root.render(<Probe isBranchVisible statusHead="head-2" />)
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
 
-  it("refreshes when the remote status moves without a HEAD change", async () => {
+  it('refreshes when the remote status moves without a HEAD change', async () => {
     const remote: GitUpstreamStatus = {
       hasUpstream: true,
-      upstreamName: "origin/feature",
+      upstreamName: 'origin/feature',
       ahead: 0,
-      behind: 0,
-    };
-    const root = await mount({
-      isBranchVisible: true,
-      statusHead: "head-1",
-      remoteStatus: remote,
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+      behind: 0
+    }
+    const root = await mount({ isBranchVisible: true, statusHead: 'head-1', remoteStatus: remote })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
 
     // A push moves the remote base and ahead count while local HEAD stays put.
     await act(async () => {
       root.render(
-        <Probe
-          isBranchVisible
-          statusHead="head-1"
-          remoteStatus={{ ...remote, ahead: 1 }}
-        />,
-      );
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
-});
+        <Probe isBranchVisible statusHead="head-1" remoteStatus={{ ...remote, ahead: 1 }} />
+      )
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
+})
 
-describe("branch comparison visibility recovery", () => {
-  it.each(["loading", "missing", "base-change", "error"])(
-    "bypasses slow polling backoff for %s data",
+describe('branch comparison visibility recovery', () => {
+  it.each(['loading', 'missing', 'base-change', 'error'])(
+    'bypasses slow polling backoff for %s data',
     async (reason) => {
-      vi.useFakeTimers();
-      const first = deferred<typeof OK>();
-      mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
-      const root = await mount({ isBranchVisible: true, statusHead: "head-1" });
+      vi.useFakeTimers()
+      const first = deferred<typeof OK>()
+      mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
+      const root = await mount({ isBranchVisible: true, statusHead: 'head-1' })
       await act(async () => {
-        root.render(<Probe isBranchVisible={false} statusHead="head-1" />);
-        await vi.advanceTimersByTimeAsync(90_000);
-        first.resolve(OK);
-      });
-      await flush();
+        root.render(<Probe isBranchVisible={false} statusHead="head-1" />)
+        await vi.advanceTimersByTimeAsync(90_000)
+        first.resolve(OK)
+      })
+      await flush()
       mocks.gitBranchCompareSummaryByWorktree =
-        reason === "missing"
+        reason === 'missing'
           ? {}
           : {
               A: {
-                baseRef: "origin/main",
-                status:
-                  reason === "loading"
-                    ? "loading"
-                    : reason === "error"
-                      ? "error"
-                      : "ready",
-              },
-            };
+                baseRef: 'origin/main',
+                status: reason === 'loading' ? 'loading' : reason === 'error' ? 'error' : 'ready'
+              }
+            }
       await act(async () => {
         root.render(
           <Probe
             isBranchVisible
             statusHead="head-2"
-            compareBaseRef={
-              reason === "base-change" ? "origin/dev" : "origin/main"
-            }
-          />,
-        );
-      });
-      await flush();
-      expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
+            compareBaseRef={reason === 'base-change' ? 'origin/dev' : 'origin/main'}
+          />
+        )
+      })
+      await flush()
+      expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
       expect(mocks.getRuntimeGitBranchCompare).toHaveBeenLastCalledWith(
-        expect.objectContaining({ worktreeId: "A" }),
-        reason === "base-change" ? "origin/dev" : "origin/main",
-        "interactive",
-      );
-    },
-  );
+        expect.objectContaining({ worktreeId: 'A' }),
+        reason === 'base-change' ? 'origin/dev' : 'origin/main',
+        'interactive'
+      )
+    }
+  )
 
-  it("preserves slow polling backoff when reopening valid data", async () => {
-    vi.useFakeTimers();
-    const first = deferred<typeof OK>();
-    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
-    const root = await mount({ isBranchVisible: true, statusHead: "head-1" });
+  it('preserves slow polling backoff when reopening valid data', async () => {
+    vi.useFakeTimers()
+    const first = deferred<typeof OK>()
+    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
+    const root = await mount({ isBranchVisible: true, statusHead: 'head-1' })
     await act(async () => {
-      root.render(<Probe isBranchVisible={false} statusHead="head-1" />);
-      await vi.advanceTimersByTimeAsync(90_000);
-      first.resolve(OK);
-    });
-    await flush();
+      root.render(<Probe isBranchVisible={false} statusHead="head-1" />)
+      await vi.advanceTimersByTimeAsync(90_000)
+      first.resolve(OK)
+    })
+    await flush()
     mocks.gitBranchCompareSummaryByWorktree = {
-      A: { baseRef: "origin/main", status: "ready" },
-    };
+      A: { baseRef: 'origin/main', status: 'ready' }
+    }
     await act(async () => {
-      root.render(<Probe isBranchVisible statusHead="head-1" />);
-    });
+      root.render(<Probe isBranchVisible statusHead="head-1" />)
+    })
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(89_999);
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(89_999)
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1);
-    });
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1)
+    })
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
     expect(mocks.getRuntimeGitBranchCompare).toHaveBeenLastCalledWith(
-      expect.objectContaining({ worktreeId: "A" }),
-      "origin/main",
-      "background",
-    );
-  });
+      expect.objectContaining({ worktreeId: 'A' }),
+      'origin/main',
+      'background'
+    )
+  })
 
-  it("coalesces rapid stale reopenings behind a slow request", async () => {
-    const first = deferred<typeof OK>();
-    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
-    const root = await mount({ isBranchVisible: true, statusHead: "head-1" });
+  it('coalesces rapid stale reopenings behind a slow request', async () => {
+    const first = deferred<typeof OK>()
+    mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
+    const root = await mount({ isBranchVisible: true, statusHead: 'head-1' })
     mocks.gitBranchCompareSummaryByWorktree = {
-      A: { baseRef: "origin/main", status: "loading" },
-    };
+      A: { baseRef: 'origin/main', status: 'loading' }
+    }
     for (let i = 0; i < 5; i++) {
       await act(async () => {
-        root.render(<Probe isBranchVisible={false} statusHead="head-2" />);
-      });
+        root.render(<Probe isBranchVisible={false} statusHead="head-2" />)
+      })
       await act(async () => {
-        root.render(<Probe isBranchVisible statusHead="head-2" />);
-      });
+        root.render(<Probe isBranchVisible statusHead="head-2" />)
+      })
     }
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
     await act(async () => {
-      first.resolve(OK);
-    });
-    await flush();
-    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-  });
-});
+      first.resolve(OK)
+    })
+    await flush()
+    expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+  })
+})
 
-it("reuses a recovered in-flight result after reopening instead of immediately comparing twice", async () => {
-  vi.useFakeTimers();
-  const first = deferred<typeof OK>();
-  mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise);
-  const root = await mount({ isBranchVisible: true, statusHead: "head-1" });
+it('reuses a recovered in-flight result after reopening instead of immediately comparing twice', async () => {
+  vi.useFakeTimers()
+  const first = deferred<typeof OK>()
+  mocks.getRuntimeGitBranchCompare.mockReturnValueOnce(first.promise)
+  const root = await mount({ isBranchVisible: true, statusHead: 'head-1' })
   mocks.gitBranchCompareSummaryByWorktree = {
-    A: { baseRef: "origin/main", status: "loading" },
-  };
+    A: { baseRef: 'origin/main', status: 'loading' }
+  }
   await act(async () => {
-    root.render(<Probe isBranchVisible={false} statusHead="head-1" />);
-  });
+    root.render(<Probe isBranchVisible={false} statusHead="head-1" />)
+  })
   await act(async () => {
-    root.render(<Probe isBranchVisible statusHead="head-1" />);
-  });
+    root.render(<Probe isBranchVisible statusHead="head-1" />)
+  })
   mocks.setGitBranchCompareResult.mockImplementation(() => {
     mocks.gitBranchCompareSummaryByWorktree = {
-      A: { baseRef: "origin/main", status: "ready" },
-    };
-  });
+      A: { baseRef: 'origin/main', status: 'ready' }
+    }
+  })
   await act(async () => {
-    first.resolve(OK);
-  });
-  await flush();
-  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    first.resolve(OK)
+  })
+  await flush()
+  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(BRANCH_REFRESH_INTERVAL_MS - 1);
-  });
-  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(BRANCH_REFRESH_INTERVAL_MS - 1)
+  })
+  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(1)
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(1);
-  });
-  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2);
-});
+    await vi.advanceTimersByTimeAsync(1)
+  })
+  expect(mocks.getRuntimeGitBranchCompare).toHaveBeenCalledTimes(2)
+})

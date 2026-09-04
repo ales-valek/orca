@@ -1,134 +1,119 @@
-import type React from "react";
+import type React from 'react'
 
-import type { GlobalSettings } from "../../../../shared/global-settings-types";
-import type { StatusBarItem } from "../../../../shared/ui-chrome-types";
-import type { FeatureInteractionId } from "../../../../shared/feature-interaction-catalog";
-import { SearchableSetting } from "./SearchableSetting";
-import { AppearanceAdvancedDisclosure } from "./AppearanceAdvancedDisclosure";
-import { useAppStore } from "../../store";
+import type { GlobalSettings } from '../../../../shared/global-settings-types'
+import type { StatusBarItem } from '../../../../shared/ui-chrome-types'
+import type { FeatureInteractionId } from '../../../../shared/feature-interaction-catalog'
+import { SearchableSetting } from './SearchableSetting'
+import { AppearanceAdvancedDisclosure } from './AppearanceAdvancedDisclosure'
+import { useAppStore } from '../../store'
 import {
   SettingsRow,
   SettingsSegmentedControl,
   SettingsSubsectionHeader,
-  SettingsSwitchRow,
-} from "./SettingsFormControls";
-import { useAvailableStatusBarToggles } from "../status-bar/use-available-status-bar-toggles";
+  SettingsSwitchRow
+} from './SettingsFormControls'
+import { useAvailableStatusBarToggles } from '../status-bar/use-available-status-bar-toggles'
 import {
   getLayoutEntries,
   getFollowSymlinkedDirectoriesEntry,
   getSidebarEntries,
   getStatusBarToggles,
-  getUsagePercentageDisplayEntry,
-} from "./appearance-search";
-import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from "./appearance-usage-percentage-search";
-import { LeftSidebarAppearanceSetting } from "./LeftSidebarAppearanceSetting";
+  getUsagePercentageDisplayEntry
+} from './appearance-search'
+import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from './appearance-usage-percentage-search'
+import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
 import {
   getLeftSidebarAppearanceEntry,
   getShowPinnedWorktreesInGroupsEntry,
-  getWorkspaceCardLayoutEntry,
-} from "./appearance-sidebar-search";
-import { translate } from "@/i18n/i18n";
-import {
-  matchesSettingsSearch,
-  normalizeSettingsSearchQuery,
-} from "./settings-search";
-import { FileIconThemeSetting } from "./FileIconThemeSetting";
+  getWorkspaceCardLayoutEntry
+} from './appearance-sidebar-search'
+import { translate } from '@/i18n/i18n'
+import { matchesSettingsSearch, normalizeSettingsSearchQuery } from './settings-search'
+import { FileIconThemeSetting } from './FileIconThemeSetting'
 
 type AppearanceWindowSidebarSectionProps = {
-  settings: GlobalSettings;
-  updateSettings: (updates: Partial<GlobalSettings>) => void;
-  forceVisiblePrimary?: boolean;
-};
+  settings: GlobalSettings
+  updateSettings: (updates: Partial<GlobalSettings>) => void
+  forceVisiblePrimary?: boolean
+}
 
 function recordStatusBarToggleInteraction(
   id: StatusBarItem,
-  recordFeatureInteraction: (feature: FeatureInteractionId) => void,
+  recordFeatureInteraction: (feature: FeatureInteractionId) => void
 ): void {
-  if (id === "resource-usage") {
-    recordFeatureInteraction("resource-manager");
-  } else if (id === "ports") {
-    recordFeatureInteraction("ports");
-  } else if (id === "ssh") {
-    recordFeatureInteraction("ssh");
+  if (id === 'resource-usage') {
+    recordFeatureInteraction('resource-manager')
+  } else if (id === 'ports') {
+    recordFeatureInteraction('ports')
+  } else if (id === 'ssh') {
+    recordFeatureInteraction('ssh')
   } else if (
-    id === "claude" ||
-    id === "codex" ||
-    id === "gemini" ||
-    id === "opencode-go" ||
-    id === "kimi" ||
-    id === "antigravity" ||
-    id === "minimax" ||
-    id === "grok" ||
-    id === "cursor"
+    id === 'claude' ||
+    id === 'codex' ||
+    id === 'gemini' ||
+    id === 'opencode-go' ||
+    id === 'kimi' ||
+    id === 'antigravity' ||
+    id === 'minimax' ||
+    id === 'grok' ||
+    id === 'cursor'
   ) {
-    recordFeatureInteraction("usage-tracking");
+    recordFeatureInteraction('usage-tracking')
   }
 }
 
 export function AppearanceWindowSidebarSection({
   settings,
   updateSettings,
-  forceVisiblePrimary = false,
+  forceVisiblePrimary = false
 }: AppearanceWindowSidebarSectionProps): React.JSX.Element {
-  const searchQuery = useAppStore((state) => state.settingsSearchQuery);
-  const isSearching = normalizeSettingsSearchQuery(searchQuery).length > 0;
-  const statusBarItems = useAppStore((state) => state.statusBarItems);
-  const toggleStatusBarItem = useAppStore((state) => state.toggleStatusBarItem);
-  const usagePercentageDisplay = useAppStore(
-    (state) => state.usagePercentageDisplay,
-  );
-  const setUsagePercentageDisplay = useAppStore(
-    (state) => state.setUsagePercentageDisplay,
-  );
-  const recordFeatureInteraction = useAppStore(
-    (state) => state.recordFeatureInteraction,
-  );
-  const setWorktreeCardMode = useAppStore((state) => state.setWorktreeCardMode);
-  const visibleStatusBarToggles = useAvailableStatusBarToggles(
-    getStatusBarToggles(),
-  );
-  const usagePercentageDisplayEntry = getUsagePercentageDisplayEntry();
-  const leftSidebarAppearanceEntry = getLeftSidebarAppearanceEntry();
-  const sidebarEntries = getSidebarEntries();
-  const workspaceCardLayoutEntry = getWorkspaceCardLayoutEntry();
-  const layoutEntries = getLayoutEntries();
-  const followSymlinkEntry = getFollowSymlinkedDirectoriesEntry();
+  const searchQuery = useAppStore((state) => state.settingsSearchQuery)
+  const isSearching = normalizeSettingsSearchQuery(searchQuery).length > 0
+  const statusBarItems = useAppStore((state) => state.statusBarItems)
+  const toggleStatusBarItem = useAppStore((state) => state.toggleStatusBarItem)
+  const usagePercentageDisplay = useAppStore((state) => state.usagePercentageDisplay)
+  const setUsagePercentageDisplay = useAppStore((state) => state.setUsagePercentageDisplay)
+  const recordFeatureInteraction = useAppStore((state) => state.recordFeatureInteraction)
+  const setWorktreeCardMode = useAppStore((state) => state.setWorktreeCardMode)
+  const visibleStatusBarToggles = useAvailableStatusBarToggles(getStatusBarToggles())
+  const usagePercentageDisplayEntry = getUsagePercentageDisplayEntry()
+  const leftSidebarAppearanceEntry = getLeftSidebarAppearanceEntry()
+  const sidebarEntries = getSidebarEntries()
+  const workspaceCardLayoutEntry = getWorkspaceCardLayoutEntry()
+  const layoutEntries = getLayoutEntries()
+  const followSymlinkEntry = getFollowSymlinkedDirectoriesEntry()
   const statusBarTitle = translate(
-    "auto.components.settings.AppearancePane.3e4175e5c6",
-    "Status Bar",
-  );
+    'auto.components.settings.AppearancePane.3e4175e5c6',
+    'Status Bar'
+  )
   const statusBarDescription = translate(
-    "auto.components.settings.AppearancePane.statusBarDescription",
-    "Choose which indicators appear in the status bar.",
-  );
-  const statusBarKeywords = ["status bar", "indicators"];
+    'auto.components.settings.AppearancePane.statusBarDescription',
+    'Choose which indicators appear in the status bar.'
+  )
+  const statusBarKeywords = ['status bar', 'indicators']
   const statusBarSectionMatches = matchesSettingsSearch(searchQuery, {
     title: statusBarTitle,
     description: statusBarDescription,
-    keywords: statusBarKeywords,
-  });
+    keywords: statusBarKeywords
+  })
   const statusBarControlMatches =
     matchesSettingsSearch(searchQuery, usagePercentageDisplayEntry) ||
     visibleStatusBarToggles.some((toggle) =>
       matchesSettingsSearch(searchQuery, {
         title: toggle.title,
         description: toggle.description,
-        keywords: toggle.keywords,
-      }),
-    );
+        keywords: toggle.keywords
+      })
+    )
   const sidebarAdvancedMatches = matchesSettingsSearch(searchQuery, [
     workspaceCardLayoutEntry,
-    ...sidebarEntries,
-  ]);
-  const fileExplorerAdvancedMatches = matchesSettingsSearch(
-    searchQuery,
-    layoutEntries,
-  );
-  const showStatusBarControls =
-    !isSearching || statusBarSectionMatches || statusBarControlMatches;
-  const showSidebarAdvanced = !isSearching || sidebarAdvancedMatches;
-  const showFileExplorerAdvanced = !isSearching || fileExplorerAdvancedMatches;
-  const showAdvanced = showSidebarAdvanced || showFileExplorerAdvanced;
+    ...sidebarEntries
+  ])
+  const fileExplorerAdvancedMatches = matchesSettingsSearch(searchQuery, layoutEntries)
+  const showStatusBarControls = !isSearching || statusBarSectionMatches || statusBarControlMatches
+  const showSidebarAdvanced = !isSearching || sidebarAdvancedMatches
+  const showFileExplorerAdvanced = !isSearching || fileExplorerAdvancedMatches
+  const showAdvanced = showSidebarAdvanced || showFileExplorerAdvanced
 
   return (
     <div className="space-y-2">
@@ -140,26 +125,15 @@ export function AppearanceWindowSidebarSection({
           className="space-y-2"
           forceVisible={forceVisiblePrimary}
         >
-          <LeftSidebarAppearanceSetting
-            settings={settings}
-            updateSettings={updateSettings}
-          />
+          <LeftSidebarAppearanceSetting settings={settings} updateSettings={updateSettings} />
         </SearchableSetting>
 
         <SearchableSetting
           title={statusBarTitle}
           keywords={statusBarKeywords}
-          forceVisible={
-            forceVisiblePrimary ||
-            statusBarSectionMatches ||
-            statusBarControlMatches
-          }
+          forceVisible={forceVisiblePrimary || statusBarSectionMatches || statusBarControlMatches}
         >
-          <SettingsRow
-            label={statusBarTitle}
-            description={statusBarDescription}
-            control={null}
-          />
+          <SettingsRow label={statusBarTitle} description={statusBarDescription} control={null} />
           {showStatusBarControls ? (
             <div className="ml-4 divide-y divide-border/40 border-t border-border/40">
               <SearchableSetting
@@ -178,19 +152,19 @@ export function AppearanceWindowSidebarSection({
                       onChange={setUsagePercentageDisplay}
                       options={[
                         {
-                          value: "used",
+                          value: 'used',
                           label: translate(
-                            "auto.components.settings.AppearanceWindowSidebarSection.usagePercentageDisplayUsed",
-                            "Used",
-                          ),
+                            'auto.components.settings.AppearanceWindowSidebarSection.usagePercentageDisplayUsed',
+                            'Used'
+                          )
                         },
                         {
-                          value: "remaining",
+                          value: 'remaining',
                           label: translate(
-                            "auto.components.settings.AppearanceWindowSidebarSection.usagePercentageDisplayRemaining",
-                            "Remaining",
-                          ),
-                        },
+                            'auto.components.settings.AppearanceWindowSidebarSection.usagePercentageDisplayRemaining',
+                            'Remaining'
+                          )
+                        }
                       ]}
                     />
                   }
@@ -198,7 +172,7 @@ export function AppearanceWindowSidebarSection({
               </SearchableSetting>
 
               {visibleStatusBarToggles.map((toggle) => {
-                const enabled = statusBarItems.includes(toggle.id);
+                const enabled = statusBarItems.includes(toggle.id)
                 return (
                   <SearchableSetting
                     key={toggle.id}
@@ -211,16 +185,13 @@ export function AppearanceWindowSidebarSection({
                       description={toggle.toggleDescription}
                       checked={enabled}
                       onChange={() => {
-                        recordStatusBarToggleInteraction(
-                          toggle.id,
-                          recordFeatureInteraction,
-                        );
-                        toggleStatusBarItem(toggle.id);
+                        recordStatusBarToggleInteraction(toggle.id, recordFeatureInteraction)
+                        toggleStatusBarItem(toggle.id)
                       }}
                       ariaLabel={toggle.title}
                     />
                   </SearchableSetting>
-                );
+                )
               })}
             </div>
           ) : null}
@@ -233,10 +204,7 @@ export function AppearanceWindowSidebarSection({
             {showSidebarAdvanced ? (
               <div className="space-y-3">
                 <SettingsSubsectionHeader
-                  title={translate(
-                    "auto.components.settings.AppearancePane.dc29f3cc0d",
-                    "Sidebar",
-                  )}
+                  title={translate('auto.components.settings.AppearancePane.dc29f3cc0d', 'Sidebar')}
                 />
                 <div className="ml-4 divide-y divide-border/40">
                   <SearchableSetting
@@ -249,32 +217,26 @@ export function AppearanceWindowSidebarSection({
                       description={workspaceCardLayoutEntry.description}
                       control={
                         <SettingsSegmentedControl
-                          value={
-                            settings.compactWorktreeCards
-                              ? "compact"
-                              : "detailed"
-                          }
+                          value={settings.compactWorktreeCards ? 'compact' : 'detailed'}
                           onChange={(value) =>
-                            setWorktreeCardMode(
-                              value === "compact" ? "Compact" : "Default",
-                            )
+                            setWorktreeCardMode(value === 'compact' ? 'Compact' : 'Default')
                           }
                           ariaLabel={workspaceCardLayoutEntry.title}
                           options={[
                             {
-                              value: "detailed",
+                              value: 'detailed',
                               label: translate(
-                                "auto.components.sidebar.SidebarWorkspaceOptionsMenu.cc17bd443b",
-                                "Detailed",
-                              ),
+                                'auto.components.sidebar.SidebarWorkspaceOptionsMenu.cc17bd443b',
+                                'Detailed'
+                              )
                             },
                             {
-                              value: "compact",
+                              value: 'compact',
                               label: translate(
-                                "auto.components.sidebar.SidebarWorkspaceOptionsMenu.25105b28cb",
-                                "Compact",
-                              ),
-                            },
+                                'auto.components.sidebar.SidebarWorkspaceOptionsMenu.25105b28cb',
+                                'Compact'
+                              )
+                            }
                           ]}
                         />
                       }
@@ -283,59 +245,43 @@ export function AppearanceWindowSidebarSection({
 
                   <SearchableSetting
                     title={translate(
-                      "auto.components.settings.AppearancePane.cf81907069",
-                      "Show Tasks Button",
+                      'auto.components.settings.AppearancePane.cf81907069',
+                      'Show Tasks Button'
                     )}
                     description={sidebarEntries[0]?.description}
-                    keywords={
-                      sidebarEntries[0]?.keywords ?? [
-                        "tasks",
-                        "sidebar",
-                        "button",
-                      ]
-                    }
+                    keywords={sidebarEntries[0]?.keywords ?? ['tasks', 'sidebar', 'button']}
                   >
                     <SettingsSwitchRow
                       label={translate(
-                        "auto.components.settings.AppearancePane.cf81907069",
-                        "Show Tasks Button",
+                        'auto.components.settings.AppearancePane.cf81907069',
+                        'Show Tasks Button'
                       )}
                       checked={settings.showTasksButton !== false}
                       onChange={() =>
-                        updateSettings({
-                          showTasksButton: !(
-                            settings.showTasksButton !== false
-                          ),
-                        })
+                        updateSettings({ showTasksButton: !(settings.showTasksButton !== false) })
                       }
                     />
                   </SearchableSetting>
 
                   <SearchableSetting
                     title={translate(
-                      "auto.components.settings.AppearancePane.511f270ebb",
-                      "Show Automations Button",
+                      'auto.components.settings.AppearancePane.511f270ebb',
+                      'Show Automations Button'
                     )}
                     description={sidebarEntries[1]?.description}
                     keywords={
-                      sidebarEntries[1]?.keywords ?? [
-                        "automations",
-                        "automation",
-                        "schedule",
-                      ]
+                      sidebarEntries[1]?.keywords ?? ['automations', 'automation', 'schedule']
                     }
                   >
                     <SettingsSwitchRow
                       label={translate(
-                        "auto.components.settings.AppearancePane.511f270ebb",
-                        "Show Automations Button",
+                        'auto.components.settings.AppearancePane.511f270ebb',
+                        'Show Automations Button'
                       )}
                       checked={settings.showAutomationsButton !== false}
                       onChange={() =>
                         updateSettings({
-                          showAutomationsButton: !(
-                            settings.showAutomationsButton !== false
-                          ),
+                          showAutomationsButton: !(settings.showAutomationsButton !== false)
                         })
                       }
                     />
@@ -343,64 +289,52 @@ export function AppearanceWindowSidebarSection({
 
                   <SearchableSetting
                     title={translate(
-                      "auto.components.settings.AppearancePane.9da1020447",
-                      "Show Orca Mobile Button",
+                      'auto.components.settings.AppearancePane.9da1020447',
+                      'Show Orca Mobile Button'
                     )}
                     description={sidebarEntries[2]?.description}
-                    keywords={
-                      sidebarEntries[2]?.keywords ?? [
-                        "mobile",
-                        "phone",
-                        "sidebar",
-                      ]
-                    }
+                    keywords={sidebarEntries[2]?.keywords ?? ['mobile', 'phone', 'sidebar']}
                   >
                     <SettingsSwitchRow
                       label={translate(
-                        "auto.components.settings.AppearancePane.9da1020447",
-                        "Show Orca Mobile Button",
+                        'auto.components.settings.AppearancePane.9da1020447',
+                        'Show Orca Mobile Button'
                       )}
                       // Why: clarify where the shortcut still lives after hiding it, so users
                       // don't think the feature is gone.
                       description={translate(
-                        "auto.components.settings.AppearancePane.61d842eca0",
-                        "Show the Orca Mobile shortcut in the sidebar. It remains available from Toolbox.",
+                        'auto.components.settings.AppearancePane.61d842eca0',
+                        'Show the Orca Mobile shortcut in the sidebar. It remains available from Toolbox.'
                       )}
                       checked={settings.showMobileButton !== false}
                       onChange={() =>
-                        updateSettings({
-                          showMobileButton: !(
-                            settings.showMobileButton !== false
-                          ),
-                        })
+                        updateSettings({ showMobileButton: !(settings.showMobileButton !== false) })
                       }
                     />
                   </SearchableSetting>
 
                   <SearchableSetting
                     title={getShowPinnedWorktreesInGroupsEntry().title}
-                    description={
-                      getShowPinnedWorktreesInGroupsEntry().description
-                    }
+                    description={getShowPinnedWorktreesInGroupsEntry().description}
                     keywords={getShowPinnedWorktreesInGroupsEntry().keywords}
                   >
                     <SettingsSwitchRow
                       label={translate(
-                        "auto.components.settings.AppearancePane.showPinnedWorktreesInGroups.title",
-                        "Also show pinned worktrees in their original lists",
+                        'auto.components.settings.AppearancePane.showPinnedWorktreesInGroups.title',
+                        'Also show pinned worktrees in their original lists'
                       )}
                       // Why: pinned worktrees show only in Pinned by default; this opt-in
                       // keeps them in Pinned and also re-lists them in their natural groups.
                       description={translate(
-                        "auto.components.settings.AppearancePane.showPinnedWorktreesInGroups.description",
-                        "Pinned worktrees stay in Pinned and also appear in All, Project, Status, and PR.",
+                        'auto.components.settings.AppearancePane.showPinnedWorktreesInGroups.description',
+                        'Pinned worktrees stay in Pinned and also appear in All, Project, Status, and PR.'
                       )}
                       checked={settings.showPinnedWorktreesInGroups === true}
                       onChange={() =>
                         updateSettings({
                           showPinnedWorktreesInGroups: !(
                             settings.showPinnedWorktreesInGroups === true
-                          ),
+                          )
                         })
                       }
                     />
@@ -413,8 +347,8 @@ export function AppearanceWindowSidebarSection({
               <div className="space-y-3">
                 <SettingsSubsectionHeader
                   title={translate(
-                    "auto.components.settings.AppearancePane.d496901cd0",
-                    "File Explorer",
+                    'auto.components.settings.AppearancePane.d496901cd0',
+                    'File Explorer'
                   )}
                 />
                 <div className="ml-4 divide-y divide-border/40">
@@ -422,36 +356,28 @@ export function AppearanceWindowSidebarSection({
                     title={
                       layoutEntries[0]?.title ??
                       translate(
-                        "auto.components.settings.AppearancePane.0fafabcf35",
-                        "Show Git-Ignored Files",
+                        'auto.components.settings.AppearancePane.0fafabcf35',
+                        'Show Git-Ignored Files'
                       )
                     }
                     description={layoutEntries[0]?.description}
-                    keywords={
-                      layoutEntries[0]?.keywords ?? [
-                        "git",
-                        "gitignore",
-                        "ignored",
-                      ]
-                    }
+                    keywords={layoutEntries[0]?.keywords ?? ['git', 'gitignore', 'ignored']}
                   >
                     <SettingsSwitchRow
                       label={translate(
-                        "auto.components.settings.AppearancePane.0fafabcf35",
-                        "Show Git-Ignored Files",
+                        'auto.components.settings.AppearancePane.0fafabcf35',
+                        'Show Git-Ignored Files'
                       )}
                       // Why: define what "git-ignored" matches; the location (file explorer)
                       // is obvious from the section header.
                       description={translate(
-                        "auto.components.settings.AppearancePane.gitIgnoredGlossary",
-                        "Files matched by .gitignore.",
+                        'auto.components.settings.AppearancePane.gitIgnoredGlossary',
+                        'Files matched by .gitignore.'
                       )}
                       checked={settings.showGitIgnoredFiles ?? true}
                       onChange={() =>
                         updateSettings({
-                          showGitIgnoredFiles: !(
-                            settings.showGitIgnoredFiles ?? true
-                          ),
+                          showGitIgnoredFiles: !(settings.showGitIgnoredFiles ?? true)
                         })
                       }
                     />
@@ -463,8 +389,7 @@ export function AppearanceWindowSidebarSection({
                       checked={settings.followSymlinkedDirectories ?? false}
                       onChange={() =>
                         updateSettings({
-                          followSymlinkedDirectories:
-                            !settings.followSymlinkedDirectories,
+                          followSymlinkedDirectories: !settings.followSymlinkedDirectories
                         })
                       }
                     />
@@ -473,36 +398,27 @@ export function AppearanceWindowSidebarSection({
                   <SearchableSetting
                     title={
                       layoutEntries[2]?.title ??
-                      translate(
-                        "settings.appearance.fileIconTheme.title",
-                        "File Icon Theme",
-                      )
+                      translate('settings.appearance.fileIconTheme.title', 'File Icon Theme')
                     }
                     description={layoutEntries[2]?.description}
-                    keywords={
-                      layoutEntries[2]?.keywords ?? [
-                        "icons",
-                        "folders",
-                        "file explorer",
-                      ]
-                    }
+                    keywords={layoutEntries[2]?.keywords ?? ['icons', 'folders', 'file explorer']}
                   >
                     <SettingsRow
                       label={translate(
-                        "settings.appearance.fileIconTheme.title",
-                        "File Icon Theme",
+                        'settings.appearance.fileIconTheme.title',
+                        'File Icon Theme'
                       )}
                       description={translate(
-                        "settings.appearance.fileIconTheme.description",
-                        "Choose the icons used for files and folders in the file explorer.",
+                        'settings.appearance.fileIconTheme.description',
+                        'Choose the icons used for files and folders in the file explorer.'
                       )}
                       control={
                         <FileIconThemeSetting
                           settings={settings}
                           updateSettings={updateSettings}
                           ariaLabel={translate(
-                            "settings.appearance.fileIconTheme.title",
-                            "File Icon Theme",
+                            'settings.appearance.fileIconTheme.title',
+                            'File Icon Theme'
                           )}
                         />
                       }
@@ -515,5 +431,5 @@ export function AppearanceWindowSidebarSection({
         </AppearanceAdvancedDisclosure>
       ) : null}
     </div>
-  );
+  )
 }

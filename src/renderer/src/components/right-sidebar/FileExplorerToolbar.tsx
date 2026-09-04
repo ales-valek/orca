@@ -1,42 +1,38 @@
-import React from "react";
-import { Ellipsis, ListCollapse, Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React from 'react'
+import { Ellipsis, ListCollapse, Loader2, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { WorktreeOpenInMenuItems } from "@/components/sidebar/WorktreeOpenInMenu";
-import { translate } from "@/i18n/i18n";
-import { cn } from "@/lib/utils";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { WorktreeOpenInMenuItems } from '@/components/sidebar/WorktreeOpenInMenu'
+import { translate } from '@/i18n/i18n'
+import { cn } from '@/lib/utils'
 
 type FileExplorerToolbarProps = {
-  repoName: string;
-  worktreePath: string;
-  connectionId?: string | null;
-  runtimeEnvironmentId?: string | null;
-  ownerUnresolved?: boolean;
+  repoName: string
+  worktreePath: string
+  connectionId?: string | null
+  runtimeEnvironmentId?: string | null
+  ownerUnresolved?: boolean
   refresh: {
-    isRefreshing: boolean;
-    showRefreshSpinner: boolean;
-    handleRefresh: () => void;
-  };
-  canRefresh: boolean;
-  canCollapseAll: boolean;
-  onCollapseAll: () => void;
-  showGitIgnoredFilesToggle: boolean;
-  showGitIgnoredFiles: boolean;
-  onToggleGitIgnoredFiles: () => void;
-  showDotfiles: boolean;
-  onToggleDotfiles: () => void;
-};
+    isRefreshing: boolean
+    showRefreshSpinner: boolean
+    handleRefresh: () => void
+  }
+  canRefresh: boolean
+  canCollapseAll: boolean
+  onCollapseAll: () => void
+  showGitIgnoredFilesToggle: boolean
+  showGitIgnoredFiles: boolean
+  onToggleGitIgnoredFiles: () => void
+  showDotfiles: boolean
+  onToggleDotfiles: () => void
+}
 
 /** Shares repository actions across explorer views. */
 export function FileExplorerToolbar({
@@ -53,7 +49,7 @@ export function FileExplorerToolbar({
   showGitIgnoredFiles,
   onToggleGitIgnoredFiles,
   showDotfiles,
-  onToggleDotfiles,
+  onToggleDotfiles
 }: FileExplorerToolbarProps): React.JSX.Element {
   return (
     <div className="flex h-8 min-h-8 items-center gap-2 border-b border-border px-2">
@@ -70,21 +66,21 @@ export function FileExplorerToolbar({
             variant="ghost"
             size="icon-xs"
             className={cn(
-              "text-muted-foreground hover:text-foreground",
-              !canCollapseAll && "cursor-not-allowed opacity-50",
+              'text-muted-foreground hover:text-foreground',
+              !canCollapseAll && 'cursor-not-allowed opacity-50'
             )}
             aria-label={translate(
-              "auto.components.right.sidebar.FileExplorerToolbar.6026b16950",
-              "Collapse All",
+              'auto.components.right.sidebar.FileExplorerToolbar.6026b16950',
+              'Collapse All'
             )}
             aria-disabled={!canCollapseAll}
             // Why: native disabled buttons suppress Radix tooltip triggers in Chromium.
             onClick={(event) => {
               if (!canCollapseAll) {
-                event.preventDefault();
-                return;
+                event.preventDefault()
+                return
               }
-              onCollapseAll();
+              onCollapseAll()
             }}
           >
             <ListCollapse className="size-3" />
@@ -92,8 +88,8 @@ export function FileExplorerToolbar({
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={4}>
           {translate(
-            "auto.components.right.sidebar.FileExplorerToolbar.6026b16950",
-            "Collapse All",
+            'auto.components.right.sidebar.FileExplorerToolbar.6026b16950',
+            'Collapse All'
           )}
         </TooltipContent>
       </Tooltip>
@@ -104,21 +100,21 @@ export function FileExplorerToolbar({
             variant="ghost"
             size="icon-xs"
             className={cn(
-              "text-muted-foreground hover:text-foreground",
-              !canRefresh && "cursor-not-allowed opacity-50",
+              'text-muted-foreground hover:text-foreground',
+              !canRefresh && 'cursor-not-allowed opacity-50'
             )}
             aria-label={translate(
-              "auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28",
-              "Refresh Explorer",
+              'auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28',
+              'Refresh Explorer'
             )}
             aria-disabled={!canRefresh || refresh.isRefreshing}
             disabled={refresh.isRefreshing}
             onClick={(event) => {
               if (!canRefresh) {
-                event.preventDefault();
-                return;
+                event.preventDefault()
+                return
               }
-              refresh.handleRefresh();
+              refresh.handleRefresh()
             }}
           >
             {refresh.showRefreshSpinner ? (
@@ -130,8 +126,8 @@ export function FileExplorerToolbar({
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={4}>
           {translate(
-            "auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28",
-            "Refresh Explorer",
+            'auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28',
+            'Refresh Explorer'
           )}
         </TooltipContent>
       </Tooltip>
@@ -145,8 +141,8 @@ export function FileExplorerToolbar({
                 size="icon-xs"
                 className="text-muted-foreground hover:text-foreground"
                 aria-label={translate(
-                  "auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d",
-                  "More Explorer Actions",
+                  'auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d',
+                  'More Explorer Actions'
                 )}
               >
                 <Ellipsis className="size-3" />
@@ -155,19 +151,16 @@ export function FileExplorerToolbar({
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={4}>
             {translate(
-              "auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d",
-              "More Explorer Actions",
+              'auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d',
+              'More Explorer Actions'
             )}
           </TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="end" className="min-w-[12rem]">
-          <DropdownMenuCheckboxItem
-            checked={showDotfiles}
-            onCheckedChange={onToggleDotfiles}
-          >
+          <DropdownMenuCheckboxItem checked={showDotfiles} onCheckedChange={onToggleDotfiles}>
             {translate(
-              "auto.components.right.sidebar.FileExplorerToolbar.78f133232c",
-              "Show Dotfiles",
+              'auto.components.right.sidebar.FileExplorerToolbar.78f133232c',
+              'Show Dotfiles'
             )}
           </DropdownMenuCheckboxItem>
           {showGitIgnoredFilesToggle ? (
@@ -176,8 +169,8 @@ export function FileExplorerToolbar({
               onCheckedChange={onToggleGitIgnoredFiles}
             >
               {translate(
-                "auto.components.right.sidebar.FileExplorerToolbar.d238264654",
-                "Show Git Ignored Files",
+                'auto.components.right.sidebar.FileExplorerToolbar.d238264654',
+                'Show Git Ignored Files'
               )}
             </DropdownMenuCheckboxItem>
           ) : null}
@@ -192,5 +185,5 @@ export function FileExplorerToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  );
+  )
 }

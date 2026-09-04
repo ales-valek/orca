@@ -1,24 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
-import { renderToStaticMarkup } from "react-dom/server";
-import { CommitArea } from "./source-control/commit/commit-area";
+import { describe, expect, it, vi } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { CommitArea } from './source-control/commit/commit-area'
 import {
   hasConfiguredCommitMessageGenerationDefaults,
-  hasConfiguredSourceControlTextGenerationDefaults,
-} from "./source-control/ai/text-generation-defaults";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  resolvePrimaryAction,
-  type PrimaryActionInputs,
-} from "./source-control-primary-action";
-import { resolveDropdownItems } from "./source-control-dropdown-items";
-import type { DropdownActionKind } from "./source-control-dropdown-item-types";
-import { getDefaultSettings } from "../../../../shared/constants";
-import { CUSTOM_AGENT_ID } from "../../../../shared/commit-message-agent-spec";
-import { resolveSourceControlAiForOperation } from "../../../../shared/source-control-ai";
+  hasConfiguredSourceControlTextGenerationDefaults
+} from './source-control/ai/text-generation-defaults'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { resolvePrimaryAction, type PrimaryActionInputs } from './source-control-primary-action'
+import { resolveDropdownItems } from './source-control-dropdown-items'
+import type { DropdownActionKind } from './source-control-dropdown-item-types'
+import { getDefaultSettings } from '../../../../shared/constants'
+import { CUSTOM_AGENT_ID } from '../../../../shared/commit-message-agent-spec'
+import { resolveSourceControlAiForOperation } from '../../../../shared/source-control-ai'
 
-function buildInputs(
-  overrides: Partial<PrimaryActionInputs> = {},
-): PrimaryActionInputs {
+function buildInputs(overrides: Partial<PrimaryActionInputs> = {}): PrimaryActionInputs {
   return {
     stagedCount: 1,
     hasUnstagedChanges: false,
@@ -29,16 +24,16 @@ function buildInputs(
     isCommitting: false,
     isRemoteOperationActive: false,
     upstreamStatus: { hasUpstream: true, ahead: 0, behind: 0 },
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 
 function baseProps(overrides: Partial<PrimaryActionInputs> = {}) {
-  const inputs = buildInputs(overrides);
+  const inputs = buildInputs(overrides)
   return {
-    worktreeId: "wt-1",
-    groupId: "group-1",
-    commitMessage: "feat: add commit area",
+    worktreeId: 'wt-1',
+    groupId: 'group-1',
+    commitMessage: 'feat: add commit area',
     commitError: null as string | null,
     commitFailureRecoveryPrompt: null as string | null,
     pushRecovery: null,
@@ -64,198 +59,169 @@ function baseProps(overrides: Partial<PrimaryActionInputs> = {}) {
     onFixCommitFailureWithAI: vi.fn(),
     onFixPushFailureWithAI: vi.fn(),
     onPrimaryAction: vi.fn(),
-    onDropdownAction: vi.fn() as (kind: DropdownActionKind) => void,
-  };
+    onDropdownAction: vi.fn() as (kind: DropdownActionKind) => void
+  }
 }
 
 function renderCommitArea(props: ReturnType<typeof baseProps>): string {
   return renderToStaticMarkup(
     <TooltipProvider>
       <CommitArea {...props} />
-    </TooltipProvider>,
-  );
+    </TooltipProvider>
+  )
 }
 
 function buttonByLabel(markup: string, label: string): string {
   const button = [...markup.matchAll(/<button\b[\s\S]*?<\/button>/g)]
     .map((match) => match[0])
-    .find((entry) => entry.includes(`aria-label="${label}"`));
+    .find((entry) => entry.includes(`aria-label="${label}"`))
   if (!button) {
-    throw new Error(`button not found: ${label}`);
+    throw new Error(`button not found: ${label}`)
   }
-  return button;
+  return button
 }
 
 function hasDisabledAttribute(markup: string): boolean {
-  return (
-    markup.includes(' disabled=""') || markup.includes('aria-disabled="true"')
-  );
+  return markup.includes(' disabled=""') || markup.includes('aria-disabled="true"')
 }
 
-describe("CommitArea AI generation", () => {
-  it("does not render the AI generate affordance when the feature is disabled", () => {
+describe('CommitArea AI generation', () => {
+  it('does not render the AI generate affordance when the feature is disabled', () => {
     expect(
       renderCommitArea({
         ...baseProps(),
-        sourceControlAiActionsVisible: false,
-      }),
-    ).not.toContain('aria-label="Generate commit message with AI"');
-  });
+        sourceControlAiActionsVisible: false
+      })
+    ).not.toContain('aria-label="Generate commit message with AI"')
+  })
 
-  it("enables AI generation only when an agent is configured, changes are staged, and the message is empty", () => {
-    const props = baseProps({ hasMessage: false });
+  it('enables AI generation only when an agent is configured, changes are staged, and the message is empty', () => {
+    const props = baseProps({ hasMessage: false })
     const markup = renderCommitArea({
       ...props,
-      commitMessage: "",
-      aiAgentConfigured: true,
-    });
+      commitMessage: '',
+      aiAgentConfigured: true
+    })
 
-    const button = buttonByLabel(markup, "Generate commit message with AI");
-    expect(hasDisabledAttribute(button)).toBe(false);
+    const button = buttonByLabel(markup, 'Generate commit message with AI')
+    expect(hasDisabledAttribute(button)).toBe(false)
     // Why: single Radix tooltip only — native title removed to avoid duplicate tooltips.
-    expect(button).not.toContain("title=");
-  });
+    expect(button).not.toContain('title=')
+  })
 
-  it("disables AI generation when the textarea already has user text", () => {
+  it('disables AI generation when the textarea already has user text', () => {
     const markup = renderCommitArea({
       ...baseProps(),
-      aiAgentConfigured: true,
-    });
+      aiAgentConfigured: true
+    })
 
-    const button = buttonByLabel(markup, "Generate commit message with AI");
-    expect(button).toContain('aria-disabled="true"');
-    expect(button).not.toContain("title=");
-  });
+    const button = buttonByLabel(markup, 'Generate commit message with AI')
+    expect(button).toContain('aria-disabled="true"')
+    expect(button).not.toContain('title=')
+  })
 
-  it("keeps AI generation discoverable when the configured agent needs attention", () => {
-    const settings = getDefaultSettings("/tmp");
+  it('keeps AI generation discoverable when the configured agent needs attention', () => {
+    const settings = getDefaultSettings('/tmp')
     const resolved = resolveSourceControlAiForOperation({
       settings: {
         ...settings,
         sourceControlAi: {
           ...settings.sourceControlAi!,
-          customAgentCommand: "",
+          customAgentCommand: '',
           actions: {
             ...settings.sourceControlAi!.actions,
             commitMessage: {
-              agentId: CUSTOM_AGENT_ID,
-            },
-          },
-        },
+              agentId: CUSTOM_AGENT_ID
+            }
+          }
+        }
       },
       repo: null,
-      operation: "commitMessage",
-    });
+      operation: 'commitMessage'
+    })
     expect(resolved).toMatchObject({
       ok: false,
-      error:
-        "Custom command is empty. Add one in Settings -> Git -> Source Control AI.",
-    });
+      error: 'Custom command is empty. Add one in Settings -> Git -> Source Control AI.'
+    })
 
-    const props = baseProps({ hasMessage: false });
+    const props = baseProps({ hasMessage: false })
     const markup = renderCommitArea({
       ...props,
-      commitMessage: "",
-      aiAgentConfigured: resolved.ok,
-    });
+      commitMessage: '',
+      aiAgentConfigured: resolved.ok
+    })
 
-    const button = buttonByLabel(markup, "Generate commit message with AI");
-    expect(hasDisabledAttribute(button)).toBe(false);
-    expect(button).not.toContain("title=");
-  });
+    const button = buttonByLabel(markup, 'Generate commit message with AI')
+    expect(hasDisabledAttribute(button)).toBe(false)
+    expect(button).not.toContain('title=')
+  })
 
-  it("turns the generating icon into a stop affordance", () => {
-    const props = baseProps({ hasMessage: false });
+  it('turns the generating icon into a stop affordance', () => {
+    const props = baseProps({ hasMessage: false })
     const markup = renderCommitArea({
       ...props,
-      commitMessage: "",
+      commitMessage: '',
       aiAgentConfigured: true,
-      isGenerating: true,
-    });
+      isGenerating: true
+    })
 
-    const button = buttonByLabel(markup, "Stop generating commit message");
-    expect(button).not.toContain("title=");
-    expect(button).toContain("lucide-refresh-cw");
-    expect(button).toContain("lucide-square");
-  });
+    const button = buttonByLabel(markup, 'Stop generating commit message')
+    expect(button).not.toContain('title=')
+    expect(button).toContain('lucide-refresh-cw')
+    expect(button).toContain('lucide-square')
+  })
 
-  it("shows generation errors separately from commit errors and links them to the textarea", () => {
+  it('shows generation errors separately from commit errors and links them to the textarea', () => {
     const markup = renderCommitArea({
       ...baseProps(),
       commitError: null,
-      generateError: "No staged changes to summarize.",
-    });
+      generateError: 'No staged changes to summarize.'
+    })
 
-    expect(markup).toContain("No staged changes to summarize.");
-    expect(markup).toContain('aria-describedby="commit-area-generate-error"');
-  });
+    expect(markup).toContain('No staged changes to summarize.')
+    expect(markup).toContain('aria-describedby="commit-area-generate-error"')
+  })
 
-  it("renders a single commit-message AI entry point in the composer", () => {
-    const props = baseProps({ hasMessage: false });
+  it('renders a single commit-message AI entry point in the composer', () => {
+    const props = baseProps({ hasMessage: false })
     const markup = renderCommitArea({
       ...props,
-      commitMessage: "",
-      aiAgentConfigured: true,
-    });
+      commitMessage: '',
+      aiAgentConfigured: true
+    })
 
-    const matches =
-      markup.match(/aria-label="Generate commit message with AI"/g) ?? [];
-    expect(matches).toHaveLength(1);
-    expect(markup).not.toContain(
-      'aria-label="Customize commit-message generation"',
-    );
-    expect(markup).not.toContain(
-      'aria-label="Add commit message instructions"',
-    );
-  });
+    const matches = markup.match(/aria-label="Generate commit message with AI"/g) ?? []
+    expect(matches).toHaveLength(1)
+    expect(markup).not.toContain('aria-label="Customize commit-message generation"')
+    expect(markup).not.toContain('aria-label="Add commit message instructions"')
+  })
 
-  it("can hide only the composer while keeping the split action surface visible", () => {
+  it('can hide only the composer while keeping the split action surface visible', () => {
     const markup = renderCommitArea({
       ...baseProps({ hasMessage: false, stagedCount: 0 }),
-      commitMessage: "",
+      commitMessage: '',
       aiAgentConfigured: true,
-      showComposer: false,
-    });
+      showComposer: false
+    })
 
-    expect(markup).not.toContain('aria-label="Commit message"');
-    expect(markup).not.toContain(
-      'aria-label="Generate commit message with AI"',
-    );
-    expect(markup).toContain('aria-label="More commit and remote actions"');
-  });
-});
+    expect(markup).not.toContain('aria-label="Commit message"')
+    expect(markup).not.toContain('aria-label="Generate commit message with AI"')
+    expect(markup).toContain('aria-label="More commit and remote actions"')
+  })
+})
 
-describe("commit-message generation defaults", () => {
-  it("treats factory Source Control AI settings as needing the first-run dialog", () => {
+describe('commit-message generation defaults', () => {
+  it('treats factory Source Control AI settings as needing the first-run dialog', () => {
     expect(
       hasConfiguredCommitMessageGenerationDefaults({
-        settings: getDefaultSettings("/tmp"),
-        repo: null,
-      }),
-    ).toBe(false);
-  });
+        settings: getDefaultSettings('/tmp'),
+        repo: null
+      })
+    ).toBe(false)
+  })
 
-  it("treats a saved action agent or custom template as configured defaults", () => {
-    const settings = getDefaultSettings("/tmp");
-    expect(
-      hasConfiguredCommitMessageGenerationDefaults({
-        settings: {
-          ...settings,
-          sourceControlAi: {
-            ...settings.sourceControlAi!,
-            actions: {
-              ...settings.sourceControlAi!.actions,
-              commitMessage: {
-                commandInputTemplate: "{basePrompt}",
-                agentId: "codex",
-              },
-            },
-          },
-        },
-        repo: null,
-      }),
-    ).toBe(true);
-
+  it('treats a saved action agent or custom template as configured defaults', () => {
+    const settings = getDefaultSettings('/tmp')
     expect(
       hasConfiguredCommitMessageGenerationDefaults({
         settings: {
@@ -265,43 +231,62 @@ describe("commit-message generation defaults", () => {
             actions: {
               ...settings.sourceControlAi!.actions,
               commitMessage: {
-                commandInputTemplate: 'just use "{branch}"',
-              },
-            },
-          },
+                commandInputTemplate: '{basePrompt}',
+                agentId: 'codex'
+              }
+            }
+          }
         },
-        repo: null,
-      }),
-    ).toBe(true);
-  });
+        repo: null
+      })
+    ).toBe(true)
 
-  it("uses the same configured-defaults check for pull-request generation", () => {
-    const settings = getDefaultSettings("/tmp");
+    expect(
+      hasConfiguredCommitMessageGenerationDefaults({
+        settings: {
+          ...settings,
+          sourceControlAi: {
+            ...settings.sourceControlAi!,
+            actions: {
+              ...settings.sourceControlAi!.actions,
+              commitMessage: {
+                commandInputTemplate: 'just use "{branch}"'
+              }
+            }
+          }
+        },
+        repo: null
+      })
+    ).toBe(true)
+  })
+
+  it('uses the same configured-defaults check for pull-request generation', () => {
+    const settings = getDefaultSettings('/tmp')
     expect(
       hasConfiguredSourceControlTextGenerationDefaults({
-        actionId: "pullRequest",
+        actionId: 'pullRequest',
         settings,
-        repo: null,
-      }),
-    ).toBe(false);
+        repo: null
+      })
+    ).toBe(false)
 
     expect(
       hasConfiguredSourceControlTextGenerationDefaults({
-        actionId: "pullRequest",
+        actionId: 'pullRequest',
         settings: {
           ...settings,
           commitMessageAi: {
             ...settings.commitMessageAi!,
-            agentId: "codex",
-          },
+            agentId: 'codex'
+          }
         },
-        repo: null,
-      }),
-    ).toBe(false);
+        repo: null
+      })
+    ).toBe(false)
 
     expect(
       hasConfiguredSourceControlTextGenerationDefaults({
-        actionId: "pullRequest",
+        actionId: 'pullRequest',
         settings: {
           ...settings,
           sourceControlAi: {
@@ -309,18 +294,18 @@ describe("commit-message generation defaults", () => {
             actions: {
               ...settings.sourceControlAi!.actions,
               pullRequest: {
-                commandInputTemplate: "{basePrompt}\n\nKeep it short.",
-              },
-            },
-          },
+                commandInputTemplate: '{basePrompt}\n\nKeep it short.'
+              }
+            }
+          }
         },
-        repo: null,
-      }),
-    ).toBe(true);
+        repo: null
+      })
+    ).toBe(true)
 
     expect(
       hasConfiguredSourceControlTextGenerationDefaults({
-        actionId: "pullRequest",
+        actionId: 'pullRequest',
         settings: {
           ...settings,
           sourceControlAi: {
@@ -328,14 +313,14 @@ describe("commit-message generation defaults", () => {
             actions: {
               ...settings.sourceControlAi!.actions,
               pullRequest: {
-                commandInputTemplate: "{basePrompt}",
-                agentArgs: "--model gpt-5.5",
-              },
-            },
-          },
+                commandInputTemplate: '{basePrompt}',
+                agentArgs: '--model gpt-5.5'
+              }
+            }
+          }
         },
-        repo: null,
-      }),
-    ).toBe(true);
-  });
-});
+        repo: null
+      })
+    ).toBe(true)
+  })
+})

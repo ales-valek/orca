@@ -1,34 +1,34 @@
 import {
   antigravitySessionOrigin,
-  isAntigravityReferenceSession,
-} from "../../../../shared/antigravity-session-origin";
-import type React from "react";
-import { Badge } from "@/components/ui/badge";
-import RepoBadgeLabel from "@/components/repo/RepoBadgeLabel";
-import { AgentStateDot } from "@/components/AgentStateDot";
-import { AgentIcon } from "@/lib/agent-catalog";
-import type { AgentStatusState } from "../../../../shared/agent-status-types";
-import { useRepoById } from "@/store/selectors";
-import { resolveRepoBadgeColor } from "../../../../shared/repo-badge-color";
-import { splitWorktreeIdForFilesystem } from "../../../../shared/worktree/id";
+  isAntigravityReferenceSession
+} from '../../../../shared/antigravity-session-origin'
+import type React from 'react'
+import { Badge } from '@/components/ui/badge'
+import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
+import { AgentStateDot } from '@/components/AgentStateDot'
+import { AgentIcon } from '@/lib/agent-catalog'
+import type { AgentStatusState } from '../../../../shared/agent-status-types'
+import { useRepoById } from '@/store/selectors'
+import { resolveRepoBadgeColor } from '../../../../shared/repo-badge-color'
+import { splitWorktreeIdForFilesystem } from '../../../../shared/worktree/id'
 import {
   isAiVaultSessionRecoverableEmpty,
   type AiVaultScope,
-  type AiVaultSession,
-} from "../../../../shared/ai-vault-types";
-import { translate } from "@/i18n/i18n";
-import { SessionTime } from "./ai-vault-session-time";
-import { sessionModelLabel } from "./ai-vault-session-display";
-import { agentLabel } from "./ai-vault-session-filters";
+  type AiVaultSession
+} from '../../../../shared/ai-vault-types'
+import { translate } from '@/i18n/i18n'
+import { SessionTime } from './ai-vault-session-time'
+import { sessionModelLabel } from './ai-vault-session-display'
+import { agentLabel } from './ai-vault-session-filters'
 import {
   aiVaultWorktreeStatusLabel,
   shouldShowAiVaultWorktreeStatusBadge,
   shouldShowAiVaultSessionWorktreeLine,
-  type AiVaultSessionWorktreeInfo,
-} from "./ai-vault-session-worktree";
+  type AiVaultSessionWorktreeInfo
+} from './ai-vault-session-worktree'
 
 export function getSessionDetailsId(sessionId: string): string {
-  return `ai-vault-session-details-${sessionId.replace(/[^A-Za-z0-9_-]/g, "-")}`;
+  return `ai-vault-session-details-${sessionId.replace(/[^A-Za-z0-9_-]/g, '-')}`
 }
 
 export function SessionMetadata({
@@ -36,16 +36,16 @@ export function SessionMetadata({
   liveState,
   updatedAt,
   worktreeInfo,
-  vaultScope,
+  vaultScope
 }: {
-  session: AiVaultSession;
-  liveState: AgentStatusState | null;
-  updatedAt: string;
-  worktreeInfo: AiVaultSessionWorktreeInfo | null;
-  vaultScope: AiVaultScope;
+  session: AiVaultSession
+  liveState: AgentStatusState | null
+  updatedAt: string
+  worktreeInfo: AiVaultSessionWorktreeInfo | null
+  vaultScope: AiVaultScope
 }) {
-  const modelLabel = sessionModelLabel(session);
-  const origin = antigravitySessionOrigin(session.filePath);
+  const modelLabel = sessionModelLabel(session)
+  const origin = antigravitySessionOrigin(session.filePath)
   return (
     <div
       data-testid="ai-vault-session-metadata"
@@ -57,30 +57,26 @@ export function SessionMetadata({
       <div className="flex min-w-0 items-center gap-1.5">
         {/* Why: 'done' is the resting state of every finished pane — badging it
             would mark most rows; only live attention states earn a dot. */}
-        {liveState && liveState !== "done" ? (
-          <AgentStateDot state={liveState} />
-        ) : null}
-        <span className="min-w-0 shrink-[2] truncate">
-          {agentLabel(session.agent)}
-        </span>
+        {liveState && liveState !== 'done' ? <AgentStateDot state={liveState} /> : null}
+        <span className="min-w-0 shrink-[2] truncate">{agentLabel(session.agent)}</span>
         {isAntigravityReferenceSession(session) ? (
           <Badge
             variant="outline"
             title={translate(
-              "aiVault.antigravityReferenceDescription",
-              "Continues in a new Antigravity CLI conversation using this transcript as a reference.",
+              'aiVault.antigravityReferenceDescription',
+              'Continues in a new Antigravity CLI conversation using this transcript as a reference.'
             )}
           >
-            {origin === "antigravity-ide"
-              ? translate("aiVault.antigravityIdeToCli", "IDE → CLI")
-              : translate("aiVault.antigravity2ToCli", "2.0 → CLI")}
+            {origin === 'antigravity-ide'
+              ? translate('aiVault.antigravityIdeToCli', 'IDE → CLI')
+              : translate('aiVault.antigravity2ToCli', '2.0 → CLI')}
           </Badge>
         ) : null}
         <span className="shrink-0 tabular-nums">
           {translate(
-            "auto.components.right.sidebar.AiVaultSessionRow.messageCount",
-            "{{value0}} msgs",
-            { value0: session.messageCount },
+            'auto.components.right.sidebar.AiVaultSessionRow.messageCount',
+            '{{value0}} msgs',
+            { value0: session.messageCount }
           )}
         </span>
         {session.subagentTranscriptCount > 0 ? (
@@ -89,13 +85,13 @@ export function SessionMetadata({
             <span className="shrink-0 tabular-nums">
               {session.subagentTranscriptCount === 1
                 ? translate(
-                    "auto.components.right.sidebar.AiVaultSessionRow.subagentCountSingular",
-                    "1 subagent",
+                    'auto.components.right.sidebar.AiVaultSessionRow.subagentCountSingular',
+                    '1 subagent'
                   )
                 : translate(
-                    "auto.components.right.sidebar.AiVaultSessionRow.subagentCountPlural",
-                    "{{value0}} subagents",
-                    { value0: session.subagentTranscriptCount },
+                    'auto.components.right.sidebar.AiVaultSessionRow.subagentCountPlural',
+                    '{{value0}} subagents',
+                    { value0: session.subagentTranscriptCount }
                   )}
             </span>
           </>
@@ -105,8 +101,8 @@ export function SessionMetadata({
             <span className="shrink-0 text-muted-foreground/55">·</span>
             <span className="shrink-0 rounded-sm border border-dashed border-border/70 px-1 py-0 text-[10px] font-medium leading-4 text-muted-foreground">
               {translate(
-                "auto.components.right.sidebar.AiVaultSessionRow.recoverableBadge",
-                "Not saved",
+                'auto.components.right.sidebar.AiVaultSessionRow.recoverableBadge',
+                'Not saved'
               )}
             </span>
           </>
@@ -124,38 +120,30 @@ export function SessionMetadata({
       </div>
       {shouldShowAiVaultSessionWorktreeLine(worktreeInfo, { vaultScope }) ? (
         <div className="col-span-2 min-w-0">
-          <SessionWorktreeLine
-            worktreeInfo={worktreeInfo}
-            vaultScope={vaultScope}
-          />
+          <SessionWorktreeLine worktreeInfo={worktreeInfo} vaultScope={vaultScope} />
         </div>
       ) : null}
     </div>
-  );
+  )
 }
 
 function SessionWorktreeLine({
   worktreeInfo,
-  vaultScope,
+  vaultScope
 }: {
-  worktreeInfo: AiVaultSessionWorktreeInfo;
-  vaultScope: AiVaultScope;
+  worktreeInfo: AiVaultSessionWorktreeInfo
+  vaultScope: AiVaultScope
 }): React.JSX.Element {
   const repoId = worktreeInfo.worktreeId
     ? (splitWorktreeIdForFilesystem(worktreeInfo.worktreeId)?.repoId ?? null)
-    : null;
-  const repo = useRepoById(repoId);
+    : null
+  const repo = useRepoById(repoId)
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-      {shouldShowAiVaultWorktreeStatusBadge(worktreeInfo.status, {
-        vaultScope,
-      }) ? (
+      {shouldShowAiVaultWorktreeStatusBadge(worktreeInfo.status, { vaultScope }) ? (
         <span className="shrink-0 rounded-sm border border-sidebar-border bg-sidebar-accent/45 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
-          {aiVaultWorktreeStatusLabel(
-            worktreeInfo.status,
-            worktreeInfo.worktreeId,
-          )}
+          {aiVaultWorktreeStatusLabel(worktreeInfo.status, worktreeInfo.worktreeId)}
         </span>
       ) : null}
       <Badge
@@ -171,38 +159,23 @@ function SessionWorktreeLine({
         />
       </Badge>
     </div>
-  );
+  )
 }
 
 export function conversationRoleLabel(
-  role: AiVaultSession["previewMessages"][number]["role"],
+  role: AiVaultSession['previewMessages'][number]['role']
 ): string {
-  if (role === "user") {
-    return translate(
-      "auto.components.right.sidebar.AiVaultSessionRow.userRole",
-      "You",
-    );
+  if (role === 'user') {
+    return translate('auto.components.right.sidebar.AiVaultSessionRow.userRole', 'You')
   }
-  if (role === "assistant") {
-    return translate(
-      "auto.components.right.sidebar.AiVaultSessionRow.agentRole",
-      "Agent",
-    );
+  if (role === 'assistant') {
+    return translate('auto.components.right.sidebar.AiVaultSessionRow.agentRole', 'Agent')
   }
-  if (role === "tool") {
-    return translate(
-      "auto.components.right.sidebar.AiVaultSessionRow.toolRole",
-      "Tool",
-    );
+  if (role === 'tool') {
+    return translate('auto.components.right.sidebar.AiVaultSessionRow.toolRole', 'Tool')
   }
-  if (role === "system") {
-    return translate(
-      "auto.components.right.sidebar.AiVaultSessionRow.systemRole",
-      "System",
-    );
+  if (role === 'system') {
+    return translate('auto.components.right.sidebar.AiVaultSessionRow.systemRole', 'System')
   }
-  return translate(
-    "auto.components.right.sidebar.AiVaultSessionRow.sessionRole",
-    "Session",
-  );
+  return translate('auto.components.right.sidebar.AiVaultSessionRow.sessionRole', 'Session')
 }

@@ -1,34 +1,31 @@
-import { SubagentExpansionProvider } from "./ai-vault-subagent-expansion";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useMemo, useRef, useState } from "react";
-import type { AgentStatusState } from "../../../../shared/agent-status-types";
-import type {
-  AiVaultScope,
-  AiVaultSession,
-} from "../../../../shared/ai-vault-types";
-import type { AiVaultResumeStartup } from "@/lib/ai-vault-resume-command";
-import { translate } from "@/i18n/i18n";
-import { getActiveStickyHeaderIndexForScroll } from "../sidebar/worktree-list/viewport/virtual-rows";
-import { EmptyState, SessionLoadingState } from "./AiVaultSessionListStates";
-import type { AiVaultSessionListGroup } from "./ai-vault-session-filters";
-import type { AiVaultOriginalPaneTarget } from "./ai-vault-original-pane";
+import { SubagentExpansionProvider } from './ai-vault-subagent-expansion'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { AgentStatusState } from '../../../../shared/agent-status-types'
+import type { AiVaultScope, AiVaultSession } from '../../../../shared/ai-vault-types'
+import type { AiVaultResumeStartup } from '@/lib/ai-vault-resume-command'
+import { translate } from '@/i18n/i18n'
+import { getActiveStickyHeaderIndexForScroll } from '../sidebar/worktree-list/viewport/virtual-rows'
+import { EmptyState, SessionLoadingState } from './AiVaultSessionListStates'
+import type { AiVaultSessionListGroup } from './ai-vault-session-filters'
+import type { AiVaultOriginalPaneTarget } from './ai-vault-original-pane'
 import type {
   AiVaultSessionResumeActions,
-  AiVaultSessionResumeState,
-} from "./ai-vault-session-resume";
-import type { AiVaultSessionWorktreeInfo } from "./ai-vault-session-worktree";
+  AiVaultSessionResumeState
+} from './ai-vault-session-resume'
+import type { AiVaultSessionWorktreeInfo } from './ai-vault-session-worktree'
 import {
   extractVaultVirtualRowIndexes,
   getVaultStickyHeaderIndexes,
   VAULT_GROUP_HEADER_ROW_HEIGHT,
-  VAULT_SESSION_ROW_HEIGHT,
-} from "./ai-vault-virtual-rows";
-import type { AiVaultResumeInChatEligibility } from "./ai-vault-session-resume-in-chat";
-import { AiVaultVirtualRow, type AiVaultListRow } from "./AiVaultVirtualRow";
-import type { AiVaultSearchHit } from "../../../../shared/ai-vault-search-types";
+  VAULT_SESSION_ROW_HEIGHT
+} from './ai-vault-virtual-rows'
+import type { AiVaultResumeInChatEligibility } from './ai-vault-session-resume-in-chat'
+import { AiVaultVirtualRow, type AiVaultListRow } from './AiVaultVirtualRow'
+import type { AiVaultSearchHit } from '../../../../shared/ai-vault-search-types'
 
-const VAULT_ROW_OVERSCAN = 8;
-const VAULT_EXPANDED_SESSION_ROW_ESTIMATED_HEIGHT = 420;
+const VAULT_ROW_OVERSCAN = 8
+const VAULT_EXPANDED_SESSION_ROW_ESTIMATED_HEIGHT = 420
 
 export function AiVaultSessionVirtualList({
   groups,
@@ -61,132 +58,114 @@ export function AiVaultSessionVirtualList({
   onRevealLog,
   onOpenCwd,
   onRequestDelete,
-  searchHits,
+  searchHits
 }: {
-  groups: readonly AiVaultSessionListGroup[];
-  collapsedGroups: ReadonlySet<string>;
-  loading: boolean;
-  sessionsCount: number;
-  filteredSessionsCount: number;
-  noAgentsSelected: boolean;
-  error: string | null;
-  vaultScope: AiVaultScope;
-  buildResumeStartup: (
-    session: AiVaultSession,
-    worktreeId?: string | null,
-  ) => AiVaultResumeStartup;
-  getOriginalPaneTarget: (
-    session: AiVaultSession,
-  ) => AiVaultOriginalPaneTarget | null;
-  isStructuredSessionOpen: (session: AiVaultSession) => boolean;
-  getSessionLiveState: (session: AiVaultSession) => AgentStatusState | null;
-  getWorktreeInfo: (
-    session: AiVaultSession,
-  ) => AiVaultSessionWorktreeInfo | null;
-  getSessionResumeState: (session: AiVaultSession) => AiVaultSessionResumeState;
-  getSessionResumeActions: (
-    session: AiVaultSession,
-  ) => AiVaultSessionResumeActions;
-  getSessionResumeInChat: (
-    session: AiVaultSession,
-  ) => AiVaultResumeInChatEligibility;
-  onToggleGroup: (key: string) => void;
-  onJumpToOriginalPane: (session: AiVaultSession) => void;
-  onJumpToWorktree: (worktreeId: string) => void;
-  onResume: (session: AiVaultSession, worktreeId: string) => void;
-  onContinueInNewSession: (session: AiVaultSession, worktreeId: string) => void;
-  onResumeInNewChat: (session: AiVaultSession, worktreeId: string) => void;
-  onResumeInNewCli: (session: AiVaultSession, worktreeId: string) => void;
-  onCopyResume: (session: AiVaultSession, worktreeId?: string | null) => void;
-  onCopyId: (session: AiVaultSession) => void;
-  onCopyPath: (session: AiVaultSession) => void;
-  onOpenLog: (session: AiVaultSession) => void;
-  onRevealLog: (session: AiVaultSession) => void;
-  onOpenCwd: (session: AiVaultSession) => void;
-  onRequestDelete: (session: AiVaultSession) => void;
-  searchHits?: ReadonlyMap<string, AiVaultSearchHit>;
+  groups: readonly AiVaultSessionListGroup[]
+  collapsedGroups: ReadonlySet<string>
+  loading: boolean
+  sessionsCount: number
+  filteredSessionsCount: number
+  noAgentsSelected: boolean
+  error: string | null
+  vaultScope: AiVaultScope
+  buildResumeStartup: (session: AiVaultSession, worktreeId?: string | null) => AiVaultResumeStartup
+  getOriginalPaneTarget: (session: AiVaultSession) => AiVaultOriginalPaneTarget | null
+  isStructuredSessionOpen: (session: AiVaultSession) => boolean
+  getSessionLiveState: (session: AiVaultSession) => AgentStatusState | null
+  getWorktreeInfo: (session: AiVaultSession) => AiVaultSessionWorktreeInfo | null
+  getSessionResumeState: (session: AiVaultSession) => AiVaultSessionResumeState
+  getSessionResumeActions: (session: AiVaultSession) => AiVaultSessionResumeActions
+  getSessionResumeInChat: (session: AiVaultSession) => AiVaultResumeInChatEligibility
+  onToggleGroup: (key: string) => void
+  onJumpToOriginalPane: (session: AiVaultSession) => void
+  onJumpToWorktree: (worktreeId: string) => void
+  onResume: (session: AiVaultSession, worktreeId: string) => void
+  onContinueInNewSession: (session: AiVaultSession, worktreeId: string) => void
+  onResumeInNewChat: (session: AiVaultSession, worktreeId: string) => void
+  onResumeInNewCli: (session: AiVaultSession, worktreeId: string) => void
+  onCopyResume: (session: AiVaultSession, worktreeId?: string | null) => void
+  onCopyId: (session: AiVaultSession) => void
+  onCopyPath: (session: AiVaultSession) => void
+  onOpenLog: (session: AiVaultSession) => void
+  onRevealLog: (session: AiVaultSession) => void
+  onOpenCwd: (session: AiVaultSession) => void
+  onRequestDelete: (session: AiVaultSession) => void
+  searchHits?: ReadonlyMap<string, AiVaultSearchHit>
 }): React.JSX.Element {
-  const listScrollRef = useRef<HTMLDivElement>(null);
-  const stickyRangeStartIndexRef = useRef(0);
-  const activeStickyHeaderIndexRef = useRef<number | null>(null);
-  const [expandedSessionIds, setExpandedSessionIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const listScrollRef = useRef<HTMLDivElement>(null)
+  const stickyRangeStartIndexRef = useRef(0)
+  const activeStickyHeaderIndexRef = useRef<number | null>(null)
+  const [expandedSessionIds, setExpandedSessionIds] = useState<Set<string>>(() => new Set())
 
   const vaultRows = useMemo(() => {
-    const rows: AiVaultListRow[] = [];
+    const rows: AiVaultListRow[] = []
     for (const sessionGroup of groups) {
-      const label = sessionGroup.label;
+      const label = sessionGroup.label
       if (label !== null) {
-        rows.push({ type: "group", group: { ...sessionGroup, label } });
+        rows.push({ type: 'group', group: { ...sessionGroup, label } })
       }
       if (label === null || !collapsedGroups.has(sessionGroup.key)) {
         for (const session of sessionGroup.sessions) {
-          rows.push({ type: "session", groupKey: sessionGroup.key, session });
+          rows.push({ type: 'session', groupKey: sessionGroup.key, session })
         }
       }
     }
-    return rows;
-  }, [collapsedGroups, groups]);
+    return rows
+  }, [collapsedGroups, groups])
 
-  const stickyHeaderIndexes = useMemo(
-    () => getVaultStickyHeaderIndexes(vaultRows),
-    [vaultRows],
-  );
+  const stickyHeaderIndexes = useMemo(() => getVaultStickyHeaderIndexes(vaultRows), [vaultRows])
 
   const virtualizer = useVirtualizer({
     count: vaultRows.length,
     getScrollElement: () => listScrollRef.current,
     estimateSize: (index) => {
-      const row = vaultRows[index];
-      if (row?.type === "group") {
-        return VAULT_GROUP_HEADER_ROW_HEIGHT;
+      const row = vaultRows[index]
+      if (row?.type === 'group') {
+        return VAULT_GROUP_HEADER_ROW_HEIGHT
       }
-      if (row?.type === "session" && expandedSessionIds.has(row.session.id)) {
-        return VAULT_EXPANDED_SESSION_ROW_ESTIMATED_HEIGHT;
+      if (row?.type === 'session' && expandedSessionIds.has(row.session.id)) {
+        return VAULT_EXPANDED_SESSION_ROW_ESTIMATED_HEIGHT
       }
-      return VAULT_SESSION_ROW_HEIGHT;
+      return VAULT_SESSION_ROW_HEIGHT
     },
     overscan: VAULT_ROW_OVERSCAN,
     // Why: keep the active group header mounted so CSS sticky can pin it while
     // its sessions scroll underneath in the virtual list.
     rangeExtractor: useCallback(
       (range) => {
-        stickyRangeStartIndexRef.current = range.startIndex;
-        return extractVaultVirtualRowIndexes({ range, stickyHeaderIndexes });
+        stickyRangeStartIndexRef.current = range.startIndex
+        return extractVaultVirtualRowIndexes({ range, stickyHeaderIndexes })
       },
-      [stickyHeaderIndexes],
+      [stickyHeaderIndexes]
     ),
     getItemKey: (index) => {
-      const row = vaultRows[index];
+      const row = vaultRows[index]
       if (!row) {
-        return `missing:${index}`;
+        return `missing:${index}`
       }
-      return row.type === "group"
-        ? `group:${row.group.key}`
-        : `session:${row.session.id}`;
-    },
-  });
+      return row.type === 'group' ? `group:${row.group.key}` : `session:${row.session.id}`
+    }
+  })
 
   const toggleSessionDetails = useCallback((sessionId: string) => {
     setExpandedSessionIds((current) => {
-      const next = new Set(current);
+      const next = new Set(current)
       if (next.has(sessionId)) {
-        next.delete(sessionId);
+        next.delete(sessionId)
       } else {
-        next.add(sessionId);
+        next.add(sessionId)
       }
-      return next;
-    });
-  }, []);
+      return next
+    })
+  }, [])
 
-  const virtualItems = virtualizer.getVirtualItems();
+  const virtualItems = virtualizer.getVirtualItems()
   activeStickyHeaderIndexRef.current = getActiveStickyHeaderIndexForScroll({
     rangeStartIndex: stickyRangeStartIndexRef.current,
     scrollOffset: virtualizer.scrollOffset ?? 0,
     stickyHeaderIndexes,
-    virtualItems,
-  });
+    virtualItems
+  })
 
   return (
     <SubagentExpansionProvider>
@@ -199,8 +178,8 @@ export function AiVaultSessionVirtualList({
         {!loading && sessionsCount === 0 && !error ? (
           <EmptyState
             title={translate(
-              "auto.components.right.sidebar.AiVaultPanel.noAgentSessionsFound",
-              "No agent sessions found",
+              'auto.components.right.sidebar.AiVaultPanel.noAgentSessionsFound',
+              'No agent sessions found'
             )}
           />
         ) : null}
@@ -210,22 +189,19 @@ export function AiVaultSessionVirtualList({
             title={
               noAgentsSelected
                 ? translate(
-                    "auto.components.right.sidebar.AiVaultPanel.noAgentsSelected",
-                    "No agents selected",
+                    'auto.components.right.sidebar.AiVaultPanel.noAgentsSelected',
+                    'No agents selected'
                   )
                 : translate(
-                    "auto.components.right.sidebar.AiVaultPanel.noSessionsMatchFilters",
-                    "No sessions match the current filters",
+                    'auto.components.right.sidebar.AiVaultPanel.noSessionsMatchFilters',
+                    'No sessions match the current filters'
                   )
             }
           />
         ) : null}
 
         {vaultRows.length > 0 ? (
-          <div
-            className="relative w-full"
-            style={{ height: virtualizer.getTotalSize() }}
-          >
+          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
             {virtualItems.map((virtualRow) => (
               <AiVaultVirtualRow
                 key={virtualRow.key}
@@ -267,5 +243,5 @@ export function AiVaultSessionVirtualList({
         ) : null}
       </div>
     </SubagentExpansionProvider>
-  );
+  )
 }

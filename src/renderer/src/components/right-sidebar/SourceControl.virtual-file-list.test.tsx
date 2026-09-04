@@ -1,35 +1,35 @@
 // @vitest-environment happy-dom
 
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import type { GitStatusEntry } from "../../../../shared/git-status-types";
-import SourceControl from "./SourceControl";
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import type { GitStatusEntry } from '../../../../shared/git-status-types'
+import SourceControl from './SourceControl'
 import {
   VIRTUALIZED_LIST_MIN_ROWS,
   VIRTUALIZED_LIST_OVERSCAN,
-  VIRTUALIZED_LIST_ROW_HEIGHT_PX,
-} from "@/components/virtualized-list";
+  VIRTUALIZED_LIST_ROW_HEIGHT_PX
+} from '@/components/virtualized-list'
 
 const mocks = vi.hoisted(() => {
   const activeRepo = {
-    id: "repo-1",
-    path: "/repo",
-    displayName: "Repo",
-    badgeColor: "#000",
-    addedAt: 0,
-  };
+    id: 'repo-1',
+    path: '/repo',
+    displayName: 'Repo',
+    badgeColor: '#000',
+    addedAt: 0
+  }
   const activeWorktree = {
-    id: "wt-1",
-    repoId: "repo-1",
-    path: "/repo/wt",
-    head: "abcdef123",
-    branch: "refs/heads/feature/virtual-list",
+    id: 'wt-1',
+    repoId: 'repo-1',
+    path: '/repo/wt',
+    head: 'abcdef123',
+    branch: 'refs/heads/feature/virtual-list',
     isBare: false,
     isMainWorktree: false,
-    displayName: "feature/virtual-list",
-    comment: "",
+    displayName: 'feature/virtual-list',
+    comment: '',
     linkedIssue: null,
     linkedPR: null,
     linkedLinearIssue: null,
@@ -39,83 +39,78 @@ const mocks = vi.hoisted(() => {
     isUnread: false,
     isPinned: false,
     sortOrder: 0,
-    lastActivityAt: 0,
-  };
+    lastActivityAt: 0
+  }
   return {
     activeRepo,
     activeWorktree,
-    state: {} as Record<string, unknown>,
-  };
-});
+    state: {} as Record<string, unknown>
+  }
+})
 
-vi.mock("@/store", () => {
+vi.mock('@/store', () => {
   const useAppStore = Object.assign(
     (selector?: (state: Record<string, unknown>) => unknown) =>
       selector ? selector(mocks.state) : mocks.state,
     {
-      getState: () => mocks.state,
-    },
-  );
-  return { useAppStore };
-});
+      getState: () => mocks.state
+    }
+  )
+  return { useAppStore }
+})
 
-vi.mock("@/store/selectors", () => ({
+vi.mock('@/store/selectors', () => ({
   useActiveWorktree: () => mocks.activeWorktree,
   useRepoById: (repoId: string | null) =>
     repoId === mocks.activeRepo.id ? mocks.activeRepo : null,
-  useWorktreeMap: () =>
-    new Map([[mocks.activeWorktree.id, mocks.activeWorktree]]),
-}));
+  useWorktreeMap: () => new Map([[mocks.activeWorktree.id, mocks.activeWorktree]])
+}))
 
-vi.mock("@/components/confirmation-dialog-context", () => ({
-  useConfirmationDialog: () => vi.fn().mockResolvedValue(true),
-}));
+vi.mock('@/components/confirmation-dialog-context', () => ({
+  useConfirmationDialog: () => vi.fn().mockResolvedValue(true)
+}))
 
-vi.mock("./git-status-refresh", () => ({
-  refreshGitStatusForWorktree: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('./git-status-refresh', () => ({
+  refreshGitStatusForWorktree: vi.fn().mockResolvedValue(undefined)
+}))
 
-const VIEWPORT_HEIGHT_PX = 600;
+const VIEWPORT_HEIGHT_PX = 600
 // Rows the viewport can show plus overscan on both edges plus the partial
 // rows clipped at each edge of the window.
 const MAX_MOUNTED_ROWS =
-  Math.ceil(VIEWPORT_HEIGHT_PX / VIRTUALIZED_LIST_ROW_HEIGHT_PX) +
-  2 * VIRTUALIZED_LIST_OVERSCAN +
-  2;
+  Math.ceil(VIEWPORT_HEIGHT_PX / VIRTUALIZED_LIST_ROW_HEIGHT_PX) + 2 * VIRTUALIZED_LIST_OVERSCAN + 2
 
 function gitEntry(overrides: Partial<GitStatusEntry>): GitStatusEntry {
   return {
-    path: "src/file.ts",
-    area: "unstaged",
-    status: "modified",
+    path: 'src/file.ts',
+    area: 'unstaged',
+    status: 'modified',
     added: 1,
     removed: 0,
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 
 function manyEntries(count: number): GitStatusEntry[] {
   return Array.from({ length: count }, (_, index) =>
-    gitEntry({ path: `src/file-${String(index).padStart(3, "0")}.ts` }),
-  );
+    gitEntry({ path: `src/file-${String(index).padStart(3, '0')}.ts` })
+  )
 }
 
 function noopAsync(value: unknown = undefined): () => Promise<unknown> {
-  return vi.fn().mockResolvedValue(value);
+  return vi.fn().mockResolvedValue(value)
 }
 
 function resetState(overrides: Partial<Record<string, unknown>> = {}): void {
-  vi.clearAllMocks();
+  vi.clearAllMocks()
   mocks.state = {
     activeWorktreeId: mocks.activeWorktree.id,
-    activeGroupIdByWorktree: { [mocks.activeWorktree.id]: "group-1" },
-    groupsByWorktree: {
-      [mocks.activeWorktree.id]: [{ id: "group-1", activeTabId: null }],
-    },
+    activeGroupIdByWorktree: { [mocks.activeWorktree.id]: 'group-1' },
+    groupsByWorktree: { [mocks.activeWorktree.id]: [{ id: 'group-1', activeTabId: null }] },
     repos: [mocks.activeRepo],
     worktreesByRepo: { [mocks.activeRepo.id]: [mocks.activeWorktree] },
     rightSidebarOpen: false,
-    rightSidebarTab: "source-control",
+    rightSidebarTab: 'source-control',
     gitStatusByWorktree: { [mocks.activeWorktree.id]: [] },
     gitBranchChangesByWorktree: { [mocks.activeWorktree.id]: [] },
     gitBranchCompareSummaryByWorktree: { [mocks.activeWorktree.id]: null },
@@ -138,14 +133,14 @@ function resetState(overrides: Partial<Record<string, unknown>> = {}): void {
     openSettingsPage: vi.fn(),
     fetchHostedReviewForBranch: noopAsync(),
     getHostedReviewCreationEligibility: noopAsync(null),
-    createHostedReview: noopAsync({ ok: false, error: "not available" }),
+    createHostedReview: noopAsync({ ok: false, error: 'not available' }),
     updateWorktreeMeta: noopAsync(),
     fetchPRForBranch: noopAsync(),
     enqueueGitHubPRRefresh: vi.fn(),
     updateRepo: noopAsync(),
     setGitStatus: vi.fn(),
     updateWorktreeGitIdentity: vi.fn(),
-    beginGitBranchCompareRequest: vi.fn(() => "request-key"),
+    beginGitBranchCompareRequest: vi.fn(() => 'request-key'),
     setGitBranchCompareResult: vi.fn(),
     clearGitBranchCompare: vi.fn(),
     fetchUpstreamStatus: noopAsync(),
@@ -166,7 +161,7 @@ function resetState(overrides: Partial<Record<string, unknown>> = {}): void {
     openConflictFile: vi.fn(),
     openConflictReview: vi.fn(),
     openBranchDiff: vi.fn(),
-    createEmptySplitGroup: vi.fn(() => "group-2"),
+    createEmptySplitGroup: vi.fn(() => 'group-2'),
     openAllDiffs: vi.fn(),
     openBranchAllDiffs: vi.fn(),
     openCommitAllDiffs: vi.fn(),
@@ -176,22 +171,20 @@ function resetState(overrides: Partial<Record<string, unknown>> = {}): void {
     setScrollToDiffCommentId: vi.fn(),
     setRightSidebarOpen: vi.fn(),
     setRightSidebarTab: vi.fn(),
-    allocateCommitMessageGenerationRequestId: vi.fn(
-      () => "commit-generation-1",
-    ),
+    allocateCommitMessageGenerationRequestId: vi.fn(() => 'commit-generation-1'),
     setCommitMessageGenerationRecord: vi.fn(),
     updateCommitMessageGenerationRecord: vi.fn(),
     pruneCommitMessageGenerationRecords: vi.fn(),
-    allocatePullRequestGenerationRequestId: vi.fn(() => "pr-generation-1"),
+    allocatePullRequestGenerationRequestId: vi.fn(() => 'pr-generation-1'),
     setPullRequestGenerationRecord: vi.fn(),
     updatePullRequestGenerationRecord: vi.fn(),
     prunePullRequestGenerationRecords: vi.fn(),
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 
-let container: HTMLDivElement;
-let root: Root;
+let container: HTMLDivElement
+let root: Root
 
 class NoopResizeObserver {
   observe(): void {}
@@ -200,235 +193,227 @@ class NoopResizeObserver {
 }
 
 beforeEach(() => {
-  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-  resetState();
-  container = document.createElement("div");
-  document.body.appendChild(container);
-  root = createRoot(container);
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  resetState()
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
 
   // Why: happy-dom has no layout. Give the virtualizer a 600px scroll viewport
   // and 24px rows (both rect + row measurement read offsetHeight), and keep
   // the observer path inert so measurements stay deterministic.
-  vi.stubGlobal("ResizeObserver", NoopResizeObserver);
-  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
-    function (this: HTMLElement) {
-      return this.classList.contains("overflow-auto")
-        ? VIEWPORT_HEIGHT_PX
-        : VIRTUALIZED_LIST_ROW_HEIGHT_PX;
-    },
-  );
-  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
-    function (this: Element) {
-      // The panel scroller acts as the fixed viewport; everything inside it
-      // shifts up by scrollTop, which is what the list's scroll-margin math
-      // reads. Leaf rows only ever contribute their 24px height.
-      const isScroller = this.classList.contains("overflow-auto");
-      const scroller = isScroller ? null : this.closest(".overflow-auto");
-      const top = isScroller ? 0 : -(scroller?.scrollTop ?? 0);
-      return new DOMRect(0, top, 240, VIRTUALIZED_LIST_ROW_HEIGHT_PX);
-    },
-  );
-});
+  vi.stubGlobal('ResizeObserver', NoopResizeObserver)
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+    this: HTMLElement
+  ) {
+    return this.classList.contains('overflow-auto')
+      ? VIEWPORT_HEIGHT_PX
+      : VIRTUALIZED_LIST_ROW_HEIGHT_PX
+  })
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    // The panel scroller acts as the fixed viewport; everything inside it
+    // shifts up by scrollTop, which is what the list's scroll-margin math
+    // reads. Leaf rows only ever contribute their 24px height.
+    const isScroller = this.classList.contains('overflow-auto')
+    const scroller = isScroller ? null : this.closest('.overflow-auto')
+    const top = isScroller ? 0 : -(scroller?.scrollTop ?? 0)
+    return new DOMRect(0, top, 240, VIRTUALIZED_LIST_ROW_HEIGHT_PX)
+  })
+})
 
 afterEach(() => {
-  act(() => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
+  act(() => root.unmount())
+  container.remove()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 function renderSourceControl(): void {
   act(() => {
     root.render(
       <TooltipProvider>
         <SourceControl />
-      </TooltipProvider>,
-    );
-  });
+      </TooltipProvider>
+    )
+  })
 }
 
 function scroller(): HTMLDivElement {
-  const element = container.querySelector<HTMLDivElement>(".overflow-auto");
+  const element = container.querySelector<HTMLDivElement>('.overflow-auto')
   if (!element) {
-    throw new Error("source control scroller not found");
+    throw new Error('source control scroller not found')
   }
-  return element;
+  return element
 }
 
 function scrollTo(offset: number): void {
-  const element = scroller();
+  const element = scroller()
   // Why: happy-dom clamps scrollTop against its zero-height layout; pin the
   // property so the virtualizer's scroll handler reads the intended offset.
-  Object.defineProperty(element, "scrollTop", {
+  Object.defineProperty(element, 'scrollTop', {
     configurable: true,
     writable: true,
-    value: offset,
-  });
+    value: offset
+  })
   act(() => {
-    element.dispatchEvent(new Event("scroll"));
-  });
+    element.dispatchEvent(new Event('scroll'))
+  })
 }
 
 function mountedRows(): HTMLDivElement[] {
   return Array.from(
-    container.querySelectorAll<HTMLDivElement>(
-      '[data-testid="source-control-entry"]',
-    ),
-  );
+    container.querySelectorAll<HTMLDivElement>('[data-testid="source-control-entry"]')
+  )
 }
 
 function row(path: string): HTMLDivElement | null {
   return container.querySelector<HTMLDivElement>(
-    `[data-source-control-path="${path}"][data-source-control-area="unstaged"]`,
-  );
+    `[data-source-control-path="${path}"][data-source-control-area="unstaged"]`
+  )
 }
 
 function virtualList(): HTMLDivElement | null {
-  return container.querySelector<HTMLDivElement>(
-    '[data-testid="virtualized-list"]',
-  );
+  return container.querySelector<HTMLDivElement>('[data-testid="virtualized-list"]')
 }
 
-describe("SourceControl virtualized changed-files list", () => {
-  it("bounds mounted rows by viewport + overscan with 500 entries", () => {
+describe('SourceControl virtualized changed-files list', () => {
+  it('bounds mounted rows by viewport + overscan with 500 entries', () => {
     resetState({
-      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) },
-    });
-    renderSourceControl();
+      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) }
+    })
+    renderSourceControl()
 
-    expect(virtualList()).toBeTruthy();
-    const mounted = mountedRows().length;
-    expect(mounted).toBeGreaterThan(0);
-    expect(mounted).toBeLessThanOrEqual(MAX_MOUNTED_ROWS);
-  });
+    expect(virtualList()).toBeTruthy()
+    const mounted = mountedRows().length
+    expect(mounted).toBeGreaterThan(0)
+    expect(mounted).toBeLessThanOrEqual(MAX_MOUNTED_ROWS)
+  })
 
-  it("windows rows while scrolling instead of mounting the tail", () => {
+  it('windows rows while scrolling instead of mounting the tail', () => {
     resetState({
-      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) },
-    });
-    renderSourceControl();
+      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) }
+    })
+    renderSourceControl()
 
-    expect(row("src/file-000.ts")).toBeTruthy();
-    expect(row("src/file-250.ts")).toBeNull();
+    expect(row('src/file-000.ts')).toBeTruthy()
+    expect(row('src/file-250.ts')).toBeNull()
 
-    scrollTo(250 * VIRTUALIZED_LIST_ROW_HEIGHT_PX);
+    scrollTo(250 * VIRTUALIZED_LIST_ROW_HEIGHT_PX)
 
-    expect(row("src/file-250.ts")).toBeTruthy();
-    expect(row("src/file-000.ts")).toBeNull();
-    expect(mountedRows().length).toBeLessThanOrEqual(MAX_MOUNTED_ROWS);
-  });
+    expect(row('src/file-250.ts')).toBeTruthy()
+    expect(row('src/file-000.ts')).toBeNull()
+    expect(mountedRows().length).toBeLessThanOrEqual(MAX_MOUNTED_ROWS)
+  })
 
-  it("keeps row selection across the virtualized boundary", () => {
+  it('keeps row selection across the virtualized boundary', () => {
     resetState({
-      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) },
-    });
-    renderSourceControl();
+      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) }
+    })
+    renderSourceControl()
 
-    const target = row("src/file-000.ts");
-    expect(target).toBeTruthy();
+    const target = row('src/file-000.ts')
+    expect(target).toBeTruthy()
     act(() => {
-      target?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
-    });
-    expect(row("src/file-000.ts")?.className).toContain("bg-accent/60");
-    expect(container.textContent).toContain("1 selected");
+      target?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(row('src/file-000.ts')?.className).toContain('bg-accent/60')
+    expect(container.textContent).toContain('1 selected')
 
     // The selected row scrolls out of the mounted window but stays selected.
-    scrollTo(240 * VIRTUALIZED_LIST_ROW_HEIGHT_PX);
-    expect(row("src/file-000.ts")).toBeNull();
-    expect(container.textContent).toContain("1 selected");
+    scrollTo(240 * VIRTUALIZED_LIST_ROW_HEIGHT_PX)
+    expect(row('src/file-000.ts')).toBeNull()
+    expect(container.textContent).toContain('1 selected')
 
-    scrollTo(0);
-    expect(row("src/file-000.ts")?.className).toContain("bg-accent/60");
-  });
+    scrollTo(0)
+    expect(row('src/file-000.ts')?.className).toContain('bg-accent/60')
+  })
 
-  it("collapses and re-expands a virtualized section", () => {
+  it('collapses and re-expands a virtualized section', () => {
     resetState({
-      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) },
-    });
-    renderSourceControl();
-    expect(mountedRows().length).toBeGreaterThan(0);
+      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) }
+    })
+    renderSourceControl()
+    expect(mountedRows().length).toBeGreaterThan(0)
 
-    const changesHeader = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Changes"),
-    );
-    expect(changesHeader).toBeTruthy();
+    const changesHeader = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Changes')
+    )
+    expect(changesHeader).toBeTruthy()
 
     act(() => {
-      changesHeader?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    expect(mountedRows().length).toBe(0);
-    expect(virtualList()).toBeNull();
+      changesHeader?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(mountedRows().length).toBe(0)
+    expect(virtualList()).toBeNull()
 
     act(() => {
-      changesHeader?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    expect(mountedRows().length).toBeGreaterThan(0);
-    expect(mountedRows().length).toBeLessThanOrEqual(MAX_MOUNTED_ROWS);
-  });
+      changesHeader?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(mountedRows().length).toBeGreaterThan(0)
+    expect(mountedRows().length).toBeLessThanOrEqual(MAX_MOUNTED_ROWS)
+  })
 
-  it("keeps the scroll offset and window when a refresh delivers identical entries", () => {
+  it('keeps the scroll offset and window when a refresh delivers identical entries', () => {
     resetState({
-      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) },
-    });
-    renderSourceControl();
+      gitStatusByWorktree: { [mocks.activeWorktree.id]: manyEntries(500) }
+    })
+    renderSourceControl()
 
-    scrollTo(100 * VIRTUALIZED_LIST_ROW_HEIGHT_PX);
-    expect(row("src/file-100.ts")).toBeTruthy();
-    const heightBefore = virtualList()?.style.height;
+    scrollTo(100 * VIRTUALIZED_LIST_ROW_HEIGHT_PX)
+    expect(row('src/file-100.ts')).toBeTruthy()
+    const heightBefore = virtualList()?.style.height
 
     // A status refresh rebuilds every entry object with identical content.
     mocks.state = {
       ...mocks.state,
       gitStatusByWorktree: {
-        [mocks.activeWorktree.id]: manyEntries(500).map((entry) => ({
-          ...entry,
-        })),
-      },
-    };
-    renderSourceControl();
+        [mocks.activeWorktree.id]: manyEntries(500).map((entry) => ({ ...entry }))
+      }
+    }
+    renderSourceControl()
 
-    expect(scroller().scrollTop).toBe(100 * VIRTUALIZED_LIST_ROW_HEIGHT_PX);
-    expect(row("src/file-100.ts")).toBeTruthy();
-    expect(virtualList()?.style.height).toBe(heightBefore);
-  });
+    expect(scroller().scrollTop).toBe(100 * VIRTUALIZED_LIST_ROW_HEIGHT_PX)
+    expect(row('src/file-100.ts')).toBeTruthy()
+    expect(virtualList()?.style.height).toBe(heightBefore)
+  })
 
-  it("renders small changesets in full without the virtualization container", () => {
-    const paths = ["src/a.ts", "src/b.ts", "src/c.ts"];
+  it('renders small changesets in full without the virtualization container', () => {
+    const paths = ['src/a.ts', 'src/b.ts', 'src/c.ts']
     resetState({
       gitStatusByWorktree: {
-        [mocks.activeWorktree.id]: paths.map((path) => gitEntry({ path })),
-      },
-    });
-    renderSourceControl();
+        [mocks.activeWorktree.id]: paths.map((path) => gitEntry({ path }))
+      }
+    })
+    renderSourceControl()
 
-    expect(paths.length).toBeLessThan(VIRTUALIZED_LIST_MIN_ROWS);
-    expect(virtualList()).toBeNull();
-    expect(mountedRows().length).toBe(paths.length);
+    expect(paths.length).toBeLessThan(VIRTUALIZED_LIST_MIN_ROWS)
+    expect(virtualList()).toBeNull()
+    expect(mountedRows().length).toBe(paths.length)
     for (const path of paths) {
-      expect(row(path)).toBeTruthy();
+      expect(row(path)).toBeTruthy()
     }
-  });
+  })
 
-  it("bounds mounted tree-view rows for large changesets", () => {
+  it('bounds mounted tree-view rows for large changesets', () => {
     resetState({
-      settings: { sourceControlViewMode: "tree" },
+      settings: { sourceControlViewMode: 'tree' },
       gitStatusByWorktree: {
         [mocks.activeWorktree.id]: Array.from({ length: 500 }, (_, index) =>
           gitEntry({
-            path: `src/dir-${String(Math.floor(index / 20)).padStart(2, "0")}/file-${String(
-              index,
-            ).padStart(3, "0")}.ts`,
-          }),
-        ),
-      },
-    });
-    renderSourceControl();
+            path: `src/dir-${String(Math.floor(index / 20)).padStart(2, '0')}/file-${String(
+              index
+            ).padStart(3, '0')}.ts`
+          })
+        )
+      }
+    })
+    renderSourceControl()
 
-    expect(virtualList()).toBeTruthy();
+    expect(virtualList()).toBeTruthy()
     const mounted = container.querySelectorAll(
-      '[data-testid="virtualized-list"] [data-index]',
-    ).length;
-    expect(mounted).toBeGreaterThan(0);
-    expect(mounted).toBeLessThanOrEqual(MAX_MOUNTED_ROWS);
-  });
-});
+      '[data-testid="virtualized-list"] [data-index]'
+    ).length
+    expect(mounted).toBeGreaterThan(0)
+    expect(mounted).toBeLessThanOrEqual(MAX_MOUNTED_ROWS)
+  })
+})

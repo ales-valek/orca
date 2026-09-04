@@ -1,22 +1,22 @@
-import React from "react";
-import { ListFilter, Loader2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { translate } from "@/i18n/i18n";
+import React from 'react'
+import { ListFilter, Loader2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { translate } from '@/i18n/i18n'
 
 type FileExplorerNameFilterProps = {
-  query: string;
-  scopeLabel?: string;
-  loading?: boolean;
-  onQueryChange: (value: string) => void;
-  onClear: () => void;
-};
+  query: string
+  scopeLabel?: string
+  loading?: boolean
+  onQueryChange: (value: string) => void
+  onClear: () => void
+}
 
 export function FileExplorerNameFilter({
   query,
   scopeLabel,
   loading = false,
   onQueryChange,
-  onClear,
+  onClear
 }: FileExplorerNameFilterProps): React.JSX.Element {
   return (
     <div
@@ -28,26 +28,22 @@ export function FileExplorerNameFilter({
         type="text"
         className="min-w-0 flex-1 bg-transparent py-1 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
         aria-label={translate(
-          "auto.components.right.sidebar.FileExplorerNameFilter.26fb73c6e3",
-          "Find files",
+          'auto.components.right.sidebar.FileExplorerNameFilter.26fb73c6e3',
+          'Find files'
         )}
         placeholder={
           scopeLabel
-            ? translate("fileExplorer.root.findInFolder", "Find in {{path}}", {
-                path: scopeLabel,
-              })
+            ? translate('fileExplorer.root.findInFolder', 'Find in {{path}}', { path: scopeLabel })
             : translate(
-                "auto.components.right.sidebar.FileExplorerNameFilter.26fb73c6e3",
-                "Find files",
+                'auto.components.right.sidebar.FileExplorerNameFilter.26fb73c6e3',
+                'Find files'
               )
         }
         value={query}
         onChange={(event) => onQueryChange(event.currentTarget.value)}
         spellCheck={false}
       />
-      {loading ? (
-        <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
-      ) : null}
+      {loading ? <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" /> : null}
       {query ? (
         <Button
           type="button"
@@ -55,8 +51,8 @@ export function FileExplorerNameFilter({
           size="icon-xs"
           className="h-auto w-auto rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
           aria-label={translate(
-            "auto.components.right.sidebar.FileExplorerNameFilter.4d5a6b2a49",
-            "Clear file filter",
+            'auto.components.right.sidebar.FileExplorerNameFilter.4d5a6b2a49',
+            'Clear file filter'
           )}
           onClick={onClear}
         >
@@ -64,5 +60,5 @@ export function FileExplorerNameFilter({
         </Button>
       ) : null}
     </div>
-  );
+  )
 }

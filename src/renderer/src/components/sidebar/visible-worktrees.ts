@@ -110,9 +110,7 @@ export function computeVisibleWorktrees(
   const lineageAncestorById =
     opts.missionMemberWorktreeIds.size === 0
       ? lineageAncestorIndex
-      : new Map(
-          [...lineageAncestorIndex].filter(([id]) => !opts.missionMemberWorktreeIds.has(id))
-        )
+      : new Map([...lineageAncestorIndex].filter(([id]) => !opts.missionMemberWorktreeIds.has(id)))
 
   if (opts.hideWorkspacesFromOtherDevices) {
     all = all.filter(

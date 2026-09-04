@@ -5,29 +5,27 @@ import {
   GitPullRequestArrow,
   GitPullRequestClosed,
   LoaderCircle,
-  Trash2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { translate } from "@/i18n/i18n";
+  Trash2
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { translate } from '@/i18n/i18n'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import {
   RIGHT_SIDEBAR_PRIMARY_BUTTON_LABEL_CLASS,
-  RIGHT_SIDEBAR_SPLIT_ACTION_ROW_CLASS,
-} from "./right-sidebar-primary-action-layout";
+  RIGHT_SIDEBAR_SPLIT_ACTION_ROW_CLASS
+} from './right-sidebar-primary-action-layout'
 
 export function HostedReviewActionError({
-  message,
+  message
 }: {
-  message: string | null;
+  message: string | null
 }): React.JSX.Element | null {
-  return message ? (
-    <div className="text-[10px] text-rose-500 break-words">{message}</div>
-  ) : null;
+  return message ? <div className="text-[10px] text-rose-500 break-words">{message}</div> : null
 }
 
 export function DraftReviewActions({
@@ -38,19 +36,19 @@ export function DraftReviewActions({
   stateUpdating,
   actionError,
   onMarkReadyForReview,
-  onCloseReview,
+  onCloseReview
 }: {
-  shortLabel: string;
-  reviewLabel: string;
-  isGitLab: boolean;
-  readying: boolean;
-  stateUpdating: "open" | "closed" | null;
-  actionError: string | null;
-  onMarkReadyForReview: () => void;
-  onCloseReview: () => void;
+  shortLabel: string
+  reviewLabel: string
+  isGitLab: boolean
+  readying: boolean
+  stateUpdating: 'open' | 'closed' | null
+  actionError: string | null
+  onMarkReadyForReview: () => void
+  onCloseReview: () => void
 }): React.JSX.Element {
-  const disabled = readying || stateUpdating !== null;
-  const ReadyIcon = isGitLab ? GitMerge : GitPullRequestArrow;
+  const disabled = readying || stateUpdating !== null
+  const ReadyIcon = isGitLab ? GitMerge : GitPullRequestArrow
   return (
     <div className="space-y-1.5">
       <div className={RIGHT_SIDEBAR_SPLIT_ACTION_ROW_CLASS}>
@@ -69,12 +67,12 @@ export function DraftReviewActions({
           <span className={RIGHT_SIDEBAR_PRIMARY_BUTTON_LABEL_CLASS}>
             {readying
               ? translate(
-                  "auto.components.right.sidebar.HostedReviewActions.markingReady",
-                  "Marking ready...",
+                  'auto.components.right.sidebar.HostedReviewActions.markingReady',
+                  'Marking ready...'
                 )
               : translate(
-                  "auto.components.right.sidebar.HostedReviewActions.markReady",
-                  "Mark ready for review",
+                  'auto.components.right.sidebar.HostedReviewActions.markReady',
+                  'Mark ready for review'
                 )}
           </span>
         </Button>
@@ -86,12 +84,12 @@ export function DraftReviewActions({
               className="shrink-0 rounded-l-none border-l border-primary-foreground/20 px-1.5 disabled:cursor-not-allowed"
               disabled={disabled}
               aria-label={translate(
-                "auto.components.right.sidebar.HostedReviewActions.draftMoreActions",
-                "More {{value0}} actions",
-                { value0: reviewLabel },
+                'auto.components.right.sidebar.HostedReviewActions.draftMoreActions',
+                'More {{value0}} actions',
+                { value0: reviewLabel }
               )}
             >
-              {stateUpdating === "closed" ? (
+              {stateUpdating === 'closed' ? (
                 <LoaderCircle className="size-3.5 animate-spin" />
               ) : (
                 <ChevronDown className="size-3.5" />
@@ -102,9 +100,9 @@ export function DraftReviewActions({
             <DropdownMenuItem variant="destructive" onSelect={onCloseReview}>
               <GitPullRequestClosed className="size-3.5" />
               {translate(
-                "auto.components.right.sidebar.HostedReviewActions.closeDraft",
-                "Close",
-              )}{" "}
+                'auto.components.right.sidebar.HostedReviewActions.closeDraft',
+                'Close'
+              )}{' '}
               {shortLabel}
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -112,19 +110,19 @@ export function DraftReviewActions({
       </div>
       <HostedReviewActionError message={actionError} />
     </div>
-  );
+  )
 }
 
 export function ClosedReviewActions({
   shortLabel,
   stateUpdating,
   actionError,
-  onReopenReview,
+  onReopenReview
 }: {
-  shortLabel: string;
-  stateUpdating: "open" | "closed" | null;
-  actionError: string | null;
-  onReopenReview: () => void;
+  shortLabel: string
+  stateUpdating: 'open' | 'closed' | null
+  actionError: string | null
+  onReopenReview: () => void
 }): React.JSX.Element {
   return (
     <div className="flex flex-col items-start gap-1.5">
@@ -136,33 +134,33 @@ export function ClosedReviewActions({
         onClick={onReopenReview}
         disabled={stateUpdating !== null}
       >
-        {stateUpdating === "open" ? (
+        {stateUpdating === 'open' ? (
           <LoaderCircle className="size-3.5 animate-spin" />
         ) : (
           <CircleDot className="size-3.5" />
         )}
-        {stateUpdating === "open"
+        {stateUpdating === 'open'
           ? translate(
-              "auto.components.right.sidebar.HostedReviewActions.6645ac7dd1",
-              "Reopening...",
+              'auto.components.right.sidebar.HostedReviewActions.6645ac7dd1',
+              'Reopening...'
             )
           : translate(
-              "auto.components.right.sidebar.HostedReviewActions.3ce211ece6",
-              "Reopen {{value0}}",
-              { value0: shortLabel },
+              'auto.components.right.sidebar.HostedReviewActions.3ce211ece6',
+              'Reopen {{value0}}',
+              { value0: shortLabel }
             )}
       </Button>
       <HostedReviewActionError message={actionError} />
     </div>
-  );
+  )
 }
 
 export function MergedReviewActions({
   isDeletingWorktree,
-  onDeleteWorktree,
+  onDeleteWorktree
 }: {
-  isDeletingWorktree: boolean;
-  onDeleteWorktree: () => void;
+  isDeletingWorktree: boolean
+  onDeleteWorktree: () => void
 }): React.JSX.Element {
   return (
     <Button
@@ -181,14 +179,11 @@ export function MergedReviewActions({
         <Trash2 className="size-3.5" />
       )}
       {isDeletingWorktree
-        ? translate(
-            "auto.components.right.sidebar.HostedReviewActions.eefd50457e",
-            "Deleting...",
-          )
+        ? translate('auto.components.right.sidebar.HostedReviewActions.eefd50457e', 'Deleting...')
         : translate(
-            "auto.components.right.sidebar.HostedReviewActions.e4aca40024",
-            "Delete Workspace",
+            'auto.components.right.sidebar.HostedReviewActions.e4aca40024',
+            'Delete Workspace'
           )}
     </Button>
-  );
+  )
 }

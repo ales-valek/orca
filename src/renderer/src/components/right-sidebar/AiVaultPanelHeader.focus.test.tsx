@@ -1,20 +1,20 @@
 // @vitest-environment happy-dom
-import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
-import { AiVaultPanelHeader } from "./AiVaultPanelHeader";
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, expect, it, vi } from 'vitest'
+import { AiVaultPanelHeader } from './AiVaultPanelHeader'
 
-vi.mock("@/i18n/i18n", () => ({
+vi.mock('@/i18n/i18n', () => ({
   translate: (_key: string, fallback: string, args?: Record<string, unknown>) =>
-    fallback.replace(/{{(\w+)}}/g, (_, key: string) => String(args?.[key])),
-}));
-vi.mock("./AiVaultPanelControls", () => ({
+    fallback.replace(/{{(\w+)}}/g, (_, key: string) => String(args?.[key]))
+}))
+vi.mock('./AiVaultPanelControls', () => ({
   VaultHostScopeMenu: () => null,
   VaultScopeSwitch: () => null,
-  VaultViewMenu: () => null,
-}));
+  VaultViewMenu: () => null
+}))
 
-afterEach(cleanup);
+afterEach(cleanup)
 
 function header(focusSearchRequestId: number) {
   return render(
@@ -43,20 +43,16 @@ function header(focusSearchRequestId: number) {
       onSessionLimitChange={vi.fn()}
       onReset={vi.fn()}
       onRefresh={vi.fn()}
-    />,
-  );
+    />
+  )
 }
 
-it("leaves focus alone until someone asks for the search box", () => {
-  header(0);
-  expect(
-    screen.getByRole("textbox", { name: "Search sessions" }),
-  ).not.toHaveFocus();
-});
+it('leaves focus alone until someone asks for the search box', () => {
+  header(0)
+  expect(screen.getByRole('textbox', { name: 'Search sessions' })).not.toHaveFocus()
+})
 
-it("focuses the search box when Settings sends the user here", () => {
-  header(1);
-  expect(
-    screen.getByRole("textbox", { name: "Search sessions" }),
-  ).toHaveFocus();
-});
+it('focuses the search box when Settings sends the user here', () => {
+  header(1)
+  expect(screen.getByRole('textbox', { name: 'Search sessions' })).toHaveFocus()
+})

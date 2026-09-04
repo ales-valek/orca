@@ -1,37 +1,31 @@
-import { describe, expect, it, vi } from "vitest";
-import { FileExplorerRow } from "./FileExplorerRow";
-import { FileExplorerVirtualRows } from "./FileExplorerVirtualRows";
-import { createFileExplorerRowProjection } from "./file-explorer-row-projection";
-import {
-  directoryNode,
-  fileNode,
-} from "./file-explorer-tree-node-test-fixtures";
-import {
-  visit,
-  type ReactElementLike,
-} from "./file-explorer-element-tree-test-harness";
+import { describe, expect, it, vi } from 'vitest'
+import { FileExplorerRow } from './FileExplorerRow'
+import { FileExplorerVirtualRows } from './FileExplorerVirtualRows'
+import { createFileExplorerRowProjection } from './file-explorer-row-projection'
+import { directoryNode, fileNode } from './file-explorer-tree-node-test-fixtures'
+import { visit, type ReactElementLike } from './file-explorer-element-tree-test-harness'
 
 function findFileExplorerRow(node: unknown): ReactElementLike {
-  let found: ReactElementLike | null = null;
+  let found: ReactElementLike | null = null
   visit(node, (entry) => {
     if (entry.type === FileExplorerRow) {
-      found = entry;
+      found = entry
     }
-  });
+  })
   if (!found) {
-    throw new Error("file explorer row not found");
+    throw new Error('file explorer row not found')
   }
-  return found;
+  return found
 }
 
-describe("FileExplorerRow collapse folder action", () => {
-  it("passes the row node to the collapse folder handler", () => {
-    const onCollapseFolderSubtree = vi.fn();
+describe('FileExplorerRow collapse folder action', () => {
+  it('passes the row node to the collapse folder handler', () => {
+    const onCollapseFolderSubtree = vi.fn()
     const element = FileExplorerVirtualRows({
       virtualizer: {
         getTotalSize: () => 26,
-        getVirtualItems: () => [{ index: 0, key: "src", start: 0 }],
-        measureElement: vi.fn(),
+        getVirtualItems: () => [{ index: 0, key: 'src', start: 0 }],
+        measureElement: vi.fn()
       } as never,
       inlineInputIndex: -1,
       rowProjection: createFileExplorerRowProjection([directoryNode]),
@@ -46,7 +40,7 @@ describe("FileExplorerRow collapse folder action", () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: "Del",
+      deleteShortcutLabel: 'Del',
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
       onViewFile: vi.fn(),
@@ -69,22 +63,22 @@ describe("FileExplorerRow collapse folder action", () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null,
-    });
+      nativeDropTargetDir: null
+    })
 
-    const row = findFileExplorerRow(element);
-    (row.props.onCollapseFolderSubtree as () => void)();
+    const row = findFileExplorerRow(element)
+    ;(row.props.onCollapseFolderSubtree as () => void)()
 
-    expect(onCollapseFolderSubtree).toHaveBeenCalledWith(directoryNode);
-  });
+    expect(onCollapseFolderSubtree).toHaveBeenCalledWith(directoryNode)
+  })
 
-  it("passes the row node to the find in folder handler", () => {
-    const onFindInFolder = vi.fn();
+  it('passes the row node to the find in folder handler', () => {
+    const onFindInFolder = vi.fn()
     const element = FileExplorerVirtualRows({
       virtualizer: {
         getTotalSize: () => 26,
-        getVirtualItems: () => [{ index: 0, key: "src", start: 0 }],
-        measureElement: vi.fn(),
+        getVirtualItems: () => [{ index: 0, key: 'src', start: 0 }],
+        measureElement: vi.fn()
       } as never,
       inlineInputIndex: -1,
       rowProjection: createFileExplorerRowProjection([directoryNode]),
@@ -99,7 +93,7 @@ describe("FileExplorerRow collapse folder action", () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: "Del",
+      deleteShortcutLabel: 'Del',
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
       onViewFile: vi.fn(),
@@ -122,21 +116,21 @@ describe("FileExplorerRow collapse folder action", () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null,
-    });
+      nativeDropTargetDir: null
+    })
 
-    const row = findFileExplorerRow(element);
-    (row.props.onFindInFolder as () => void)();
+    const row = findFileExplorerRow(element)
+    ;(row.props.onFindInFolder as () => void)()
 
-    expect(onFindInFolder).toHaveBeenCalledWith(directoryNode);
-  });
+    expect(onFindInFolder).toHaveBeenCalledWith(directoryNode)
+  })
 
-  it("passes the active connection id to virtualized rows", () => {
+  it('passes the active connection id to virtualized rows', () => {
     const element = FileExplorerVirtualRows({
       virtualizer: {
         getTotalSize: () => 26,
-        getVirtualItems: () => [{ index: 0, key: "index.ts", start: 0 }],
-        measureElement: vi.fn(),
+        getVirtualItems: () => [{ index: 0, key: 'index.ts', start: 0 }],
+        measureElement: vi.fn()
       } as never,
       inlineInputIndex: -1,
       rowProjection: createFileExplorerRowProjection([fileNode]),
@@ -151,8 +145,8 @@ describe("FileExplorerRow collapse folder action", () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: "Del",
-      connectionId: "ssh-1",
+      deleteShortcutLabel: 'Del',
+      connectionId: 'ssh-1',
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
       onViewFile: vi.fn(),
@@ -175,21 +169,21 @@ describe("FileExplorerRow collapse folder action", () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null,
-    });
+      nativeDropTargetDir: null
+    })
 
-    const row = findFileExplorerRow(element);
+    const row = findFileExplorerRow(element)
 
-    expect(row.props.connectionId).toBe("ssh-1");
-  });
+    expect(row.props.connectionId).toBe('ssh-1')
+  })
 
-  it("passes the row node to the open in terminal handler", () => {
-    const onOpenInTerminal = vi.fn();
+  it('passes the row node to the open in terminal handler', () => {
+    const onOpenInTerminal = vi.fn()
     const element = FileExplorerVirtualRows({
       virtualizer: {
         getTotalSize: () => 26,
-        getVirtualItems: () => [{ index: 0, key: "src", start: 0 }],
-        measureElement: vi.fn(),
+        getVirtualItems: () => [{ index: 0, key: 'src', start: 0 }],
+        measureElement: vi.fn()
       } as never,
       inlineInputIndex: -1,
       rowProjection: createFileExplorerRowProjection([directoryNode]),
@@ -204,7 +198,7 @@ describe("FileExplorerRow collapse folder action", () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: "Del",
+      deleteShortcutLabel: 'Del',
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
       onViewFile: vi.fn(),
@@ -227,22 +221,22 @@ describe("FileExplorerRow collapse folder action", () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null,
-    });
+      nativeDropTargetDir: null
+    })
 
-    const row = findFileExplorerRow(element);
-    (row.props.onOpenInTerminal as () => void)();
+    const row = findFileExplorerRow(element)
+    ;(row.props.onOpenInTerminal as () => void)()
 
-    expect(onOpenInTerminal).toHaveBeenCalledWith(directoryNode);
-  });
+    expect(onOpenInTerminal).toHaveBeenCalledWith(directoryNode)
+  })
 
-  it("passes the row node to the view file handler", () => {
-    const onViewFile = vi.fn();
+  it('passes the row node to the view file handler', () => {
+    const onViewFile = vi.fn()
     const element = FileExplorerVirtualRows({
       virtualizer: {
         getTotalSize: () => 26,
-        getVirtualItems: () => [{ index: 0, key: "src", start: 0 }],
-        measureElement: vi.fn(),
+        getVirtualItems: () => [{ index: 0, key: 'src', start: 0 }],
+        measureElement: vi.fn()
       } as never,
       inlineInputIndex: -1,
       rowProjection: createFileExplorerRowProjection([fileNode]),
@@ -257,7 +251,7 @@ describe("FileExplorerRow collapse folder action", () => {
       selectedPaths: new Set(),
       activeFileId: null,
       flashingPath: null,
-      deleteShortcutLabel: "Del",
+      deleteShortcutLabel: 'Del',
       onClick: vi.fn(),
       onDoubleClick: vi.fn(),
       onViewFile,
@@ -280,12 +274,12 @@ describe("FileExplorerRow collapse folder action", () => {
       onNativeDragExpandDir: vi.fn(),
       dropTargetDir: null,
       dragSourcePath: null,
-      nativeDropTargetDir: null,
-    });
+      nativeDropTargetDir: null
+    })
 
-    const row = findFileExplorerRow(element);
-    (row.props.onViewFile as () => void)();
+    const row = findFileExplorerRow(element)
+    ;(row.props.onViewFile as () => void)()
 
-    expect(onViewFile).toHaveBeenCalledWith(fileNode);
-  });
-});
+    expect(onViewFile).toHaveBeenCalledWith(fileNode)
+  })
+})

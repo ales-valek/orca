@@ -1,84 +1,70 @@
-import { PanelsTopLeft, RefreshCw } from "lucide-react";
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { lazyWithRetry } from "@/lib/lazy-with-retry";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { PanelsTopLeft, RefreshCw } from 'lucide-react'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { lazyWithRetry } from '@/lib/lazy-with-retry'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { translate } from "@/i18n/i18n";
-import { UsageRosterPanel } from "./UsageRosterPanel";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { translate } from '@/i18n/i18n'
+import { UsageRosterPanel } from './UsageRosterPanel'
 import {
   STATUS_BAR_CONTEXT_MENU_EXEMPT_PROPS,
-  shouldOpenStatusBarContextMenu,
-} from "./status-bar-context-menu-policy";
-import { StatusBarUsageEmptyCta } from "./StatusBarUsageEmptyCta";
-import { StatusBarUsageChangeNotices } from "./StatusBarUsageChangeNotices";
-import { UpdateStatusSegment } from "./UpdateStatusSegment";
-import { SkillUpdateStatusSegment } from "./SkillUpdateStatusSegment";
-import { NativeChatResumeStatusSegment } from "./NativeChatResumeStatusSegment";
-import { CaffeinateStatusSegment } from "./CaffeinateStatusSegment";
-import { LspStatusSegment } from "./LspStatusSegment";
-import { RemoteServerUpdateStatusSegment } from "./RemoteServerUpdateStatusSegment";
-import { TOGGLE_FLOATING_TERMINAL_EVENT } from "@/lib/floating-terminal";
-import { FloatingTerminalIconContextMenu } from "@/components/floating-terminal/FloatingTerminalIconContextMenu";
-import { ClaudeSwitcherMenu } from "./ClaudeSwitcherMenu";
-import { CodexSwitcherMenu } from "./CodexSwitcherMenu";
-import { ProviderDetailsMenu } from "./ProviderDetailsMenu";
-import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from "@/lib/close-all-context-menus";
-import {
-  ProviderSegment,
-  UsageOverflowChip,
-  getUsageTone,
-} from "./StatusBarProviderSegment";
+  shouldOpenStatusBarContextMenu
+} from './status-bar-context-menu-policy'
+import { StatusBarUsageEmptyCta } from './StatusBarUsageEmptyCta'
+import { StatusBarUsageChangeNotices } from './StatusBarUsageChangeNotices'
+import { UpdateStatusSegment } from './UpdateStatusSegment'
+import { SkillUpdateStatusSegment } from './SkillUpdateStatusSegment'
+import { NativeChatResumeStatusSegment } from './NativeChatResumeStatusSegment'
+import { CaffeinateStatusSegment } from './CaffeinateStatusSegment'
+import { LspStatusSegment } from './LspStatusSegment'
+import { RemoteServerUpdateStatusSegment } from './RemoteServerUpdateStatusSegment'
+import { TOGGLE_FLOATING_TERMINAL_EVENT } from '@/lib/floating-terminal'
+import { FloatingTerminalIconContextMenu } from '@/components/floating-terminal/FloatingTerminalIconContextMenu'
+import { ClaudeSwitcherMenu } from './ClaudeSwitcherMenu'
+import { CodexSwitcherMenu } from './CodexSwitcherMenu'
+import { ProviderDetailsMenu } from './ProviderDetailsMenu'
+import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
+import { ProviderSegment, UsageOverflowChip, getUsageTone } from './StatusBarProviderSegment'
 import {
   UsageUnitLabel,
   getUsageUnitLabelState,
-  usageChipShowsPercentage,
-} from "./usage-unit-label";
-import { useStatusBarController } from "./use-status-bar-controller";
-import { StatusBarVisibilityMenu } from "./StatusBarVisibilityMenu";
-import { isPairedWebClientWindow } from "@/lib/desktop-window-chrome";
+  usageChipShowsPercentage
+} from './usage-unit-label'
+import { useStatusBarController } from './use-status-bar-controller'
+import { StatusBarVisibilityMenu } from './StatusBarVisibilityMenu'
+import { isPairedWebClientWindow } from '@/lib/desktop-window-chrome'
 
 const PetStatusSegment = lazyWithRetry(() =>
-  import("./PetStatusSegment").then((module) => ({
-    default: module.PetStatusSegment,
-  })),
-);
+  import('./PetStatusSegment').then((module) => ({ default: module.PetStatusSegment }))
+)
 const ResourceUsageStatusSegment = lazyWithRetry(() =>
-  import("./ResourceUsageStatusSegment").then((module) => ({
-    default: module.ResourceUsageStatusSegment,
-  })),
-);
+  import('./ResourceUsageStatusSegment').then((module) => ({
+    default: module.ResourceUsageStatusSegment
+  }))
+)
 const PortsStatusSegment = lazyWithRetry(() =>
-  import("./PortsStatusSegment").then((module) => ({
-    default: module.PortsStatusSegment,
-  })),
-);
+  import('./PortsStatusSegment').then((module) => ({ default: module.PortsStatusSegment }))
+)
 const SshStatusSegment = lazyWithRetry(() =>
-  import("./SshStatusSegment").then((module) => ({
-    default: module.SshStatusSegment,
-  })),
-);
+  import('./SshStatusSegment').then((module) => ({ default: module.SshStatusSegment }))
+)
 
 export type StatusBarProps = {
-  floatingTerminalOpen: boolean;
-};
+  floatingTerminalOpen: boolean
+}
 
 export function StatusBarSurface({
-  floatingTerminalOpen,
+  floatingTerminalOpen
 }: StatusBarProps): React.JSX.Element | null {
   // Memoized labels still need to follow language changes.
-  useTranslation();
-  const controller = useStatusBarController(floatingTerminalOpen);
+  useTranslation()
+  const controller = useStatusBarController(floatingTerminalOpen)
   if (!controller) {
-    return null;
+    return null
   }
   const {
     anyFetching,
@@ -117,14 +103,10 @@ export function StatusBarSurface({
     usageMenuOpen,
     usagePercentageDisplay,
     usageRef,
-    usageTightestOnly,
-  } = controller;
-  const usageMode = usageTightestOnly ? "compact" : statusBarUsageMode;
-  const unitLabelState = getUsageUnitLabelState(
-    rosterProviders,
-    collapsedUsageProviders,
-    usageMode,
-  );
+    usageTightestOnly
+  } = controller
+  const usageMode = usageTightestOnly ? 'compact' : statusBarUsageMode
+  const unitLabelState = getUsageUnitLabelState(rosterProviders, collapsedUsageProviders, usageMode)
 
   return (
     <div
@@ -133,17 +115,14 @@ export function StatusBarSurface({
       className="flex items-center h-6 min-h-[24px] px-3 gap-4 overflow-clip [overflow-clip-margin:3px] whitespace-nowrap border-t border-border bg-[var(--bg-titlebar,var(--card))] text-xs select-none shrink-0 relative"
       onContextMenuCapture={(event) => {
         if (!shouldOpenStatusBarContextMenu(event.target)) {
-          return;
+          return
         }
         // Why: mirror the app-wide right-click pattern — close peer menus, then anchor a hidden trigger at the cursor so re-clicks reposition.
-        event.preventDefault();
-        window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT));
-        const bounds = event.currentTarget.getBoundingClientRect();
-        setMenuPoint({
-          x: event.clientX - bounds.left,
-          y: event.clientY - bounds.top,
-        });
-        setMenuOpen(true);
+        event.preventDefault()
+        window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
+        const bounds = event.currentTarget.getBoundingClientRect()
+        setMenuPoint({ x: event.clientX - bounds.left, y: event.clientY - bounds.top })
+        setMenuOpen(true)
       }}
     >
       {/* Why: usage gives way first — what it drops stays one click away in its popover. */}
@@ -158,9 +137,7 @@ export function StatusBarSurface({
             ) : null
           ) : hasVisibleUsageMeters ? (
             // Consolidated roster pill → opens the all-agents Usage popover (mock parity).
-            <StatusBarUsageChangeNotices
-              hasVisibleUsageMeters={hasVisibleUsageMeters}
-            >
+            <StatusBarUsageChangeNotices hasVisibleUsageMeters={hasVisibleUsageMeters}>
               <DropdownMenu
                 open={usageMenuOpen}
                 onOpenChange={handleUsageMenuOpenChange}
@@ -171,13 +148,13 @@ export function StatusBarSurface({
                     type="button"
                     className="inline-flex items-center gap-3 rounded px-1 py-0.5 hover:bg-accent/70"
                     aria-label={translate(
-                      "auto.components.status.bar.UsageRosterPanel.title",
-                      "Usage",
+                      'auto.components.status.bar.UsageRosterPanel.title',
+                      'Usage'
                     )}
                   >
-                    {unitLabelState !== "absent" ? (
+                    {unitLabelState !== 'absent' ? (
                       <UsageUnitLabel
-                        collapsed={unitLabelState === "collapsed"}
+                        collapsed={unitLabelState === 'collapsed'}
                         display={usagePercentageDisplay}
                       />
                     ) : null}
@@ -186,17 +163,10 @@ export function StatusBarSurface({
                       <span
                         key={p.provider}
                         data-usage-chip={p.provider}
-                        data-usage-urgent={getUsageTone(p) === "urgent"}
-                        data-usage-percentage={usageChipShowsPercentage(
-                          p,
-                          usageMode,
-                        )}
-                        data-usage-collapsed={collapsedUsageProviders.includes(
-                          p.provider,
-                        )}
-                        aria-hidden={collapsedUsageProviders.includes(
-                          p.provider,
-                        )}
+                        data-usage-urgent={getUsageTone(p) === 'urgent'}
+                        data-usage-percentage={usageChipShowsPercentage(p, usageMode)}
+                        data-usage-collapsed={collapsedUsageProviders.includes(p.provider)}
+                        aria-hidden={collapsedUsageProviders.includes(p.provider)}
                         className="inline-flex data-[usage-collapsed=true]:invisible data-[usage-collapsed=true]:absolute"
                       >
                         <ProviderSegment
@@ -211,7 +181,7 @@ export function StatusBarSurface({
                       <UsageOverflowChip
                         providerCount={rosterProviders.length}
                         hidden={rosterProviders.filter((p) =>
-                          collapsedUsageProviders.includes(p.provider),
+                          collapsedUsageProviders.includes(p.provider)
                         )}
                         display={usagePercentageDisplay}
                       />
@@ -227,9 +197,7 @@ export function StatusBarSurface({
                   // bar instead of overlapping it — bottom padding ≈ footer height.
                   collisionPadding={{ top: 8, bottom: 32, left: 8, right: 8 }}
                   className="w-[360px] p-0"
-                  onPointerDownOutside={
-                    usageMenuFocusHandoff.onPointerDownOutside
-                  }
+                  onPointerDownOutside={usageMenuFocusHandoff.onPointerDownOutside}
                   onCloseAutoFocus={usageMenuFocusHandoff.onCloseAutoFocus}
                 >
                   <UsageRosterPanel
@@ -248,7 +216,7 @@ export function StatusBarSurface({
                       // Every provider drills into its detail panel (parity with the
                       // per-provider dropdowns on main); Claude/Codex additionally get
                       // the account switcher + runtime toggle + Codex reset credits.
-                      if (p.provider === "claude") {
+                      if (p.provider === 'claude') {
                         return (
                           <ClaudeSwitcherMenu
                             claude={p}
@@ -257,9 +225,9 @@ export function StatusBarSurface({
                             asSubmenu
                             triggerContent={rowNode}
                           />
-                        );
+                        )
                       }
-                      if (p.provider === "codex") {
+                      if (p.provider === 'codex') {
                         return (
                           <CodexSwitcherMenu
                             codex={p}
@@ -268,7 +236,7 @@ export function StatusBarSurface({
                             asSubmenu
                             triggerContent={rowNode}
                           />
-                        );
+                        )
                       }
                       return (
                         <ProviderDetailsMenu
@@ -278,11 +246,11 @@ export function StatusBarSurface({
                           asSubmenu
                           triggerContent={rowNode}
                           ariaLabel={translate(
-                            "auto.components.status.bar.UsageRosterPanel.openDetails",
-                            "Open usage details",
+                            'auto.components.status.bar.UsageRosterPanel.openDetails',
+                            'Open usage details'
                           )}
                         />
-                      );
+                      )
                     }}
                   />
                 </DropdownMenuContent>
@@ -297,23 +265,18 @@ export function StatusBarSurface({
                   disabled={isRefreshing}
                   className="p-0.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
                   aria-label={translate(
-                    "auto.components.status.bar.StatusBar.3325d996cb",
-                    "Refresh rate limits",
+                    'auto.components.status.bar.StatusBar.3325d996cb',
+                    'Refresh rate limits'
                   )}
                 >
                   <RefreshCw
                     size={11}
-                    className={
-                      isRefreshing || anyFetching ? "animate-spin" : ""
-                    }
+                    className={isRefreshing || anyFetching ? 'animate-spin' : ''}
                   />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={6}>
-                {translate(
-                  "auto.components.status.bar.StatusBar.c8857b40f7",
-                  "Refresh usage data",
-                )}
+                {translate('auto.components.status.bar.StatusBar.c8857b40f7', 'Refresh usage data')}
               </TooltipContent>
             </Tooltip>
           )}
@@ -337,26 +300,15 @@ export function StatusBarSurface({
           <React.Suspense fallback={null}>
             {petEnabled ? <PetStatusSegment /> : null}
             {showResourceUsage ? (
-              <ResourceUsageStatusSegment
-                compact={compact}
-                iconOnly={segmentsIconOnly}
-              />
+              <ResourceUsageStatusSegment compact={compact} iconOnly={segmentsIconOnly} />
             ) : null}
             {showPorts ? (
-              <PortsStatusSegment
-                compact={compact}
-                iconOnly={segmentsIconOnly}
-              />
+              <PortsStatusSegment compact={compact} iconOnly={segmentsIconOnly} />
             ) : null}
-            {showSsh ? (
-              <SshStatusSegment compact={compact} iconOnly={segmentsIconOnly} />
-            ) : null}
+            {showSsh ? <SshStatusSegment compact={compact} iconOnly={segmentsIconOnly} /> : null}
           </React.Suspense>
           {showFloatingTerminalToggle && (
-            <FloatingTerminalIconContextMenu
-              currentLocation="status-bar"
-              className="relative"
-            >
+            <FloatingTerminalIconContextMenu currentLocation="status-bar" className="relative">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -365,16 +317,14 @@ export function StatusBarSurface({
                     aria-label={
                       showFloatingWorkspaceAttentionDot
                         ? translate(
-                            "auto.components.status.bar.StatusBar.floatingTerminalNewActivity",
-                            "{{label}}, new activity",
-                            { label: floatingTerminalActionLabel },
+                            'auto.components.status.bar.StatusBar.floatingTerminalNewActivity',
+                            '{{label}}, new activity',
+                            { label: floatingTerminalActionLabel }
                           )
                         : floatingTerminalActionLabel
                     }
                     onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent(TOGGLE_FLOATING_TERMINAL_EVENT),
-                      );
+                      window.dispatchEvent(new CustomEvent(TOGGLE_FLOATING_TERMINAL_EVENT))
                     }}
                   >
                     <PanelsTopLeft className="size-3.5" />
@@ -399,5 +349,5 @@ export function StatusBarSurface({
 
       <StatusBarVisibilityMenu controller={controller} />
     </div>
-  );
+  )
 }

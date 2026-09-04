@@ -1,91 +1,76 @@
-import { describe, expect, it, vi } from "vitest";
-import { Button } from "@/components/ui/button";
-import { FileExplorerNameFilter } from "./FileExplorerNameFilter";
-import {
-  visit,
-  type ReactElementLike,
-} from "./file-explorer-element-tree-test-harness";
+import { describe, expect, it, vi } from 'vitest'
+import { Button } from '@/components/ui/button'
+import { FileExplorerNameFilter } from './FileExplorerNameFilter'
+import { visit, type ReactElementLike } from './file-explorer-element-tree-test-harness'
 
-function findInputByAriaLabel(
-  node: unknown,
-  ariaLabel: string,
-): ReactElementLike {
-  let found: ReactElementLike | null = null;
+function findInputByAriaLabel(node: unknown, ariaLabel: string): ReactElementLike {
+  let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === "input" && entry.props["aria-label"] === ariaLabel) {
-      found = entry;
+    if (entry.type === 'input' && entry.props['aria-label'] === ariaLabel) {
+      found = entry
     }
-  });
+  })
   if (!found) {
-    throw new Error(`${ariaLabel} input not found`);
+    throw new Error(`${ariaLabel} input not found`)
   }
-  return found;
+  return found
 }
 
-function findButtonByAriaLabel(
-  node: unknown,
-  ariaLabel: string,
-): ReactElementLike {
-  let found: ReactElementLike | null = null;
+function findButtonByAriaLabel(node: unknown, ariaLabel: string): ReactElementLike {
+  let found: ReactElementLike | null = null
   visit(node, (entry) => {
     if (
-      entry.props["aria-label"] === ariaLabel &&
-      (entry.type === Button || entry.type === "button")
+      entry.props['aria-label'] === ariaLabel &&
+      (entry.type === Button || entry.type === 'button')
     ) {
-      found = entry;
+      found = entry
     }
-  });
+  })
   if (!found) {
-    throw new Error(`${ariaLabel} button not found`);
+    throw new Error(`${ariaLabel} button not found`)
   }
-  return found;
+  return found
 }
 
-describe("FileExplorerNameFilter", () => {
-  it("reports text changes and shows the compact file filter input", () => {
-    const onQueryChange = vi.fn();
+describe('FileExplorerNameFilter', () => {
+  it('reports text changes and shows the compact file filter input', () => {
+    const onQueryChange = vi.fn()
     const element = FileExplorerNameFilter({
-      query: "",
+      query: '',
       onQueryChange,
-      onClear: vi.fn(),
-    });
+      onClear: vi.fn()
+    })
 
-    const input = findInputByAriaLabel(element, "Find files");
-    (
-      input.props.onChange as (event: {
-        currentTarget: { value: string };
-      }) => void
-    )({
-      currentTarget: { value: "FileExplorer" },
-    });
+    const input = findInputByAriaLabel(element, 'Find files')
+    ;(input.props.onChange as (event: { currentTarget: { value: string } }) => void)({
+      currentTarget: { value: 'FileExplorer' }
+    })
 
-    expect(input.props.placeholder).toBe("Find files");
-    expect(onQueryChange).toHaveBeenCalledWith("FileExplorer");
-  });
+    expect(input.props.placeholder).toBe('Find files')
+    expect(onQueryChange).toHaveBeenCalledWith('FileExplorer')
+  })
 
-  it("clears the current file filter from the clear button", () => {
-    const onClear = vi.fn();
+  it('clears the current file filter from the clear button', () => {
+    const onClear = vi.fn()
     const element = FileExplorerNameFilter({
-      query: "FileExplorer",
+      query: 'FileExplorer',
       onQueryChange: vi.fn(),
-      onClear,
-    });
+      onClear
+    })
 
-    const button = findButtonByAriaLabel(element, "Clear file filter");
-    (button.props.onClick as () => void)();
+    const button = findButtonByAriaLabel(element, 'Clear file filter')
+    ;(button.props.onClick as () => void)()
 
-    expect(onClear).toHaveBeenCalledTimes(1);
-  });
-});
+    expect(onClear).toHaveBeenCalledTimes(1)
+  })
+})
 
-it("names the visible folder in the filter prompt", () => {
+it('names the visible folder in the filter prompt', () => {
   const element = FileExplorerNameFilter({
-    query: "",
-    scopeLabel: "apps/web",
+    query: '',
+    scopeLabel: 'apps/web',
     onQueryChange: vi.fn(),
-    onClear: vi.fn(),
-  });
-  expect(findInputByAriaLabel(element, "Find files").props.placeholder).toBe(
-    "Find in apps/web",
-  );
-});
+    onClear: vi.fn()
+  })
+  expect(findInputByAriaLabel(element, 'Find files').props.placeholder).toBe('Find in apps/web')
+})

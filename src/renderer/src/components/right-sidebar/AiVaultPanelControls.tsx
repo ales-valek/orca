@@ -1,13 +1,13 @@
-import type React from "react";
+import type React from 'react'
 import {
   ArchiveRestore,
   ChevronRight,
   FolderOpen,
   ListFilter,
   PanelsTopLeft,
-  Server,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+  Server
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,49 +17,43 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { AgentIcon } from "@/lib/agent-catalog";
-import { cn } from "@/lib/utils";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { AgentIcon } from '@/lib/agent-catalog'
+import { cn } from '@/lib/utils'
 import {
   AI_VAULT_AGENTS,
   type AiVaultAgent,
   type AiVaultGroup,
-  type AiVaultScope,
-} from "../../../../shared/ai-vault-types";
-import {
-  getExecutionHostLabel,
-  type ExecutionHostScope,
-} from "../../../../shared/execution-host";
-import {
-  agentLabel,
-  type AiVaultSessionGroup,
-} from "./ai-vault-session-filters";
-import { translate } from "@/i18n/i18n";
-import type { AiVaultHostScopeOption } from "./ai-vault-host-scope";
-import { AiVaultSessionLimitMenu } from "./AiVaultSessionLimitMenu";
-import type { AiVaultSessionLimit } from "./ai-vault-session-limit";
+  type AiVaultScope
+} from '../../../../shared/ai-vault-types'
+import { getExecutionHostLabel, type ExecutionHostScope } from '../../../../shared/execution-host'
+import { agentLabel, type AiVaultSessionGroup } from './ai-vault-session-filters'
+import { translate } from '@/i18n/i18n'
+import type { AiVaultHostScopeOption } from './ai-vault-host-scope'
+import { AiVaultSessionLimitMenu } from './AiVaultSessionLimitMenu'
+import type { AiVaultSessionLimit } from './ai-vault-session-limit'
 
-const VAULT_HEADER_CONTROL_CLASS = "size-6 shrink-0";
+const VAULT_HEADER_CONTROL_CLASS = 'size-6 shrink-0'
 
 const AGENT_BULK_ACTION_CLASS =
-  "rounded-full px-2 py-0.5 text-[11px] font-normal text-muted-foreground focus:text-foreground";
+  'rounded-full px-2 py-0.5 text-[11px] font-normal text-muted-foreground focus:text-foreground'
 
 // Why: match ToggleGroup's spacing+outline qualifiers so selected edges out-specify its border-l-0 collapse.
 const VAULT_SCOPE_SELECTED_EDGE_CLASS =
-  "data-[spacing=0]:data-[variant=outline]:aria-[checked=true]:border-l data-[spacing=0]:data-[variant=outline]:data-[state=on]:border-l";
+  'data-[spacing=0]:data-[variant=outline]:aria-[checked=true]:border-l data-[spacing=0]:data-[variant=outline]:data-[state=on]:border-l'
 
-const VAULT_SCOPE_TOGGLE_ITEM_CLASS = `h-7 min-h-7 min-w-0 flex-1 basis-0 shrink border border-transparent bg-transparent px-2.5 text-[11px] font-medium leading-none text-foreground shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-[checked=true]:border-foreground/20 aria-[checked=true]:bg-foreground/10 aria-[checked=true]:text-foreground aria-[checked=true]:shadow-xs aria-[checked=true]:hover:bg-foreground/15 aria-[checked=true]:hover:text-foreground data-[state=on]:border-foreground/20 data-[state=on]:bg-foreground/10 data-[state=on]:text-foreground data-[state=on]:shadow-xs data-[state=on]:hover:bg-foreground/15 data-[state=on]:hover:text-foreground ${VAULT_SCOPE_SELECTED_EDGE_CLASS} @max-[300px]/ai-vault:px-1.5`;
+const VAULT_SCOPE_TOGGLE_ITEM_CLASS = `h-7 min-h-7 min-w-0 flex-1 basis-0 shrink border border-transparent bg-transparent px-2.5 text-[11px] font-medium leading-none text-foreground shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-[checked=true]:border-foreground/20 aria-[checked=true]:bg-foreground/10 aria-[checked=true]:text-foreground aria-[checked=true]:shadow-xs aria-[checked=true]:hover:bg-foreground/15 aria-[checked=true]:hover:text-foreground data-[state=on]:border-foreground/20 data-[state=on]:bg-foreground/10 data-[state=on]:text-foreground data-[state=on]:shadow-xs data-[state=on]:hover:bg-foreground/15 data-[state=on]:hover:text-foreground ${VAULT_SCOPE_SELECTED_EDGE_CLASS} @max-[300px]/ai-vault:px-1.5`
 
 export function VaultGroupHeader({
   group,
   collapsed,
-  onToggle,
+  onToggle
 }: {
-  group: AiVaultSessionGroup;
-  collapsed: boolean;
-  onToggle: () => void;
+  group: AiVaultSessionGroup
+  collapsed: boolean
+  onToggle: () => void
 }): React.JSX.Element {
   return (
     <button
@@ -70,8 +64,8 @@ export function VaultGroupHeader({
     >
       <ChevronRight
         className={cn(
-          "size-3.5 shrink-0 text-foreground/80 transition-transform",
-          !collapsed && "rotate-90",
+          'size-3.5 shrink-0 text-foreground/80 transition-transform',
+          !collapsed && 'rotate-90'
         )}
       />
       <span className="min-w-0 flex-1 truncate">{group.label}</span>
@@ -79,64 +73,61 @@ export function VaultGroupHeader({
         {group.sessions.length}
       </span>
     </button>
-  );
+  )
 }
 
 export function VaultScopeSwitch({
   scope,
   workspaceAvailable,
   projectAvailable,
-  onScopeChange,
+  onScopeChange
 }: {
-  scope: AiVaultScope;
-  workspaceAvailable: boolean;
-  projectAvailable: boolean;
-  onScopeChange: (scope: AiVaultScope) => void;
+  scope: AiVaultScope
+  workspaceAvailable: boolean
+  projectAvailable: boolean
+  onScopeChange: (scope: AiVaultScope) => void
 }): React.JSX.Element {
   const workspaceLabel = translate(
-    "auto.components.right.sidebar.AiVaultPanelControls.workspaceScope",
-    "Workspace",
-  );
+    'auto.components.right.sidebar.AiVaultPanelControls.workspaceScope',
+    'Workspace'
+  )
   const projectLabel = translate(
-    "auto.components.right.sidebar.AiVaultPanelControls.projectScope",
-    "Project",
-  );
-  const allLabel = translate(
-    "auto.components.right.sidebar.AiVaultPanelControls.allScope",
-    "All",
-  );
+    'auto.components.right.sidebar.AiVaultPanelControls.projectScope',
+    'Project'
+  )
+  const allLabel = translate('auto.components.right.sidebar.AiVaultPanelControls.allScope', 'All')
 
   return (
     <ToggleGroup
       type="single"
       value={scope}
       onValueChange={(value) => {
-        if (value === "workspace" || value === "project" || value === "all") {
-          onScopeChange(value);
+        if (value === 'workspace' || value === 'project' || value === 'all') {
+          onScopeChange(value)
         }
       }}
       variant="outline"
       className="h-7 w-full rounded-md border border-sidebar-border bg-sidebar-accent/35 shadow-xs"
       aria-label={translate(
-        "auto.components.right.sidebar.AiVaultPanelControls.scopeAriaLabel",
-        "Session History scope: {{value0}}",
+        'auto.components.right.sidebar.AiVaultPanelControls.scopeAriaLabel',
+        'Session History scope: {{value0}}',
         {
           value0:
-            scope === "workspace"
+            scope === 'workspace'
               ? translate(
-                  "auto.components.right.sidebar.AiVaultPanelControls.currentWorkspaceLower",
-                  "current workspace",
+                  'auto.components.right.sidebar.AiVaultPanelControls.currentWorkspaceLower',
+                  'current workspace'
                 )
-              : scope === "project"
+              : scope === 'project'
                 ? translate(
-                    "auto.components.right.sidebar.AiVaultPanelControls.currentProjectLower",
-                    "current project",
+                    'auto.components.right.sidebar.AiVaultPanelControls.currentProjectLower',
+                    'current project'
                   )
                 : translate(
-                    "auto.components.right.sidebar.AiVaultPanelControls.allSessionsLower",
-                    "all sessions",
-                  ),
-        },
+                    'auto.components.right.sidebar.AiVaultPanelControls.allSessionsLower',
+                    'all sessions'
+                  )
+        }
       )}
     >
       <ToggleGroupItem
@@ -157,23 +148,20 @@ export function VaultScopeSwitch({
         {allLabel}
       </ToggleGroupItem>
     </ToggleGroup>
-  );
+  )
 }
 
 export function VaultHostScopeMenu({
   executionHostScope,
   hostOptions,
-  onExecutionHostScopeChange,
+  onExecutionHostScopeChange
 }: {
-  executionHostScope: ExecutionHostScope;
-  hostOptions: readonly AiVaultHostScopeOption[];
-  onExecutionHostScopeChange: (scope: ExecutionHostScope) => void;
+  executionHostScope: ExecutionHostScope
+  hostOptions: readonly AiVaultHostScopeOption[]
+  onExecutionHostScopeChange: (scope: ExecutionHostScope) => void
 }): React.JSX.Element {
-  const selectedOption = hostOptions.find(
-    (option) => option.id === executionHostScope,
-  );
-  const label =
-    selectedOption?.label ?? getExecutionHostLabel(executionHostScope);
+  const selectedOption = hostOptions.find((option) => option.id === executionHostScope)
+  const label = selectedOption?.label ?? getExecutionHostLabel(executionHostScope)
 
   return (
     <DropdownMenu>
@@ -184,29 +172,22 @@ export function VaultHostScopeMenu({
           size="sm"
           className="h-6 max-w-24 shrink-0 gap-1 px-1.5 text-[11px] font-medium text-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground @max-[340px]/ai-vault:w-6 @max-[340px]/ai-vault:px-0"
           aria-label={translate(
-            "auto.components.right.sidebar.AiVaultPanelControls.hostScopeAriaLabel",
-            "Session History host: {{value0}}",
-            { value0: label },
+            'auto.components.right.sidebar.AiVaultPanelControls.hostScopeAriaLabel',
+            'Session History host: {{value0}}',
+            { value0: label }
           )}
         >
           <Server className="size-3 shrink-0" />
-          <span className="min-w-0 truncate @max-[340px]/ai-vault:hidden">
-            {label}
-          </span>
+          <span className="min-w-0 truncate @max-[340px]/ai-vault:hidden">{label}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={6} className="w-44">
         <DropdownMenuLabel>
-          {translate(
-            "auto.components.right.sidebar.AiVaultPanelControls.host",
-            "Host",
-          )}
+          {translate('auto.components.right.sidebar.AiVaultPanelControls.host', 'Host')}
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={executionHostScope}
-          onValueChange={(value) =>
-            onExecutionHostScopeChange(value as ExecutionHostScope)
-          }
+          onValueChange={(value) => onExecutionHostScopeChange(value as ExecutionHostScope)}
         >
           {hostOptions.map((option) => (
             <DropdownMenuRadioItem key={option.id} value={option.id}>
@@ -216,7 +197,7 @@ export function VaultHostScopeMenu({
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
 
 export function VaultViewMenu({
@@ -231,23 +212,23 @@ export function VaultViewMenu({
   onGroupChange,
   onHideEmptySessionsChange,
   onSessionLimitChange,
-  onReset,
+  onReset
 }: {
-  searching?: boolean;
-  agents: readonly AiVaultAgent[];
-  group: AiVaultGroup;
-  hideEmptySessions: boolean;
-  sessionLimit: AiVaultSessionLimit;
-  adjustmentCount: number;
-  onAgentEnabledChange: (agent: AiVaultAgent, enabled: boolean) => void;
-  onAllAgentsEnabledChange: (enabled: boolean) => void;
-  onGroupChange: (group: AiVaultGroup) => void;
-  onHideEmptySessionsChange: (hideEmptySessions: boolean) => void;
-  onSessionLimitChange: (limit: AiVaultSessionLimit) => void;
-  onReset: () => void;
+  searching?: boolean
+  agents: readonly AiVaultAgent[]
+  group: AiVaultGroup
+  hideEmptySessions: boolean
+  sessionLimit: AiVaultSessionLimit
+  adjustmentCount: number
+  onAgentEnabledChange: (agent: AiVaultAgent, enabled: boolean) => void
+  onAllAgentsEnabledChange: (enabled: boolean) => void
+  onGroupChange: (group: AiVaultGroup) => void
+  onHideEmptySessionsChange: (hideEmptySessions: boolean) => void
+  onSessionLimitChange: (limit: AiVaultSessionLimit) => void
+  onReset: () => void
 }): React.JSX.Element {
-  const allAgentsSelected = agents.length === AI_VAULT_AGENTS.length;
-  const noAgentsSelected = agents.length === 0;
+  const allAgentsSelected = agents.length === AI_VAULT_AGENTS.length
+  const noAgentsSelected = agents.length === 0
 
   return (
     <DropdownMenu>
@@ -258,18 +239,18 @@ export function VaultViewMenu({
           size="icon-xs"
           className={cn(
             VAULT_HEADER_CONTROL_CLASS,
-            "relative text-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            'relative text-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
           )}
           aria-label={translate(
-            "auto.components.right.sidebar.AiVaultPanelControls.viewOptionsAriaLabel",
-            "Session History view options",
+            'auto.components.right.sidebar.AiVaultPanelControls.viewOptionsAriaLabel',
+            'Session History view options'
           )}
         >
           <ListFilter className="size-3" />
           <span className="sr-only">
             {translate(
-              "auto.components.right.sidebar.AiVaultPanelControls.viewOptions",
-              "View options",
+              'auto.components.right.sidebar.AiVaultPanelControls.viewOptions',
+              'View options'
             )}
           </span>
           {adjustmentCount > 0 ? (
@@ -286,10 +267,7 @@ export function VaultViewMenu({
         {/* Why: Select all / Clear lets users isolate one agent without unchecking 15 boxes. */}
         <div className="flex items-center justify-between px-2 py-1">
           <span className="text-[11px] font-semibold text-muted-foreground">
-            {translate(
-              "auto.components.right.sidebar.AiVaultPanelControls.agents",
-              "Agents",
-            )}
+            {translate('auto.components.right.sidebar.AiVaultPanelControls.agents', 'Agents')}
           </span>
           {/* Why: real menu items so arrow keys reach them; plain buttons are skipped by Radix roving focus. */}
           <div className="flex items-center gap-1">
@@ -297,28 +275,25 @@ export function VaultViewMenu({
               disabled={allAgentsSelected}
               // Why: preventDefault keeps the menu open for further multi-select.
               onSelect={(event) => {
-                event.preventDefault();
-                onAllAgentsEnabledChange(true);
+                event.preventDefault()
+                onAllAgentsEnabledChange(true)
               }}
               className={AGENT_BULK_ACTION_CLASS}
             >
               {translate(
-                "auto.components.right.sidebar.AiVaultPanelControls.selectAllAgents",
-                "Select all",
+                'auto.components.right.sidebar.AiVaultPanelControls.selectAllAgents',
+                'Select all'
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={noAgentsSelected}
               onSelect={(event) => {
-                event.preventDefault();
-                onAllAgentsEnabledChange(false);
+                event.preventDefault()
+                onAllAgentsEnabledChange(false)
               }}
               className={AGENT_BULK_ACTION_CLASS}
             >
-              {translate(
-                "auto.components.right.sidebar.AiVaultPanelControls.clearAgents",
-                "Clear",
-              )}
+              {translate('auto.components.right.sidebar.AiVaultPanelControls.clearAgents', 'Clear')}
             </DropdownMenuItem>
           </div>
         </div>
@@ -326,9 +301,7 @@ export function VaultViewMenu({
           <DropdownMenuCheckboxItem
             key={agent}
             checked={agents.includes(agent)}
-            onCheckedChange={(checked) =>
-              onAgentEnabledChange(agent, checked === true)
-            }
+            onCheckedChange={(checked) => onAgentEnabledChange(agent, checked === true)}
             onSelect={(event) => event.preventDefault()}
           >
             <AgentIcon agent={agent} size={14} />
@@ -339,10 +312,7 @@ export function VaultViewMenu({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>
-              {translate(
-                "auto.components.right.sidebar.AiVaultPanelControls.group",
-                "Group",
-              )}
+              {translate('auto.components.right.sidebar.AiVaultPanelControls.group', 'Group')}
             </DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={group}
@@ -350,37 +320,26 @@ export function VaultViewMenu({
             >
               <DropdownMenuRadioItem value="project">
                 <PanelsTopLeft className="size-3.5" />
-                {translate(
-                  "auto.components.right.sidebar.AiVaultPanelControls.project",
-                  "Project",
-                )}
+                {translate('auto.components.right.sidebar.AiVaultPanelControls.project', 'Project')}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="folder">
                 <FolderOpen className="size-3.5" />
-                {translate(
-                  "auto.components.right.sidebar.AiVaultPanelControls.folder",
-                  "Folder",
-                )}
+                {translate('auto.components.right.sidebar.AiVaultPanelControls.folder', 'Folder')}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="agent">
                 <ArchiveRestore className="size-3.5" />
-                {translate(
-                  "auto.components.right.sidebar.AiVaultPanelControls.agent",
-                  "Agent",
-                )}
+                {translate('auto.components.right.sidebar.AiVaultPanelControls.agent', 'Agent')}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={hideEmptySessions}
-              onCheckedChange={(checked) =>
-                onHideEmptySessionsChange(checked === true)
-              }
+              onCheckedChange={(checked) => onHideEmptySessionsChange(checked === true)}
               onSelect={(event) => event.preventDefault()}
             >
               {translate(
-                "auto.components.right.sidebar.AiVaultPanelControls.hideEmptySessions",
-                "Hide empty sessions",
+                'auto.components.right.sidebar.AiVaultPanelControls.hideEmptySessions',
+                'Hide empty sessions'
               )}
             </DropdownMenuCheckboxItem>
             <AiVaultSessionLimitMenu
@@ -394,13 +353,13 @@ export function VaultViewMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onReset}>
               {translate(
-                "auto.components.right.sidebar.AiVaultPanelControls.resetView",
-                "Reset view",
+                'auto.components.right.sidebar.AiVaultPanelControls.resetView',
+                'Reset view'
               )}
             </DropdownMenuItem>
           </>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }

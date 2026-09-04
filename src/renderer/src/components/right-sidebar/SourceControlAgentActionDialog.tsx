@@ -1,63 +1,63 @@
-import React from "react";
+import React from 'react'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle
+} from '@/components/ui/dialog'
 import type {
   SourceControlActionRecipe,
-  SourceControlLaunchActionId,
-} from "../../../../shared/source-control-ai-actions";
-import type { TuiAgent } from "../../../../shared/tui-agent";
-import type { LaunchSource } from "../../../../shared/telemetry-events";
-import type { SourceControlAiWriteTarget } from "../../../../shared/source-control-ai-recipe-save";
-import { SourceControlAgentActionDialogForm } from "./SourceControlAgentActionDialogForm";
-import { useSourceControlAgentActionDialog } from "./useSourceControlAgentActionDialog";
+  SourceControlLaunchActionId
+} from '../../../../shared/source-control-ai-actions'
+import type { TuiAgent } from '../../../../shared/tui-agent'
+import type { LaunchSource } from '../../../../shared/telemetry-events'
+import type { SourceControlAiWriteTarget } from '../../../../shared/source-control-ai-recipe-save'
+import { SourceControlAgentActionDialogForm } from './SourceControlAgentActionDialogForm'
+import { useSourceControlAgentActionDialog } from './useSourceControlAgentActionDialog'
 
 export type SourceControlAgentActionDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  actionId: SourceControlLaunchActionId;
-  title: string;
-  description: string;
-  baseCommandInput: string;
-  savedCommandInputTemplate?: string | null;
-  savedAgentArgs?: string | null;
-  worktreeId?: string | null;
-  groupId?: string | null;
-  connectionId?: string | null;
-  repoId?: string | null;
-  promptDelivery?: "auto-submit" | "draft" | "submit-after-ready";
-  launchPlatform?: NodeJS.Platform;
-  launchSource: LaunchSource;
-  savedAgentId?: TuiAgent | null;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  actionId: SourceControlLaunchActionId
+  title: string
+  description: string
+  baseCommandInput: string
+  savedCommandInputTemplate?: string | null
+  savedAgentArgs?: string | null
+  worktreeId?: string | null
+  groupId?: string | null
+  connectionId?: string | null
+  repoId?: string | null
+  promptDelivery?: 'auto-submit' | 'draft' | 'submit-after-ready'
+  launchPlatform?: NodeJS.Platform
+  launchSource: LaunchSource
+  savedAgentId?: TuiAgent | null
   onSaveAgentDefault?: (
     target: SourceControlAiWriteTarget,
     actionId: SourceControlLaunchActionId,
-    recipe: SourceControlActionRecipe,
-  ) => void | Promise<void>;
-  onOpenSettings?: () => void;
+    recipe: SourceControlActionRecipe
+  ) => void | Promise<void>
+  onOpenSettings?: () => void
   /**
    * Fires when the agent tab is created, before deferred prompt delivery finishes.
    * Reversible bookkeeping only; irreversible host writes belong in onLaunched.
    */
-  onLaunchAccepted?: () => void;
+  onLaunchAccepted?: () => void
   /** Fires when an accepted launch later failed to deliver its prompt. */
-  onLaunchAborted?: () => void;
-  onLaunched?: () => void;
-  startLabel?: string;
+  onLaunchAborted?: () => void
+  onLaunched?: () => void
+  startLabel?: string
   onStart?: (args: {
-    agent: TuiAgent;
-    commandInput: string;
+    agent: TuiAgent
+    commandInput: string
     /** Omitted when CLI arguments do not apply to this launch, so it resolves the global setting. */
-    agentArgs?: string;
-  }) => boolean | Promise<boolean>;
-};
+    agentArgs?: string
+  }) => boolean | Promise<boolean>
+}
 
 export function SourceControlAgentActionDialog(
-  props: SourceControlAgentActionDialogProps,
+  props: SourceControlAgentActionDialogProps
 ): React.JSX.Element {
   const {
     open,
@@ -67,9 +67,9 @@ export function SourceControlAgentActionDialog(
     baseCommandInput,
     savedCommandInputTemplate,
     onOpenSettings,
-    startLabel = "Start agent",
-    onSaveAgentDefault,
-  } = props;
+    startLabel = 'Start agent',
+    onSaveAgentDefault
+  } = props
   const {
     handleOpenChange,
     shouldRenderDialog,
@@ -95,8 +95,8 @@ export function SourceControlAgentActionDialog(
     onCommandTemplateChange,
     onSaveLaunchRecipeChange,
     onSaveAgentDefaultChange,
-    handleStart,
-  } = useSourceControlAgentActionDialog(props);
+    handleStart
+  } = useSourceControlAgentActionDialog(props)
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -106,9 +106,7 @@ export function SourceControlAgentActionDialog(
         <DialogContent className="flex max-h-[min(82vh,42rem)] min-w-0 flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-sm">{title}</DialogTitle>
-            <DialogDescription className="text-xs">
-              {description}
-            </DialogDescription>
+            <DialogDescription className="text-xs">{description}</DialogDescription>
           </DialogHeader>
           <SourceControlAgentActionDialogForm
             actionId={actionId}
@@ -145,5 +143,5 @@ export function SourceControlAgentActionDialog(
         </DialogContent>
       ) : null}
     </Dialog>
-  );
+  )
 }

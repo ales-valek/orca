@@ -1,53 +1,49 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import type { AiVaultSession } from "../../../../shared/ai-vault-types";
-import type { AiVaultSearchHit } from "../../../../shared/ai-vault-search-types";
-import { AiVaultVirtualRow } from "./AiVaultVirtualRow";
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import type { AiVaultSession } from '../../../../shared/ai-vault-types'
+import type { AiVaultSearchHit } from '../../../../shared/ai-vault-search-types'
+import { AiVaultVirtualRow } from './AiVaultVirtualRow'
 
 const cliSession: AiVaultSession = {
-  id: "local:codex:session-1:/tmp/session-1.jsonl",
-  executionHostId: "local",
-  agent: "codex",
-  sessionId: "session-1",
-  title: "CLI session",
-  cwd: "/repo",
+  id: 'local:codex:session-1:/tmp/session-1.jsonl',
+  executionHostId: 'local',
+  agent: 'codex',
+  sessionId: 'session-1',
+  title: 'CLI session',
+  cwd: '/repo',
   branch: null,
   model: null,
-  filePath: "/tmp/session-1.jsonl",
+  filePath: '/tmp/session-1.jsonl',
   codexHome: null,
   createdAt: null,
   updatedAt: null,
-  modifiedAt: "2026-09-17T00:00:00.000Z",
+  modifiedAt: '2026-09-17T00:00:00.000Z',
   messageCount: 1,
   totalTokens: 0,
-  previewMessages: [{ role: "user", text: "Fix it", timestamp: null }],
+  previewMessages: [{ role: 'user', text: 'Fix it', timestamp: null }],
   queuedMessageCount: 0,
   subagentTranscriptCount: 0,
-  resumeCommand: "codex resume session-1",
-  subagent: null,
-};
+  resumeCommand: 'codex resume session-1',
+  subagent: null
+}
 
 afterEach(() => {
-  cleanup();
-});
+  cleanup()
+})
 
-function renderSession(
-  session: AiVaultSession,
-  blocked = false,
-  searchHit?: AiVaultSearchHit,
-) {
-  const buildResumeStartup = vi.fn(() => ({ command: session.resumeCommand }));
-  const onCopyResume = vi.fn();
-  const onResume = vi.fn();
-  const onResumeInNewCli = vi.fn();
+function renderSession(session: AiVaultSession, blocked = false, searchHit?: AiVaultSearchHit) {
+  const buildResumeStartup = vi.fn(() => ({ command: session.resumeCommand }))
+  const onCopyResume = vi.fn()
+  const onResume = vi.fn()
+  const onResumeInNewCli = vi.fn()
   render(
     <TooltipProvider>
       <AiVaultVirtualRow
-        row={{ type: "session", groupKey: "today", session }}
+        row={{ type: 'session', groupKey: 'today', session }}
         index={0}
         start={0}
         activeStickyHeaderIndex={null}
@@ -63,17 +59,14 @@ function renderSession(
         getWorktreeInfo={() => null}
         getSessionResumeState={() => ({
           blocked,
-          worktreeId: blocked ? null : "worktree-1",
-          usesSessionWorktree: false,
+          worktreeId: blocked ? null : 'worktree-1',
+          usesSessionWorktree: false
         })}
         getSessionResumeActions={() => ({
           worktree: { worktreeId: null, disabled: true },
-          newTab: { worktreeId: "worktree-1", disabled: blocked },
+          newTab: { worktreeId: 'worktree-1', disabled: blocked }
         })}
-        getSessionResumeInChat={() => ({
-          available: false,
-          reason: "already-structured",
-        })}
+        getSessionResumeInChat={() => ({ available: false, reason: 'already-structured' })}
         onToggleGroup={vi.fn()}
         onToggleSessionDetails={vi.fn()}
         onJumpToOriginalPane={vi.fn()}
@@ -90,161 +83,128 @@ function renderSession(
         onOpenCwd={vi.fn()}
         onRequestDelete={vi.fn()}
       />
-    </TooltipProvider>,
-  );
-  return { buildResumeStartup, onCopyResume, onResume, onResumeInNewCli };
+    </TooltipProvider>
+  )
+  return { buildResumeStartup, onCopyResume, onResume, onResumeInNewCli }
 }
 
-describe("AiVaultVirtualRow resume command actions", () => {
-  it("renders blocked IDE references without preparing an unsafe startup command", () => {
+describe('AiVaultVirtualRow resume command actions', () => {
+  it('renders blocked IDE references without preparing an unsafe startup command', () => {
     const { buildResumeStartup } = renderSession(
       {
         ...cliSession,
-        agent: "antigravity",
-        title: "IDE reference on another host",
+        agent: 'antigravity',
+        title: 'IDE reference on another host',
         filePath:
-          "//wsl.localhost/Debian/home/example/.gemini/antigravity-ide/brain/id/transcript_full.jsonl",
+          '//wsl.localhost/Debian/home/example/.gemini/antigravity-ide/brain/id/transcript_full.jsonl'
       },
-      true,
-    );
-    expect(screen.getByText("IDE reference on another host")).toBeTruthy();
-    expect(buildResumeStartup).not.toHaveBeenCalled();
-  });
+      true
+    )
+    expect(screen.getByText('IDE reference on another host')).toBeTruthy()
+    expect(buildResumeStartup).not.toHaveBeenCalled()
+  })
 
-  it("keeps Copy Resume Command in overflow and context actions for CLI sessions", async () => {
-    const { buildResumeStartup, onCopyResume } = renderSession(cliSession);
-    const user = userEvent.setup();
+  it('keeps Copy Resume Command in overflow and context actions for CLI sessions', async () => {
+    const { buildResumeStartup, onCopyResume } = renderSession(cliSession)
+    const user = userEvent.setup()
 
-    await user.click(screen.getByTestId("ai-vault-session-more-actions"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: "Copy Resume Command" }),
-    );
-    expect(onCopyResume).toHaveBeenCalledExactlyOnceWith(
-      cliSession,
-      "worktree-1",
-    );
+    await user.click(screen.getByTestId('ai-vault-session-more-actions'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy Resume Command' }))
+    expect(onCopyResume).toHaveBeenCalledExactlyOnceWith(cliSession, 'worktree-1')
 
-    fireEvent.contextMenu(screen.getByText("CLI session"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: "Copy Resume Command" }),
-    );
-    expect(onCopyResume).toHaveBeenCalledTimes(2);
-    expect(buildResumeStartup).toHaveBeenCalledTimes(2);
-  });
+    fireEvent.contextMenu(screen.getByText('CLI session'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy Resume Command' }))
+    expect(onCopyResume).toHaveBeenCalledTimes(2)
+    expect(buildResumeStartup).toHaveBeenCalledTimes(2)
+  })
 
-  it("omits Copy Resume Command and legacy command preparation for native sessions", async () => {
+  it('omits Copy Resume Command and legacy command preparation for native sessions', async () => {
     const nativeSession: AiVaultSession = {
       ...cliSession,
-      id: "local:codex:session-native:/tmp/session-native.jsonl",
-      sessionId: "session-native",
-      title: "Native session",
-      structuredSession: {
-        sessionId: "session-native",
-        workspaceId: "worktree-1",
-      },
-    };
-    const { buildResumeStartup, onCopyResume } = renderSession(nativeSession);
-    const user = userEvent.setup();
+      id: 'local:codex:session-native:/tmp/session-native.jsonl',
+      sessionId: 'session-native',
+      title: 'Native session',
+      structuredSession: { sessionId: 'session-native', workspaceId: 'worktree-1' }
+    }
+    const { buildResumeStartup, onCopyResume } = renderSession(nativeSession)
+    const user = userEvent.setup()
 
-    await user.click(screen.getByTestId("ai-vault-session-more-actions"));
-    expect(
-      screen.queryByRole("menuitem", { name: "Copy Resume Command" }),
-    ).toBeNull();
-    await user.keyboard("{Escape}");
+    await user.click(screen.getByTestId('ai-vault-session-more-actions'))
+    expect(screen.queryByRole('menuitem', { name: 'Copy Resume Command' })).toBeNull()
+    await user.keyboard('{Escape}')
 
-    fireEvent.contextMenu(screen.getByText("Native session"));
-    expect(
-      screen.queryByRole("menuitem", { name: "Copy Resume Command" }),
-    ).toBeNull();
-    expect(onCopyResume).not.toHaveBeenCalled();
-    expect(buildResumeStartup).not.toHaveBeenCalled();
-  });
+    fireEvent.contextMenu(screen.getByText('Native session'))
+    expect(screen.queryByRole('menuitem', { name: 'Copy Resume Command' })).toBeNull()
+    expect(onCopyResume).not.toHaveBeenCalled()
+    expect(buildResumeStartup).not.toHaveBeenCalled()
+  })
 
-  it("opens a paired host native chat search hit that carries no resume command", async () => {
-    const owner = { sessionId: "session-native", workspaceId: "worktree-1" };
+  it('opens a paired host native chat search hit that carries no resume command', async () => {
+    const owner = { sessionId: 'session-native', workspaceId: 'worktree-1' }
     const session: AiVaultSession = {
       ...cliSession,
-      id: "runtime:paired:codex:session-1:",
-      executionHostId: "runtime:paired",
-      title: "Paired native chat",
-      filePath: "",
-      resumeCommand: "",
-      structuredSession: owner,
-    };
+      id: 'runtime:paired:codex:session-1:',
+      executionHostId: 'runtime:paired',
+      title: 'Paired native chat',
+      filePath: '',
+      resumeCommand: '',
+      structuredSession: owner
+    }
     const hit: AiVaultSearchHit = {
-      agent: "codex",
-      sessionId: "session-1",
-      title: "Paired native chat",
-      cwd: "/repo",
+      agent: 'codex',
+      sessionId: 'session-1',
+      title: 'Paired native chat',
+      cwd: '/repo',
       branch: null,
       updatedAt: null,
       messageCount: 1,
       score: 1,
-      source: { presence: "present" },
+      source: { presence: 'present' },
       evidence: null,
-      structuredSession: owner,
-    };
-    const { onResume } = renderSession(session, false, hit);
-    const user = userEvent.setup();
+      structuredSession: owner
+    }
+    const { onResume } = renderSession(session, false, hit)
+    const user = userEvent.setup()
 
-    fireEvent.contextMenu(screen.getByText("Paired native chat"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: "Resume in New Tab" }),
-    );
-    expect(onResume).toHaveBeenCalledExactlyOnceWith(session, "worktree-1");
-  });
-});
+    fireEvent.contextMenu(screen.getByText('Paired native chat'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Resume in New Tab' }))
+    expect(onResume).toHaveBeenCalledExactlyOnceWith(session, 'worktree-1')
+  })
+})
 
-describe("AiVaultVirtualRow Resume in New CLI", () => {
-  const owner = { sessionId: "chat-1", workspaceId: "worktree-1" };
+describe('AiVaultVirtualRow Resume in New CLI', () => {
+  const owner = { sessionId: 'chat-1', workspaceId: 'worktree-1' }
 
-  it.each(["claude", "codex"] as const)(
-    "offers the fork on a chat-owned %s row from both menus",
+  it.each(['claude', 'codex'] as const)(
+    'offers the fork on a chat-owned %s row from both menus',
     async (agent) => {
-      const session: AiVaultSession = {
-        ...cliSession,
-        agent,
-        structuredSession: owner,
-      };
-      const { onResumeInNewCli, onResume } = renderSession(session);
-      const user = userEvent.setup();
+      const session: AiVaultSession = { ...cliSession, agent, structuredSession: owner }
+      const { onResumeInNewCli, onResume } = renderSession(session)
+      const user = userEvent.setup()
 
-      await user.click(screen.getByTestId("ai-vault-session-more-actions"));
-      await user.click(
-        await screen.findByRole("menuitem", { name: "Resume in New CLI" }),
-      );
-      expect(onResumeInNewCli).toHaveBeenCalledExactlyOnceWith(
-        session,
-        "worktree-1",
-      );
+      await user.click(screen.getByTestId('ai-vault-session-more-actions'))
+      await user.click(await screen.findByRole('menuitem', { name: 'Resume in New CLI' }))
+      expect(onResumeInNewCli).toHaveBeenCalledExactlyOnceWith(session, 'worktree-1')
 
-      fireEvent.contextMenu(screen.getByText("CLI session"));
-      await user.click(
-        await screen.findByRole("menuitem", { name: "Resume in New CLI" }),
-      );
-      expect(onResumeInNewCli).toHaveBeenCalledTimes(2);
-      expect(onResume).not.toHaveBeenCalled();
-    },
-  );
+      fireEvent.contextMenu(screen.getByText('CLI session'))
+      await user.click(await screen.findByRole('menuitem', { name: 'Resume in New CLI' }))
+      expect(onResumeInNewCli).toHaveBeenCalledTimes(2)
+      expect(onResume).not.toHaveBeenCalled()
+    }
+  )
 
   it.each([
-    { name: "a terminal row", session: cliSession },
+    { name: 'a terminal row', session: cliSession },
     {
-      name: "a chat-owned row of an agent that cannot fork",
-      session: {
-        ...cliSession,
-        agent: "gemini" as const,
-        structuredSession: owner,
-      },
-    },
-  ])("does not offer the fork on $name", async ({ session }) => {
-    renderSession(session);
-    const user = userEvent.setup();
+      name: 'a chat-owned row of an agent that cannot fork',
+      session: { ...cliSession, agent: 'gemini' as const, structuredSession: owner }
+    }
+  ])('does not offer the fork on $name', async ({ session }) => {
+    renderSession(session)
+    const user = userEvent.setup()
 
-    await user.click(screen.getByTestId("ai-vault-session-more-actions"));
-    await screen.findByRole("menu");
-    expect(
-      screen.queryByRole("menuitem", { name: "Resume in New CLI" }),
-    ).toBeNull();
-  });
-});
+    await user.click(screen.getByTestId('ai-vault-session-more-actions'))
+    await screen.findByRole('menu')
+    expect(screen.queryByRole('menuitem', { name: 'Resume in New CLI' })).toBeNull()
+  })
+})

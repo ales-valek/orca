@@ -1,17 +1,17 @@
-import React from "react";
-import { FileExplorerViewSwitch } from "./FileExplorerViewSwitch";
-import type { RightSidebarExplorerView } from "../../../../shared/ui-chrome-types";
+import React from 'react'
+import { FileExplorerViewSwitch } from './FileExplorerViewSwitch'
+import type { RightSidebarExplorerView } from '../../../../shared/ui-chrome-types'
 
 type FileExplorerQueryStripProps = {
-  view: RightSidebarExplorerView;
-  onSelectView: (view: RightSidebarExplorerView) => void;
-  children: React.ReactNode;
-};
+  view: RightSidebarExplorerView
+  onSelectView: (view: RightSidebarExplorerView) => void
+  children: React.ReactNode
+}
 
 export function FileExplorerQueryStrip({
   view,
   onSelectView,
-  children,
+  children
 }: FileExplorerQueryStripProps): React.JSX.Element {
   return (
     <div className="border-b border-border px-2 py-1.5">
@@ -22,5 +22,5 @@ export function FileExplorerQueryStrip({
         <FileExplorerViewSwitch view={view} onSelectView={onSelectView} />
       </div>
     </div>
-  );
+  )
 }

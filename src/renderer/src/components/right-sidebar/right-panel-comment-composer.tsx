@@ -1,82 +1,72 @@
-import { ImeTextarea } from "@/lib/ime-text-field";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Bold, Code2, Italic, List, Quote } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ShortcutKeyCombo } from "@/components/ShortcutKeyCombo";
-import { cn } from "@/lib/utils";
-import { isImeCompositionKeyDown } from "@/lib/ime-composition-keyboard-event";
+import { ImeTextarea } from '@/lib/ime-text-field'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Bold, Code2, Italic, List, Quote } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
+import { cn } from '@/lib/utils'
+import { isImeCompositionKeyDown } from '@/lib/ime-composition-keyboard-event'
 import {
   getCommentBodySubmitState,
-  hasBoundedCommentBodyText,
-} from "@/lib/comment-body-submit-state";
+  hasBoundedCommentBodyText
+} from '@/lib/comment-body-submit-state'
 import {
   clearRightPanelCommentFocusTimer,
-  scheduleRightPanelCommentFocusTimer,
-} from "./right-panel-comment-focus-timers";
-import { translate } from "@/i18n/i18n";
+  scheduleRightPanelCommentFocusTimer
+} from './right-panel-comment-focus-timers'
+import { translate } from '@/i18n/i18n'
 
-export type RightPanelCommentSubmitResult =
-  { ok: true } | { ok: false; error: string };
+export type RightPanelCommentSubmitResult = { ok: true } | { ok: false; error: string }
 
-type MarkdownAction = "bold" | "italic" | "code" | "quote" | "list";
+type MarkdownAction = 'bold' | 'italic' | 'code' | 'quote' | 'list'
 
 type RightPanelCommentComposerProps = {
-  placeholder: string;
-  submitLabel: string;
-  onSubmit: (body: string) => Promise<RightPanelCommentSubmitResult>;
-  disabled?: boolean;
-  disabledReason?: string;
-  autoFocus?: boolean;
-  className?: string;
-  onCancel?: () => void;
-};
+  placeholder: string
+  submitLabel: string
+  onSubmit: (body: string) => Promise<RightPanelCommentSubmitResult>
+  disabled?: boolean
+  disabledReason?: string
+  autoFocus?: boolean
+  className?: string
+  onCancel?: () => void
+}
 
-function applyMarkdownAction(
-  value: string,
-  start: number,
-  end: number,
-  action: MarkdownAction,
-) {
-  const selected = value.slice(start, end);
+function applyMarkdownAction(value: string, start: number, end: number, action: MarkdownAction) {
+  const selected = value.slice(start, end)
   switch (action) {
-    case "bold":
+    case 'bold':
       return {
-        value: `${value.slice(0, start)}**${selected || "strong text"}**${value.slice(end)}`,
+        value: `${value.slice(0, start)}**${selected || 'strong text'}**${value.slice(end)}`,
         selectionStart: start + 2,
-        selectionEnd: start + 2 + (selected || "strong text").length,
-      };
-    case "italic":
+        selectionEnd: start + 2 + (selected || 'strong text').length
+      }
+    case 'italic':
       return {
-        value: `${value.slice(0, start)}_${selected || "emphasis"}_${value.slice(end)}`,
+        value: `${value.slice(0, start)}_${selected || 'emphasis'}_${value.slice(end)}`,
         selectionStart: start + 1,
-        selectionEnd: start + 1 + (selected || "emphasis").length,
-      };
-    case "code":
+        selectionEnd: start + 1 + (selected || 'emphasis').length
+      }
+    case 'code':
       return {
-        value: `${value.slice(0, start)}\`${selected || "code"}\`${value.slice(end)}`,
+        value: `${value.slice(0, start)}\`${selected || 'code'}\`${value.slice(end)}`,
         selectionStart: start + 1,
-        selectionEnd: start + 1 + (selected || "code").length,
-      };
-    case "quote": {
-      const prefix = start === 0 || value[start - 1] === "\n" ? "> " : "\n> ";
+        selectionEnd: start + 1 + (selected || 'code').length
+      }
+    case 'quote': {
+      const prefix = start === 0 || value[start - 1] === '\n' ? '> ' : '\n> '
       return {
-        value: `${value.slice(0, start)}${prefix}${selected || "quote"}${value.slice(end)}`,
+        value: `${value.slice(0, start)}${prefix}${selected || 'quote'}${value.slice(end)}`,
         selectionStart: start + prefix.length,
-        selectionEnd: start + prefix.length + (selected || "quote").length,
-      };
+        selectionEnd: start + prefix.length + (selected || 'quote').length
+      }
     }
-    case "list": {
-      const prefix = start === 0 || value[start - 1] === "\n" ? "- " : "\n- ";
+    case 'list': {
+      const prefix = start === 0 || value[start - 1] === '\n' ? '- ' : '\n- '
       return {
-        value: `${value.slice(0, start)}${prefix}${selected || "item"}${value.slice(end)}`,
+        value: `${value.slice(0, start)}${prefix}${selected || 'item'}${value.slice(end)}`,
         selectionStart: start + prefix.length,
-        selectionEnd: start + prefix.length + (selected || "item").length,
-      };
+        selectionEnd: start + prefix.length + (selected || 'item').length
+      }
     }
   }
 }
@@ -89,169 +79,162 @@ export function RightPanelCommentComposer({
   disabledReason,
   autoFocus,
   className,
-  onCancel,
+  onCancel
 }: RightPanelCommentComposerProps): React.JSX.Element {
-  const [body, setBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const autoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMac = navigator.userAgent.includes("Mac");
+  const [body, setBody] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const autoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMac = navigator.userAgent.includes('Mac')
 
   useEffect(() => {
-    const textarea = textareaRef.current;
+    const textarea = textareaRef.current
     if (!textarea) {
-      return;
+      return
     }
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
-  }, [body]);
+    textarea.style.height = '0px'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`
+  }, [body])
 
   useEffect(() => {
     if (!autoFocus) {
-      clearRightPanelCommentFocusTimer(autoFocusTimerRef);
-      return;
+      clearRightPanelCommentFocusTimer(autoFocusTimerRef)
+      return
     }
-    scheduleRightPanelCommentFocusTimer(autoFocusTimerRef, () =>
-      textareaRef.current?.focus(),
-    );
-    return () => clearRightPanelCommentFocusTimer(autoFocusTimerRef);
-  }, [autoFocus]);
+    scheduleRightPanelCommentFocusTimer(autoFocusTimerRef, () => textareaRef.current?.focus())
+    return () => clearRightPanelCommentFocusTimer(autoFocusTimerRef)
+  }, [autoFocus])
 
   const setTextareaRef = useCallback((node: HTMLTextAreaElement | null) => {
-    textareaRef.current = node;
+    textareaRef.current = node
     if (node === null) {
       // Why: markdown toolbar selection restoration is scoped to this textarea;
       // clearing here prevents stale focus after the composer unmounts.
-      clearRightPanelCommentFocusTimer(selectionTimerRef);
+      clearRightPanelCommentFocusTimer(selectionTimerRef)
     }
-  }, []);
+  }, [])
 
   const stopPropagation = useCallback((event: React.SyntheticEvent) => {
-    event.stopPropagation();
-  }, []);
+    event.stopPropagation()
+  }, [])
 
   const applyAction = useCallback(
     (action: MarkdownAction) => {
-      const textarea = textareaRef.current;
+      const textarea = textareaRef.current
       if (!textarea) {
-        return;
+        return
       }
-      const next = applyMarkdownAction(
-        body,
-        textarea.selectionStart,
-        textarea.selectionEnd,
-        action,
-      );
-      setBody(next.value);
+      const next = applyMarkdownAction(body, textarea.selectionStart, textarea.selectionEnd, action)
+      setBody(next.value)
       scheduleRightPanelCommentFocusTimer(selectionTimerRef, () => {
         if (!textarea.isConnected) {
-          return;
+          return
         }
-        textarea.focus();
-        textarea.setSelectionRange(next.selectionStart, next.selectionEnd);
-      });
+        textarea.focus()
+        textarea.setSelectionRange(next.selectionStart, next.selectionEnd)
+      })
     },
-    [body],
-  );
+    [body]
+  )
 
   const submit = useCallback(async () => {
-    const bodyState = getCommentBodySubmitState(body);
-    if (bodyState.status === "empty" || submitting || disabled) {
-      return;
+    const bodyState = getCommentBodySubmitState(body)
+    if (bodyState.status === 'empty' || submitting || disabled) {
+      return
     }
-    if (bodyState.status === "too-large-leading-whitespace") {
+    if (bodyState.status === 'too-large-leading-whitespace') {
       setError(
         translate(
-          "auto.components.right.sidebar.right.panel.comment.composer.commentTooLarge",
-          "Comment is too large to submit safely.",
-        ),
-      );
-      return;
+          'auto.components.right.sidebar.right.panel.comment.composer.commentTooLarge',
+          'Comment is too large to submit safely.'
+        )
+      )
+      return
     }
-    setSubmitting(true);
-    setError(null);
+    setSubmitting(true)
+    setError(null)
     try {
-      const result = await onSubmit(bodyState.body);
+      const result = await onSubmit(bodyState.body)
       if (result.ok) {
-        setBody("");
-        onCancel?.();
+        setBody('')
+        onCancel?.()
       } else {
-        setError(result.error);
+        setError(result.error)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to post comment.");
+      setError(err instanceof Error ? err.message : 'Failed to post comment.')
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  }, [body, disabled, onCancel, onSubmit, submitting]);
-  const canSubmitComment = hasBoundedCommentBodyText(body);
+  }, [body, disabled, onCancel, onSubmit, submitting])
+  const canSubmitComment = hasBoundedCommentBodyText(body)
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       // Why: the Enter that only confirms a CJK candidate still reports the held
       // modifier, so submitting here posts the comment without its last syllable.
       if (isImeCompositionKeyDown(event)) {
-        return;
+        return
       }
-      const modifierPressed = isMac ? event.metaKey : event.ctrlKey;
-      if (event.key === "Enter" && modifierPressed) {
-        event.preventDefault();
-        void submit();
+      const modifierPressed = isMac ? event.metaKey : event.ctrlKey
+      if (event.key === 'Enter' && modifierPressed) {
+        event.preventDefault()
+        void submit()
       }
     },
-    [isMac, submit],
-  );
+    [isMac, submit]
+  )
 
   const toolbar = [
     {
-      action: "bold" as const,
+      action: 'bold' as const,
       label: translate(
-        "auto.components.right.sidebar.right.panel.comment.composer.256300f8ea",
-        "Bold",
+        'auto.components.right.sidebar.right.panel.comment.composer.256300f8ea',
+        'Bold'
       ),
-      icon: Bold,
+      icon: Bold
     },
     {
-      action: "italic" as const,
+      action: 'italic' as const,
       label: translate(
-        "auto.components.right.sidebar.right.panel.comment.composer.542bf6a7e2",
-        "Italic",
+        'auto.components.right.sidebar.right.panel.comment.composer.542bf6a7e2',
+        'Italic'
       ),
-      icon: Italic,
+      icon: Italic
     },
     {
-      action: "code" as const,
+      action: 'code' as const,
       label: translate(
-        "auto.components.right.sidebar.right.panel.comment.composer.f49e0a21e0",
-        "Code",
+        'auto.components.right.sidebar.right.panel.comment.composer.f49e0a21e0',
+        'Code'
       ),
-      icon: Code2,
+      icon: Code2
     },
     {
-      action: "quote" as const,
+      action: 'quote' as const,
       label: translate(
-        "auto.components.right.sidebar.right.panel.comment.composer.d6d9c3c947",
-        "Quote",
+        'auto.components.right.sidebar.right.panel.comment.composer.d6d9c3c947',
+        'Quote'
       ),
-      icon: Quote,
+      icon: Quote
     },
     {
-      action: "list" as const,
+      action: 'list' as const,
       label: translate(
-        "auto.components.right.sidebar.right.panel.comment.composer.cf5a7aba6f",
-        "List",
+        'auto.components.right.sidebar.right.panel.comment.composer.cf5a7aba6f',
+        'List'
       ),
-      icon: List,
-    },
-  ];
+      icon: List
+    }
+  ]
 
   return (
     <div
       className={cn(
-        "min-w-0 overflow-hidden rounded-md border border-border bg-background",
-        className,
+        'min-w-0 overflow-hidden rounded-md border border-border bg-background',
+        className
       )}
       onClick={stopPropagation}
       onMouseDown={stopPropagation}
@@ -297,16 +280,10 @@ export function RightPanelCommentComposer({
       )}
       <div className="flex min-w-0 items-center justify-end gap-1 border-t border-border px-2 py-1.5">
         {onCancel && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            disabled={submitting}
-            onClick={onCancel}
-          >
+          <Button type="button" variant="ghost" size="xs" disabled={submitting} onClick={onCancel}>
             {translate(
-              "auto.components.right.sidebar.right.panel.comment.composer.9bca633dee",
-              "Cancel",
+              'auto.components.right.sidebar.right.panel.comment.composer.9bca633dee',
+              'Cancel'
             )}
           </Button>
         )}
@@ -321,8 +298,8 @@ export function RightPanelCommentComposer({
             >
               {submitting
                 ? translate(
-                    "auto.components.right.sidebar.right.panel.comment.composer.87aff03d63",
-                    "Sending...",
+                    'auto.components.right.sidebar.right.panel.comment.composer.87aff03d63',
+                    'Sending...'
                   )
                 : submitLabel}
             </Button>
@@ -334,7 +311,7 @@ export function RightPanelCommentComposer({
               <span className="flex items-center gap-2">
                 <span>{submitLabel}</span>
                 <ShortcutKeyCombo
-                  keys={[isMac ? "⌘" : "Ctrl", "Enter"]}
+                  keys={[isMac ? '⌘' : 'Ctrl', 'Enter']}
                   className="shrink text-[10px] [&_span]:min-w-0 [&_span]:px-1"
                   separatorClassName="mx-0 text-[10px] text-muted-foreground"
                 />
@@ -344,5 +321,5 @@ export function RightPanelCommentComposer({
         </Tooltip>
       </div>
     </div>
-  );
+  )
 }
