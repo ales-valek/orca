@@ -2,6 +2,7 @@ import type { WorkspaceResource } from '@/lib/workspace-copy-owner'
 import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from 'react'
 import type { editor as monacoEditor } from 'monaco-editor'
 import type { DecoratedDiffComment } from '../../../diff-comments/decorated-diff-comment'
+import type { GitBlameContentsSource } from '../../../../shared/git-blame'
 import type { DiffSection } from './diff-section-types'
 
 export type DiffSectionItemProps = {
@@ -16,7 +17,10 @@ export type DiffSectionItemProps = {
   noteSource?: WorkspaceResource
   originalBlamePath?: string
   originalBlameRevision?: string
+  originalContentsSource?: GitBlameContentsSource
   modifiedBlameRevision?: string
+  modifiedContentsSource?: GitBlameContentsSource
+  modifiedBufferDirty?: boolean
   loadSection: (index: number) => void
   loadDeferredSection?: (index: number) => void
   retrySection: (index: number) => void
