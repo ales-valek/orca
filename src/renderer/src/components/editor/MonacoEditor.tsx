@@ -109,11 +109,15 @@ export default function MonacoEditor({
   contentSyncModeRef.current = readOnly && liveTail ? 'read-only-live-tail' : 'undoable'
 
   const settings = useAppStore((s) => s.settings)
+  const fileIsDirty = useAppStore(
+    (s) => s.openFiles.find((file) => file.id === fileId)?.isDirty === true
+  )
   useGitLineBlame({
     editor: mountedEditor,
     enabled:
       !autoHeight &&
       !liveTail &&
+      !fileIsDirty &&
       Boolean(worktreeId) &&
       settings?.editorGitLineBlameEnabled !== false,
     worktreeId,
