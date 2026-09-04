@@ -25,6 +25,7 @@ import { EditorFontFamilySetting } from './EditorFontFamilySetting'
 import { EditorFormatOnSaveSetting } from './EditorFormatOnSaveSetting'
 import { EditorInsertFinalNewlineSetting } from './EditorInsertFinalNewlineSetting'
 import { EditorTypographySettings } from './EditorTypographySettings'
+import { GitLineBlameSetting } from './GitLineBlameSetting'
 import {
   createAutoSaveDelayDraftState,
   resolveAutoSaveDelayDraftState,
@@ -382,6 +383,8 @@ export function GeneralEditorSettingsSection({
       </SearchableSetting>
 
       <MarkdownDefaultViewSetting settings={settings} />
+
+      <GitLineBlameSetting settings={settings} updateSettings={updateSettings} />
 
       <RichMarkdownSpellcheckSetting settings={settings} updateSettings={updateSettings} />
 

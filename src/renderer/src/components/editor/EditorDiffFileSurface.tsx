@@ -3,6 +3,7 @@ import { translate } from '@/i18n/i18n'
 import type { OpenFile } from '@/store/slices/editor'
 import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
 import { getDiffContentSignature } from './diff/sections/diff-content-signature'
+import { getFileDiffBlameRevisions } from './diff-blame-revisions'
 import { DiffViewer, ImageDiffViewer, MarkdownPreview } from './editor-lazy-views'
 import { ExternalFileChangeBanner } from './external-changes/ExternalFileChangeBanner'
 import { MarkdownPreviewSizeGate } from './markdown-preview/render-tree/MarkdownPreviewSizeGate'
@@ -146,6 +147,7 @@ export function EditorDiffFileSurface({
   const diffReloadNonce = activeFile.diffContentReloadNonce ?? 0
   const originalModelKey = `${diffViewStateKey}:original:${getDiffContentSignature(diffContent.originalContent)}`
   const modifiedModelKey = `${diffViewStateKey}:modified:${getDiffContentSignature(diffContent.modifiedContent)}:${diffReloadNonce}`
+  const blameRevisions = getFileDiffBlameRevisions(activeFile)
   const diffViewer = (
     <DiffViewer
       // Refresh through modifiedModelKey; keying the widget by content would remount and flash on save.
@@ -161,6 +163,9 @@ export function EditorDiffFileSurface({
       language={resolvedLanguage}
       filePath={activeFile.filePath}
       relativePath={activeFile.relativePath}
+      originalBlamePath={activeFile.branchOldPath}
+      originalBlameRevision={blameRevisions.originalRevision}
+      modifiedBlameRevision={blameRevisions.modifiedRevision}
       sideBySide={sideBySide}
       editable={isEditable}
       worktreeId={activeFile.worktreeId}

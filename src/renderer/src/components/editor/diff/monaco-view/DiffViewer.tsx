@@ -1,6 +1,6 @@
 import { NO_RESOURCE_EVIDENCE } from '@/lib/workspace-copy-owner'
 import { useDiffCommentView } from '../../../diff-comments/use-diff-comment-owner'
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { DiffEditor, type DiffOnMount } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { useAppStore } from '@/store/index'
@@ -37,6 +37,7 @@ import {
   applyModelLanguage
 } from '@/lib/monaco-languages/plugin-syntax-editor-options'
 import { useMonacoTheme } from '@/hooks/use-monaco-theme'
+import { useDiffPaneGitLineBlame } from './useDiffPaneGitLineBlame'
 
 export default function DiffViewer({
   modelKey,
@@ -59,7 +60,10 @@ export default function DiffViewer({
   onContentChange,
   onSave,
   largeDiffRenderLimit,
-  largeDiffSaveContentAvailable
+  largeDiffSaveContentAvailable,
+  originalBlamePath,
+  originalBlameRevision,
+  modifiedBlameRevision
 }: DiffViewerProps): React.JSX.Element {
   const diffWordWrap = useAppStore((s) => s.settings?.diffWordWrap)
   const diffShowWhitespace = useAppStore((s) => s.settings?.diffShowWhitespace)
@@ -91,7 +95,20 @@ export default function DiffViewer({
   useLayoutEffect(() => {
     diffWordWrapRef.current = diffWordWrap
   }, [diffWordWrap])
-  const [modifiedEditor, setModifiedEditor] = useState<editor.ICodeEditor | null>(null)
+
+  const renderLimit = useMemo(
+    () => largeDiffRenderLimit ?? getLargeDiffRenderLimit({ originalContent, modifiedContent }),
+    [largeDiffRenderLimit, originalContent, modifiedContent]
+  )
+  const { modifiedEditor, setOriginalEditor, setModifiedEditor } = useDiffPaneGitLineBlame({
+    worktreeId,
+    relativePath,
+    originalBlamePath,
+    originalBlameRevision,
+    modifiedBlameRevision,
+    widgetKeyPrefix: 'diff',
+    extraEnabled: renderLimit.limited !== true
+  })
   useEffect(() => {
     const models = diffEditorRef.current?.getModel()
     applyModelLanguage([models?.original, models?.modified], language)
@@ -103,11 +120,6 @@ export default function DiffViewer({
     language,
     modelIdentity: modifiedModelKey ?? modelKey
   })
-
-  const renderLimit = useMemo(
-    () => largeDiffRenderLimit ?? getLargeDiffRenderLimit({ originalContent, modifiedContent }),
-    [largeDiffRenderLimit, originalContent, modifiedContent]
-  )
   const hasLineCommentAction = Boolean(worktreeId || onAddLineComment)
 
   // Forward only owned notes so viewers cannot race to acknowledge another surface’s request.
@@ -214,8 +226,9 @@ export default function DiffViewer({
     if (fallenBackEditor) {
       unregisterDiffEditor(fallenBackEditor)
     }
+    setOriginalEditor(null)
     setModifiedEditor(null)
-  }, [unregisterDiffEditor])
+  }, [setModifiedEditor, setOriginalEditor, unregisterDiffEditor])
 
   const onSaveRef = useRef(onSave)
   onSaveRef.current = onSave
@@ -267,12 +280,14 @@ export default function DiffViewer({
         wordWrapOptionsSubRef.current = null
         unregisterDiffEditor(diffEditor)
         diffEditorRef.current = null
+        setOriginalEditor(null)
         setModifiedEditor(null)
       })
       diffEditor.onDidDispose(preserveDiffViewStateAcrossModelSwaps(diffEditor).dispose)
 
       setupCopy(originalEditor, monaco, filePath, propsRef)
       setupCopy(modifiedEditor, monaco, filePath, propsRef)
+      setOriginalEditor(originalEditor)
       setModifiedEditor(modifiedEditor)
 
       // Restore cursor and selection across both panes alongside scroll.
@@ -308,7 +323,17 @@ export default function DiffViewer({
         diffEditor.focus()
       }
     },
-    [editable, setupCopy, modelKey, filePath, sideBySide, registerDiffEditor, unregisterDiffEditor]
+    [
+      editable,
+      setupCopy,
+      modelKey,
+      filePath,
+      sideBySide,
+      registerDiffEditor,
+      unregisterDiffEditor,
+      setOriginalEditor,
+      setModifiedEditor
+    ]
   )
 
   // Snapshot on layout cleanup before unmount, avoiding scroll-time writes.

@@ -1,6 +1,6 @@
 import { NO_RESOURCE_EVIDENCE } from '@/lib/workspace-copy-owner'
 import { useDiffCommentView } from '../../../diff-comments/use-diff-comment-owner'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { DiffOnMount } from '@monaco-editor/react'
 import type { editor as monacoEditor } from 'monaco-editor'
 import { detectLanguage } from '../../../../../../shared/editor-language/editor-language-detect'
@@ -16,6 +16,7 @@ import { useDiffSectionLayoutMetrics } from './useDiffSectionLayoutMetrics'
 import { getLiveDiffSectionRenderLimit } from './diff-section-live-render-limit'
 import { useDiffSectionFallbackCleanup } from './useDiffSectionFallbackCleanup'
 import { submitDiffSectionComment } from './diff-section-comment-submit'
+import { useDiffPaneGitLineBlame } from './useDiffPaneGitLineBlame'
 import type { DiffSectionItemProps } from './diff-section-item-props'
 import { useDiffSectionModelLifecycle } from './use-diff-section-model-lifecycle'
 import { hasLayoutBox } from '@/hooks/virtualized-hidden-row-measurement'
@@ -31,6 +32,9 @@ export function DiffSectionItem({
   sectionHeight,
   worktreeId,
   noteSource = NO_RESOURCE_EVIDENCE,
+  originalBlamePath,
+  originalBlameRevision,
+  modifiedBlameRevision,
   loadSection,
   loadDeferredSection,
   retrySection,
@@ -74,7 +78,15 @@ export function DiffSectionItem({
     [section.contentGeneration, section.key, worktreeId]
   )
 
-  const [modifiedEditor, setModifiedEditor] = useState<monacoEditor.ICodeEditor | null>(null)
+  const { modifiedEditor, setOriginalEditor, setModifiedEditor } = useDiffPaneGitLineBlame({
+    worktreeId,
+    relativePath: section.path,
+    originalBlamePath,
+    originalBlameRevision,
+    modifiedBlameRevision,
+    widgetKeyPrefix: `diff:${section.key}`,
+    extraEnabled: !section.collapsed
+  })
   useMonacoLspForDiff({
     modifiedEditor,
     relativePath: section.path,
@@ -181,6 +193,7 @@ export function DiffSectionItem({
     lineNumberOptionsSubRef.current?.dispose()
     lineNumberOptionsSubRef.current = applyDiffEditorLineNumberOptions(editor, sideBySide)
     const modified = editor.getModifiedEditor()
+    const original = editor.getOriginalEditor()
 
     // Wait for Monaco’s hidden-region layout; earlier full-file measurements make virtualized rows jump on remount.
     let diffLayoutReady = false
@@ -221,6 +234,7 @@ export function DiffSectionItem({
       markDiffLayoutReady()
     }
 
+    setOriginalEditor(original)
     setModifiedEditor(modified)
     // Monaco disposes inner editors on unmount; clear state so decorators and drafts cannot retain a disposed instance.
     modified.onDidDispose(() => {
@@ -237,6 +251,7 @@ export function DiffSectionItem({
         modifiedEditorsRef.current.delete(index)
       }
       setModifiedEditor(null)
+      setOriginalEditor(null)
     })
 
     if (!isEditable) {
@@ -244,7 +259,6 @@ export function DiffSectionItem({
     }
 
     modifiedEditorsRef.current.set(index, modified)
-    const original = editor.getOriginalEditor()
     const cleanupSaveShortcut = installEditorSaveShortcut(modified.getContainerDomNode(), () =>
       handleSectionSaveRef.current(index)
     )

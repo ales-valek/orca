@@ -5,6 +5,7 @@ import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare
 import type { GitStatusEntry } from '../../../../shared/git/status/git-status-types'
 import { ConflictBanner } from './ConflictComponents'
 import { getDiffContentSignature } from './diff/sections/diff-content-signature'
+import { GIT_BLAME_HEAD_REVISION } from '../../../../shared/git-blame'
 import { translate } from '@/i18n/i18n'
 
 const DiffViewer = lazy(() => import('./diff/monaco-view/DiffViewer'))
@@ -90,6 +91,7 @@ export function ChangesModeView({
           editable={true}
           worktreeId={activeFile.worktreeId}
           noteSource={activeFile}
+          originalBlameRevision={GIT_BLAME_HEAD_REVISION}
           onContentChange={onContentChange}
           onSave={onSave}
         />

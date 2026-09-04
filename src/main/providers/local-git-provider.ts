@@ -2,6 +2,7 @@ import { gitSyncForkDefaultBranch } from '../git/fork-sync'
 import type { GitRuntimeOptions } from '../git/git-runtime-options'
 import { checkIgnoredPaths } from '../git/source-control/check-ignored-paths'
 import { checkoutBranch, listLocalBranches } from '../git/checkout'
+import { getFileBlame } from '../git/blame'
 import { getHistory } from '../git/history'
 import { gitFastForward, gitFetch, gitPull, gitPullRebaseFromBase, gitPush } from '../git/remote'
 import { getRemoteCommitUrl, getRemoteFileUrl, isGitRepo } from '../git/repo'
@@ -112,6 +113,8 @@ export function createLocalGitProvider(options: LocalGitProviderOptions = {}): L
       }),
     getCommitCompare: (worktreePath, commitId) =>
       getCommitCompare(worktreePath, commitId, interactive),
+    getBlame: (worktreePath, filePath, revision) =>
+      getFileBlame(worktreePath, filePath, interactive, revision),
     getUpstreamStatus: (worktreePath, pushTarget) =>
       getUpstreamStatus(worktreePath, pushTarget, base),
     pushBranch: (worktreePath, publish, pushTarget, pushOptions) =>

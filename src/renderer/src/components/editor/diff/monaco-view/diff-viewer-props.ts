@@ -31,4 +31,7 @@ export type DiffViewerProps = {
   largeDiffRenderLimit?: LargeDiffRenderLimit
   // Render-limited IPC bodies are blank placeholders, never saveable drafts.
   largeDiffSaveContentAvailable?: boolean
+  originalBlamePath?: string
+  originalBlameRevision?: string
+  modifiedBlameRevision?: string
 }

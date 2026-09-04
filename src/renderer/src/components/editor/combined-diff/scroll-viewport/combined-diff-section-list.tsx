@@ -11,6 +11,7 @@ import type { DiffSectionItemProps } from '../../diff/sections/diff-section-item
 import { DiffNotesSendMenu } from '../../diff/review/DiffNotesSendMenu'
 import { canOpenDiffSectionPreviewToSide } from '../../diff/sections/diff-section-preview'
 import type { DiffSection } from '../../diff/sections/diff-section-types'
+import { getCombinedSectionBlameRevisions } from '../../diff-blame-revisions'
 import type { CombinedDiffScrollThumb } from './use-combined-diff-scrollbar'
 import { translate } from '@/i18n/i18n'
 
@@ -97,6 +98,12 @@ export function CombinedDiffSectionList({
             if (!section) {
               return null
             }
+            const blameRevisions = getCombinedSectionBlameRevisions({
+              diffSource: file.diffSource,
+              sectionArea: section.area,
+              commitCompare: file.commitCompare,
+              branchCompare: file.branchCompare
+            })
 
             return (
               <div
@@ -118,6 +125,9 @@ export function CombinedDiffSectionList({
                   sectionHeight={sectionHeights[virtualItem.index]}
                   worktreeId={file.worktreeId}
                   noteSource={file}
+                  originalBlamePath={section.oldPath}
+                  originalBlameRevision={blameRevisions.originalRevision}
+                  modifiedBlameRevision={blameRevisions.modifiedRevision}
                   loadSection={loadSection}
                   loadDeferredSection={loadDeferredSection}
                   retrySection={retrySection}
