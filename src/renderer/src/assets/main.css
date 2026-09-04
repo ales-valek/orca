@@ -2724,6 +2724,27 @@ html.native-shell .app-layout {
   opacity: 0.92;
 }
 
+.monaco-editor .orca-git-line-blame {
+  box-sizing: border-box;
+  max-width: 60ch;
+  padding-left: 2ch;
+  color: var(--muted-foreground, #8b949e);
+  cursor: pointer;
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.55;
+  overflow: hidden;
+  pointer-events: auto;
+  text-overflow: ellipsis;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.monaco-editor .orca-git-line-blame:hover {
+  opacity: 0.9;
+  text-decoration: underline;
+}
+
 /* Compact Monaco tooltip wrappers overlap find buttons, causing mouseleave/dispose/mouseover flicker.
    Disable hit-testing only on context-view chains containing compact hovers; preserve menus and interactive markdown. */
 .context-view:has(> .workbench-hover-container > .workbench-hover.compact),

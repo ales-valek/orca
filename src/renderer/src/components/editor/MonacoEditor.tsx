@@ -20,6 +20,7 @@ import {
 import { getMonacoAutoHeightForContent, isMonacoAutoHeightCapped } from './monaco-auto-height'
 import { monacoFindOptions } from './monaco-find-options'
 import { buildEditorUnicodeHighlightOptions } from './editor-unicode-highlight-options'
+import { useGitLineBlame } from './useGitLineBlame'
 import { useMonacoRevealScheduler } from './use-monaco-reveal-scheduler'
 import type { MonacoContentSyncMode } from './monaco-content-sync'
 import { useMonacoContentSyncBridge } from './use-monaco-content-sync-bridge'
@@ -111,6 +112,16 @@ export default function MonacoEditor({
   contentSyncModeRef.current = readOnly && liveTail ? 'read-only-live-tail' : 'undoable'
 
   const settings = useAppStore((s) => s.settings)
+  useGitLineBlame({
+    editor: mountedEditor,
+    enabled:
+      !autoHeight &&
+      !liveTail &&
+      Boolean(worktreeId) &&
+      settings?.editorGitLineBlameEnabled !== false,
+    worktreeId,
+    relativePath
+  })
   const setPendingEditorReveal = useAppStore((s) => s.setPendingEditorReveal)
   const setEditorCursorLine = useAppStore((s) => s.setEditorCursorLine)
   const typography = useEditorTypography()

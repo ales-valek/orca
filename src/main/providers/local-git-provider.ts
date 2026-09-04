@@ -5,6 +5,7 @@ import type { GitRuntimeOptions } from '../git/git-runtime-options'
 import { checkIgnoredPaths } from '../git/source-control/check-ignored-paths'
 import { checkoutBranch, listLocalBranches } from '../git/checkout'
 import { getHistory, getHistoryRefs } from '../git/history'
+import { getFileBlame } from '../git/blame'
 import { gitFastForward, gitFetch, gitPull, gitPullRebaseFromBase, gitPush } from '../git/remote'
 import { getRemoteCommitUrl, getRemoteFileUrl, isGitRepo } from '../git/repo'
 import { awaitWindowsHostGitEnvironmentReady, gitExecFileAsync } from '../git/runner'
@@ -127,6 +128,8 @@ export function createLocalGitProvider(options: LocalGitProviderOptions = {}): L
       }),
     getCommitCompare: (worktreePath, commitId) =>
       getCommitCompare(worktreePath, commitId, interactive),
+    getBlame: (worktreePath, filePath, revision) =>
+      getFileBlame(worktreePath, filePath, interactive, revision),
     getUpstreamStatus: (worktreePath, pushTarget) =>
       getUpstreamStatus(worktreePath, pushTarget, base),
     pushBranch: (worktreePath, publish, pushTarget, pushOptions) =>

@@ -70,6 +70,7 @@ export const EXECUTION_HOST_METHODS = [
   'folderWorkspace.list',
   'git.abortMerge',
   'git.abortRebase',
+  'git.blame',
   'git.branchCompare',
   'git.branchDiff',
   'git.bulkStage',
