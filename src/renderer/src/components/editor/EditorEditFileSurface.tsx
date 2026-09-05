@@ -46,6 +46,7 @@ export function EditorEditFileSurface({
   pdfPreferenceKey,
   fileContent,
   diffContent,
+  highlightChangedLines,
   editBuffer,
   activeConflictEntry,
   monacoLanguage,
@@ -80,6 +81,7 @@ export function EditorEditFileSurface({
   pdfPreferenceKey: string
   fileContent: FileContent | undefined
   diffContent: GitDiffResult | undefined
+  highlightChangedLines: boolean
   editBuffer: string | undefined
   activeConflictEntry: GitStatusEntry | null
   monacoLanguage: string
@@ -251,6 +253,8 @@ export function EditorEditFileSurface({
         relativePath={activeFile.relativePath}
         content={currentContent}
         language={monacoLanguage}
+        diffContent={diffContent}
+        changedLineDecorationsEnabled={highlightChangedLines}
         readOnly={activeFile.readOnly === true}
         liveTail={activeFile.liveTail === true}
         onContentChange={

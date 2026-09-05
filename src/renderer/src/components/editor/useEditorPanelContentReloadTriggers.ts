@@ -2,6 +2,11 @@ import { useEffect, useMemo, type MutableRefObject } from 'react'
 import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { useAppStore } from '@/store'
 import type { DiffContent, EditorPanelFileContentLoader } from './editor-panel-content-types'
+import type { GitBranchCompareSummary } from '../../../../shared/git-diff-compare-types'
+import {
+  getChangedLineDiffFile,
+  shouldLoadChangedLineDiffForEditFile
+} from './editor-panel-changed-line-diff'
 import {
   isReloadableSingleFileDiffTab,
   shouldReloadDiffOnGitStatusChange
@@ -9,10 +14,15 @@ import {
 import type { EditorPanelDiffContentLoader } from './useEditorPanelDiffContentLoader'
 
 type GitStatusByWorktree = ReturnType<typeof useAppStore.getState>['gitStatusByWorktree']
+type GitBranchChangesByWorktree = ReturnType<
+  typeof useAppStore.getState
+>['gitBranchChangesByWorktree']
 
 type UseEditorPanelContentReloadTriggersParams = {
   activeFile: OpenFile | null
   gitStatusEntries: GitStatusByWorktree[string] | undefined
+  gitBranchEntries: GitBranchChangesByWorktree[string] | undefined
+  gitBranchCompareSummary: GitBranchCompareSummary | null | undefined
   isChangesMode: boolean
   diffContentsRef: MutableRefObject<Record<string, DiffContent>>
   isVisibleRef: MutableRefObject<boolean>
@@ -26,6 +36,8 @@ type UseEditorPanelContentReloadTriggersParams = {
 export function useEditorPanelContentReloadTriggers({
   activeFile,
   gitStatusEntries,
+  gitBranchEntries,
+  gitBranchCompareSummary,
   isChangesMode,
   diffContentsRef,
   isVisibleRef,
@@ -42,6 +54,12 @@ export function useEditorPanelContentReloadTriggers({
     }
     return changesStatusEntries.filter((entry) => entry.path === activeFile.relativePath)
   }, [activeFile?.relativePath, changesStatusEntries])
+  const activeFileGitBranchEntries = useMemo(() => {
+    if (!activeFile?.relativePath || !gitBranchEntries) {
+      return undefined
+    }
+    return gitBranchEntries.filter((entry) => entry.path === activeFile.relativePath)
+  }, [activeFile?.relativePath, gitBranchEntries])
   const activeFileGitStatusSignature = useMemo(() => {
     if (!activeFileGitStatusEntries) {
       return ''
@@ -55,12 +73,55 @@ export function useEditorPanelContentReloadTriggers({
       }))
     )
   }, [activeFileGitStatusEntries])
+  const activeFileGitBranchSignature = useMemo(() => {
+    if (!activeFileGitBranchEntries) {
+      return ''
+    }
+    return JSON.stringify(
+      activeFileGitBranchEntries.map((entry) => ({
+        oldPath: entry.oldPath,
+        status: entry.status,
+        added: entry.added,
+        removed: entry.removed
+      }))
+    )
+  }, [activeFileGitBranchEntries])
+  const branchCompare = useMemo(
+    () =>
+      gitBranchCompareSummary?.status === 'ready'
+        ? {
+            baseRef: gitBranchCompareSummary.baseRef,
+            compareRef: gitBranchCompareSummary.compareRef,
+            compareVersion: gitBranchCompareSummary.compareRef,
+            baseOid: gitBranchCompareSummary.baseOid,
+            headOid: gitBranchCompareSummary.headOid,
+            mergeBase: gitBranchCompareSummary.mergeBase
+          }
+        : null,
+    [
+      gitBranchCompareSummary?.baseOid,
+      gitBranchCompareSummary?.baseRef,
+      gitBranchCompareSummary?.compareRef,
+      gitBranchCompareSummary?.headOid,
+      gitBranchCompareSummary?.mergeBase,
+      gitBranchCompareSummary?.status
+    ]
+  )
   const activeFileShouldReloadOnGitStatusChange = useMemo(
     () =>
       activeFile
         ? shouldReloadDiffOnGitStatusChange(activeFile, activeFileGitStatusEntries)
         : false,
     [activeFile, activeFileGitStatusEntries]
+  )
+  const activeFileShouldReloadChangedLineDiff = useMemo(
+    () =>
+      shouldLoadChangedLineDiffForEditFile(
+        activeFile,
+        activeFileGitStatusEntries,
+        activeFileGitBranchEntries
+      ),
+    [activeFile, activeFileGitBranchEntries, activeFileGitStatusEntries]
   )
   useEffect(() => {
     if (!activeFile?.id) {
@@ -70,7 +131,13 @@ export function useEditorPanelContentReloadTriggers({
     if (!current) {
       return
     }
-    if (!(isChangesMode || activeFileShouldReloadOnGitStatusChange)) {
+    if (
+      !(
+        isChangesMode ||
+        activeFileShouldReloadOnGitStatusChange ||
+        activeFileShouldReloadChangedLineDiff
+      )
+    ) {
       return
     }
     if (!isVisibleRef.current) {
@@ -82,10 +149,26 @@ export function useEditorPanelContentReloadTriggers({
     if (!cachedDiff || cachedDiff.isStale === true) {
       return
     }
-    void loadDiffContent(current, { force: true })
+    const changedLineDiffFile = activeFileShouldReloadChangedLineDiff
+      ? getChangedLineDiffFile(
+          current,
+          activeFileGitStatusEntries,
+          activeFileGitBranchEntries,
+          branchCompare
+        )
+      : null
+    if (activeFileShouldReloadChangedLineDiff && !changedLineDiffFile) {
+      return
+    }
+    void loadDiffContent(changedLineDiffFile ?? current, { force: true })
   }, [
     activeFileShouldReloadOnGitStatusChange,
+    activeFileShouldReloadChangedLineDiff,
+    activeFileGitBranchEntries,
     activeFileGitStatusSignature,
+    activeFileGitBranchSignature,
+    activeFileGitStatusEntries,
+    branchCompare,
     isChangesMode,
     activeFile?.id,
     invalidateDiffContent,

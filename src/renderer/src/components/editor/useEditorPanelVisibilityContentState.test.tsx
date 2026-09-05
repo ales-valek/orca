@@ -116,6 +116,8 @@ function Probe({
     activeFile,
     editorViewMode,
     gitStatusEntries,
+    gitBranchEntries: undefined,
+    gitBranchCompareSummary: undefined,
     isChangesMode,
     isVisible,
     openFiles: panelOpenFiles

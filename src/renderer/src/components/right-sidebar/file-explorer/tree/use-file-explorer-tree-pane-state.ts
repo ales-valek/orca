@@ -27,6 +27,7 @@ import type { LocalPathOpenOwner } from '@/lib/local-path-open-guard'
 
 // Why: a stable reference keeps the selector from re-rendering the pane when the active worktree has no status.
 const NO_GIT_STATUS_ENTRIES: GitStatusEntry[] = []
+const NO_GIT_BRANCH_ENTRIES: GitBranchChangeEntry[] = []
 
 type UseFileExplorerTreePaneStateParams = {
   onRevealOutsideRoot?: () => void
@@ -141,6 +142,11 @@ export function useFileExplorerTreePaneState({
       ? (s.gitStatusByWorktree[activeWorktreeId] ?? NO_GIT_STATUS_ENTRIES)
       : NO_GIT_STATUS_ENTRIES
   )
+  const branchEntries = useAppStore((s) =>
+    activeWorktreeId
+      ? (s.gitBranchChangesByWorktree[activeWorktreeId] ?? NO_GIT_BRANCH_ENTRIES)
+      : NO_GIT_BRANCH_ENTRIES
+  )
   const closeFile = useAppStore((s) => s.closeFile)
 
   const runtimeDownloadContext = useMemo(
@@ -157,8 +163,15 @@ export function useFileExplorerTreePaneState({
   )
   const isWindows = useMemo(() => navigator.userAgent.includes('Windows'), [])
 
-  const statusByRelativePath = useMemo(() => buildStatusMap(entries), [entries])
-  const folderStatusByRelativePath = useMemo(() => buildFolderStatusMap(entries), [entries])
+  const decoratedEntries = useMemo(
+    () => [...branchEntries, ...entries],
+    [branchEntries, entries]
+  )
+  const statusByRelativePath = useMemo(() => buildStatusMap(decoratedEntries), [decoratedEntries])
+  const folderStatusByRelativePath = useMemo(
+    () => buildFolderStatusMap(decoratedEntries),
+    [decoratedEntries]
+  )
 
   const deletion = useFileDeletion({
     activeWorktreeId,
