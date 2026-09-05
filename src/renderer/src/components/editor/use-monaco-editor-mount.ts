@@ -61,6 +61,7 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
     decorations: {
       markdownDocLinkDecorationsRef,
       conflictDecorationsRef,
+      changedLineDecorationsRef,
       updateMarkdownCompletionDocuments
     },
     annotations: {
@@ -212,6 +213,11 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
         }
         conflictDecorationsRef.current?.clear()
         conflictDecorationsRef.current = null
+        // Why: this collection is tied to the disposed editor instance — leaving
+        // it set would make the next editor's debounced recompute call .set()
+        // on a stale collection instead of creating its own.
+        changedLineDecorationsRef.current?.clear()
+        changedLineDecorationsRef.current = null
         uninstallE2EProbe()
         editorRef.current = null
         setMountedEditor(null)
@@ -295,6 +301,7 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
       isApplyingProgrammaticContentRef,
       markdownDocLinkDecorationsRef,
       conflictDecorationsRef,
+      changedLineDecorationsRef,
       commentPopoverRef,
       shouldShowMarkdownAnnotationsRef,
       setCommentPopover,
