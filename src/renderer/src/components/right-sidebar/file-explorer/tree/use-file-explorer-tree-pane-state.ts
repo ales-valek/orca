@@ -138,6 +138,9 @@ export function useFileExplorerTreePaneState({
   const makePreviewFilePermanent = useAppStore((s) => s.makePreviewFilePermanent)
   const gitStatusByWorktree = useAppStore((s) => s.gitStatusByWorktree)
   const gitBranchChangesByWorktree = useAppStore((s) => s.gitBranchChangesByWorktree)
+  const changedLineHighlightsEnabled = useAppStore(
+    (s) => s.settings?.editorChangedLineHighlightsEnabled ?? true
+  )
   const closeFile = useAppStore((s) => s.closeFile)
 
   const runtimeDownloadContext = useMemo(
@@ -163,8 +166,11 @@ export function useFileExplorerTreePaneState({
     [activeWorktreeId, gitBranchChangesByWorktree]
   )
   const decoratedEntries = useMemo(
-    () => mergeBranchAndWorktreeEntries(branchEntries, entries),
-    [branchEntries, entries]
+    () =>
+      changedLineHighlightsEnabled
+        ? mergeBranchAndWorktreeEntries(branchEntries, entries)
+        : entries,
+    [branchEntries, changedLineHighlightsEnabled, entries]
   )
   const statusByRelativePath = useMemo(() => buildStatusMap(decoratedEntries), [decoratedEntries])
   const folderStatusByRelativePath = useMemo(
