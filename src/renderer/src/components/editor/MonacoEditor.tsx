@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useLayoutEffect, useMemo, useState } from 're
 import Editor from '@monaco-editor/react'
 import type { editor, IRange } from 'monaco-editor'
 import type { MarkdownDocument } from '../../../../shared/filesystem-entry-types'
+import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
 import { useAppStore } from '@/store'
 import '@/lib/monaco-setup'
 import { monacoTypographyOptions } from '@/lib/editor-typography'
@@ -50,11 +51,13 @@ type MonacoEditorProps = {
   revealColumn?: number
   revealMatchLength?: number
   markdownDocuments?: MarkdownDocument[]
+  diffContent?: GitDiffResult
   worktreeId?: string
   /** The open file's tab; its review notes belong to the copy it names. */
   noteSource?: WorkspaceResource
   markdownAnnotationsEnabled?: boolean
   conflictDecorationsEnabled?: boolean
+  changedLineDecorationsEnabled?: boolean
   readOnly?: boolean
   // Why: shows another tab's record read-only; never moves its cursor line or takes its reveals.
   passiveMirror?: boolean
@@ -76,10 +79,12 @@ export default function MonacoEditor({
   revealColumn,
   revealMatchLength,
   markdownDocuments,
+  diffContent,
   worktreeId,
   noteSource = NO_RESOURCE_EVIDENCE,
   markdownAnnotationsEnabled = false,
   conflictDecorationsEnabled = false,
+  changedLineDecorationsEnabled = false,
   readOnly = false,
   passiveMirror = false,
   liveTail = false,
@@ -219,7 +224,9 @@ export default function MonacoEditor({
     content,
     language,
     markdownDocuments,
-    conflictDecorationsEnabled
+    conflictDecorationsEnabled,
+    changedLineDecorationsEnabled: changedLineDecorationsEnabled && !readOnly,
+    diffContent
   })
 
   const handleMount = useMonacoEditorMount({
