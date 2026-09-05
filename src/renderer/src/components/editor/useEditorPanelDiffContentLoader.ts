@@ -78,9 +78,14 @@ export function useEditorPanelDiffContentLoader({
           file.runtimeEnvironmentId
         )
         const gitScope = getRuntimeGitScope(fileTarget, connectionId)
-        const effectiveDiffSource: typeof file.diffSource =
-          file.mode === 'edit' ? 'unstaged' : file.diffSource
-        const compareAgainstHead = file.mode === 'edit'
+        const useEditBranchCompare =
+          file.mode === 'edit' && file.diffSource === 'branch' && branchCompare !== null
+        const effectiveDiffSource: typeof file.diffSource = useEditBranchCompare
+          ? 'branch'
+          : file.mode === 'edit'
+            ? 'unstaged'
+            : file.diffSource
+        const compareAgainstHead = file.mode === 'edit' && !useEditBranchCompare
         const wake = options?.wakeWslDistro ? { wakeWslDistro: true } : undefined
         // A background reload must not join (and inherit the refusal of) a wake, or vice versa.
         const key = `${inFlightDiffKey(

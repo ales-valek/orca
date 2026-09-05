@@ -2643,6 +2643,19 @@ html.native-shell .app-layout {
   text-decoration: underline;
 }
 
+/* ── Regular editor changed-line decorations ───────────────────── */
+
+.monaco-editor .orca-editor-changed-line {
+  background: color-mix(in srgb, var(--git-decoration-modified) 8%, transparent);
+}
+
+.monaco-editor .orca-editor-changed-line-gutter {
+  width: 3px !important;
+  margin-left: 4px;
+  background: color-mix(in srgb, var(--git-decoration-modified) 72%, transparent);
+  border-radius: 999px;
+}
+
 /* Compact Monaco tooltip wrappers overlap find buttons, causing mouseleave/dispose/mouseover flicker.
    Disable hit-testing only on context-view chains containing compact hovers; preserve menus and interactive markdown. */
 .context-view:has(> .workbench-hover-container > .workbench-hover.compact),
