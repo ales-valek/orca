@@ -10,6 +10,7 @@ import { createVisibleFileExplorerRowProjection } from './useFileExplorerVisible
 import { FILE_EXPLORER_DRAGGABLE_SELECTOR } from './file-explorer-drag-scroll-marker'
 import type { DirCache, TreeNode } from './file-explorer-types'
 import { readWorkspaceFileDragSource } from '@/lib/workspace-file-drag'
+import type { GitFileStatus } from '../../../../shared/git-status-types'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -63,6 +64,8 @@ function virtualRowsElement(
     selectedPaths?: Set<string>
     sourceWorkspaceId?: string
     rowProjection?: ReturnType<typeof createFileExplorerRowProjection>
+    statusByRelativePath?: Map<string, GitFileStatus>
+    folderStatusByRelativePath?: Map<string, GitFileStatus | null>
   } = {}
 ): React.JSX.Element {
   return FileExplorerVirtualRows({
@@ -77,8 +80,8 @@ function virtualRowsElement(
     inlineInput: null,
     handleInlineSubmit: vi.fn(),
     dismissInlineInput: vi.fn(),
-    folderStatusByRelativePath: new Map(),
-    statusByRelativePath: new Map(),
+    folderStatusByRelativePath: options.folderStatusByRelativePath ?? new Map(),
+    statusByRelativePath: options.statusByRelativePath ?? new Map(),
     ignoredByRelativePath: new Set(),
     expanded: new Set(),
     loadingDirPaths: new Set<string>(),
@@ -265,6 +268,19 @@ describe('file explorer draggable rows carry the wheel-scroll marker', () => {
       executionHostId: 'local',
       workspaceId: 'workspace-1'
     })
+  })
+
+  it('colors changed files and folders with git status accents', async () => {
+    const container = await renderToBody(
+      virtualRowsElement([directoryNode, fileNode], {
+        folderStatusByRelativePath: new Map([['src', 'modified']]),
+        statusByRelativePath: new Map([['src/index.ts', 'modified']])
+      })
+    )
+
+    expect(container.textContent).toContain('src')
+    expect(container.textContent).toContain('index.ts')
+    expect(container.querySelectorAll('[style*="--file-explorer-row-status-color"]').length).toBe(2)
   })
 })
 

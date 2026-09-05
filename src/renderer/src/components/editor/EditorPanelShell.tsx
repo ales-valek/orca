@@ -141,6 +141,7 @@ export function EditorPanelShell({
           editBuffers={editorDrafts}
           openFiles={openFiles}
           worktreeEntries={model.worktreeEntries}
+          branchEntries={model.branchEntries}
           resolvedLanguage={model.resolvedLanguage}
           isMarkdown={model.isMarkdown}
           isMermaid={model.isMermaid}

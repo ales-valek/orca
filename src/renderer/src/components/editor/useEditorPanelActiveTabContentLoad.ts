@@ -6,7 +6,15 @@ import {
 import type { OpenFile } from '@/store/slices/editor'
 import { joinPath } from '@/lib/path'
 import { useAppStore } from '@/store'
+import type {
+  GitBranchChangeEntry,
+  GitBranchCompareSummary
+} from '../../../../shared/git-diff-compare-types'
 import type { DiffContent, FileContent } from './editor-panel-content-types'
+import {
+  getChangedLineDiffFile,
+  shouldLoadChangedLineDiffForEditFile
+} from './editor-panel-changed-line-diff'
 import { isReloadableSingleFileDiffTab } from './editor-panel-diff-reload'
 import type { EditorPanelDiffContentLoader } from './useEditorPanelDiffContentLoader'
 import type { EditorPanelFileContentLoader } from './useEditorPanelFileContentLoader'
@@ -17,6 +25,9 @@ import { useQuickOpenHistoryVisit } from './use-quick-open-history-visit'
 const ACTIVE_TAB_LOAD = { wakeWslDistro: true }
 
 type GitStatusByWorktree = ReturnType<typeof useAppStore.getState>['gitStatusByWorktree']
+type GitBranchChangesByWorktree = ReturnType<
+  typeof useAppStore.getState
+>['gitBranchChangesByWorktree']
 
 type UseEditorPanelActiveTabContentLoadParams = {
   activeFile: OpenFile | null
@@ -24,6 +35,8 @@ type UseEditorPanelActiveTabContentLoadParams = {
   isVisible: boolean
   isChangesMode: boolean
   gitStatusEntries: GitStatusByWorktree[string] | undefined
+  gitBranchEntries: GitBranchChangesByWorktree[string] | undefined
+  gitBranchCompareSummary: GitBranchCompareSummary | null | undefined
   fileContents: Record<string, FileContent>
   diffContents: Record<string, DiffContent>
   fileReadGenerationRef: MutableRefObject<Record<string, number>>
@@ -50,6 +63,8 @@ export function useEditorPanelActiveTabContentLoad({
   isVisible,
   isChangesMode,
   gitStatusEntries,
+  gitBranchEntries,
+  gitBranchCompareSummary,
   fileContents,
   diffContents,
   fileReadGenerationRef,
@@ -154,8 +169,28 @@ export function useEditorPanelActiveTabContentLoad({
           load
         )
       }
+      const branchCompare =
+        gitBranchCompareSummary?.status === 'ready'
+          ? {
+              baseRef: gitBranchCompareSummary.baseRef,
+              compareRef: gitBranchCompareSummary.compareRef,
+              compareVersion: gitBranchCompareSummary.compareRef,
+              baseOid: gitBranchCompareSummary.baseOid,
+              headOid: gitBranchCompareSummary.headOid,
+              mergeBase: gitBranchCompareSummary.mergeBase
+            }
+          : null
+      const activeBranchEntries: readonly GitBranchChangeEntry[] | undefined = gitBranchEntries
+      const shouldLoadChangedLineDiff =
+        !isChangesMode &&
+        shouldLoadChangedLineDiffForEditFile(fileToLoad, gitStatusEntries, activeBranchEntries)
+      const changedLineDiffFile = shouldLoadChangedLineDiff
+        ? getChangedLineDiffFile(fileToLoad, gitStatusEntries, activeBranchEntries, branchCompare)
+        : null
       if (isChangesMode && needsDiffRead(fileToLoad.id)) {
         void loadDiffContent(fileToLoad)
+      } else if (changedLineDiffFile && needsDiffRead(fileToLoad.id)) {
+        void loadDiffContent(changedLineDiffFile)
       }
     } else if (isReloadableSingleFileDiffTab(fileToLoad) && needsDiffRead(fileToLoad.id)) {
       void loadDiffContent(fileToLoad)
@@ -170,6 +205,8 @@ export function useEditorPanelActiveTabContentLoad({
     isChangesMode,
     isVisible,
     gitStatusEntries,
-    overviewViewsKey
+    overviewViewsKey,
+    gitBranchEntries,
+    gitBranchCompareSummary
   ])
 }

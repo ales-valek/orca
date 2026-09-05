@@ -37,7 +37,9 @@ export function getDominantStatus(statuses: Iterable<GitFileStatus>): GitFileSta
   return dominantStatus
 }
 
-export function buildStatusMap(entries: readonly GitStatusEntry[]): Map<string, GitFileStatus> {
+type GitStatusLikeEntry = Pick<GitStatusEntry, 'path' | 'status'>
+
+export function buildStatusMap(entries: readonly GitStatusLikeEntry[]): Map<string, GitFileStatus> {
   const statusByPath = new Map<string, GitFileStatus>()
 
   for (const entry of entries) {
@@ -52,7 +54,9 @@ export function buildStatusMap(entries: readonly GitStatusEntry[]): Map<string, 
   return statusByPath
 }
 
-export function buildFolderStatusMap(entries: GitStatusEntry[]): Map<string, GitFileStatus | null> {
+export function buildFolderStatusMap(
+  entries: readonly GitStatusLikeEntry[]
+): Map<string, GitFileStatus | null> {
   const folderStatuses = new Map<string, GitFileStatus[]>()
 
   for (const entry of entries) {

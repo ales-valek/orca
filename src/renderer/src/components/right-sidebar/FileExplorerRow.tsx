@@ -159,6 +159,16 @@ export function FileExplorerRow({
       })
     : null
   const rowDropDir = node.isDirectory ? node.path : targetDir
+  const statusAccent = nodeStatus ? statusColor : null
+  const rowStyle = {
+    paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px`,
+    ...(statusAccent
+      ? {
+          '--file-explorer-row-status-color': statusAccent
+        }
+      : {})
+  } as React.CSSProperties
+  const iconStyle = statusAccent ? { color: statusAccent } : undefined
   const { setRowDragNode, handleDragOver, handleDragEnter, handleDragLeave, handleDrop } =
     useFileExplorerRowDrag({
       rowDropDir,
@@ -192,7 +202,7 @@ export function FileExplorerRow({
             isSelected && 'text-accent-foreground',
             isFlashing && 'bg-amber-400/20 ring-1 ring-inset ring-amber-400/70'
           )}
-          style={{ paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px` }}
+          style={rowStyle}
           ref={setRowDragNode}
           // The OS-drop owner reads the target folder here at drop time.
           data-file-explorer-drop-dir={rowDropDir}
@@ -245,7 +255,10 @@ export function FileExplorerRow({
                 )}
               />
               {isLoading ? (
-                <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
+                <Loader2
+                  className="size-3 shrink-0 animate-spin text-muted-foreground"
+                  style={iconStyle}
+                />
               ) : showLoadError ? (
                 <CircleAlert className="size-3 shrink-0 text-destructive" />
               ) : pluginIcon ? (
@@ -257,12 +270,12 @@ export function FileExplorerRow({
               ) : isExpanded ? (
                 <FolderOpen
                   className="size-3 shrink-0 text-muted-foreground"
-                  style={{ color: folderColor ?? undefined }}
+                  style={iconStyle ?? { color: folderColor ?? undefined }}
                 />
               ) : (
                 <Folder
                   className="size-3 shrink-0 text-muted-foreground"
-                  style={{ color: folderColor ?? undefined }}
+                  style={iconStyle ?? { color: folderColor ?? undefined }}
                 />
               )}
             </>
@@ -270,7 +283,7 @@ export function FileExplorerRow({
             <>
               <span className="size-3 shrink-0" />
               {node.isSymlink ? (
-                <Link className="size-3 shrink-0 text-muted-foreground" />
+                <Link className="size-3 shrink-0 text-muted-foreground" style={iconStyle} />
               ) : pluginIcon ? (
                 <PluginFileIcon
                   asset={pluginIcon}
@@ -279,7 +292,8 @@ export function FileExplorerRow({
               ) : (
                 React.createElement(FileTypeIcon, {
                   filePath: node.relativePath || node.name,
-                  className: 'size-3 shrink-0 text-muted-foreground'
+                  className: 'size-3 shrink-0 text-muted-foreground',
+                  style: iconStyle
                 })
               )}
             </>
