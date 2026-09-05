@@ -128,6 +128,7 @@ function renderEditPath({
       editBuffers={editorDrafts}
       openFiles={[activeFile]}
       worktreeEntries={[]}
+      branchEntries={model.branchEntries}
       resolvedLanguage={model.resolvedLanguage}
       isMarkdown={model.isMarkdown}
       isMermaid={model.isMermaid}
