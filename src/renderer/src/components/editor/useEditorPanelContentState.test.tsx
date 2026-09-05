@@ -9,7 +9,7 @@ import type {
   GitBranchChangeEntry,
   GitBranchCompareSummary
 } from '../../../../shared/git-diff-compare-types'
-import type { DiffContent, FileContent } from './editor-panel-content-types'
+import type { FileContent } from './editor-panel-content-types'
 
 const mocks = vi.hoisted(() => ({
   readRuntimeFileContent: vi.fn(),
@@ -130,10 +130,8 @@ let latestFileContents: Record<string, FileContent> = {}
 let latestDiffContents: Record<string, DiffContent> = {}
 const EMPTY_GIT_STATUS_BY_WORKTREE: Record<string, GitStatusEntry[]> = {}
 const EMPTY_GIT_BRANCH_CHANGES_BY_WORKTREE: Record<string, GitBranchChangeEntry[]> = {}
-const EMPTY_GIT_BRANCH_COMPARE_SUMMARY_BY_WORKTREE: Record<
-  string,
-  GitBranchCompareSummary | null
-> = {}
+const EMPTY_GIT_BRANCH_COMPARE_SUMMARY_BY_WORKTREE: Record<string, GitBranchCompareSummary | null> =
+  {}
 
 function HookProbe({
   activeFile,
@@ -147,12 +145,11 @@ function HookProbe({
     isChangesMode: false,
     openFiles,
     gitStatusEntries: activeFile ? gitStatusByWorktree[activeFile.worktreeId] : undefined,
-    gitBranchEntries: activeFile
-      ? gitBranchChangesByWorktree[activeFile.worktreeId]
-      : undefined,
+    gitBranchEntries: activeFile ? gitBranchChangesByWorktree[activeFile.worktreeId] : undefined,
     gitBranchCompareSummary: activeFile
       ? gitBranchCompareSummaryByWorktree[activeFile.worktreeId]
       : undefined,
+    changedLineHighlightsEnabled: true,
     editorViewMode: {}
   })
   latestFileContents = state.fileContents
@@ -179,7 +176,6 @@ describe('useEditorPanelContentState', () => {
 
   beforeEach(() => {
     latestFileContents = {}
-    latestDiffContents = {}
     onLocalLogTailChanged.mockClear()
     ;(window as unknown as { api: unknown }).api = { fs: fsApi }
     mocks.readRuntimeFileContent.mockReset()
