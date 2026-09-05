@@ -19,6 +19,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import { RichMarkdownSpellcheckSetting } from './RichMarkdownSpellcheckSetting'
 import { MarkdownDefaultViewSetting } from './MarkdownDefaultViewSetting'
+import { EditorChangedLineHighlightsSetting } from './EditorChangedLineHighlightsSetting'
 import { DiffShowWhitespaceSetting } from './DiffShowWhitespaceSetting'
 import { EditorWordWrapSetting } from './EditorWordWrapSetting'
 import { EditorFontFamilySetting } from './EditorFontFamilySetting'
@@ -385,6 +386,8 @@ export function GeneralEditorSettingsSection({
       <MarkdownDefaultViewSetting settings={settings} />
 
       <GitLineBlameSetting settings={settings} updateSettings={updateSettings} />
+
+      <EditorChangedLineHighlightsSetting settings={settings} updateSettings={updateSettings} />
 
       <RichMarkdownSpellcheckSetting settings={settings} updateSettings={updateSettings} />
 

@@ -7,7 +7,7 @@ import {
   setMarkdownDocCompletionDocuments
 } from './markdown-source-tools/monaco/monaco-markdown-doc-completions'
 import type { MarkdownDocLinkDecorationController } from './markdown-source-tools/monaco/monaco-markdown-doc-link-decorations'
-import { buildGitConflictDecorations, hasGitConflictMarkers } from './monaco-conflict-decorations'
+import { buildGitConflictDecorations } from './monaco-conflict-decorations'
 import { buildChangedLineDecorations } from './monaco-changed-line-decorations'
 
 export type MonacoEditorDecorations = {

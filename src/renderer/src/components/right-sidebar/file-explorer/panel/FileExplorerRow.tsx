@@ -117,14 +117,9 @@ export function FileExplorerRow({
   const showLoadError = node.isDirectory && isExpanded && !isLoading && loadError !== null
   const rowDropDir = node.isDirectory ? node.path : targetDir
   const statusAccent = nodeStatus ? statusColor : null
-  const rowStyle = {
-    paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px`,
-    ...(statusAccent
-      ? {
-          '--file-explorer-row-status-color': statusAccent
-        }
-      : {})
-  } as React.CSSProperties
+  const rowStyle: React.CSSProperties = {
+    paddingLeft: `${(node.depth - displayDepthOffset) * 16 + 8}px`
+  }
   const iconStyle = statusAccent ? { color: statusAccent } : undefined
   const { setRowDragNode, handleDragOver, handleDragEnter, handleDragLeave, handleDrop } =
     useFileExplorerRowDrag({
