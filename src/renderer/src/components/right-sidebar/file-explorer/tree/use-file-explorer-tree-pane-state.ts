@@ -7,6 +7,7 @@ import type { RuntimeFileOperationArgs } from '@/runtime/files/runtime-file-clie
 import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { GitStatusEntry } from '../../../../../../shared/git/status/git-status-types'
+import type { GitBranchChangeEntry } from '../../../../../../shared/git/diff/git-diff-compare-types'
 import type { FileExplorerRowProjection } from './file-explorer-row-projection'
 import type { TreeNode } from './file-explorer-types'
 import {
@@ -151,6 +152,9 @@ export function useFileExplorerTreePaneState({
       ? (s.gitBranchChangesByWorktree[activeWorktreeId] ?? NO_GIT_BRANCH_ENTRIES)
       : NO_GIT_BRANCH_ENTRIES
   )
+  const changedLineHighlightsEnabled = useAppStore(
+    (s) => s.settings?.editorChangedLineHighlightsEnabled ?? true
+  )
   const closeFile = useAppStore((s) => s.closeFile)
 
   const runtimeDownloadContext = useMemo(
@@ -168,8 +172,11 @@ export function useFileExplorerTreePaneState({
   const isWindows = useMemo(() => navigator.userAgent.includes('Windows'), [])
 
   const decoratedEntries = useMemo(
-    () => mergeBranchAndWorktreeEntries(branchEntries, entries),
-    [branchEntries, entries]
+    () =>
+      changedLineHighlightsEnabled
+        ? mergeBranchAndWorktreeEntries(branchEntries, entries)
+        : entries,
+    [branchEntries, changedLineHighlightsEnabled, entries]
   )
   const statusByRelativePath = useMemo(() => buildStatusMap(decoratedEntries), [decoratedEntries])
   const folderStatusByRelativePath = useMemo(
