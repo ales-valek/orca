@@ -186,6 +186,7 @@ export function getEditorPanelRenderModel({
     isDiffSurface: isSingleDiff || isChangesMode,
     isCombinedDiff,
     worktreeEntries,
+    branchEntries,
     resolvedLanguage,
     openFileState,
     isMarkdown: viewerLanguage === 'markdown',
