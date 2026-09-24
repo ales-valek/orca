@@ -34,6 +34,19 @@ function contributionSummary(
   // Use literal singular/plural keys so catalog extraction works and counts retain correct grammar.
   const entries: { key: string; count: number; one: string; many: string }[] = [
     {
+      key: 'iconThemes',
+      count: contributes.iconThemes.length,
+      one: translate(
+        'auto.components.settings.PluginMarketplacePreviewDialog.iconThemesOne',
+        '1 file icon theme'
+      ),
+      many: translate(
+        'auto.components.settings.PluginMarketplacePreviewDialog.iconThemes',
+        '{{value0}} file icon themes',
+        { value0: contributes.iconThemes.length }
+      )
+    },
+    {
       key: 'languagePacks',
       count: contributes.languagePacks.length,
       one: translate(

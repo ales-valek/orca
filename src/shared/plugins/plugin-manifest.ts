@@ -2,10 +2,12 @@ import { z } from 'zod'
 import { pluginCapabilitySchema } from './plugin-capabilities'
 import {
   PLUGIN_AGENT_PROFILE_LIMIT,
+  PLUGIN_ICON_THEME_LIMIT,
   PLUGIN_KEYBINDING_LIMIT,
   PLUGIN_LANGUAGE_PACK_LIMIT,
   PLUGIN_VM_RECIPE_LIMIT,
   pluginAgentProfileContributionSchema,
+  pluginIconThemeContributionSchema,
   pluginKeybindingContributionSchema,
   pluginLanguagePackContributionSchema,
   pluginVmRecipeContributionSchema
@@ -98,6 +100,10 @@ const pluginManifestV1Object = z.object({
       agents: z
         .array(pluginAgentProfileContributionSchema)
         .max(PLUGIN_AGENT_PROFILE_LIMIT)
+        .default([]),
+      iconThemes: z
+        .array(pluginIconThemeContributionSchema)
+        .max(PLUGIN_ICON_THEME_LIMIT)
         .default([])
     })
     .strict()

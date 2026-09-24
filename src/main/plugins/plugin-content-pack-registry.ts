@@ -7,6 +7,7 @@ import {
 import { PluginLanguagePackRegistry } from './plugin-language-pack-registry'
 import { PluginVmRecipeRegistry } from './plugin-vm-recipe-registry'
 import { PluginCommandRegistry } from './plugin-command-registry'
+import { PluginIconThemeRegistry } from './plugin-icon-theme-registry'
 import { verifyInstructionalPluginContent } from './plugin-instructional-content-integrity'
 import type { KeybindingOverrides } from '../../shared/keybindings'
 
@@ -22,6 +23,7 @@ export class PluginContentPackRegistry {
   readonly languagePacks: PluginLanguagePackRegistry
   readonly vmRecipes: PluginVmRecipeRegistry
   readonly commands: PluginCommandRegistry
+  readonly iconThemes: PluginIconThemeRegistry
   private readonly activationErrors = new Map<string, string>()
 
   constructor(
@@ -32,6 +34,7 @@ export class PluginContentPackRegistry {
     this.languagePacks = new PluginLanguagePackRegistry(contentVerifier)
     this.vmRecipes = new PluginVmRecipeRegistry()
     this.commands = new PluginCommandRegistry()
+    this.iconThemes = new PluginIconThemeRegistry(contentVerifier)
   }
 
   async reconcile(
@@ -113,6 +116,7 @@ export class PluginContentPackRegistry {
     return [
       this.languagePacks,
       this.vmRecipes,
+      this.iconThemes,
       {
         reconcile: async (discovered, isApproved) =>
           this.commands.reconcile(discovered, isApproved, keybindings),

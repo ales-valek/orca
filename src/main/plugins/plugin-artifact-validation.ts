@@ -10,6 +10,7 @@ export const PLUGIN_PANEL_ENTRY_MAX_BYTES = 10 * 1024 * 1024
 export const PLUGIN_WORKER_ENTRY_MAX_BYTES = 50 * 1024 * 1024
 const PLUGIN_ICON_MAX_BYTES = 2 * 1024 * 1024
 export const PLUGIN_LANGUAGE_PACK_MAX_BYTES = 5 * 1024 * 1024
+export const PLUGIN_ICON_THEME_MAX_BYTES = 512 * 1024
 export const PLUGIN_VM_RECIPE_MAX_BYTES = 256 * 1024
 const PLUGIN_AGENT_PROFILE_MAX_BYTES = 1024 * 1024
 
@@ -31,6 +32,9 @@ function declaredArtifactPaths(manifest: PluginManifest): DeclaredArtifact[] {
     ),
     ...c.languagePacks.flatMap((pack) =>
       declaredFile(`language pack "${pack.locale}"`, pack.path, PLUGIN_LANGUAGE_PACK_MAX_BYTES)
+    ),
+    ...c.iconThemes.flatMap((theme) =>
+      declaredFile(`icon theme "${theme.id}"`, theme.path, PLUGIN_ICON_THEME_MAX_BYTES)
     ),
     ...c.vmRecipes.flatMap((recipe) =>
       declaredFile('VM recipe', recipe.path, PLUGIN_VM_RECIPE_MAX_BYTES)
