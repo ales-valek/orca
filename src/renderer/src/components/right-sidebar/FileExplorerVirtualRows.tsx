@@ -11,12 +11,15 @@ import type { FileExplorerRowProjection } from './file-explorer-row-projection'
 import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
 import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
 import type { WorkspaceFileDragSource } from '@/lib/workspace-file-drag'
+import type { ExecutionHostId } from '../../../../shared/execution-host'
+import type { PluginIconThemeRegistration } from '../../../../shared/plugins/plugin-icon-theme-artifact'
 
 type FileExplorerVirtualRowsProps = {
   virtualizer: Virtualizer<HTMLDivElement, Element>
   inlineInputIndex: number
   rowProjection: FileExplorerRowProjection
   displayDepthOffset?: number
+  iconTheme?: PluginIconThemeRegistration | null
   inlineInput: InlineInput | null
   handleInlineSubmit: (value: string) => void
   dismissInlineInput: () => void
@@ -113,6 +116,7 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
     inlineInputIndex,
     rowProjection,
     displayDepthOffset = 0,
+    iconTheme = null,
     inlineInput,
     handleInlineSubmit,
     dismissInlineInput,
@@ -230,6 +234,7 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
             <FileExplorerRow
               displayDepthOffset={displayDepthOffset}
               node={n}
+              iconTheme={iconTheme}
               isExpanded={expanded.has(n.path)}
               isLoading={n.isDirectory && loadingDirPaths.has(n.path)}
               loadError={n.isDirectory ? (dirCache?.[n.path]?.error ?? null) : null}

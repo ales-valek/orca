@@ -18,8 +18,6 @@ export const OFFICIAL_MARKETPLACE_REPOSITORY = 'orca-plugins'
 // dead "install" path until the marketplace catches up.
 export const UNSUPPORTED_MARKETPLACE_CATEGORIES: readonly string[] = [
   'themes',
-  'icons',
-  'icon-themes',
   'terminal-themes',
   'skills'
 ]

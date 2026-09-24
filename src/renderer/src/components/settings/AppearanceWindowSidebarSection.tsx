@@ -29,6 +29,7 @@ import {
 } from './appearance-sidebar-search'
 import { translate } from '@/i18n/i18n'
 import { matchesSettingsSearch, normalizeSettingsSearchQuery } from './settings-search'
+import { FileIconThemeSetting } from './FileIconThemeSetting'
 
 type AppearanceWindowSidebarSectionProps = {
   settings: GlobalSettings
@@ -390,6 +391,36 @@ export function AppearanceWindowSidebarSection({
                         updateSettings({
                           followSymlinkedDirectories: !settings.followSymlinkedDirectories
                         })
+                      }
+                    />
+                  </SearchableSetting>
+
+                  <SearchableSetting
+                    title={
+                      layoutEntries[2]?.title ??
+                      translate('settings.appearance.fileIconTheme.title', 'File Icon Theme')
+                    }
+                    description={layoutEntries[2]?.description}
+                    keywords={layoutEntries[2]?.keywords ?? ['icons', 'folders', 'file explorer']}
+                  >
+                    <SettingsRow
+                      label={translate(
+                        'settings.appearance.fileIconTheme.title',
+                        'File Icon Theme'
+                      )}
+                      description={translate(
+                        'settings.appearance.fileIconTheme.description',
+                        'Choose the icons used for files and folders in the file explorer.'
+                      )}
+                      control={
+                        <FileIconThemeSetting
+                          settings={settings}
+                          updateSettings={updateSettings}
+                          ariaLabel={translate(
+                            'settings.appearance.fileIconTheme.title',
+                            'File Icon Theme'
+                          )}
+                        />
                       }
                     />
                   </SearchableSetting>
