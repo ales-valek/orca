@@ -10,11 +10,16 @@ type FileIconThemeTarget = {
 }
 
 function extensionCandidates(name: string): string[] {
-  const parts = name.toLowerCase().split('.')
-  if (parts.length < 2 || parts[0] === '' || parts.at(-1) === '') {
+  const normalized = name.toLowerCase()
+  const parts = (normalized.startsWith('.') ? normalized.slice(1) : normalized).split('.')
+  if (parts.length < 2 || parts.at(-1) === '') {
     return []
   }
   return parts.slice(1).map((_, index) => parts.slice(index + 1).join('.'))
+}
+
+function ownMappingValue(entries: Record<string, string>, key: string): string | undefined {
+  return Object.hasOwn(entries, key) ? entries[key] : undefined
 }
 
 export function resolveFileIconThemeAsset(
@@ -27,15 +32,15 @@ export function resolveFileIconThemeAsset(
 
   if (target.isDirectory) {
     path = target.isExpanded
-      ? (theme.folderNamesExpanded[name] ??
-        theme.folderNames[name] ??
+      ? (ownMappingValue(theme.folderNamesExpanded, name) ??
+        ownMappingValue(theme.folderNames, name) ??
         theme.icons['folder-open'] ??
         theme.icons.folder)
-      : (theme.folderNames[name] ?? theme.icons.folder)
+      : (ownMappingValue(theme.folderNames, name) ?? theme.icons.folder)
   } else {
-    path = theme.fileNames[name]
+    path = ownMappingValue(theme.fileNames, name)
     for (const extension of extensionCandidates(name)) {
-      path ??= theme.fileExtensions[extension]
+      path ??= ownMappingValue(theme.fileExtensions, extension)
     }
     path ??= theme.icons.file
   }

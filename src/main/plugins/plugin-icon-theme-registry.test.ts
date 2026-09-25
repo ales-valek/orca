@@ -82,4 +82,19 @@ describe('PluginIconThemeRegistry', () => {
     await registry.reconcile([plugin], () => false)
     expect(registry.error(plugin.pluginKey)).toBeNull()
   })
+
+  it.each([
+    ['an XML comment', '<!-- Generator: Illustrator -->'],
+    ['a simple doctype', '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN">']
+  ])('accepts SVG assets prefixed by %s', async (_label, prefix) => {
+    const plugin = await iconPlugin(
+      `${prefix}\n<svg xmlns="http://www.w3.org/2000/svg"><path fill="#38bdf8"/></svg>`
+    )
+    const registry = new PluginIconThemeRegistry(new PluginContentVerifier())
+
+    await registry.reconcile([plugin], () => true)
+
+    expect(registry.list()).toHaveLength(1)
+    expect(registry.error(plugin.pluginKey)).toBeNull()
+  })
 })
