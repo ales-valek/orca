@@ -38,6 +38,7 @@ import {
   setFolderColorOverride,
   type FolderColorHex
 } from '../../../../shared/folder-color-palette'
+import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
 
 // ─── File / Folder Row with Context Menu ─────────────────────────
 
@@ -141,7 +142,7 @@ export function FileExplorerRow({
   const updateSettings = useAppStore((state) => state.updateSettings)
   const folderColorKey = folderColorOverrideKey(
     node.path,
-    connectionId ?? runtimeDownloadContext?.expectedExecutionHostId
+    getFileExplorerOperationExecutionHostId(node.operationOwner)
   )
   const folderColor = node.isDirectory
     ? resolveFolderColorOverride(folderColorOverrides, folderColorKey)

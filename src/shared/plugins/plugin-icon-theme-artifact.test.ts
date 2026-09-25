@@ -77,4 +77,20 @@ describe('plugin icon-theme artifacts', () => {
       })
     ).toBe(true)
   })
+
+  it('accepts association names that match inherited object properties', () => {
+    const result = parsePluginIconThemeArtifact(
+      JSON.stringify({
+        schemaVersion: 1,
+        icons: {},
+        fileNames: { constructor: 'icons/file.svg' }
+      })
+    )
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(Object.hasOwn(result.theme.fileNames, 'constructor')).toBe(true)
+      expect(result.theme.fileNames.constructor).toBe('icons/file.svg')
+    }
+  })
 })

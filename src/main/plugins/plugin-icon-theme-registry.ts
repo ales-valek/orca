@@ -26,7 +26,11 @@ type IconThemeLoadResult =
 
 function svgAsset(svg: string, path: string): PluginIconThemeAsset {
   const source = svg.trimStart()
-  if (!/^(?:<\?xml[^>]*>\s*)?<svg[\s>]/i.test(source)) {
+  if (
+    !/^(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*|<!DOCTYPE\s+svg[^<>[\]]*>\s*)*<svg[\s>]/i.test(
+      source
+    )
+  ) {
     throw new Error(`icon asset ${path} must contain an SVG document`)
   }
   return {

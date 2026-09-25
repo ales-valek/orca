@@ -5,6 +5,7 @@ import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import { FLOATING_TERMINAL_WORKTREE_ID, getDefaultSettings } from '../../../../shared/constants'
 import {
   captureFileExplorerOperationGuard,
+  getFileExplorerOperationExecutionHostId,
   getFileExplorerOperationOwner,
   getFileExplorerOperationOwnerFromState
 } from './file-explorer-operation-owner'
@@ -28,6 +29,21 @@ afterEach(() => {
 })
 
 describe('file explorer operation generations', () => {
+  it('provides canonical host ids for host-scoped presentation settings', () => {
+    expect(getFileExplorerOperationExecutionHostId({ kind: 'local' })).toBe('local')
+    expect(
+      getFileExplorerOperationExecutionHostId({ kind: 'ssh', connectionId: 'private target' })
+    ).toBe('ssh:private%20target')
+    expect(
+      getFileExplorerOperationExecutionHostId({
+        kind: 'runtime',
+        environmentId: 'hub-a',
+        executionHostId: 'runtime:hub-a'
+      })
+    ).toBe('runtime:hub-a')
+    expect(getFileExplorerOperationExecutionHostId({ kind: 'unresolved' })).toBeNull()
+  })
+
   it('routes floating file ownership and mutations locally while a runtime is focused', () => {
     useAppStore.setState({
       settings: { ...getDefaultSettings('/home/me'), activeRuntimeEnvironmentId: 'focused-env' },

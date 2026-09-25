@@ -72,7 +72,7 @@ function normalizeAssociations(
   source: Record<string, string>,
   kind: AssociationKind
 ): { ok: true; entries: Record<string, string> } | { ok: false; error: string } {
-  const entries: Record<string, string> = {}
+  const entries: Record<string, string> = Object.create(null)
   for (const [rawKey, path] of Object.entries(source)) {
     const key = rawKey.toLowerCase()
     if (
@@ -89,7 +89,7 @@ function normalizeAssociations(
     if (kind === 'fileExtensions' && !/^[a-z0-9][a-z0-9._+-]{0,63}$/.test(key)) {
       return { ok: false, error: `fileExtensions key ${rawKey} is not a portable extension` }
     }
-    if (key in entries) {
+    if (Object.hasOwn(entries, key)) {
       return { ok: false, error: `${kind} contains duplicate case-insensitive key ${rawKey}` }
     }
     entries[key] = path

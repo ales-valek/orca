@@ -20,7 +20,7 @@ const registration: PluginIconThemeRegistration = {
       'folder-open': 'folder-open.svg'
     },
     fileNames: { readme: 'readme.svg' },
-    fileExtensions: { ts: 'typescript.svg', 'd.ts': 'declaration.svg' },
+    fileExtensions: { ts: 'typescript.svg', 'd.ts': 'declaration.svg', json: 'json.svg' },
     folderNames: { src: 'source.svg' },
     folderNamesExpanded: { docs: 'docs-open.svg' }
   },
@@ -31,6 +31,7 @@ const registration: PluginIconThemeRegistration = {
     'readme.svg': asset('readme'),
     'typescript.svg': asset('typescript'),
     'declaration.svg': asset('declaration'),
+    'json.svg': asset('json'),
     'source.svg': asset('source'),
     'docs-open.svg': asset('docs-open')
   }
@@ -79,5 +80,47 @@ describe('resolveFileIconThemeAsset', () => {
         isExpanded: false
       })
     ).toBe(registration.assets['declaration.svg'])
+  })
+
+  it('resolves extensions on suffixed dotfiles but not single-component dotfiles', () => {
+    expect(
+      resolveFileIconThemeAsset(registration, {
+        name: '.config.json',
+        isDirectory: false,
+        isExpanded: false
+      })
+    ).toBe(registration.assets['json.svg'])
+    expect(
+      resolveFileIconThemeAsset(registration, {
+        name: '.gitignore',
+        isDirectory: false,
+        isExpanded: false
+      })
+    ).toBe(registration.assets['file.svg'])
+  })
+
+  it('ignores inherited association properties and honors own mappings with those names', () => {
+    expect(
+      resolveFileIconThemeAsset(registration, {
+        name: 'constructor',
+        isDirectory: false,
+        isExpanded: false
+      })
+    ).toBe(registration.assets['file.svg'])
+
+    const withConstructorMapping: PluginIconThemeRegistration = {
+      ...registration,
+      theme: {
+        ...registration.theme,
+        fileNames: { ...registration.theme.fileNames, constructor: 'readme.svg' }
+      }
+    }
+    expect(
+      resolveFileIconThemeAsset(withConstructorMapping, {
+        name: 'constructor',
+        isDirectory: false,
+        isExpanded: false
+      })
+    ).toBe(registration.assets['readme.svg'])
   })
 })
