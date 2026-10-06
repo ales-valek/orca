@@ -76,6 +76,37 @@ export function resetLspServerAvailabilityForTests(): void {
   availabilityByCommand.clear()
 }
 
+const DIAGNOSTIC_COMPANION_SERVERS: readonly {
+  languages: readonly string[]
+  server: LspServerDescriptor
+}[] = [
+  {
+    languages: ['typescript', 'javascript'],
+    server: {
+      serverId: 'eslint',
+      command: 'vscode-eslint-language-server',
+      args: ['--stdio']
+    }
+  }
+]
+
+/** Servers that lint alongside the language server. They never replace it. */
+export async function resolveDiagnosticCompanionServers(
+  languageId: string,
+  probe: (command: string) => Promise<boolean> = isCommandOnLocalPath
+): Promise<LspServerDescriptor[]> {
+  const available: LspServerDescriptor[] = []
+  for (const entry of DIAGNOSTIC_COMPANION_SERVERS) {
+    if (!entry.languages.includes(languageId)) {
+      continue
+    }
+    if (await isServerCommandAvailable(entry.server.command, probe)) {
+      available.push(entry.server)
+    }
+  }
+  return available
+}
+
 /** Monaco has no react language ids (.tsx shares 'typescript'), but LSP servers
  *  key script kind off the didOpen languageId — tsserver parses a 'typescript'
  *  .tsx as plain TS and errors on every JSX element. */
