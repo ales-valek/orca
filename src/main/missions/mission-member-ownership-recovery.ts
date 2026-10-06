@@ -169,7 +169,7 @@ export class MissionMemberOwnershipRecovery {
     }
     // Why: deleting while preserving checkouts may remove the root view next;
     // persist recovered pointers before that irreversible ordering boundary.
-    this.store.flushOrThrow()
+    await this.store.flushPendingOrThrowAsync()
     const recoveredMission = this.store.getMission(mission.id)
     if (!recoveredMission) {
       throw new Error('mission_not_found')

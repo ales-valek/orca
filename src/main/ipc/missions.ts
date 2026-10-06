@@ -75,7 +75,7 @@ export function registerMissionHandlers(
           rootedMission = ensureMissionRootStrict(store, mission)
           // Why: the worktree marker can recover metadata/member-pointer crash
           // windows only if the owning Mission and root already reached disk.
-          store.flushOrThrow()
+          await store.flushPendingOrThrowAsync()
         } catch (error) {
           if (rootedMission) {
             try {
@@ -131,7 +131,7 @@ export function registerMissionHandlers(
               rootWarning = `Preserved files in the former Mission root: ${mission.rootPath}`
             }
             // Why: marker removal is safe only after Mission/session deletion is durable.
-            deleted = store.deleteMissionAndFlush(mission.id)
+            deleted = await store.deleteMissionAndFlush(mission.id)
           } catch (error) {
             return { deleted: false, memberResults: [], error: toErrorMessage(error) }
           }
@@ -210,7 +210,7 @@ export function registerMissionHandlers(
         try {
           // Why: marker-only recovery needs the intended membership durable
           // before any newly added repo receives a linked checkout.
-          store.flushOrThrow()
+          await store.flushPendingOrThrowAsync()
         } catch (error) {
           for (const repoId of repoIds) {
             store.removeMissionMember(mission.id, repoId)

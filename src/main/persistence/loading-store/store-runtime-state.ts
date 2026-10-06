@@ -92,6 +92,7 @@ export class StoreRuntimeState {
   readonly protectedSecrets = new ProtectedSecretPersistence()
   loadNeedsSave = false
   flushOrThrow!: () => void
+  flushPendingOrThrowAsync!: () => Promise<void>
   runDurableMutation!: <T>(mutate: () => DurableProfileStateMutation<T>) => Promise<T>
   settingsChangeListeners = new Set<
     (
