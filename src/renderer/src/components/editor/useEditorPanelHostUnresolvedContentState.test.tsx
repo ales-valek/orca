@@ -77,6 +77,9 @@ function Probe({ activeFile, openFiles }: { activeFile: OpenFile; openFiles: Ope
     isChangesMode: false,
     openFiles,
     gitStatusEntries: undefined,
+    gitBranchEntries: undefined,
+    gitBranchCompareSummary: undefined,
+    changedLineHighlightsEnabled: true,
     editorViewMode: EMPTY_EDITOR_VIEW_MODE
   })
   latestFileContents = state.fileContents

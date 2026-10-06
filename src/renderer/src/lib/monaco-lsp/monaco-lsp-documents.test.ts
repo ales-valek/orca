@@ -46,6 +46,7 @@ const openParams = {
 function stubLspApi(): {
   openDocument: ReturnType<typeof vi.fn>
   changeDocument: ReturnType<typeof vi.fn>
+  closeDocument: ReturnType<typeof vi.fn>
 } {
   const api = {
     openDocument: vi.fn().mockResolvedValue(OPEN_RESULT),

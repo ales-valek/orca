@@ -2,11 +2,12 @@ import { LSP_MARKER_OWNER, type MonacoMarkerShape } from './lsp-monaco-conversio
 
 type MarkerHost = {
   editor: {
-    setModelMarkers: (
+    // Method syntax stays bivariant, so Monaco's ITextModel setter still fits.
+    setModelMarkers(
       model: { uri: { toString(): string } },
       owner: string,
       markers: MonacoMarkerShape[]
-    ) => void
+    ): void
   }
 }
 
