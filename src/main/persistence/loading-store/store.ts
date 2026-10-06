@@ -88,6 +88,7 @@ export class Store {
     this.domains = createStoreDomains(this.runtime)
     installStoreDomainContexts(this, this.domains)
     this.runtime.flushOrThrow = () => this.flushOrThrow()
+    this.runtime.flushPendingOrThrowAsync = () => this.flushPendingOrThrowAsync()
     this.runtime.runDurableMutation = (mutate) => this.runDurableMutation(mutate)
     let loaded: PersistedState
     if (options.profileStateAuthority !== undefined) {
