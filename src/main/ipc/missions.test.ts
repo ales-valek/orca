@@ -110,7 +110,7 @@ describe('missions IPC', () => {
     )) as { mission: Mission; memberResults: unknown[] }
 
     expect(runtime.createManagedWorktree).toHaveBeenCalledTimes(2)
-    expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(store.flushPendingOrThrowAsync.mock.invocationCallOrder[0]).toBeLessThan(
       runtime.createManagedWorktree.mock.invocationCallOrder[0]
     )
     expect(runtime.createManagedWorktree).toHaveBeenCalledWith({
@@ -376,18 +376,19 @@ describe('missions IPC', () => {
     )
     expect(
       runtime.findManagedWorktreesForMissionOwnership.mock.invocationCallOrder[0]
-    ).toBeLessThan(store.flushOrThrow.mock.invocationCallOrder[0])
-    expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
+    ).toBeLessThan(store.flushPendingOrThrowAsync.mock.invocationCallOrder[0])
+    expect(store.flushPendingOrThrowAsync.mock.invocationCallOrder[0]).toBeLessThan(
       missionRootMocks.removeMissionRoot.mock.invocationCallOrder[0]
     )
     expect(missionRootMocks.removeMissionRoot.mock.invocationCallOrder[0]).toBeLessThan(
       store.deleteMission.mock.invocationCallOrder[0]
     )
-    expect(store.flushOrThrow).toHaveBeenCalledTimes(2)
+    expect(store.flushPendingOrThrowAsync).toHaveBeenCalledTimes(1)
+    expect(store.flushOrThrow).toHaveBeenCalledTimes(1)
     expect(store.deleteMission.mock.invocationCallOrder[0]).toBeLessThan(
-      store.flushOrThrow.mock.invocationCallOrder[1]
+      store.flushOrThrow.mock.invocationCallOrder[0]
     )
-    expect(store.flushOrThrow.mock.invocationCallOrder[1]).toBeLessThan(
+    expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
       ownershipMarkerMocks.removeMissionWorktreeOwnershipMarker.mock.invocationCallOrder[0]
     )
     expect(store.setWorktreeMeta).toHaveBeenLastCalledWith(owned.worktreeId, {
@@ -432,18 +433,18 @@ describe('missions IPC', () => {
       runtime.findManagedWorktreesForMissionOwnership.mock.invocationCallOrder[0]
     ).toBeLessThan(store.setMissionMemberWorktree.mock.invocationCallOrder[0])
     expect(store.setMissionMemberWorktree.mock.invocationCallOrder[0]).toBeLessThan(
-      store.flushOrThrow.mock.invocationCallOrder[0]
+      store.flushPendingOrThrowAsync.mock.invocationCallOrder[0]
     )
-    expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(store.flushPendingOrThrowAsync.mock.invocationCallOrder[0]).toBeLessThan(
       missionRootMocks.removeMissionRoot.mock.invocationCallOrder[0]
     )
     expect(missionRootMocks.removeMissionRoot.mock.invocationCallOrder[0]).toBeLessThan(
       store.deleteMission.mock.invocationCallOrder[0]
     )
     expect(store.deleteMission.mock.invocationCallOrder[0]).toBeLessThan(
-      store.flushOrThrow.mock.invocationCallOrder[1]
+      store.flushOrThrow.mock.invocationCallOrder[0]
     )
-    expect(store.flushOrThrow.mock.invocationCallOrder[1]).toBeLessThan(
+    expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
       ownershipMarkerMocks.removeMissionWorktreeOwnershipMarker.mock.invocationCallOrder[0]
     )
     expect(ownershipMarkerMocks.removeMissionWorktreeOwnershipMarker).toHaveBeenCalledWith({
@@ -459,11 +460,9 @@ describe('missions IPC', () => {
     const owned = assignOwnedWorktree(store, 'r1')
     store.setMissionRootPath('m1', referralRootPath)
     store.ensureMissionSessionWorkspace('m1')
-    store.flushOrThrow
-      .mockImplementationOnce(() => {})
-      .mockImplementationOnce(() => {
-        throw new Error('disk full')
-      })
+    store.flushOrThrow.mockImplementationOnce(() => {
+      throw new Error('disk full')
+    })
     const runtime = makeFakeRuntime(store)
     registerMissionHandlers(makeFakeWindow() as never, store as never, runtime as never)
 
@@ -600,7 +599,10 @@ describe('missions IPC', () => {
     const result = (await handlers.get('missions:removeMember')!(
       {},
       { missionId: 'm1', repoId: 'r1', deleteWorktree: true }
-    )) as { deleted: boolean; memberResults: { repoId: string; worktreeId: string | null }[] }
+    )) as {
+      deleted: boolean
+      memberResults: { repoId: string; worktreeId: string | null }[]
+    }
 
     expect(runtime.removeManagedWorktree).toHaveBeenCalledWith(`id:${owned.worktreeId}`, {
       force: false,

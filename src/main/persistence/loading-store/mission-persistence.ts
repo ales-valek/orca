@@ -13,7 +13,10 @@ import type { StoreRuntimeState } from './store-runtime-state'
 import type { WriteSchedulingOperations } from './write-scheduling'
 import { scheduleSave } from './write-scheduling'
 
-type MissionPersistenceRuntime = Pick<StoreRuntimeState, 'state' | 'flushOrThrow'>
+type MissionPersistenceRuntime = Pick<
+  StoreRuntimeState,
+  'state' | 'flushOrThrow' | 'flushPendingOrThrowAsync'
+>
 
 const missionPersistenceContext = Symbol('MissionPersistence')
 type MissionPersistenceContext = {
@@ -97,7 +100,7 @@ export class MissionPersistence {
     return true
   }
 
-  deleteMissionAndFlush(missionId: string): boolean {
+  async deleteMissionAndFlush(missionId: string): Promise<boolean> {
     const state = this[missionPersistenceContext].runtime.state
     const snapshot = {
       missions: state.missions,
@@ -110,7 +113,7 @@ export class MissionPersistence {
       return false
     }
     try {
-      this[missionPersistenceContext].runtime.flushOrThrow()
+      await this[missionPersistenceContext].runtime.flushPendingOrThrowAsync()
       return true
     } catch (error) {
       // Why: ownership guards must stay live until Mission deletion is durable.
