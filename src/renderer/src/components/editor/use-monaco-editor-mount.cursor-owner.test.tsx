@@ -82,6 +82,7 @@ it('keeps a retained cursor listener on the current file ID after same-path owne
     decorations: {
       markdownDocLinkDecorationsRef: { current: null },
       conflictDecorationsRef: { current: null },
+      changedLineDecorationsRef: { current: null },
       updateMarkdownCompletionDocuments: vi.fn()
     },
     annotations: {
