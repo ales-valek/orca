@@ -92,6 +92,7 @@ function Harness(): ReactElement {
         pdfPreferenceKey="pdf-pref-1"
         fileContent={{ content: 'const a = 1\n', isBinary: false }}
         diffContent={undefined}
+        highlightChangedLines={false}
         editBuffer={undefined}
         activeConflictEntry={null}
         monacoLanguage="typescript"
