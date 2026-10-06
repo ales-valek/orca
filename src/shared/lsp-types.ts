@@ -31,6 +31,15 @@ export type LspOpenDocumentResult = {
   /** True when the server wants pull diagnostics (textDocument/diagnostic)
    *  instead of pushing publishDiagnostics. */
   pullDiagnostics: boolean
+  /** Extra diagnostic servers opened for the same document, such as ESLint
+   *  beside the TypeScript server. Absent on older local builds. */
+  diagnosticSessions?: readonly LspDiagnosticSession[]
+}
+
+export type LspDiagnosticSession = {
+  sessionId: string
+  serverId: string
+  pullDiagnostics: boolean
 }
 
 export type LspChangeDocumentArgs = {

@@ -96,4 +96,26 @@ describe('openLspDocumentForModel', () => {
     )
     closeLspDocumentForModel(model.uri.toString(), () => {})
   })
+
+  it('routes and closes an eslint session opened beside the language server', async () => {
+    const api = stubLspApi()
+    api.openDocument.mockResolvedValue({
+      ...OPEN_RESULT,
+      diagnosticSessions: [{ sessionId: 'eslint-1', serverId: 'eslint', pullDiagnostics: false }]
+    })
+    const model = fakeModel('file:///w/src/eslint.ts', 'x')
+    await openLspDocumentForModel({ ...openParams, filePath: '/w/src/eslint.ts', model })
+    expect(getLspEntriesForSessionDocument('eslint-1', OPEN_RESULT.fileUri)).toHaveLength(1)
+
+    closeLspDocumentForModel(model.uri.toString(), () => {})
+    expect(api.closeDocument).toHaveBeenCalledWith({
+      sessionId: 'lsp-1',
+      fileUri: OPEN_RESULT.fileUri
+    })
+    expect(api.closeDocument).toHaveBeenCalledWith({
+      sessionId: 'eslint-1',
+      fileUri: OPEN_RESULT.fileUri
+    })
+    expect(getLspEntriesForSessionDocument('eslint-1', OPEN_RESULT.fileUri)).toHaveLength(0)
+  })
 })
