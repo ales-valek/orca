@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const repoRoot = path.resolve(import.meta.dirname, '../..')
@@ -28,12 +28,37 @@ chmodSync(binaryPath, 0o755)
 createHelperApp()
 
 function buildUniversalBinary() {
+  const isolateScratch = defaultBuildSystemIsSwiftBuild()
   const builtBinaries = universalTriples.map((triple) => {
-    run('swift', ['build', '-c', 'release', '--package-path', packagePath, '--triple', triple])
-    return path.join(packagePath, '.build', triple, 'release', 'orca-computer-use-macos')
+    const scratchPath = path.join(packagePath, '.build', 'arch', triple)
+    const args = ['build', '-c', 'release', '--package-path', packagePath, '--triple', triple]
+    // Swift Build writes every triple into one Products/Release directory.
+    if (isolateScratch) {
+      args.push('--scratch-path', scratchPath)
+    }
+    run('swift', args)
+    return resolveBuiltBinary(
+      isolateScratch ? scratchPath : path.join(packagePath, '.build'),
+      triple
+    )
   })
   mkdirSync(path.dirname(binaryPath), { recursive: true })
   run('lipo', ['-create', ...builtBinaries, '-output', binaryPath])
+}
+
+function resolveBuiltBinary(scratchPath, triple) {
+  const binaryName = 'orca-computer-use-macos'
+  const candidates = [
+    path.join(scratchPath, 'out', 'Products', 'Release', binaryName),
+    path.join(scratchPath, triple, 'release', binaryName),
+    path.join(scratchPath, 'release', binaryName)
+  ]
+  const found = candidates.find((candidate) => existsSync(candidate))
+  if (!found) {
+    console.error(`Missing built binary for ${triple}. Looked in:\n${candidates.join('\n')}`)
+    process.exit(1)
+  }
+  return found
 }
 
 function createHelperApp() {
@@ -81,6 +106,12 @@ function resolveSigningIdentity() {
     identities.stdout.match(/"([^"]*Developer ID Application:[^"]+)"/) ??
     identities.stdout.match(/"([^"]*Apple Distribution:[^"]+)"/)
   return releaseMatch?.[1] ?? developmentMatch?.[1] ?? '-'
+}
+
+function defaultBuildSystemIsSwiftBuild() {
+  const help = spawnSync('swift', ['build', '--help'], { encoding: 'utf8' })
+  const text = `${help.stdout ?? ''}${help.stderr ?? ''}`
+  return text.includes('default: swiftbuild')
 }
 
 function run(command, args) {
