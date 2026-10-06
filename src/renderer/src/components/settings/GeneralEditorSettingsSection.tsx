@@ -23,6 +23,7 @@ import { DiffShowWhitespaceSetting } from './DiffShowWhitespaceSetting'
 import { EditorWordWrapSetting } from './EditorWordWrapSetting'
 import { EditorFontFamilySetting } from './EditorFontFamilySetting'
 import { GitLineBlameSetting } from './GitLineBlameSetting'
+import { EditorThemeSetting } from './EditorThemeSetting'
 import {
   createAutoSaveDelayDraftState,
   resolveAutoSaveDelayDraftState,
@@ -226,6 +227,8 @@ export function GeneralEditorSettingsSection({
           ]}
         />
       </SearchableSetting>
+
+      <EditorThemeSetting settings={settings} updateSettings={updateSettings} />
 
       <EditorFontFamilySetting
         settings={settings}

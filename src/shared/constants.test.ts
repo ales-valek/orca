@@ -89,6 +89,11 @@ describe('getDefaultSettings', () => {
     expect(getDefaultSettings('/tmp').editorGitLineBlameEnabled).toBe(true)
   })
 
+  it('keeps default editor themes configured to vs-dark and vs', () => {
+    expect(getDefaultSettings('/tmp').editorThemeDark).toBe('vs-dark')
+    expect(getDefaultSettings('/tmp').editorThemeLight).toBe('vs')
+  })
+
   it('keeps rich Markdown spellcheck enabled by default', () => {
     expect(getDefaultSettings('/tmp').richMarkdownSpellcheckEnabled).toBe(true)
   })
