@@ -24,6 +24,9 @@ import { registerSvelteLanguage } from '../../monaco-languages/register-svelte'
 import { registerTypstLanguage } from '../../monaco-languages/register-typst'
 import { registerVueLanguage } from '../../monaco-languages/register-vue'
 import { registerZigLanguage } from '../../monaco-languages/register-zig'
+import { language as javascriptLanguage } from 'monaco-editor/esm/vs/basic-languages/javascript/javascript.js'
+import { language as typescriptLanguage } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript.js'
+import { withDecoratorToken } from './monaco-languages/decorator-tokens'
 import { installMonacoDelayerCancellationGuard } from './monaco-delayer-cancellation-guard'
 import { installMonacoDiffEditorDisposalGuard } from './monaco-diff-editor-disposal'
 import { installMonacoDiffViewportTokenization } from './monaco-diff-viewport-tokenization'
@@ -84,12 +87,18 @@ monacoTS.javascriptDefaults.setModeConfiguration({
 // TSX/JSX share TypeScript/JavaScript defaults; preserve JSX parsing without emission to avoid TS17004 on tags.
 monacoTS.typescriptDefaults.setCompilerOptions({
   ...monacoTS.typescriptDefaults.getCompilerOptions(),
-  jsx: monacoTS.JsxEmit.Preserve
+  jsx: monacoTS.JsxEmit.Preserve,
+  experimentalDecorators: true
 })
 monacoTS.javascriptDefaults.setCompilerOptions({
   ...monacoTS.javascriptDefaults.getCompilerOptions(),
-  jsx: monacoTS.JsxEmit.Preserve
+  jsx: monacoTS.JsxEmit.Preserve,
+  experimentalDecorators: true
 })
+
+// The bundled grammars are plain objects Monaco already accepted as Monarch languages.
+monaco.languages.setMonarchTokensProvider('typescript', withDecoratorToken(typescriptLanguage))
+monaco.languages.setMonarchTokensProvider('javascript', withDecoratorToken(javascriptLanguage))
 
 runMonacoSetupSteps([
   ['Vue language registration', () => registerVueLanguage(monaco)],
