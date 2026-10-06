@@ -109,6 +109,7 @@ function renderPreviewTab(content: string) {
     editBuffers: {},
     openFiles: [sourceFile, previewTab],
     worktreeEntries: [],
+    branchEntries: [],
     resolvedLanguage: 'markdown',
     isMarkdown: true,
     isMermaid: false,

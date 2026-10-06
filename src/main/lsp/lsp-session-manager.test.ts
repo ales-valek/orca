@@ -9,7 +9,7 @@ import { createLspSessionManager } from './lsp-session-manager'
 
 type JsonRpcMessage = {
   jsonrpc: '2.0'
-  id?: number
+  id?: number | string
   method?: string
   params?: unknown
   result?: unknown
@@ -42,7 +42,7 @@ function createFakeServer(serverCapabilities: Record<string, unknown> = {}) {
   return {
     child,
     received,
-    reply(id: number, result: unknown): void {
+    reply(id: number | string, result: unknown): void {
       stdout.write(encodeLspMessage({ jsonrpc: '2.0', id, result }))
     },
     notify(method: string, params: unknown): void {

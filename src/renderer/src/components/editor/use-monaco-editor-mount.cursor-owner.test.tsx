@@ -70,6 +70,7 @@ function mountParams(
     decorations: {
       markdownDocLinkDecorationsRef: { current: null },
       conflictDecorationsRef: { current: null },
+      changedLineDecorationsRef: { current: null },
       updateMarkdownCompletionDocuments: vi.fn()
     },
     annotations: {
