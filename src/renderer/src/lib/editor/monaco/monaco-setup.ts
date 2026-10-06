@@ -27,6 +27,7 @@ import { registerZigLanguage } from '../../monaco-languages/register-zig'
 import { language as javascriptLanguage } from 'monaco-editor/esm/vs/basic-languages/javascript/javascript.js'
 import { language as typescriptLanguage } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript.js'
 import { withDecoratorToken } from './monaco-languages/decorator-tokens'
+import { withDarkPlusIdentifierTokens } from './monaco-languages/dark-plus-identifier-tokens'
 import { installMonacoDelayerCancellationGuard } from './monaco-delayer-cancellation-guard'
 import { installMonacoDiffEditorDisposalGuard } from './monaco-diff-editor-disposal'
 import { installMonacoDiffViewportTokenization } from './monaco-diff-viewport-tokenization'
@@ -97,8 +98,14 @@ monacoTS.javascriptDefaults.setCompilerOptions({
 })
 
 // The bundled grammars are plain objects Monaco already accepted as Monarch languages.
-monaco.languages.setMonarchTokensProvider('typescript', withDecoratorToken(typescriptLanguage))
-monaco.languages.setMonarchTokensProvider('javascript', withDecoratorToken(javascriptLanguage))
+monaco.languages.setMonarchTokensProvider(
+  'typescript',
+  withDarkPlusIdentifierTokens(withDecoratorToken(typescriptLanguage))
+)
+monaco.languages.setMonarchTokensProvider(
+  'javascript',
+  withDarkPlusIdentifierTokens(withDecoratorToken(javascriptLanguage))
+)
 
 runMonacoSetupSteps([
   ['Vue language registration', () => registerVueLanguage(monaco)],
