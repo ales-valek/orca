@@ -29,6 +29,7 @@ type DiffSectionBodyProps = {
   isBranchMode: boolean
   sideBySide: boolean
   isDark: boolean
+  theme?: string
   language: string
   modelPathBase: string
   isEditable: boolean
@@ -50,6 +51,7 @@ export function DiffSectionBody({
   isBranchMode,
   sideBySide,
   isDark,
+  theme,
   language,
   modelPathBase,
   isEditable,
@@ -207,7 +209,7 @@ export function DiffSectionBody({
           language={language}
           original={section.originalContent}
           modified={section.modifiedContent}
-          theme={isDark ? 'vs-dark' : 'vs'}
+          theme={theme ?? (isDark ? 'vs-dark' : 'vs')}
           onMount={handleEditorMount}
           // The React wrapper may dispose models before widgets; retain them through teardown and dispose unattached models next tick.
           originalModelPath={`${modelPathBase}:original`}

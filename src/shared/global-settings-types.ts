@@ -84,6 +84,10 @@ export type GlobalSettings = GlobalSettingsBase & {
   editorAutoSave: boolean
   editorAutoSaveDelayMs: number
   editorMinimapEnabled: boolean
+  /** Monaco editor theme for dark mode. Defaults to 'vs-dark'. */
+  editorThemeDark?: string
+  /** Monaco editor theme for light mode. Defaults to 'vs'. */
+  editorThemeLight?: string
   /** Current-line git blame annotation. Absent on older profiles; treated as on. */
   editorGitLineBlameEnabled?: boolean
   /** Tints lines that differ from the git baseline in the regular (non-diff) editor view. */

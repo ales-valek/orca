@@ -25,6 +25,7 @@ import { installMonacoDelayerCancellationGuard } from './monaco-delayer-cancella
 import { installMonacoDiffEditorDisposalGuard } from './monaco-diff-editor-disposal'
 import { installMonacoPeekReferencesPreviewOptions } from './monaco-peek-preview-options'
 import { installMonacoContextMenuPaste } from '@/components/editor/install-monaco-context-menu-paste'
+import { registerMonacoThemes } from './monaco-themes'
 import { runMonacoSetupSteps } from './monaco-setup-steps'
 import { installMonacoTsWorkerIdleStop } from './monaco-ts-worker-idle-stop'
 
@@ -108,7 +109,8 @@ runMonacoSetupSteps([
   ['peek references preview options', installMonacoPeekReferencesPreviewOptions],
   // Sandboxed navigator.clipboard blocks Monaco Paste; use trusted IPC as native Cmd+V does.
   ['context-menu paste', () => installMonacoContextMenuPaste(monaco)],
-  ['TS worker idle stop', () => installMonacoTsWorkerIdleStop(monaco)]
+  ['TS worker idle stop', () => installMonacoTsWorkerIdleStop(monaco)],
+  ['custom editor themes', () => registerMonacoThemes(monaco)]
 ])
 
 loader.config({ monaco })
