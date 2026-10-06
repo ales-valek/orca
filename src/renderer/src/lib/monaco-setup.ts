@@ -11,6 +11,7 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import { language as javascriptLanguage } from 'monaco-editor/esm/vs/basic-languages/javascript/javascript.js'
 import { language as typescriptLanguage } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript.js'
 import { withDecoratorToken } from './monaco-languages/decorator-tokens'
+import { withDarkPlusIdentifierTokens } from './monaco-languages/dark-plus-identifier-tokens'
 import { registerAstroLanguage } from './monaco-languages/register-astro'
 import { registerJsonlLanguage } from './monaco-languages/register-jsonl'
 import { registerNimLanguage } from './monaco-languages/register-nim'
@@ -108,8 +109,14 @@ monacoTS.javascriptDefaults.setCompilerOptions({
 })
 
 // The bundled grammars are plain objects Monaco already accepted as Monarch languages.
-monaco.languages.setMonarchTokensProvider('typescript', withDecoratorToken(typescriptLanguage))
-monaco.languages.setMonarchTokensProvider('javascript', withDecoratorToken(javascriptLanguage))
+monaco.languages.setMonarchTokensProvider(
+  'typescript',
+  withDarkPlusIdentifierTokens(withDecoratorToken(typescriptLanguage))
+)
+monaco.languages.setMonarchTokensProvider(
+  'javascript',
+  withDarkPlusIdentifierTokens(withDecoratorToken(javascriptLanguage))
+)
 
 runMonacoSetupSteps([
   ['Vue language registration', () => registerVueLanguage(monaco)],
