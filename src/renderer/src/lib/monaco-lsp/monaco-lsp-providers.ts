@@ -4,7 +4,6 @@ import { relativePathInsideRoot } from '../../../../shared/cross-platform-path'
 import { detectLanguage } from '@/lib/language-detect'
 import { useAppStore } from '@/store'
 import {
-  LSP_MARKER_OWNER,
   fileUriToPath,
   lspCompletionToMonaco,
   lspDefinitionToLocations,
@@ -12,6 +11,7 @@ import {
   lspHoverToMonaco,
   toLspPosition
 } from './lsp-monaco-conversion'
+import { clearLspMarkerLayers, publishLspSessionMarkers } from './lsp-marker-layers'
 import {
   flushPendingLspChange,
   getLspEntriesForSessionDocument,
@@ -135,7 +135,7 @@ function ensureGlobalLspWiring(monaco: MonacoApi): void {
       const markers = lspDiagnosticsToMonacoMarkers(payload.diagnostics, monaco.MarkerSeverity)
       for (const entry of entries) {
         if (!entry.model.isDisposed()) {
-          monaco.editor.setModelMarkers(entry.model, LSP_MARKER_OWNER, markers)
+          publishLspSessionMarkers(monaco, entry.model, payload.sessionId, markers)
         }
       }
     })
@@ -218,5 +218,5 @@ export function ensureLspSupportForLanguage(monaco: MonacoApi, languageId: strin
 }
 
 export function clearLspMarkers(monaco: MonacoApi, model: editor.ITextModel): void {
-  monaco.editor.setModelMarkers(model, LSP_MARKER_OWNER, [])
+  clearLspMarkerLayers(monaco, model)
 }

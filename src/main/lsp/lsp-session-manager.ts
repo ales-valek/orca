@@ -1,9 +1,11 @@
 import { pathToFileURL } from 'node:url'
 import type { LspOpenDocumentResult, LspRequestMethod } from '../../shared/lsp-types'
 import { canonicalFileUriKey } from './lsp-file-uri-key'
+import { answerLspServerRequest } from './lsp-eslint-configuration'
 import { buildLspInitializeParams } from './lsp-initialize-params'
 import { encodeLspMessage, LspMessageDecoder } from './lsp-message-framing'
-import { resolveLspServerForLanguage, toLspDocumentLanguageId } from './lsp-server-catalog'
+import { openLanguageDocument } from './lsp-open-language-document'
+import { toLspDocumentLanguageId } from './lsp-server-catalog'
 import type { LspServerDescriptor } from './lsp-server-catalog'
 import { spawnLspServer } from './lsp-server-spawn'
 import type { SpawnLspServer } from './lsp-server-spawn'
@@ -11,7 +13,7 @@ import type { LspDiagnosticsListener, LspSession, OpenDocumentState } from './ls
 
 export type { LspDiagnosticsListener } from './lsp-session-state'
 
-const MAX_CONCURRENT_SESSIONS = 6
+const MAX_CONCURRENT_SESSIONS = 8
 const REQUEST_TIMEOUT_MS = 15_000
 // Why: keep a doc-less server briefly for tab switches, but don't hold
 // memory-heavy servers (tsserver, rust-analyzer) open indefinitely.
@@ -92,12 +94,11 @@ export function createLspSessionManager(deps?: {
       // Why: answer server→client requests so servers that await them don't
       // stall. workspace/configuration expects one entry per requested item
       // (pyright hangs on a bare null); everything else accepts null.
-      const configurationItems = (parsed.params as { items?: unknown[] } | undefined)?.items
-      const result =
-        parsed.method === 'workspace/configuration' && Array.isArray(configurationItems)
-          ? configurationItems.map(() => null)
-          : null
-      send(session, { jsonrpc: '2.0', id: parsed.id, result })
+      send(session, {
+        jsonrpc: '2.0',
+        id: parsed.id,
+        result: answerLspServerRequest(parsed.method, parsed.params)
+      })
     }
   }
 
@@ -182,19 +183,14 @@ export function createLspSessionManager(deps?: {
     sessionId: null,
     fileUri: null,
     serverId: null,
-    pullDiagnostics: false
+    pullDiagnostics: false,
+    diagnosticSessions: []
   }
 
-  async function openDocument(args: {
-    filePath: string
-    rootPath: string
-    languageId: string
-    text: string
-  }): Promise<LspOpenDocumentResult> {
-    const descriptor = await resolveLspServerForLanguage(args.languageId, deps?.probeCommand)
-    if (!descriptor) {
-      return noSession
-    }
+  async function ensureDocument(
+    descriptor: LspServerDescriptor,
+    args: { filePath: string; rootPath: string; languageId: string; text: string }
+  ): Promise<LspOpenDocumentResult> {
     const key = `${descriptor.serverId} ${args.rootPath}`
     let session = sessionsByKey.get(key)
     if (!session || session.disposed) {
@@ -245,8 +241,23 @@ export function createLspSessionManager(deps?: {
       sessionId: session.sessionId,
       fileUri,
       serverId: session.serverId,
-      pullDiagnostics: session.pullDiagnostics
+      pullDiagnostics: session.pullDiagnostics,
+      diagnosticSessions: []
     }
+  }
+
+  async function openDocument(args: {
+    filePath: string
+    rootPath: string
+    languageId: string
+    text: string
+  }): Promise<LspOpenDocumentResult> {
+    return openLanguageDocument({
+      document: args,
+      noSession,
+      probe: deps?.probeCommand,
+      ensureDocument
+    })
   }
 
   function sendDidChange(

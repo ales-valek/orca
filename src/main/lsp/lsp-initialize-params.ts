@@ -22,7 +22,7 @@ export function buildLspInitializeParams(rootPath: string): object {
         diagnostic: {},
         synchronization: { didSave: false }
       },
-      workspace: { workspaceFolders: true }
+      workspace: { configuration: true, workspaceFolders: true }
     }
   }
 }
