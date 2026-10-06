@@ -20,7 +20,11 @@ export function getDarkEditorThemeSearchKeywords(): string[] {
     ...translateSearchKeyword('auto.components.settings.general.search.catppuccinKw', 'catppuccin'),
     ...translateSearchKeyword('auto.components.settings.general.search.monokaiKw', 'monokai'),
     ...translateSearchKeyword('auto.components.settings.general.search.solarizedKw', 'solarized'),
-    ...translateSearchKeyword('auto.components.settings.general.search.githubDarkKw', 'github dark')
+    ...translateSearchKeyword(
+      'auto.components.settings.general.search.githubDarkKw',
+      'github dark'
+    ),
+    ...translateSearchKeyword('auto.components.settings.general.search.darkModernKw', 'dark modern')
   ]
 }
 

@@ -124,7 +124,7 @@ describe('MonacoEditor system theme', () => {
     act(() => {
       media.emit(true)
     })
-    expect(editorProps.current?.theme).toBe('vs-dark')
+    expect(editorProps.current?.theme).toBe('dark-modern')
 
     act(() => {
       media.emit(false)

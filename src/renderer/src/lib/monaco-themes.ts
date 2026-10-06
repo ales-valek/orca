@@ -6,7 +6,7 @@ import { LIGHT_EDITOR_THEMES } from './monaco-themes-light'
 
 export { DARK_EDITOR_THEMES, LIGHT_EDITOR_THEMES, type EditorThemeItem }
 
-export const DEFAULT_EDITOR_THEME_DARK = 'vs-dark'
+export const DEFAULT_EDITOR_THEME_DARK = 'dark-modern'
 export const DEFAULT_EDITOR_THEME_LIGHT = 'vs'
 
 export const ALL_EDITOR_THEMES: EditorThemeItem[] = [...DARK_EDITOR_THEMES, ...LIGHT_EDITOR_THEMES]

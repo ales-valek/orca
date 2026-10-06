@@ -9,6 +9,57 @@ export type EditorThemeItem = {
 
 export const DARK_BASE_THEMES: EditorThemeItem[] = [
   {
+    id: 'dark-modern',
+    name: 'Dark Modern',
+    mode: 'dark',
+    data: {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: '', foreground: 'CCCCCC' },
+        { token: 'comment', foreground: '6A9955' },
+        { token: 'keyword', foreground: '569CD6' },
+        { token: 'keyword.flow', foreground: 'C586C0' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+        { token: 'regexp', foreground: 'D16969' },
+        { token: 'type', foreground: '4EC9B0' },
+        { token: 'class', foreground: '4EC9B0' },
+        { token: 'function', foreground: 'DCDCAA' },
+        { token: 'variable', foreground: '9CDCFE' },
+        { token: 'variable.parameter', foreground: '9CDCFE' },
+        { token: 'variable.predefined', foreground: '569CD6' },
+        { token: 'operator', foreground: 'CCCCCC' },
+        { token: 'delimiter', foreground: 'CCCCCC' },
+        { token: 'tag', foreground: '569CD6' },
+        { token: 'attribute.name', foreground: '9CDCFE' },
+        { token: 'attribute.value', foreground: 'CE9178' }
+      ],
+      colors: {
+        'editor.background': '#1F1F1F',
+        'editor.foreground': '#CCCCCC',
+        'editorCursor.foreground': '#AEAFAD',
+        'editor.selectionBackground': '#264F78',
+        'editor.inactiveSelectionBackground': '#3A3D41',
+        'editor.selectionHighlightBackground': '#ADD6FF26',
+        'editorLineNumber.foreground': '#6E7681',
+        'editorLineNumber.activeForeground': '#CCCCCC',
+        'editorGutter.background': '#1F1F1F',
+        'editorGutter.addedBackground': '#2EA043',
+        'editorGutter.deletedBackground': '#F85149',
+        'editorGutter.modifiedBackground': '#0078D4',
+        'editorWidget.background': '#202020',
+        'editorWidget.border': '#313131',
+        'editor.findMatchBackground': '#9E6A03',
+        'editor.findMatchHighlightBackground': '#BB800966',
+        'editorIndentGuide.background1': '#404040',
+        'editorIndentGuide.activeBackground1': '#707070',
+        'diffEditor.insertedTextBackground': '#2EA04333',
+        'diffEditor.removedTextBackground': '#F8514933'
+      }
+    }
+  },
+  {
     id: 'vs-dark',
     name: 'VS Code Dark (Default)',
     mode: 'dark'

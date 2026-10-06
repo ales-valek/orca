@@ -84,7 +84,7 @@ export type GlobalSettings = GlobalSettingsBase & {
   editorAutoSave: boolean
   editorAutoSaveDelayMs: number
   editorMinimapEnabled: boolean
-  /** Monaco editor theme for dark mode. Defaults to 'vs-dark'. */
+  /** Monaco editor theme for dark mode. Defaults to 'dark-modern'. */
   editorThemeDark?: string
   /** Monaco editor theme for light mode. Defaults to 'vs'. */
   editorThemeLight?: string

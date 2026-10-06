@@ -88,8 +88,8 @@ describe('getDefaultSettings', () => {
     expect(getDefaultSettings('/tmp').editorGitLineBlameEnabled).toBe(true)
   })
 
-  it('keeps default editor themes configured to vs-dark and vs', () => {
-    expect(getDefaultSettings('/tmp').editorThemeDark).toBe('vs-dark')
+  it('keeps default editor themes configured to dark-modern and vs', () => {
+    expect(getDefaultSettings('/tmp').editorThemeDark).toBe('dark-modern')
     expect(getDefaultSettings('/tmp').editorThemeLight).toBe('vs')
   })
 
