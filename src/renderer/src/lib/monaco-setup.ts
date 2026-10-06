@@ -8,6 +8,9 @@ import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
 import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import { language as javascriptLanguage } from 'monaco-editor/esm/vs/basic-languages/javascript/javascript.js'
+import { language as typescriptLanguage } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript.js'
+import { withDecoratorToken } from './monaco-languages/decorator-tokens'
 import { registerAstroLanguage } from './monaco-languages/register-astro'
 import { registerJsonlLanguage } from './monaco-languages/register-jsonl'
 import { registerNimLanguage } from './monaco-languages/register-nim'
@@ -94,12 +97,18 @@ monacoTS.javascriptDefaults.setModeConfiguration({
 // an emit transform (we never emit — this is a read-only language service).
 monacoTS.typescriptDefaults.setCompilerOptions({
   ...monacoTS.typescriptDefaults.getCompilerOptions(),
-  jsx: monacoTS.JsxEmit.Preserve
+  jsx: monacoTS.JsxEmit.Preserve,
+  experimentalDecorators: true
 })
 monacoTS.javascriptDefaults.setCompilerOptions({
   ...monacoTS.javascriptDefaults.getCompilerOptions(),
-  jsx: monacoTS.JsxEmit.Preserve
+  jsx: monacoTS.JsxEmit.Preserve,
+  experimentalDecorators: true
 })
+
+// The bundled grammars are plain objects Monaco already accepted as Monarch languages.
+monaco.languages.setMonarchTokensProvider('typescript', withDecoratorToken(typescriptLanguage))
+monaco.languages.setMonarchTokensProvider('javascript', withDecoratorToken(javascriptLanguage))
 
 runMonacoSetupSteps([
   ['Vue language registration', () => registerVueLanguage(monaco)],

@@ -33,17 +33,29 @@ export function useMonacoLspForDiff(params: {
     if (!resolved) {
       return
     }
-    const model = modifiedEditor.getModel()
-    if (!model || model.isDisposed()) {
-      return
+    let detach: (() => void) | undefined
+    const attach = (): void => {
+      detach?.()
+      detach = undefined
+      const model = modifiedEditor.getModel()
+      if (!model || model.isDisposed()) {
+        return
+      }
+      detach = attachMonacoLspDocument({
+        model,
+        filePath: resolved.absolutePath,
+        rootPath: worktreePath,
+        worktreeId,
+        languageId: language
+      })
     }
-    return attachMonacoLspDocument({
-      model,
-      filePath: resolved.absolutePath,
-      rootPath: worktreePath,
-      worktreeId,
-      languageId: language
-    })
+    attach()
+    // Why: @monaco-editor/react can swap the modified model after mount.
+    const modelSub = modifiedEditor.onDidChangeModel(attach)
+    return () => {
+      modelSub.dispose()
+      detach?.()
+    }
     // Why: modelIdentity re-attaches after the diff surface swaps its models.
   }, [modifiedEditor, worktreeId, worktreePath, relativePath, language, modelIdentity])
 }

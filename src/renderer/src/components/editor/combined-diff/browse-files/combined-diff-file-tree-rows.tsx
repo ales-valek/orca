@@ -1,5 +1,6 @@
 import React from 'react'
 import { VirtualizedList } from '@/components/virtualized-list'
+import type { PluginIconThemeRegistration } from '../../../../../../shared/plugins/plugin-icon-theme-artifact'
 import type {
   CombinedDiffFileTreeEntry,
   CombinedDiffFileTreeMode
@@ -20,6 +21,7 @@ export function CombinedDiffFileTreeRows({
   mode,
   worktreePath,
   sourceWorkspaceId,
+  iconTheme = null,
   activeSectionKey,
   sectionIndexByKey,
   collapsedDirectoryKeys,
@@ -32,6 +34,7 @@ export function CombinedDiffFileTreeRows({
   mode: CombinedDiffFileTreeMode
   worktreePath: string
   sourceWorkspaceId?: string
+  iconTheme?: PluginIconThemeRegistration | null
   activeSectionKey: string | null
   sectionIndexByKey: ReadonlyMap<string, number>
   collapsedDirectoryKeys: ReadonlySet<string>
@@ -53,6 +56,7 @@ export function CombinedDiffFileTreeRows({
           mode={mode}
           worktreePath={worktreePath}
           sourceWorkspaceId={sourceWorkspaceId}
+          iconTheme={iconTheme}
           activeSectionKey={activeSectionKey}
           sectionIndexByKey={sectionIndexByKey}
           isCollapsed={collapsedDirectoryKeys.has(node.key)}
