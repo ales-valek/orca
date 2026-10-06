@@ -27,6 +27,7 @@ export const DARK_BASE_THEMES: EditorThemeItem[] = [
         { token: 'class', foreground: '4EC9B0' },
         { token: 'function', foreground: 'DCDCAA' },
         { token: 'variable', foreground: '9CDCFE' },
+        { token: 'identifier', foreground: '9CDCFE' },
         { token: 'variable.parameter', foreground: '9CDCFE' },
         { token: 'variable.predefined', foreground: '569CD6' },
         { token: 'operator', foreground: 'CCCCCC' },
