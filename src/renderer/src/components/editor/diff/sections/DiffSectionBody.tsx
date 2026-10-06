@@ -84,6 +84,8 @@ export function DiffSectionBody({
       editContext: false,
       readOnly: !isEditable,
       originalEditable: false,
+      // Why: the default 'editable' hides language-server squiggles on read-only diffs.
+      renderValidationDecorations: 'on',
       renderSideBySide: sideBySide,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
