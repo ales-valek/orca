@@ -1,6 +1,8 @@
 import { ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react'
-import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import { createElement, type MouseEvent, type ReactElement, type ReactNode } from 'react'
+import { ThemedFileIcon } from '@/components/right-sidebar/ThemedFileIcon'
 import { translate } from '@/i18n/i18n'
+import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { splitPathForDisplay } from './editor-path-display'
 
 export function DiffSectionHeader({
@@ -27,12 +29,18 @@ export function DiffSectionHeader({
   trailingContent?: ReactNode
 }): ReactElement {
   const displayPath = splitPathForDisplay(path)
+  const FileIcon = getFileTypeIcon(path)
   return (
     <div
       className="sticky top-0 z-10 bg-background flex items-center w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors group cursor-pointer"
       onClick={onToggle}
     >
       <span className="flex min-w-0 flex-1 items-center text-muted-foreground">
+        <ThemedFileIcon
+          name={displayPath.fileName}
+          className="mr-1.5 size-3.5 shrink-0"
+          fallback={createElement(FileIcon, { className: 'mr-1.5 size-3.5 shrink-0' })}
+        />
         <span
           role="button"
           tabIndex={0}
