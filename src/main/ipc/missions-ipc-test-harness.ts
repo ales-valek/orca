@@ -70,6 +70,7 @@ export function makeFakeStore(): FakeStore {
   let sessionWorkspace: { id: string; missionId: string } | null = null
   const worktreeMeta: Record<string, FakeWorktreeMeta> = {}
   const flushOrThrow = vi.fn()
+  const flushPendingOrThrowAsync = vi.fn(async () => {})
   const deleteMission = vi.fn(() => {
     if (!mission) {
       return false
@@ -126,6 +127,7 @@ export function makeFakeStore(): FakeStore {
     getProjects: () => [],
     getSettings: () => ({ workspaceDir: workspacesDir }),
     flushOrThrow,
+    flushPendingOrThrowAsync,
     getAllWorktreeMeta: () => worktreeMeta,
     getWorktreeMeta: (worktreeId: string) => worktreeMeta[worktreeId],
     setWorktreeMeta: vi.fn((worktreeId: string, updates: FakeWorktreeMeta) => {

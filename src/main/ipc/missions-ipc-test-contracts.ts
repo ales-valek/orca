@@ -48,6 +48,7 @@ export type FakeStore = {
   getProjects: () => never[]
   getSettings: () => { workspaceDir: string }
   flushOrThrow: Mock<() => void>
+  flushPendingOrThrowAsync: Mock<() => Promise<void>>
   getAllWorktreeMeta: () => Record<string, FakeWorktreeMeta>
   getWorktreeMeta: (worktreeId: string) => FakeWorktreeMeta | undefined
   setWorktreeMeta: Mock<(worktreeId: string, updates: FakeWorktreeMeta) => FakeWorktreeMeta>

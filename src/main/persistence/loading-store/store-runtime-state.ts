@@ -98,6 +98,7 @@ export class StoreRuntimeState {
   loadNeedsSave = false
   originalExperimentalNativeChat?: { readonly experimentalNativeChat: unknown }
   flushOrThrow!: () => void
+  flushPendingOrThrowAsync!: () => Promise<void>
   runDurableMutation!: <T>(mutate: () => DurableProfileStateMutation<T>) => Promise<T>
   settingsChangeListeners = new Set<
     (
