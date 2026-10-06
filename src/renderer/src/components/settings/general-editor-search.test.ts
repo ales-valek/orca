@@ -33,6 +33,7 @@ describe('editor theme settings search', () => {
     'solarized',
     'one light',
     'github dark',
+    'dark modern',
     'github light'
   ])('keeps the editor theme setting reachable through both search gates for "%s"', (query) => {
     const editorEntries = getGeneralEditorSearchEntries()

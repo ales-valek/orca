@@ -13,6 +13,7 @@ import {
 
 describe('monaco-themes', () => {
   it('contains expected default themes and popular presets', () => {
+    expect(DARK_EDITOR_THEMES.some((t) => t.id === 'dark-modern')).toBe(true)
     expect(DARK_EDITOR_THEMES.some((t) => t.id === 'vs-dark')).toBe(true)
     expect(DARK_EDITOR_THEMES.some((t) => t.id === 'dracula')).toBe(true)
     expect(DARK_EDITOR_THEMES.some((t) => t.id === 'one-dark-pro')).toBe(true)
@@ -48,6 +49,7 @@ describe('monaco-themes', () => {
     registerMonacoThemes(mockMonaco)
 
     // Should define themes that have custom data
+    expect(defineTheme).toHaveBeenCalledWith('dark-modern', expect.any(Object))
     expect(defineTheme).toHaveBeenCalledWith('dracula', expect.any(Object))
     expect(defineTheme).toHaveBeenCalledWith('one-dark-pro', expect.any(Object))
     expect(defineTheme).toHaveBeenCalledWith('github-dark', expect.any(Object))

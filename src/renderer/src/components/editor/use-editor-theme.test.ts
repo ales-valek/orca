@@ -48,7 +48,7 @@ describe('useEditorTheme', () => {
     mockSettings = {}
     mockIsDark = true
     const { result: darkResult } = renderHook(() => useEditorTheme())
-    expect(darkResult.current).toBe('vs-dark')
+    expect(darkResult.current).toBe('dark-modern')
 
     mockIsDark = false
     const { result: lightResult } = renderHook(() => useEditorTheme())

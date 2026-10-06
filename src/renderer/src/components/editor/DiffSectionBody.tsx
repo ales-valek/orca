@@ -16,6 +16,7 @@ import {
   buildDiffEditorWordWrapOptions,
   syncDiffEditorOriginalWordWrap
 } from './diff-editor-word-wrap-options'
+import { DEFAULT_EDITOR_THEME_DARK, DEFAULT_EDITOR_THEME_LIGHT } from '@/lib/monaco-themes'
 import { monacoFindOptions } from './monaco-find-options'
 import { installDiffEditorShiftWheelScroll } from './diff-editor-shift-wheel-scroll'
 
@@ -209,7 +210,7 @@ export function DiffSectionBody({
           language={language}
           original={section.originalContent}
           modified={section.modifiedContent}
-          theme={theme ?? (isDark ? 'vs-dark' : 'vs')}
+          theme={theme ?? (isDark ? DEFAULT_EDITOR_THEME_DARK : DEFAULT_EDITOR_THEME_LIGHT)}
           onMount={handleEditorMount}
           // Why: @monaco-editor/react can dispose models before widget teardown.
           // Keep them through unmount and dispose unattached models next tick.
