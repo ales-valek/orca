@@ -1,10 +1,8 @@
 import type { IDisposable, editor } from 'monaco-editor'
+import type { LspDiagnosticSession } from '../../../../shared/lsp-types'
 import { monaco } from '@/lib/monaco-setup'
-import {
-  LSP_MARKER_OWNER,
-  lspDiagnosticsToMonacoMarkers,
-  lspPullDiagnosticsToItems
-} from './lsp-monaco-conversion'
+import { lspDiagnosticsToMonacoMarkers, lspPullDiagnosticsToItems } from './lsp-monaco-conversion'
+import { clearLspMarkerLayers, publishLspSessionMarkers } from './lsp-marker-layers'
 import { setLspFileStatus } from './monaco-lsp-status'
 
 // Why: batch keystrokes into one didChange without letting hover/completion
@@ -21,6 +19,7 @@ export type LspDocumentEntry = {
   /** True when the server never pushes publishDiagnostics (tsgo/TS7 model);
    *  we request textDocument/diagnostic after open and after each sync. */
   pullDiagnostics: boolean
+  diagnosticSessions: readonly LspDiagnosticSession[]
   model: editor.ITextModel
   refCount: number
   changeTimer: ReturnType<typeof setTimeout> | null
@@ -38,29 +37,39 @@ function sessionDocumentKey(sessionId: string, fileUri: string): string {
   return `${sessionId} ${fileUri}`
 }
 
-function registerSessionDocumentEntry(entry: LspDocumentEntry): void {
-  const key = sessionDocumentKey(entry.sessionId, entry.fileUri)
+function registerSessionDocumentEntry(entry: LspDocumentEntry, sessionId = entry.sessionId): void {
+  const key = sessionDocumentKey(sessionId, entry.fileUri)
   const entries = entriesBySessionDocument.get(key) ?? new Set()
   entries.add(entry)
   entriesBySessionDocument.set(key, entries)
 }
 
 function unregisterSessionDocumentEntry(entry: LspDocumentEntry): void {
-  const key = sessionDocumentKey(entry.sessionId, entry.fileUri)
-  const entries = entriesBySessionDocument.get(key)
-  entries?.delete(entry)
-  if (entries?.size === 0) {
-    entriesBySessionDocument.delete(key)
+  const sessionIds = [
+    entry.sessionId,
+    ...entry.diagnosticSessions.map((session) => session.sessionId)
+  ]
+  for (const sessionId of sessionIds) {
+    const key = sessionDocumentKey(sessionId, entry.fileUri)
+    const entries = entriesBySessionDocument.get(key)
+    entries?.delete(entry)
+    if (entries?.size === 0) {
+      entriesBySessionDocument.delete(key)
+    }
   }
 }
 
-async function pullDiagnosticsNow(entry: LspDocumentEntry): Promise<void> {
-  if (!entry.pullDiagnostics) {
-    return
-  }
+function syncTargets(entry: LspDocumentEntry): { sessionId: string; pullDiagnostics: boolean }[] {
+  return [
+    { sessionId: entry.sessionId, pullDiagnostics: entry.pullDiagnostics },
+    ...entry.diagnosticSessions
+  ]
+}
+
+async function pullDiagnosticsNow(entry: LspDocumentEntry, sessionId: string): Promise<void> {
   try {
     const result = await window.api.lsp.request({
-      sessionId: entry.sessionId,
+      sessionId,
       method: 'textDocument/diagnostic',
       params: { textDocument: { uri: entry.fileUri } }
     })
@@ -71,14 +80,28 @@ async function pullDiagnosticsNow(entry: LspDocumentEntry): Promise<void> {
       !entry.model.isDisposed() &&
       entriesByModelUri.get(entry.model.uri.toString()) === entry
     ) {
-      monaco.editor.setModelMarkers(
+      publishLspSessionMarkers(
+        monaco,
         entry.model,
-        LSP_MARKER_OWNER,
+        sessionId,
         lspDiagnosticsToMonacoMarkers(items, monaco.MarkerSeverity)
       )
     }
   } catch {
     // A dead or slow server must never break editing; markers just go stale.
+  }
+}
+
+async function syncDocumentText(entry: LspDocumentEntry, text: string): Promise<void> {
+  for (const target of syncTargets(entry)) {
+    await window.api.lsp.changeDocument({
+      sessionId: target.sessionId,
+      fileUri: entry.fileUri,
+      text
+    })
+    if (target.pullDiagnostics) {
+      await pullDiagnosticsNow(entry, target.sessionId)
+    }
   }
 }
 
@@ -91,12 +114,7 @@ function sendChangeNow(entry: LspDocumentEntry): void {
     return
   }
   const text = entry.model.getValue()
-  entry.lastSync = entry.lastSync
-    .then(() =>
-      window.api.lsp.changeDocument({ sessionId: entry.sessionId, fileUri: entry.fileUri, text })
-    )
-    .then(() => pullDiagnosticsNow(entry))
-    .catch(() => {})
+  entry.lastSync = entry.lastSync.then(() => syncDocumentText(entry, text)).catch(() => {})
 }
 
 export async function openLspDocumentForModel(params: {
@@ -120,6 +138,7 @@ export async function openLspDocumentForModel(params: {
     fileUri: string | null
     serverId?: string | null
     pullDiagnostics?: boolean
+    diagnosticSessions?: readonly LspDiagnosticSession[]
   }
   try {
     opened = await window.api.lsp.openDocument({
@@ -140,9 +159,13 @@ export async function openLspDocumentForModel(params: {
   const raced = entriesByModelUri.get(modelUri)
   if (raced) {
     raced.refCount++
-    void window.api.lsp
-      .closeDocument({ sessionId: opened.sessionId, fileUri: opened.fileUri })
-      .catch(() => {})
+    const sessionIds = [
+      opened.sessionId,
+      ...(opened.diagnosticSessions ?? []).map((session) => session.sessionId)
+    ]
+    for (const sessionId of sessionIds) {
+      void window.api.lsp.closeDocument({ sessionId, fileUri: opened.fileUri }).catch(() => {})
+    }
     return raced
   }
   const entry: LspDocumentEntry = {
@@ -153,6 +176,7 @@ export async function openLspDocumentForModel(params: {
     worktreeId,
     serverId: opened.serverId ?? null,
     pullDiagnostics: opened.pullDiagnostics === true,
+    diagnosticSessions: opened.diagnosticSessions ?? [],
     model,
     refCount: 1,
     changeTimer: null,
@@ -166,13 +190,20 @@ export async function openLspDocumentForModel(params: {
   }
   entriesByModelUri.set(modelUri, entry)
   registerSessionDocumentEntry(entry)
+  for (const session of entry.diagnosticSessions) {
+    registerSessionDocumentEntry(entry, session.sessionId)
+  }
   setLspFileStatus(filePath, { state: 'running', serverId: entry.serverId })
   // Why: keystrokes during the open round-trip predate the change listener;
   // re-sync when the buffer moved so the server isn't pinned to stale text.
   if (!model.isDisposed() && model.getValue() !== openedText) {
     sendChangeNow(entry)
   }
-  void pullDiagnosticsNow(entry)
+  for (const target of syncTargets(entry)) {
+    if (target.pullDiagnostics) {
+      void pullDiagnosticsNow(entry, target.sessionId)
+    }
+  }
   return entry
 }
 
@@ -215,9 +246,14 @@ export function closeLspDocumentForModel(
     entry.changeTimer = null
   }
   if (!entry.model.isDisposed()) {
+    clearLspMarkerLayers(monaco, entry.model)
     clearMarkers(entry.model)
   }
-  void window.api.lsp
-    .closeDocument({ sessionId: entry.sessionId, fileUri: entry.fileUri })
-    .catch(() => {})
+  const sessionIds = [
+    entry.sessionId,
+    ...entry.diagnosticSessions.map((session) => session.sessionId)
+  ]
+  for (const sessionId of sessionIds) {
+    void window.api.lsp.closeDocument({ sessionId, fileUri: entry.fileUri }).catch(() => {})
+  }
 }

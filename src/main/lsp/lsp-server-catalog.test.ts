@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   resetLspServerAvailabilityForTests,
+  resolveDiagnosticCompanionServers,
   resolveLspServerForLanguage,
   toLspDocumentLanguageId
 } from './lsp-server-catalog'
@@ -44,5 +45,19 @@ describe('resolveLspServerForLanguage', () => {
     await resolveLspServerForLanguage('typescript', probe)
     await resolveLspServerForLanguage('javascript', probe)
     expect(probes).toBe(1)
+  })
+})
+
+describe('resolveDiagnosticCompanionServers', () => {
+  beforeEach(() => resetLspServerAvailabilityForTests())
+
+  it('adds eslint beside typescript without replacing the language server', async () => {
+    const probe = (command: string): Promise<boolean> =>
+      Promise.resolve(command === 'vscode-eslint-language-server' || command === 'tsgo')
+    const companions = await resolveDiagnosticCompanionServers('typescript', probe)
+    const primary = await resolveLspServerForLanguage('typescript', probe)
+    expect(primary?.serverId).toBe('tsgo')
+    expect(companions.map((server) => server.serverId)).toEqual(['eslint'])
+    expect(await resolveDiagnosticCompanionServers('python', probe)).toEqual([])
   })
 })

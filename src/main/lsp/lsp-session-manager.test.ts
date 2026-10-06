@@ -2,8 +2,9 @@ import { EventEmitter } from 'node:events'
 import { PassThrough } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodeLspMessage, LspMessageDecoder } from './lsp-message-framing'
+import { resetLspServerAvailabilityForTests } from './lsp-server-catalog'
 import { createLspSessionManager } from './lsp-session-manager'
 
 type JsonRpcMessage = {
@@ -68,7 +69,7 @@ function createManagerWithFakeServer(serverCapabilities?: Record<string, unknown
   const spawnServer = vi.fn(() => fake.child)
   const manager = createLspSessionManager({
     spawnServer,
-    probeCommand: () => Promise.resolve(true)
+    probeCommand: (command) => Promise.resolve(command !== 'vscode-eslint-language-server')
   })
   return { fake, manager, spawnServer }
 }
@@ -81,6 +82,8 @@ const openArgs = {
 }
 
 describe('createLspSessionManager', () => {
+  beforeEach(() => resetLspServerAvailabilityForTests())
+
   it('returns no session when no server matches the language', async () => {
     const { manager, spawnServer } = createManagerWithFakeServer()
     const result = await manager.openDocument({ ...openArgs, languageId: 'plaintext' })
@@ -88,7 +91,8 @@ describe('createLspSessionManager', () => {
       sessionId: null,
       fileUri: null,
       serverId: null,
-      pullDiagnostics: false
+      pullDiagnostics: false,
+      diagnosticSessions: []
     })
     expect(spawnServer).not.toHaveBeenCalled()
   })
@@ -217,5 +221,37 @@ describe('createLspSessionManager', () => {
     await manager.openDocument(openArgs)
     manager.disposeAll()
     expect(fake.child.kill).toHaveBeenCalled()
+  })
+
+  it('opens eslint beside typescript and answers its client requests', async () => {
+    const typescript = createFakeServer()
+    const eslint = createFakeServer()
+    const children = [typescript.child, eslint.child]
+    let nextChild = 0
+    const manager = createLspSessionManager({
+      spawnServer: () => {
+        const child = children[nextChild]
+        nextChild += 1
+        if (!child) {
+          throw new Error('unexpected LSP spawn')
+        }
+        return child
+      },
+      probeCommand: () => Promise.resolve(true)
+    })
+    const opened = await manager.openDocument(openArgs)
+    expect(opened.serverId).toBe('tsgo')
+    expect(opened.diagnosticSessions).toEqual([
+      expect.objectContaining({ serverId: 'eslint', pullDiagnostics: false })
+    ])
+    await eslint.waitFor((message) => message.method === 'textDocument/didOpen')
+    eslint.requestFromServer('cfg', 'workspace/configuration', {
+      items: [{ section: 'eslint' }]
+    })
+    eslint.requestFromServer('ok', 'eslint/confirmESLintExecution', { scope: openArgs.rootPath })
+    const configuration = await eslint.waitFor((message) => message.id === 'cfg')
+    const approval = await eslint.waitFor((message) => message.id === 'ok')
+    expect(configuration.result).toEqual([expect.objectContaining({ validate: 'on' })])
+    expect(approval.result).toBe(4)
   })
 })
