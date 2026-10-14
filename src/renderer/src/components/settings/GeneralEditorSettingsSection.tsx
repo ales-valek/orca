@@ -374,7 +374,6 @@ export function GeneralEditorSettingsSection({
       </SearchableSetting>
 
       <GitLineBlameSetting settings={settings} updateSettings={updateSettings} />
-
       <EditorChangedLineHighlightsSetting settings={settings} updateSettings={updateSettings} />
 
       <RichMarkdownSpellcheckSetting settings={settings} updateSettings={updateSettings} />

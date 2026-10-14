@@ -63,6 +63,7 @@ import { updaterApi } from './api/updater-bridge'
 import { docPreviewApi } from './api/doc-preview-bridge'
 import { notebookApi } from './api/notebook-bridge'
 import { fsApi } from './api/fs-bridge'
+import { lspApi } from './api/lsp-bridge'
 import { gitApi } from './api/git-bridge'
 import { uiApi } from './api/ui-bridge'
 import { statsApi } from './api/stats-bridge'
@@ -152,7 +153,6 @@ const api = {
   macosTccPrompts: macosTccPromptsApi,
   developerPermissions: developerPermissionsApi,
   computerUsePermissions: computerUsePermissionsApi,
-  lsp: lspApi,
   shell: shellApi,
   skills: skillsApi,
   pet: petApi,
@@ -166,6 +166,7 @@ const api = {
   docPreview: docPreviewApi,
   notebook: notebookApi,
   fs: fsApi,
+  lsp: lspApi,
   git: gitApi,
   ui: uiApi,
   stats: statsApi,

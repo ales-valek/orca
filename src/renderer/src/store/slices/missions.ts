@@ -10,6 +10,9 @@ import type { TuiAgent } from '../../../../shared/tui-agent'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { AppState } from '../types'
 
+// Why: missions and their session workspaces live in this app's own catalog, never a runtime's.
+const LOCAL_CATALOG_OWNER = { runtimeEnvironmentId: null }
+
 export type MissionsSlice = {
   missions: Mission[]
   /** Per-member worktree errors keyed `${missionId}:${repoId}` and rebuilt
@@ -106,7 +109,7 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         const result = await window.api.missions.delete({ missionId, deleteWorktrees })
         applyMemberResults(missionId, result.memberResults)
         if (result.deleted) {
-          await get().fetchFolderWorkspaces()
+          await get().fetchFolderWorkspaces(LOCAL_CATALOG_OWNER)
           // Why: main may report a deleted Mission before a folder-workspace
           // refresh proves its session record is gone. Keep terminal UI state
           // until that authoritative catalog no longer contains the workspace.
@@ -164,7 +167,7 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         const workspace = await window.api.missions.ensureSession({ missionId })
         // Why: the session is a folder workspace; both collections must refresh
         // before the caller activates the returned workspace key.
-        await get().fetchFolderWorkspaces()
+        await get().fetchFolderWorkspaces(LOCAL_CATALOG_OWNER)
         await get().fetchMissions()
         return workspace
       } catch (err) {

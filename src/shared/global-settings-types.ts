@@ -81,21 +81,6 @@ export type GlobalSettings = GlobalSettingsBase & {
   uiLanguagePortugueseMigrationApplied?: boolean
   appIcon: AppIconId
   appFontFamily: string
-  editorAutoSave: boolean
-  editorAutoSaveDelayMs: number
-  editorMinimapEnabled: boolean
-  /** Monaco editor theme for dark mode. Defaults to 'dark-modern'. */
-  editorThemeDark?: string
-  /** Monaco editor theme for light mode. Defaults to 'vs'. */
-  editorThemeLight?: string
-  /** Current-line git blame annotation. Absent on older profiles; treated as on. */
-  editorGitLineBlameEnabled?: boolean
-  /** Tints lines that differ from the git baseline in the regular (non-diff) editor view. */
-  editorChangedLineHighlightsEnabled: boolean
-  /** Opt-in code-editor font; empty (the default) keeps following `terminalFontFamily`. */
-  editorFontFamily?: string
-  /** Defaults on for profiles saved before file-editor wrapping became configurable. */
-  editorWordWrap?: boolean
   /** Persisted opt-out for browser spellcheck noise in rich Markdown editing surfaces. */
   richMarkdownSpellcheckEnabled?: boolean
   /** Whether local markdown review note controls and the review panel are shown. */

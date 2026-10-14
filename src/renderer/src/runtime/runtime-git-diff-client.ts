@@ -136,7 +136,7 @@ export async function getRuntimeGitBlame(
   revision?: string,
   contentsSource?: GitBlameContentsSource
 ): Promise<GitBlameResult> {
-  const target = getActiveRuntimeTarget(context.settings)
+  const target = context.target
   if (target.kind === 'local' || !context.worktreeId) {
     return window.api.git.blame({
       worktreePath: resolveLocalWorktreePath(context),

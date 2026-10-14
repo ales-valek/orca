@@ -48,6 +48,7 @@ const {
   setAgentBrowserBridgeRefMock,
   setTrustedBrowserRendererWebContentsIdMock,
   registerFilesystemWatcherHandlersMock,
+  registerLspHandlersMock,
   registerAppHandlersMock,
   registerLinearHandlersMock,
   registerJiraHandlersMock,
@@ -119,6 +120,7 @@ const {
   setAgentBrowserBridgeRefMock: vi.fn(),
   setTrustedBrowserRendererWebContentsIdMock: vi.fn(),
   registerFilesystemWatcherHandlersMock: vi.fn(),
+  registerLspHandlersMock: vi.fn(),
   registerAppHandlersMock: vi.fn(),
   registerLinearHandlersMock: vi.fn(),
   registerJiraHandlersMock: vi.fn(),
@@ -302,6 +304,10 @@ vi.mock('../filesystem/filesystem', () => ({
 
 vi.mock('../filesystem/watchers/filesystem-watcher-handlers', () => ({
   registerFilesystemWatcherHandlers: registerFilesystemWatcherHandlersMock
+}))
+
+vi.mock('../lsp', () => ({
+  registerLspHandlers: registerLspHandlersMock
 }))
 
 vi.mock('../rate-limits', () => ({
@@ -490,6 +496,7 @@ describe('registerCoreHandlers', () => {
     setAgentBrowserBridgeRefMock.mockReset()
     setTrustedBrowserRendererWebContentsIdMock.mockReset()
     registerFilesystemWatcherHandlersMock.mockReset()
+    registerLspHandlersMock.mockReset()
     registerAppHandlersMock.mockReset()
     registerLinearHandlersMock.mockReset()
     registerJiraHandlersMock.mockReset()
@@ -653,6 +660,7 @@ describe('registerCoreHandlers', () => {
     expect(setTrustedUIRendererWebContentsIdMock).toHaveBeenCalledWith(null)
     expect(registerBrowserHandlersMock).toHaveBeenCalled()
     expect(registerFilesystemWatcherHandlersMock).toHaveBeenCalled()
+    expect(registerLspHandlersMock).toHaveBeenCalledWith(store)
     expect(registerSpeechHandlersMock).toHaveBeenCalledWith(store)
 
     await expect(

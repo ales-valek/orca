@@ -4,14 +4,11 @@ import { translate } from '@/i18n/i18n'
 import { getConnectionId } from '@/lib/connection-context'
 import { monaco } from '@/lib/monaco-setup'
 import { openGitBlameCommitDiff } from '@/lib/open-git-blame-commit-diff'
-import { getRepoOwnerRoutedSettings } from '@/lib/repo-runtime-owner'
+import { runtimeTargetForWorkspaceOwner } from '@/lib/resolve-owner'
 import { getRuntimeGitBlame } from '@/runtime/runtime-git-diff-client'
 import { useAppStore } from '@/store'
 import { findWorktreeById } from '@/store/slices/worktree-helpers'
-import {
-  getRepoIdFromWorktreeId,
-  splitWorktreeIdForFilesystem
-} from '../../../../shared/worktree/id'
+import { splitWorktreeIdForFilesystem } from '../../../../shared/worktree/id'
 import {
   indexBlameLinesByNumber,
   type GitBlameContentsSource,
@@ -143,8 +140,10 @@ export function useGitLineBlame(args: {
         if (!worktreePath) {
           return
         }
-        const repoId = worktree?.repoId ?? getRepoIdFromWorktreeId(worktreeId)
-        const repo = state.repos.find((entry) => entry.id === repoId) ?? null
+        const target = runtimeTargetForWorkspaceOwner(state, { workspaceId: worktreeId })
+        if (!target) {
+          return
+        }
         queued?.cancel()
         const generation = ++fetchGeneration
         const model = editorInstance.getModel()
@@ -152,7 +151,7 @@ export function useGitLineBlame(args: {
         const request = enqueueGitBlameRequest(() =>
           getRuntimeGitBlame(
             {
-              settings: getRepoOwnerRoutedSettings(state.settings, repo),
+              target,
               worktreeId,
               worktreePath,
               connectionId: getConnectionId(worktreeId) ?? undefined
