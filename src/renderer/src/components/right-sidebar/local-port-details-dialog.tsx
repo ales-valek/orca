@@ -7,6 +7,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { addressForPort } from '@/lib/workspace-ports/workspace-port-urls'
+import { getWorkspacePortProcessLabel } from '@/lib/workspace-ports/workspace-port-process-label'
 import type { WorkspacePort } from '../../../../shared/workspace-ports'
 import { translate } from '@/i18n/i18n'
 
@@ -31,7 +32,7 @@ export function LocalPortDetailsDialog({
               : translate('auto.components.right.sidebar.PortsPanel.d41a8241ec', 'Port')}
           </DialogTitle>
           <DialogDescription>
-            {port ? `${port.processName ?? 'Unknown process'} · ${addressForPort(port)}` : ''}
+            {port ? `${getWorkspacePortProcessLabel(port).label} · ${addressForPort(port)}` : ''}
           </DialogDescription>
         </DialogHeader>
         {port && (
