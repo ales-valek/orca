@@ -32,6 +32,7 @@ type RuntimeStub = {
   markGraphUnavailable: MockFn
   readAgentListPublication: MockFn
   setAgentListPublication: MockFn
+  attachMissionOperations: MockFn
 }
 
 export function createMainWindowServiceStub(
@@ -71,7 +72,8 @@ export function createRuntime(): RuntimeStub {
     markGraphReloadFailed: vi.fn(),
     markGraphUnavailable: vi.fn(),
     readAgentListPublication: vi.fn(() => null),
-    setAgentListPublication: vi.fn()
+    setAgentListPublication: vi.fn(),
+    attachMissionOperations: vi.fn()
   }
 }
 

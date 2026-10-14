@@ -6,6 +6,7 @@ import { AUTOMATION_COMMAND_SPECS } from './automations'
 import { CORE_COMMAND_SPECS } from './core'
 import { CHAT_COMMAND_SPECS } from './chat'
 import { FILE_COMMAND_SPECS } from './file'
+import { MISSION_COMMAND_SPECS } from './mission'
 import { PROJECT_COMMAND_SPECS } from './project'
 import { ORCHESTRATION_COMMAND_SPECS } from './orchestration'
 import { withFullRecordFlag } from './orchestration-full-record-flag'
@@ -41,6 +42,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,
   ...PROJECT_COMMAND_SPECS,
+  ...MISSION_COMMAND_SPECS,
   ...FILE_COMMAND_SPECS,
   ...AUTOMATION_COMMAND_SPECS,
   ...BROWSER_BASIC_COMMAND_SPECS,

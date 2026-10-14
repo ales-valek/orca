@@ -74,6 +74,7 @@ import { ARTIFACT_METHODS } from './artifacts/artifacts'
 import { AGENT_HOOK_METHODS } from './agent-hooks/agent-hooks'
 import { AGENT_LAUNCH_METHODS } from './agent-launch/agent-launch'
 import { CONNECTOR_METHODS } from './connectors/connector'
+import { MISSION_METHODS } from './missions'
 import {
   LAYOUT_APPLY_METHODS,
   LAYOUT_VIEW_REPORT_METHODS,
@@ -96,6 +97,7 @@ export const ALL_RPC_METHODS = [
   ...WORKTREE_METHODS,
   ...AGENT_ACTIVITY_METHODS,
   ...REFERENCE_METHODS,
+  ...MISSION_METHODS,
   ...AGENT_SESSION_METHODS,
   ...STRUCTURED_AGENT_SESSION_METHODS,
   ...STRUCTURED_AGENT_SESSION_ATTACHMENT_METHODS,

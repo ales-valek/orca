@@ -15,7 +15,9 @@ import { getMissionRootDirName } from '../../shared/missions'
 import { writeMissionRootMarkerFile } from './mission-root-marker-write'
 
 export const MISSIONS_DIR_NAME = 'missions'
-const MISSION_ROOT_MARKER_NAME = '.orca-mission-root.json'
+export const MISSION_ROOT_MARKER_NAME = '.orca-mission-root.json'
+// Why here: root removal treats this hook log as Orca-owned rather than preserved user data.
+export const MISSION_SETUP_LOG_NAME = '.orca-mission-setup.log'
 const MISSION_ROOT_MARKER_VERSION = 1
 
 type MissionRootMarker = { version: 1; missionId: string; links: MissionRootLink[] }
@@ -300,8 +302,13 @@ export function removeMissionRoot(args: {
       unlinkSync(linkPath)
     }
   }
+  const setupLogPath = path.join(args.rootPath, MISSION_SETUP_LOG_NAME)
+  const setupLogIsFile = lstatOrNull(setupLogPath)?.isFile() === true
   const preservedEntries = readdirSync(args.rootPath)
-    .filter((entry) => entry !== MISSION_ROOT_MARKER_NAME)
+    .filter(
+      (entry) =>
+        entry !== MISSION_ROOT_MARKER_NAME && !(entry === MISSION_SETUP_LOG_NAME && setupLogIsFile)
+    )
     .sort()
   if (preservedEntries.length > 0) {
     // Why: a crash may reload the still-persisted Mission; retain ownership of
@@ -312,6 +319,9 @@ export function removeMissionRoot(args: {
       links: []
     })
     return { removed: false, preservedEntries }
+  }
+  if (setupLogIsFile) {
+    unlinkSync(setupLogPath)
   }
   unlinkSync(path.join(args.rootPath, MISSION_ROOT_MARKER_NAME))
   rmdirSync(args.rootPath)

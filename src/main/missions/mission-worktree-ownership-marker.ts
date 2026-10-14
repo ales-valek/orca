@@ -165,6 +165,43 @@ function markerMatches(
   )
 }
 
+// Why: rebase and bisect detach HEAD but still record the branch they will return to.
+const IN_PROGRESS_BRANCH_FILES = [
+  'rebase-merge/head-name',
+  'rebase-apply/head-name',
+  'BISECT_START'
+]
+
+/**
+ * The Mission-relevant branch of a checkout: its HEAD branch, or while a rebase/bisect has
+ * detached HEAD, the branch that operation is rewriting. '' when neither is known.
+ */
+export function resolveMissionWorktreeBranch(worktree: { path: string; branch: string }): string {
+  const branch = worktree.branch.replace(/^refs\/heads\//, '')
+  if (branch) {
+    return branch
+  }
+  let gitDir: string
+  try {
+    gitDir = resolveGitDir(worktree.path)
+  } catch {
+    return ''
+  }
+  for (const name of IN_PROGRESS_BRANCH_FILES) {
+    try {
+      const ref = readFileSync(path.join(gitDir, ...name.split('/')), 'utf8').trim()
+      if (ref) {
+        return ref.replace(/^refs\/heads\//, '')
+      }
+    } catch (error) {
+      if (!isMissingPathError(error)) {
+        return ''
+      }
+    }
+  }
+  return ''
+}
+
 export function readMissionWorktreeOwnershipMarker(args: {
   repoPath: string
   worktreePath: string
