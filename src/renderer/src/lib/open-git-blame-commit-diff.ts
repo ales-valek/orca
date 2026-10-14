@@ -1,12 +1,12 @@
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { getConnectionId } from '@/lib/connection-context'
-import { getRepoOwnerRoutedSettings } from '@/lib/repo-runtime-owner'
+import { runtimeTargetForWorkspaceOwner } from '@/lib/resolve-owner'
 import { getRuntimeGitCommitCompare } from '@/runtime/runtime-git-diff-client'
 import { useAppStore } from '@/store'
 import { findWorktreeById } from '@/store/slices/worktree-helpers'
 import { isUncommittedBlameOid, type GitBlameLine } from '../../../shared/git-blame'
-import { getRepoIdFromWorktreeId, splitWorktreeIdForFilesystem } from '../../../shared/worktree/id'
+import { splitWorktreeIdForFilesystem } from '../../../shared/worktree/id'
 
 export async function openGitBlameCommitDiff(
   worktreeId: string,
@@ -26,19 +26,17 @@ export async function openGitBlameCommitDiff(
   const worktree = findWorktreeById(state.worktreesByRepo, worktreeId)
   const worktreePath =
     worktree?.path ?? splitWorktreeIdForFilesystem(worktreeId)?.worktreePath ?? null
-  if (!worktreePath) {
+  const target = runtimeTargetForWorkspaceOwner(state, { workspaceId: worktreeId })
+  if (!worktreePath || !target) {
     toast.error(
       translate('auto.components.editor.gitLineBlame.openFailed', 'Failed to open commit diff')
     )
     return
   }
-  const repoId = worktree?.repoId ?? getRepoIdFromWorktreeId(worktreeId)
-  const repo = state.repos.find((entry) => entry.id === repoId) ?? null
-  const settings = getRepoOwnerRoutedSettings(state.settings, repo)
   try {
     const result = await getRuntimeGitCommitCompare(
       {
-        settings,
+        target,
         worktreeId,
         worktreePath,
         connectionId: getConnectionId(worktreeId) ?? undefined

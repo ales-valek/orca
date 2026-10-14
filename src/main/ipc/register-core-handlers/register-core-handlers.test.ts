@@ -48,6 +48,7 @@ const {
   setAgentBrowserBridgeRefMock,
   setTrustedBrowserRendererWebContentsIdMock,
   registerFilesystemWatcherHandlersMock,
+  registerLspHandlersMock,
   registerAppHandlersMock,
   registerLinearHandlersMock,
   registerJiraHandlersMock,
@@ -120,6 +121,7 @@ const {
   setAgentBrowserBridgeRefMock: vi.fn(),
   setTrustedBrowserRendererWebContentsIdMock: vi.fn(),
   registerFilesystemWatcherHandlersMock: vi.fn(),
+  registerLspHandlersMock: vi.fn(),
   registerAppHandlersMock: vi.fn(),
   registerLinearHandlersMock: vi.fn(),
   registerJiraHandlersMock: vi.fn(),
@@ -317,6 +319,10 @@ vi.mock('../filesystem/watchers/filesystem-watcher-handlers', () => ({
   registerFilesystemWatcherHandlers: registerFilesystemWatcherHandlersMock
 }))
 
+vi.mock('../lsp', () => ({
+  registerLspHandlers: registerLspHandlersMock
+}))
+
 vi.mock('../rate-limits', () => ({
   registerRateLimitHandlers: registerRateLimitHandlersMock
 }))
@@ -511,6 +517,7 @@ describe('registerCoreHandlers', () => {
     setAgentBrowserBridgeRefMock.mockReset()
     setTrustedBrowserRendererWebContentsIdMock.mockReset()
     registerFilesystemWatcherHandlersMock.mockReset()
+    registerLspHandlersMock.mockReset()
     registerAppHandlersMock.mockReset()
     registerLinearHandlersMock.mockReset()
     registerJiraHandlersMock.mockReset()

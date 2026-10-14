@@ -65,3 +65,64 @@ export async function teardownOwningMissionSession(
     await stopSessionPtys(folderWorkspaceKey(workspace.id))
   }
 }
+
+type RemovedWorktreeMeta = { missionId?: string; instanceId?: string } | undefined
+
+/** The Mission checks a managed worktree removal runs, in order; keeps them out of the removal flow. */
+export function missionRemovalGuard(
+  stopPtys: (workspaceId: string) => Promise<unknown>,
+  store: RuntimeStore,
+  removalTarget: RuntimeWorktreeRemovalTarget,
+  expectedOwnership: MissionWorktreeOwnershipProof | undefined
+) {
+  const stopSessionPtys = async (workspaceId: string): Promise<void> => {
+    await stopPtys(workspaceId)
+  }
+  return {
+    /** Before any Git work: refuse unverifiable scoped removals, guard generic ones. */
+    async beforeRemoval(repo: Repo | undefined): Promise<void> {
+      if (!expectedOwnership) {
+        await guardGenericMissionWorktreeRemoval({ store, removalTarget, repo, stopSessionPtys })
+        return
+      }
+      if (!repo || repo.connectionId || isFolderRepo(repo)) {
+        throw new Error('mission_member_worktree_ownership_unverified')
+      }
+    },
+    /** After the registered checkout is known: prove ownership and stop the Mission session. */
+    async afterRegistrationLookup(
+      repo: Repo | undefined,
+      registeredPath: string | undefined,
+      removedMeta: RemovedWorktreeMeta
+    ): Promise<void> {
+      if (!expectedOwnership || !repo) {
+        return
+      }
+      assertScopedMissionWorktreeOwnership({
+        repo,
+        registeredPath,
+        removedMeta,
+        expectedOwnership,
+        removalTarget
+      })
+      await teardownOwningMissionSession(store, expectedOwnership.missionId, stopSessionPtys)
+    },
+    /** Re-proves ownership at Git's last boundary; undefined for non-Mission removals. */
+    ownershipAssertion(
+      repo: Repo,
+      registeredPath: string,
+      removedMeta: RemovedWorktreeMeta
+    ): (() => void) | undefined {
+      return expectedOwnership
+        ? () =>
+            assertScopedMissionWorktreeOwnership({
+              repo,
+              registeredPath,
+              removedMeta,
+              expectedOwnership,
+              removalTarget
+            })
+        : undefined
+    }
+  }
+}

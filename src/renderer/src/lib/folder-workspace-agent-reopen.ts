@@ -5,7 +5,7 @@ import {
   resolveTuiAgentLaunchEnv
 } from '../../../shared/tui-agent-launch-defaults'
 import type { TuiAgent } from '../../../shared/tui-agent'
-import { getFolderWorkspaceAgentLaunchPlatform } from '@/components/sidebar/folder-workspace-agent-startup'
+import { getFolderWorkspaceAgentLaunchFact } from '@/components/sidebar/folder-workspace-agent-startup'
 import { useAppStore } from '@/store'
 import { tuiAgentToAgentKind } from './telemetry'
 import { buildAgentStartupPlan } from './tui-agent-startup'
@@ -55,15 +55,18 @@ export function buildFolderWorkspaceAgentReopenStartup(
     return undefined
   }
   // Why: a folder workspace has no repo row — derive the launch platform from
-  // its own host provenance (connectionId + path) so remote/WSL sessions relaunch
-  // on the correct host, not always locally.
-  const launchPlatform = getFolderWorkspaceAgentLaunchPlatform({
+  // its own host provenance so remote/WSL sessions relaunch on the correct host.
+  const launchHost = getFolderWorkspaceAgentLaunchFact(useAppStore.getState(), {
     connectionId: folderWorkspace.connectionId,
+    executionHostId: folderWorkspace.executionHostId,
     parentPath: folderWorkspace.folderPath
   })
+  if (launchHost.kind !== 'known') {
+    return undefined
+  }
   return buildAgentReopenStartupPayload(
     agent,
-    launchPlatform,
+    launchHost.platform,
     Boolean(folderWorkspace.connectionId)
   )
 }

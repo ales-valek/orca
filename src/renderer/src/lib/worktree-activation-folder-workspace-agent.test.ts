@@ -28,6 +28,9 @@ function makeFolderWorkspace(overrides: Partial<FolderWorkspace> = {}): FolderWo
   }
 }
 
+// Why: main withholds an SSH launch until the host reports its OS.
+const REPORTED_SSH_HOST = new Map([['ssh-1', { remotePlatform: 'linux' }]])
+
 function seedSettings(): void {
   useAppStore.setState({
     repos: [],
@@ -63,6 +66,9 @@ describe('buildFolderWorkspaceAgentReopenStartup', () => {
 
   it('still builds a startup for a remote (SSH) folder workspace', () => {
     seedSettings()
+    useAppStore.setState({ sshConnectionStates: REPORTED_SSH_HOST } as unknown as Parameters<
+      typeof useAppStore.setState
+    >[0])
     // A folder workspace has no repoId to resolve, so host provenance must come
     // from its own connectionId/path — a remote session must not silently fall
     // back to a bare shell.
@@ -74,6 +80,18 @@ describe('buildFolderWorkspaceAgentReopenStartup', () => {
       })
     )
     expect(startup?.launchAgent).toBe('codex')
+  })
+
+  it('opens a bare shell when the SSH host has not reported its OS', () => {
+    seedSettings()
+    const startup = buildFolderWorkspaceAgentReopenStartup(
+      makeFolderWorkspace({
+        createdWithAgent: 'codex',
+        connectionId: 'ssh-1',
+        folderPath: '/home/remote/project'
+      })
+    )
+    expect(startup).toBeUndefined()
   })
 })
 
@@ -125,7 +143,7 @@ describe('activateAndRevealFolderWorkspace agent reopen wiring', () => {
       launchAgent: 'codex',
       telemetry: { agent_kind: 'codex', launch_source: 'sidebar', request_kind: 'resume' }
     })
-    expect(revealWorktreeInSidebar).toHaveBeenCalledWith(workspaceKey, undefined)
+    expect(revealWorktreeInSidebar).toHaveBeenCalledWith(workspaceKey, expect.any(Object))
   })
 
   it('opens a bare shell for an agentless folder workspace', () => {
@@ -191,11 +209,12 @@ describe('buildFolderWorkspaceAgentReopenStartup host routing', () => {
     const { useAppStore: store } = await import('@/store')
     store.setState({
       repos: [],
+      sshConnectionStates: REPORTED_SSH_HOST,
       settings: {
         agentCmdOverrides: {},
         setupScriptLaunchMode: 'new-tab'
-      } as unknown as ReturnType<typeof store.getState>['settings']
-    })
+      }
+    } as unknown as Parameters<typeof store.setState>[0])
 
     build(makeFolderWorkspace({ createdWithAgent: 'codex' }))
     build(
