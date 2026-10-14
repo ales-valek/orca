@@ -3,11 +3,19 @@ import { useShallow } from 'zustand/react/shallow'
 import { SYNC_FIT_PANES_EVENT } from '@/constants/terminal'
 import { canShowRightSidebarForView } from '@/lib/right-sidebar-visibility'
 import { resolveLeftSidebarStyleVariables } from '@/lib/left-sidebar-appearance'
+import {
+  resolveSidebarSlotChrome,
+  resolveSidebarSlotLayout,
+  type WindowEdge
+} from '@/lib/sidebar-slot-layout'
 import { resolveLeftTitlebarChromeLayout } from '@/lib/titlebar-left-chrome'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/worktree-creation-surface'
 import { useAppStore } from '../store'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { selectActiveTerminalChromeState } from '../store/active-terminal-chrome-selector'
+import { isPairedWebClientWindow } from '@/lib/desktop-window-chrome'
+import { normalizeWorkspaceSidebarPosition } from '../../../shared/workspace-sidebar-position'
+import { shortcutPlatform } from './app-window-chrome'
 import {
   hasRequestedBackgroundTerminalWorktreeMount,
   subscribeBackgroundTerminalWorktreeMountRequests
@@ -66,15 +74,34 @@ export function useAppChromeLayout() {
   // Activity/Space own full pages and hide the workspace sidebar.
   const showSidebar =
     activeView !== 'settings' && activeView !== 'activity' && activeView !== 'space'
+  const sidebarSlots = resolveSidebarSlotLayout({
+    workspaceSidebarPosition: normalizeWorkspaceSidebarPosition(settings?.workspaceSidebarPosition),
+    platform: shortcutPlatform,
+    isWebClient: isPairedWebClientWindow()
+  })
+  const activitySidebarEdge: WindowEdge =
+    sidebarSlots.leftOccupant === 'activity' ? 'left' : 'right'
+  const workspaceSidebarOnLeft = sidebarSlots.leftOccupant === 'workspace'
+  const showRightSidebarControls = canShowRightSidebarForView(activeView)
+  // Slot occupancy tracks the sidebar actually drawn so an unmounted one does not reserve its column.
+  const activitySidebarOpen = rightSidebarOpen && showRightSidebarControls
+  const leftOccupantOpen = workspaceSidebarOnLeft ? sidebarOpen : activitySidebarOpen
   // Tasks/Landing keep sidebar-width chrome when open; creation suppresses stacked chrome.
   const stackedSidebarOpen =
-    !workspaceChromeActive && !creationLayoutActive && showSidebar && sidebarOpen
+    !workspaceChromeActive && !creationLayoutActive && showSidebar && leftOccupantOpen
   // Creation retains sidebar chrome; workspaceChromeActive gates the workspace tabs.
   const leftTitlebarChromeLayout = resolveLeftTitlebarChromeLayout({
     workspaceChromeActive,
     stackedSidebarOpen,
     creationLayoutActive,
-    sidebarOpen
+    sidebarOpen: leftOccupantOpen
+  })
+  const { leftSlotOpen, trailingSlotOpen, leftColumnHeaderFloating } = resolveSidebarSlotChrome({
+    leftOccupant: sidebarSlots.leftOccupant,
+    workspaceSidebarOpen: sidebarOpen,
+    activitySidebarOpen,
+    leftTitlebarChromeMounted: leftTitlebarChromeLayout.shouldMount,
+    stackedSidebarOpen
   })
 
   // Fit terminals before paint in the width-change frame to avoid transient wrong sizes.
@@ -104,19 +131,22 @@ export function useAppChromeLayout() {
     isFullScreen,
     settings?.showTitlebarAppName,
     showSidebar,
-    leftTitlebarChromeLayout.isFloating,
-    sidebarOpen
+    leftColumnHeaderFloating,
+    leftSlotOpen
   ])
 
   return {
     activeView,
+    activitySidebarEdge,
     activePendingCreationId,
     activeTabCanExpand,
     collapsedSidebarHeaderWidth,
     creationLayoutActive,
     hasActiveWorktree,
     isFullScreen,
+    leftColumnHeaderFloating,
     leftSidebarStyle,
+    leftSlotOpen,
     leftTitlebarChromeLayout,
     rightSidebarExplorerView,
     rightSidebarOpen,
@@ -124,14 +154,17 @@ export function useAppChromeLayout() {
     shouldMountTerminalWorkbench,
     showSidebar,
     // Keep the pending composer in the same viewport as the workspace it hands off to.
-    showRightSidebarControls: canShowRightSidebarForView(activeView),
+    showRightSidebarControls,
     showTitlebarAppName: settings?.showTitlebarAppName !== false,
     showTitlebarExpandButton: workspaceChromeActive && !hasTabBar && effectiveActiveTabExpanded,
     sidebarOpen,
+    sidebarSlots,
     stackedSidebarOpen,
     // Retained workbench panes need a separate visibility condition.
     terminalWorkbenchVisible: workspaceChromeActive,
     titlebarLeftControlsRef,
-    workspaceChromeActive
+    trailingSlotOpen,
+    workspaceChromeActive,
+    workspaceSidebarOnLeft
   }
 }

@@ -14,6 +14,7 @@ import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './workspace-board/surface/WorkspaceKanbanDrawer'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { cn } from '@/lib/utils'
+import type { WindowEdge } from '@/lib/sidebar-slot-layout'
 import { FolderPlus, Loader2 } from 'lucide-react'
 import { ActivityThreadCollapseContext } from '@/components/activity/activity-thread-collapse-context'
 import { useSidebarProjectDrop } from './project-admission/drop/useSidebarProjectDrop'
@@ -50,20 +51,32 @@ const MIN_WIDTH = 220
 const MAX_WIDTH = 500
 // Why: start past the seam scrollbar strip so the list scrollbar stays grabbable from both sides of the seam.
 export const WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME =
-  'peer absolute -right-3.5 top-0 z-10 h-full w-2.5 cursor-col-resize'
-// Why: an open drawer covers the outer side of the seam, so keep the inner overlap wide enough to grab.
-const WORKTREE_SIDEBAR_RESIZE_HANDLE_UNDER_DRAWER_CLASS_NAME = '-right-1.5 w-3'
+  'peer absolute top-0 z-10 h-full cursor-col-resize'
+
+/** The handle straddles the seam facing the center pane, which swaps with the sidebar's edge. */
+export function worktreeSidebarResizeHandleClassName(
+  edge: WindowEdge,
+  drawerCoversSeam = false
+): string {
+  // Why: an open drawer covers the outer side of the seam, so keep the inner overlap wide enough to grab.
+  const seamSide =
+    edge === 'right' ? '-left-1.5 w-3' : drawerCoversSeam ? '-right-1.5 w-3' : '-right-3.5 w-2.5'
+  return cn(WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME, seamSide)
+}
 export const WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME =
   'pointer-events-none absolute -right-px top-0 z-10 h-full w-px bg-transparent transition-colors peer-hover:bg-ring/50 peer-active:bg-ring'
 
 type SidebarProps = {
   worktreeScrollOffsetRef: React.MutableRefObject<number>
   worktreeScrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
+  /** Window edge this sidebar occupies; mirrored resize affordances when it moves to the right. */
+  edge?: WindowEdge
 }
 
 function Sidebar({
   worktreeScrollOffsetRef,
-  worktreeScrollAnchorRef
+  worktreeScrollAnchorRef,
+  edge = 'left'
 }: SidebarProps): React.JSX.Element {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
@@ -150,7 +163,8 @@ function Sidebar({
     width: sidebarWidth,
     minWidth: MIN_WIDTH,
     maxWidth: MAX_WIDTH,
-    deltaSign: 1,
+    // Why: the handle sits on whichever side faces the center, so drag direction flips with the edge.
+    deltaSign: edge === 'right' ? -1 : 1,
     setWidth: setSidebarWidth,
     onDraftWidthChange: setSidebarLiveWidth
   })
@@ -255,14 +269,14 @@ function Sidebar({
 
         {sidebarOpen && (
           <>
-            {drawerCoversSeam ? null : (
+            {/* Why: on the right edge the list scrollbar sits at the window edge, not the seam. */}
+            {drawerCoversSeam || edge === 'right' ? null : (
               <SidebarSeamScrollbarStrip sidebarRef={containerRef} onResizeStart={onResizeStart} />
             )}
             <div
               data-sidebar-resize-handle=""
               className={cn(
-                WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
-                drawerCoversSeam && WORKTREE_SIDEBAR_RESIZE_HANDLE_UNDER_DRAWER_CLASS_NAME,
+                worktreeSidebarResizeHandleClassName(edge, drawerCoversSeam),
                 isResizing && 'bg-ring/10'
               )}
               onMouseDown={onResizeStart}

@@ -10,7 +10,7 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
-import { TitlebarLeftControls } from './TitlebarLeftControls'
+import { TitlebarLeftControls, WorkspaceSidebarToggle } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
 import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel'
@@ -68,6 +68,7 @@ function WorktreeSidebar({
       <Sidebar
         worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
         worktreeScrollAnchorRef={scrollRefs.scrollAnchorRef}
+        edge={layout.workspaceSidebarOnLeft ? 'left' : 'right'}
       />
     </RecoverableRenderErrorBoundary>
   )
@@ -85,6 +86,75 @@ function PendingCreationSurface(props: {
   return opensChat ? <PendingNativeChatCreation {...props} /> : <WorktreeCreationPanel {...props} />
 }
 
+// Why: keep the shell mounted for layout stability (heavy panels disconnect while closed); unmount on the distraction-free tasks view.
+function ActivitySidebar({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
+  if (!layout.showRightSidebarControls) {
+    return null
+  }
+  return (
+    <RecoverableRenderErrorBoundary
+      boundaryId="right-sidebar"
+      surface="right-sidebar"
+      resetKey={
+        layout.rightSidebarTab === 'explorer'
+          ? `${layout.rightSidebarTab}:${layout.rightSidebarExplorerView}`
+          : layout.rightSidebarTab
+      }
+      title={translate('auto.App.ed6b168d00', 'The right sidebar hit an error.')}
+      description={translate(
+        'auto.App.8d1e160ed1',
+        'Retry the sidebar or switch tabs to reload this surface.'
+      )}
+    >
+      <RightSidebar
+        edge={layout.activitySidebarEdge}
+        windowControlsEdge={layout.sidebarSlots.windowControlsEdge}
+      />
+    </RecoverableRenderErrorBoundary>
+  )
+}
+
+// Why: mirrors the left slot's 36px header so a right-mounted workspace list keeps its toggle
+// aligned with the activity sidebar's own header row.
+function TrailingWorkspaceSidebarSlot({
+  layout,
+  scrollRefs
+}: {
+  layout: AppChromeLayout
+  scrollRefs: WorktreeSidebarScrollRefs
+}): React.JSX.Element {
+  return (
+    <div
+      className={`flex min-h-0 flex-col shrink-0${
+        layout.sidebarOpen ? '' : ' relative w-0 overflow-visible'
+      }`}
+    >
+      <div
+        // Why: when collapsed the slot is 0-wide, so float the header at the right edge
+        // (mirror of the left header's top-left float) to keep the re-expand toggle reachable.
+        className={`titlebar-left justify-end${
+          layout.sidebarOpen
+            ? ''
+            : ' titlebar-left-floating absolute top-0 right-0 z-10 w-max border-l border-border'
+        }`}
+        style={{
+          width: layout.sidebarOpen ? '100%' : undefined,
+          // Why: on Windows/Linux the window-controls overlay owns this right corner; keep the toggle clear of it.
+          paddingRight:
+            layout.sidebarSlots.windowControlsEdge === 'right'
+              ? 'var(--window-controls-width)'
+              : undefined
+        }}
+      >
+        <WorkspaceSidebarToggle edge="right" />
+      </div>
+      <div className="flex min-h-0 flex-1">
+        <WorktreeSidebar layout={layout} scrollRefs={scrollRefs} />
+      </div>
+    </div>
+  )
+}
+
 function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
   const { activeView, hasActiveWorktree, activePendingCreationId, creationLayoutActive } = layout
   return (
@@ -100,7 +170,7 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
       {activeView === 'terminal' && creationLayoutActive && activePendingCreationId ? (
         <PendingCreationSurface
           creationId={activePendingCreationId}
-          reserveCollapsedSidebarHeaderSpace={layout.leftTitlebarChromeLayout.isFloating}
+          reserveCollapsedSidebarHeaderSpace={layout.leftColumnHeaderFloating}
         />
       ) : null}
       {activeView === 'terminal' && !hasActiveWorktree && !creationLayoutActive ? (
@@ -156,31 +226,41 @@ export function AppWorkspaceShell(props: {
               layout.leftTitlebarChromeLayout.shouldMount ? (
                 /* Remove the collapsed header from flex layout so panes reclaim the left edge. */
                 <div
-                  className={`flex min-h-0 flex-col shrink-0${layout.sidebarOpen ? '' : ' relative w-0 overflow-visible'}`}
+                  className={`flex min-h-0 flex-col shrink-0${
+                    layout.leftSlotOpen ? '' : ' relative w-0 overflow-visible'
+                  }`}
                 >
                   <div
                     // The floating header covers the center border; restore the seam and size to its own controls.
                     className={`titlebar-left${
-                      layout.leftTitlebarChromeLayout.isFloating
+                      layout.leftColumnHeaderFloating
                         ? ' titlebar-left-floating absolute top-0 left-0 z-10 w-max border-r border-border'
                         : ''
                     }`}
                     style={{
                       // Why: custom sidebar appearances are scoped to the sidebar root; mirror those vars onto the header in the same left-column panel.
-                      ...(layout.sidebarOpen ? layout.leftSidebarStyle : undefined),
+                      ...(layout.workspaceSidebarOnLeft && layout.sidebarOpen
+                        ? layout.leftSidebarStyle
+                        : undefined),
                       // Why: size from the wrapper's live width so the header tracks in-flight drag resizes (persisted to Zustand only on mouseup).
-                      width: layout.sidebarOpen ? '100%' : undefined
+                      width: layout.leftSlotOpen ? '100%' : undefined
                     }}
                   >
                     {titlebarLeftControls}
                   </div>
                   {/* Keep a shrinkable flex viewport below the fixed header so the sidebar can scroll. */}
                   <div className="flex min-h-0 flex-1">
-                    <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
+                    {layout.workspaceSidebarOnLeft ? (
+                      <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
+                    ) : (
+                      <ActivitySidebar layout={layout} />
+                    )}
                   </div>
                 </div>
-              ) : (
+              ) : layout.workspaceSidebarOnLeft ? (
                 <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
+              ) : (
+                <ActivitySidebar layout={layout} />
               )
             ) : null}
             <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
@@ -191,21 +271,23 @@ export function AppWorkspaceShell(props: {
                 <div className="titlebar">{titlebarMainStrip}</div>
               ) : null}
               <div className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
-                {/* Match the open sidebar header’s alignment to prevent toggle jitter. */}
-                {layout.workspaceChromeActive && !layout.rightSidebarOpen && (
-                  <div
-                    className="absolute top-0 z-10 flex items-center h-[36px]"
-                    style={
-                      {
-                        // Why: --window-controls-width keeps the toggle clear of the fixed window-controls overlay (138px on custom chrome, 0px otherwise); no internal spacer — one would cover the pane-actions Ellipsis button with an unclickable div.
-                        right: 'var(--window-controls-width)',
-                        WebkitAppRegion: 'no-drag'
-                      } as React.CSSProperties
-                    }
-                  >
-                    {layout.showRightSidebarControls ? <RightSidebarToggle /> : null}
-                  </div>
-                )}
+                {/* Match the open sidebar header’s alignment to prevent toggle jitter; a left-mounted activity sidebar keeps its toggle in TitlebarLeftControls. */}
+                {layout.workspaceChromeActive &&
+                  !layout.rightSidebarOpen &&
+                  layout.activitySidebarEdge === 'right' && (
+                    <div
+                      className="absolute top-0 z-10 flex items-center h-[36px]"
+                      style={
+                        {
+                          // Why: --window-controls-width keeps the toggle clear of the fixed window-controls overlay (138px on custom chrome, 0px otherwise); no internal spacer — one would cover the pane-actions Ellipsis button with an unclickable div.
+                          right: 'var(--window-controls-width)',
+                          WebkitAppRegion: 'no-drag'
+                        } as React.CSSProperties
+                      }
+                    >
+                      {layout.showRightSidebarControls ? <RightSidebarToggle edge="right" /> : null}
+                    </div>
+                  )}
                 <div className="flex flex-1 min-w-0 min-h-0 flex-col">
                   {layout.shouldMountTerminalWorkbench ? (
                     <TerminalWorkbenchContainer isVisible={layout.terminalWorkbenchVisible}>
@@ -253,24 +335,10 @@ export function AppWorkspaceShell(props: {
             </div>
           </div>
         </div>
-        {/* Retain the shell for stable layout while heavy panels disconnect; tasks can unmount it. */}
-        {layout.showRightSidebarControls ? (
-          <RecoverableRenderErrorBoundary
-            boundaryId="right-sidebar"
-            surface="right-sidebar"
-            resetKey={
-              layout.rightSidebarTab === 'explorer'
-                ? `${layout.rightSidebarTab}:${layout.rightSidebarExplorerView}`
-                : layout.rightSidebarTab
-            }
-            title={translate('auto.App.ed6b168d00', 'The right sidebar hit an error.')}
-            description={translate(
-              'auto.App.8d1e160ed1',
-              'Retry the sidebar or switch tabs to reload this surface.'
-            )}
-          >
-            <RightSidebar />
-          </RecoverableRenderErrorBoundary>
+        {layout.workspaceSidebarOnLeft ? (
+          <ActivitySidebar layout={layout} />
+        ) : layout.showSidebar ? (
+          <TrailingWorkspaceSidebarSlot layout={layout} scrollRefs={sidebarScrollRefs} />
         ) : null}
       </div>
     </RecoverableRenderErrorBoundary>
