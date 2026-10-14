@@ -6,11 +6,13 @@ import {
   type KeybindingOverrides
 } from '../../shared/keybindings'
 import type { UpdateCheckOptions } from '../../shared/update-status-types'
+import type { WorkspaceSidebarPosition } from '../../shared/ui-chrome-types'
 import { translateMain } from '../i18n/main-i18n'
 import { createAppMenuSelectionItem, resolveNativeEditTarget } from './app-menu-selection-item'
 import { createAppMenuQuitItems, type AppMenuQuitHandlers } from './app-menu-quit-item'
 import { createAppMenuReloadAndDevToolsItems } from './app-menu-reload-devtools-items'
 import { createAppWindowMenu } from './app-menu-window'
+import { buildSidebarToggleMenuItems } from './sidebar-toggle-menu-items'
 
 export type AppearanceMenuState = {
   showTasksButton: boolean
@@ -42,6 +44,8 @@ type RegisterAppMenuOptions = AppMenuQuitHandlers & {
   getAppearanceState: () => AppearanceMenuState
   getKeybindings?: () => KeybindingOverrides | undefined
   toggleFocusedPageDevTools?: (focused: Electron.WebContents) => boolean
+  /** Edge holding the workspace list; the menu names each sidebar toggle by the edge its panel sits on. */
+  getWorkspaceSidebarPosition?: () => WorkspaceSidebarPosition
   // app.name stays stable for Keychain; menus use the per-branch development label.
   appMenuLabel?: string
 }
@@ -57,8 +61,6 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     onZoomIn,
     onZoomOut,
     onZoomReset,
-    onToggleLeftSidebar,
-    onToggleRightSidebar,
     onToggleAppearance,
     getAppearanceState,
     getKeybindings
@@ -194,19 +196,14 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     ]
   }
 
+  const sidebarToggleItems = buildSidebarToggleMenuItems(options, shortcutLabel)
+
   // Electron menus are not reactive; rebuild after appearance settings change.
   const appearanceSubmenu: Electron.MenuItemConstructorOptions = {
     label: translateMain('menu.appearance', 'Appearance'),
     submenu: [
-      {
-        // Display hints only: native accelerators bypass markdown bold handling and renderer-owned sidebar state.
-        label: `${translateMain('menu.toggleLeftSidebar', 'Toggle Left Sidebar')}\t${shortcutLabel('sidebar.left.toggle')}`,
-        click: () => onToggleLeftSidebar()
-      },
-      {
-        label: `${translateMain('menu.toggleRightSidebar', 'Toggle Right Sidebar')}\t${shortcutLabel('sidebar.right.toggle')}`,
-        click: () => onToggleRightSidebar()
-      },
+      // Display hints only: native accelerators bypass markdown bold handling and renderer-owned sidebar state.
+      ...sidebarToggleItems,
       {
         label: translateMain('menu.showStatusBar', 'Show Status Bar'),
         type: 'checkbox',
