@@ -11,7 +11,7 @@ import type {
   WorkspaceStatus
 } from './types'
 import type { TuiAgent } from '../tui-agent'
-import type { OrcaWorkspaceLayout } from '../global-settings-types'
+import type { OrcaWorkspaceLayout } from '../orca-workspace-layout'
 import type { DiffComment, MobileDiffReviewState } from '../diff-comment-types'
 
 // ─── Worktree metadata (persisted user-authored fields only) ─────────

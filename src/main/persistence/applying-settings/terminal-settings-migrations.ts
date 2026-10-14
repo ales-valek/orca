@@ -1,4 +1,5 @@
-import type { GlobalSettings, OrcaWorkspaceLayout } from '../../../shared/global-settings-types'
+import type { GlobalSettings } from '../../../shared/global-settings-types'
+import type { OrcaWorkspaceLayout } from '../../../shared/orca-workspace-layout'
 import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
 import {
   legacyTerminalScrollbackBytesToRows,

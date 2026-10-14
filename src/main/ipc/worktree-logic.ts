@@ -1,5 +1,6 @@
 import { resolve, relative, isAbsolute, posix, sep, win32 } from 'node:path'
-import type { GlobalSettings, OrcaWorkspaceLayout } from '../../shared/global-settings-types'
+import type { GlobalSettings } from '../../shared/global-settings-types'
+import type { OrcaWorkspaceLayout } from '../../shared/orca-workspace-layout'
 import type { Repo } from '../../shared/repo-types'
 import { isWindowsAbsolutePathLike, resolveRuntimePath } from '../../shared/cross-platform-path'
 import { isWslUncPath, resolveWslRepoWorktreeBasePath } from '../../shared/wsl-paths'

@@ -1,9 +1,8 @@
 import type React from 'react'
 
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import type { StatusBarItem } from '../../../../shared/ui-chrome-types'
-import type { FeatureInteractionId } from '../../../../shared/feature-interaction-catalog'
 import { SearchableSetting } from './SearchableSetting'
+import { recordStatusBarToggleInteraction } from './appearance-status-bar-toggle-interaction'
 import { AppearanceAdvancedDisclosure } from './AppearanceAdvancedDisclosure'
 import { useAppStore } from '../../store'
 import {
@@ -22,6 +21,7 @@ import {
 } from './appearance-search'
 import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from './appearance-usage-percentage-search'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
+import { WorkspaceSidebarPositionSetting } from './WorkspaceSidebarPositionSetting'
 import {
   getLeftSidebarAppearanceEntry,
   getShowPinnedWorktreesInGroupsEntry,
@@ -35,31 +35,6 @@ type AppearanceWindowSidebarSectionProps = {
   settings: GlobalSettings
   updateSettings: (updates: Partial<GlobalSettings>) => void
   forceVisiblePrimary?: boolean
-}
-
-function recordStatusBarToggleInteraction(
-  id: StatusBarItem,
-  recordFeatureInteraction: (feature: FeatureInteractionId) => void
-): void {
-  if (id === 'resource-usage') {
-    recordFeatureInteraction('resource-manager')
-  } else if (id === 'ports') {
-    recordFeatureInteraction('ports')
-  } else if (id === 'ssh') {
-    recordFeatureInteraction('ssh')
-  } else if (
-    id === 'claude' ||
-    id === 'codex' ||
-    id === 'gemini' ||
-    id === 'opencode-go' ||
-    id === 'kimi' ||
-    id === 'antigravity' ||
-    id === 'minimax' ||
-    id === 'grok' ||
-    id === 'cursor'
-  ) {
-    recordFeatureInteraction('usage-tracking')
-  }
 }
 
 export function AppearanceWindowSidebarSection({
@@ -118,6 +93,12 @@ export function AppearanceWindowSidebarSection({
   return (
     <div className="space-y-2">
       <div className="divide-y divide-border/40">
+        <WorkspaceSidebarPositionSetting
+          settings={settings}
+          updateSettings={updateSettings}
+          forceVisible={forceVisiblePrimary}
+        />
+
         <SearchableSetting
           title={leftSidebarAppearanceEntry.title}
           description={leftSidebarAppearanceEntry.description}
