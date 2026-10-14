@@ -25,6 +25,7 @@ import {
   findKnownHugeFolderPathsToIgnore
 } from '../../git/huge-folder-ignore'
 import { resolveRegisteredWorktreePath } from '../registered-worktree-roots-cache'
+import { resolveNestedRepositoryPath } from './nested-repository-path-auth'
 import { validateGitRelativeFilePath } from './filesystem-path-containment'
 import {
   getLocalGitOptionsForRegisteredWorktree,
@@ -51,6 +52,7 @@ export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerCo
       event,
       args: {
         worktreePath: string
+        authorizedParentPath?: string
         connectionId?: string
         admissionTier?: GitAdmissionTier
         includeIgnored?: boolean
@@ -90,7 +92,9 @@ export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerCo
         const status = await runAsWslUserAct(wakeDistro, async () => {
           // Background poll: its Git or UNC read would boot a stopped WSL distro (E9).
           await assertWslUncPathRunning(args.worktreePath)
-          const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
+          const worktreePath = args.authorizedParentPath
+            ? await resolveNestedRepositoryPath(args.worktreePath, args.authorizedParentPath, store)
+            : await resolveRegisteredWorktreePath(args.worktreePath, store)
           // Reuse one registered-worktree lookup for frequent status polls and repo metadata reads.
           const repo = getLocalRepoForRegisteredWorktree(store, args.worktreePath, worktreePath)
           const gitOptions = getLocalGitOptionsForRepo(store, repo)
