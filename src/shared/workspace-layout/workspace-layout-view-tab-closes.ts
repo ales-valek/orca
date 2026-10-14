@@ -4,7 +4,8 @@
 // An emptied group hands the view's active group to its sibling in the split, as the window's
 // collapseGroupLayout (tab-group-layout-tree.ts) does on close and move.
 
-import { pickNextActiveTabAfterClose } from '../workspace-session-terminal-tab-close'
+import { tabClustersWithinOrder } from '../tab-types'
+import { pickNextActiveTabAfterClose } from '../tab-close-successor'
 import { findSiblingGroupId, removeGroupLayoutLeaf } from './tab-group-layout-tree'
 import type { WorkspaceLayoutModel } from './workspace-layout-model'
 import type { LayoutViewRecord } from './workspace-layout-views'
@@ -37,11 +38,16 @@ export function followTabClosesInView(
         now.tabOrder[0] ??
         null
       const recentTabIds = selection.recentTabIds?.filter((id) => remainingIds.has(id))
+      const tabClusters = tabClustersWithinOrder(selection.tabClusters, now.tabOrder)
       groups = {
         ...groups,
         [key]: {
           ...groups[key],
-          [groupId]: { activeTabId, ...(recentTabIds ? { recentTabIds } : {}) }
+          [groupId]: {
+            activeTabId,
+            ...(recentTabIds ? { recentTabIds } : {}),
+            ...(tabClusters ? { tabClusters } : {})
+          }
         }
       }
     }

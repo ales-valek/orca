@@ -25,6 +25,8 @@ import { TabSessionSurfaceSwitchMenuItems } from './TabSessionSurfaceSwitchMenuI
 import type { NativeChatTabSession } from './tab-session-history-switch'
 import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
 import { CopyTabIdMenuItem } from './CopyTabIdMenuItem'
+import { TabClusterMenuSection } from './TabClusterMenuSection'
+import { useTabClusterMenuCloseAction } from './use-tab-cluster-menu-close-action'
 
 const TAB_COLORS = [
   {
@@ -155,6 +157,7 @@ export function SortableTabContextMenu({
 
   const closeShortcut = useOptionalShortcutLabel('tab.close')
   const renameShortcut = useOptionalShortcutLabel('tab.rename')
+  const clusterMenuAction = useTabClusterMenuCloseAction()
   // Why: switching a tab into chat view is hidden while that toggle is removed; a tab already in
   // chat view keeps its way back.
   const showTerminalViewSwitch = canToggleViewMode && isChatView && onToggleViewMode !== undefined
@@ -169,7 +172,12 @@ export function SortableTabContextMenu({
           style={{ left: point.x, top: point.y }}
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className={TAB_CONTEXT_MENU_CONTENT_CLASS} sideOffset={0} align="start">
+      <DropdownMenuContent
+        className={TAB_CONTEXT_MENU_CONTENT_CLASS}
+        sideOffset={0}
+        align="start"
+        onCloseAutoFocus={clusterMenuAction.runAfterClose}
+      >
         <TerminalTabSplitMenuSection
           unifiedTabId={unifiedTabId}
           groupId={groupId}
@@ -209,6 +217,15 @@ export function SortableTabContextMenu({
             : translate('auto.components.tab.bar.SortableTabContextMenu.60f958ec75', 'Pin Tab')}
         </DropdownMenuItem>
         <CopyTabIdMenuItem unifiedTabId={unifiedTabId} />
+        {open ? (
+          <TabClusterMenuSection
+            worktreeId={tab.worktreeId}
+            groupId={groupId}
+            tabId={unifiedTabId}
+            isPinned={isPinned}
+            onQueueNewCluster={clusterMenuAction.queueAfterClose}
+          />
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => !isPinned && onClose(tab.id)} disabled={isPinned}>
           <X className="size-3.5" />

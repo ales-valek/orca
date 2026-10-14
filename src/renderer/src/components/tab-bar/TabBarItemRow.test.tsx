@@ -18,6 +18,7 @@ import {
   type TabBarItemSurfaceRuntime
 } from './tab-bar-item-surface'
 import { useTabBarItemActions } from './use-tab-bar-item-actions'
+import type { TabStripActivationModifiers } from './tab-strip-selection'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -27,6 +28,8 @@ type TabProps = {
   nativeChat?: { sessionId: string; agent: string | undefined }
   isActive: boolean
   isPinned: boolean
+  isHighlighted: boolean
+  onSelect: (modifiers: TabStripActivationModifiers) => boolean
   onActivate: (id: string) => void
   onDuplicate?: () => void
   gitStatus?: string | null
@@ -152,6 +155,8 @@ type StripInputs = {
   activeTabType?: WorkspaceVisibleTabType
   activeClientHostedBrowserRowId?: string | null
   statusByRelativePath?: TabBarItemSurfaceRuntime['statusByRelativePath']
+  highlightedTabIds?: ReadonlySet<string>
+  onSelectTab?: (unifiedTabId: string) => boolean
 }
 
 function Strip({
@@ -164,7 +169,9 @@ function Strip({
   sessionAgent,
   activeTabType = 'terminal',
   activeClientHostedBrowserRowId = null,
-  statusByRelativePath = STATUS_BY_RELATIVE_PATH
+  statusByRelativePath = STATUS_BY_RELATIVE_PATH,
+  highlightedTabIds,
+  onSelectTab = NOT_CONSUMED
 }: StripInputs): React.JSX.Element {
   const props: TabBarItemSurfaceProps = {
     worktreeId: 'wt-1',
@@ -200,12 +207,14 @@ function Strip({
       onTogglePaneExpand: NOOP
     },
     togglePinned: NOOP,
-    toggleTabViewMode: NOOP
+    toggleTabViewMode: NOOP,
+    selectTab: onSelectTab
   })
   return (
     <>
       {renderTabBarItems({
         items: buildItems({ terminalPinned, browserTitle, sessionLabel, sessionAgent }),
+        highlightedTabIds,
         props,
         runtime,
         actions,
@@ -218,6 +227,7 @@ function Strip({
 }
 
 const NOOP = (): void => {}
+const NOT_CONSUMED = (): boolean => false
 const STATUS_BY_RELATIVE_PATH: TabBarItemSurfaceRuntime['statusByRelativePath'] = new Map()
 const TAB_IDS = ['terminal-1', 'browser-1', 'file-1', 'session-1']
 let root: Root | null = null
@@ -373,6 +383,21 @@ describe('tab strip rows', () => {
     renderStrip({ sessionLabel: 'Hermes automation deprecation' })
 
     expect(lastRender('session-1').agent).toBeNull()
+  })
+
+  it('re-renders only the tab a highlight changes, and selects through the current handler', () => {
+    const first = vi.fn(() => false)
+    const current = vi.fn(() => true)
+    renderStrip({ onSelectTab: first })
+
+    renderStrip({ onSelectTab: current, highlightedTabIds: new Set(['unified-browser-1']) })
+
+    expect(lastRender('browser-1').isHighlighted).toBe(true)
+    expect(tabRenders).toHaveLength(TAB_IDS.length + 1)
+    const modifiers = { metaKey: false, ctrlKey: false, shiftKey: true }
+    expect(lastRender('terminal-1').onSelect(modifiers)).toBe(true)
+    expect(current).toHaveBeenCalledWith('unified-terminal-1', modifiers)
+    expect(first).not.toHaveBeenCalled()
   })
 
   it.each(TAB_IDS)('retires a client-hosted row selection when %s is activated', (tabId) => {

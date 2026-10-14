@@ -194,6 +194,9 @@ export abstract class RuntimeHeadlessTabGroups extends RuntimeHeadlessTabPropert
     if (!session || !this.store?.setWorkspaceSession) {
       return
     }
+    const previousGroupsById = new Map(
+      (session.tabGroups?.[worktreeId] ?? []).map((group) => [group.id, group])
+    )
     const groupIdByTabId = new Map(
       groups.flatMap((group) => group.tabOrder.map((tabId) => [tabId, group.id] as const))
     )
@@ -219,6 +222,9 @@ export abstract class RuntimeHeadlessTabGroups extends RuntimeHeadlessTabPropert
           worktreeId,
           activeTabId: group.activeTabId,
           tabOrder: [...group.tabOrder],
+          ...(previousGroupsById.get(group.id)?.tabClusters
+            ? { tabClusters: previousGroupsById.get(group.id)?.tabClusters }
+            : {}),
           ...(group.recentTabIds ? { recentTabIds: [...group.recentTabIds] } : {})
         }))
       },
