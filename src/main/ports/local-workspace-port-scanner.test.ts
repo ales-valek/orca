@@ -259,6 +259,46 @@ describe('scanWorkspacePorts attribution work', () => {
     expect(win32WorktreePathResolveCalls).toHaveLength(0)
     expect(posixWorktreePathResolveCalls).toHaveLength(worktrees.length)
   })
+
+  it('labels the dev server behind each port and leaves plain processes unlabelled', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    runPortScanCommandMock.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'lsof' && args.includes('-iTCP')) {
+        return {
+          stdout: ['p123', 'cnode', 'n127.0.0.1:5173', 'p124', 'cnode', 'n127.0.0.1:4000'].join(
+            '\n'
+          ),
+          spawnMs: 5
+        }
+      }
+      if (command === 'lsof') {
+        return {
+          stdout: ['p123', 'n/repo/worktrees/feature', 'p124', 'n/repo'].join('\n'),
+          spawnMs: 5
+        }
+      }
+      if (command === 'ps') {
+        return {
+          stdout: [
+            '123 node /repo/worktrees/feature/node_modules/.bin/vite --port 5173',
+            '124 node /repo/server.js'
+          ].join('\n'),
+          spawnMs: 5
+        }
+      }
+      return { stdout: '', spawnMs: 5 }
+    })
+
+    const scan = await scanWorkspacePorts(worktrees, urlWatcherStub())
+
+    const vitePort = scan.ports.find((port) => port.port === 5173)
+    expect(vitePort?.devServer).toEqual({ id: 'vite', label: 'Vite' })
+    // The raw process name still rides along so the UI can show it as detail.
+    expect(vitePort?.processName).toBe('node')
+
+    // A bare `node server.js` stays unlabelled rather than guessing.
+    expect(scan.ports.find((port) => port.port === 4000)?.devServer).toBeUndefined()
+  })
 })
 
 describe('scanWorkspacePorts lsof flags', () => {

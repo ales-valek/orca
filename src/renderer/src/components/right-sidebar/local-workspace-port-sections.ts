@@ -63,6 +63,7 @@ function workspacePortAsExternal(port: WorkspacePort & { kind: 'workspace' }): W
     port: port.port,
     pid: port.pid,
     processName: port.processName,
+    ...(port.devServer ? { devServer: port.devServer } : {}),
     protocol: port.protocol,
     kind: 'external'
   }

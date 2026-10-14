@@ -48,7 +48,7 @@ export type WorktreePaletteDocumentSources = {
   issueCache?: Record<string, IssueCacheEntry> | null
   workspacePortsByWorktreeId?: ReadonlyMap<
     string,
-    readonly { port: number; processName?: string }[]
+    readonly { port: number; processName?: string; devServer?: { label: string } }[]
   >
   checksReviewByWorktree?: ReadonlyMap<Worktree, HostedReviewInfo | null>
   hostLabelByWorktreeId?: ReadonlyMap<string, string>

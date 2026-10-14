@@ -13,7 +13,9 @@ import {
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
 import type { WorkspacePort } from '../../../../shared/workspace-ports'
+import { getWorkspacePortProcessLabel } from '@/lib/workspace-port-process-label'
 import { translate } from '@/i18n/i18n'
+import { DevServerIcon } from './dev-server-icon'
 
 const LOCAL_PORT_MENU_CONTENT_CLASS =
   '!rounded-md !border-border/60 !bg-popover !text-popover-foreground !shadow-[0_10px_24px_rgba(0,0,0,0.18)] !backdrop-blur-none'
@@ -76,7 +78,7 @@ export function LocalPortRow({
     [onStop, port]
   )
 
-  const processLabel = port.processName ?? (port.pid ? `PID ${port.pid}` : 'Unknown process')
+  const processLabel = getWorkspacePortProcessLabel(port)
   const address = addressForPort(port)
   const ownerLabel =
     port.kind === 'workspace'
@@ -107,12 +109,18 @@ export function LocalPortRow({
             )}
           >
             <div className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
-              {port.kind === 'container' ? <Box size={13} /> : <Server size={13} />}
+              {port.devServer ? (
+                <DevServerIcon id={port.devServer.id} />
+              ) : port.kind === 'container' ? (
+                <Box size={13} />
+              ) : (
+                <Server size={13} />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
                 <span className="text-xs font-medium text-foreground">:{port.port}</span>
-                <span className="truncate text-xs text-muted-foreground">{processLabel}</span>
+                <span className="truncate text-xs text-muted-foreground">{processLabel.label}</span>
               </div>
               <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="truncate">{address}</span>
