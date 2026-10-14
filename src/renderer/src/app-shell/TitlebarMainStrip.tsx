@@ -1,4 +1,4 @@
-import { Minimize2, PanelRight } from 'lucide-react'
+import { Minimize2, PanelLeft, PanelRight } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
@@ -9,7 +9,13 @@ import { selectActiveTerminalChromeState } from '../store/active-terminal-chrome
 import { hasCustomTitleBar } from './app-window-chrome'
 import type { AppChromeLayout } from './use-app-chrome-layout'
 
-export function RightSidebarToggle(): React.JSX.Element {
+// Why: the toggle follows the activity sidebar to whichever edge it occupies, so its icon and label
+// must name that edge — mirrors the RightSidebar header's own close button.
+export function RightSidebarToggle({
+  edge = 'right'
+}: {
+  edge?: 'left' | 'right'
+}): React.JSX.Element {
   const toggleRightSidebar = useAppStore((s) => s.toggleRightSidebar)
   const rightSidebarShortcutLabel = useShortcutLabel('sidebar.right.toggle')
   return (
@@ -18,15 +24,21 @@ export function RightSidebarToggle(): React.JSX.Element {
         <button
           className="sidebar-toggle mr-2"
           onClick={toggleRightSidebar}
-          aria-label={translate('auto.App.9e0b441a91', 'Toggle right sidebar')}
+          aria-label={
+            edge === 'left'
+              ? translate('menu.toggleLeftSidebar', 'Toggle Left Sidebar')
+              : translate('auto.App.9e0b441a91', 'Toggle right sidebar')
+          }
         >
-          <PanelRight size={16} />
+          {edge === 'left' ? <PanelLeft size={16} /> : <PanelRight size={16} />}
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6}>
-        {translate('auto.App.c184e056de', 'Toggle right sidebar ({{value0}})', {
-          value0: rightSidebarShortcutLabel
-        })}
+        {edge === 'left'
+          ? translate('menu.toggleLeftSidebar', 'Toggle Left Sidebar')
+          : translate('auto.App.c184e056de', 'Toggle right sidebar ({{value0}})', {
+              value0: rightSidebarShortcutLabel
+            })}
       </TooltipContent>
     </Tooltip>
   )
@@ -72,8 +84,12 @@ export function TitlebarMainStrip({ layout }: { layout: AppChromeLayout }): Reac
           </TooltipContent>
         </Tooltip>
       )}
-      {/* The open sidebar already renders its close button. */}
-      {layout.showRightSidebarControls && !layout.rightSidebarOpen ? <RightSidebarToggle /> : null}
+      {/* The open sidebar already renders its close button; a left-mounted one keeps its toggle in TitlebarLeftControls. */}
+      {layout.showRightSidebarControls &&
+      !layout.rightSidebarOpen &&
+      layout.activitySidebarEdge === 'right' ? (
+        <RightSidebarToggle edge="right" />
+      ) : null}
       {/* Reserve the custom window-controls overlay’s width. */}
       {hasCustomTitleBar && <div className="window-controls-titlebar-spacer" />}
     </>

@@ -13,6 +13,7 @@ import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './WorkspaceKanbanDrawer'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { cn } from '@/lib/utils'
+import type { WindowEdge } from '@/lib/sidebar-slot-layout'
 import { FolderPlus, Loader2 } from 'lucide-react'
 import { ActivityThreadCollapseContext } from '@/components/activity/activity-thread-collapse-context'
 import { useSidebarProjectDrop } from './useSidebarProjectDrop'
@@ -41,18 +42,29 @@ const MIN_WIDTH = 220
 const MAX_WIDTH = 500
 // Straddle the terminal seam so the resize divider sits on the border.
 export const WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME =
-  'group absolute -right-1.5 top-0 z-10 flex h-full w-3 cursor-col-resize items-stretch justify-center'
+  'group absolute top-0 z-10 flex h-full w-3 cursor-col-resize items-stretch justify-center'
+
+/** The handle straddles the seam facing the center pane, which swaps with the sidebar's edge. */
+export function worktreeSidebarResizeHandleClassName(edge: WindowEdge): string {
+  return cn(
+    WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
+    edge === 'right' ? '-left-1.5' : '-right-1.5'
+  )
+}
 export const WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME =
   'h-full w-px bg-transparent transition-colors group-hover:bg-ring/50 group-active:bg-ring'
 
 type SidebarProps = {
   worktreeScrollOffsetRef: React.MutableRefObject<number>
   worktreeScrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
+  /** Window edge this sidebar occupies; mirrored resize affordances when it moves to the right. */
+  edge?: WindowEdge
 }
 
 function Sidebar({
   worktreeScrollOffsetRef,
-  worktreeScrollAnchorRef
+  worktreeScrollAnchorRef,
+  edge = 'left'
 }: SidebarProps): React.JSX.Element {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
@@ -139,7 +151,8 @@ function Sidebar({
     width: sidebarWidth,
     minWidth: MIN_WIDTH,
     maxWidth: MAX_WIDTH,
-    deltaSign: 1,
+    // Why: the handle sits on whichever side faces the center, so drag direction flips with the edge.
+    deltaSign: edge === 'right' ? -1 : 1,
     setWidth: setSidebarWidth,
     onDraftWidthChange: setSidebarLiveWidth
   })
@@ -239,7 +252,7 @@ function Sidebar({
         {sidebarOpen && (
           <div
             data-sidebar-resize-handle=""
-            className={cn(WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME, isResizing && 'bg-ring/10')}
+            className={cn(worktreeSidebarResizeHandleClassName(edge), isResizing && 'bg-ring/10')}
             onMouseDown={onResizeStart}
           >
             <div
