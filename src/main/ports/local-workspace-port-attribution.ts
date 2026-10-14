@@ -5,6 +5,7 @@ import type {
   WorkspacePortProbe
 } from '../../shared/workspace-ports'
 import type { AdvertisedUrlWatcher } from './advertised-url-watcher'
+import { identifyDevServer } from './dev-server-signature'
 import { connectHostForBindHost } from './local-workspace-port-address'
 import type {
   NormalizedWorkspacePortProbe,
@@ -72,6 +73,7 @@ export function enrichPort(
   urlWatcher: Pick<AdvertisedUrlWatcher, 'lookup'>
 ): WorkspacePort {
   const owner = attributePortToNormalizedWorkspaces(port, worktrees)
+  const devServer = identifyDevServer(port)
   const base = {
     id: `${port.host}:${port.port}:${port.pid ?? 'unknown'}`,
     bindHost: port.host,
@@ -79,6 +81,7 @@ export function enrichPort(
     port: port.port,
     pid: port.pid,
     processName: port.processName,
+    ...(devServer ? { devServer } : {}),
     protocol: inferProtocol(port.port)
   }
 

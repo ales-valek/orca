@@ -564,4 +564,25 @@ describe('secondary workspace attachments in palette search', () => {
     expect(searchWorktrees([worktree], 'STA-84', repoMap)).toHaveLength(1)
     expect(searchWorktrees([worktree], 'payment', repoMap)).toHaveLength(1)
   })
+
+  it('names a matched port by its dev server instead of the process', () => {
+    const results = searchWorktrees([makeWorktree({ id: 'wt-port' })], '5173', repoMap, {
+      workspacePortsByWorktreeId: new Map([
+        ['wt-port', [{ port: 5173, processName: 'node', devServer: { label: 'Vite' } }]]
+      ])
+    })
+
+    expect(results[0]?.supportingText).toMatchObject({
+      labelKind: 'port',
+      text: '5173 · Vite'
+    })
+  })
+
+  it('falls back to the bare port number when neither dev server nor process is known', () => {
+    const results = searchWorktrees([makeWorktree({ id: 'wt-port' })], '8080', repoMap, {
+      workspacePortsByWorktreeId: new Map([['wt-port', [{ port: 8080 }]]])
+    })
+
+    expect(results[0]?.supportingText?.text).toBe('8080')
+  })
 })
