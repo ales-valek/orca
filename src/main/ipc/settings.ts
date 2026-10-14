@@ -65,7 +65,8 @@ const APPEARANCE_MENU_KEYS: readonly (keyof GlobalSettings)[] = [
   'showTasksButton',
   'showAutomationsButton',
   'showMobileButton',
-  'showTitlebarAppName'
+  'showTitlebarAppName',
+  'workspaceSidebarPosition'
 ]
 
 export function registerSettingsHandlers(

@@ -42,7 +42,8 @@ import type {
   OpenInApplication,
   SourceControlGroupOrder,
   SourceControlViewMode,
-  TaskViewPresetId
+  TaskViewPresetId,
+  WorkspaceSidebarPositionSettings
 } from './ui-chrome-types'
 import type { WorktreeVisibilityDefaults } from './repo-types'
 
@@ -491,8 +492,7 @@ export type GlobalSettings = GlobalSettingsBase & {
   voice?: VoiceSettings
   /** Transcript full-text search consent + retention. Absent means off; nothing indexes until the user opts in. */
   aiVaultSearch?: AiVaultSearchSettings
-}
+} & WorkspaceSidebarPositionSettings
 
 // Retain one import entry point while keeping feature shapes separate from the max-lines-limited settings module.
 export type { GhosttyImportPreview } from './ghostty-import-preview'
-export type { OrcaWorkspaceLayout } from './orca-workspace-layout'
