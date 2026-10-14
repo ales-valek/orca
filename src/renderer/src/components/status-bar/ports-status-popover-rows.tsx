@@ -18,8 +18,13 @@ import { useLocalhostLabelRouteForPort } from '@/lib/workspace-ports/workspace-p
 import { useWorktreeRuntimeTarget } from '@/runtime/rpc/targets/use-worktree-runtime-target'
 import { useAppStore } from '@/store'
 import type { WorkspacePort } from '../../../../shared/workspace-ports'
+import {
+  formatWorkspacePortProcessTooltip,
+  getWorkspacePortProcessLabel
+} from '@/lib/workspace-ports/workspace-port-process-label'
 import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
+import { DevServerIcon } from '@/components/right-sidebar/dev-server-icon'
 
 function PortAction({
   label,
@@ -88,11 +93,7 @@ export function PortRow({
   const runtimeTarget = useWorktreeRuntimeTarget(
     port.kind === 'workspace' ? port.owner.worktreeId : activeWorktreeId
   )
-  const processLabel =
-    port.processName ??
-    (port.pid
-      ? `PID ${port.pid}`
-      : t('auto.components.status.bar.ports.status.popover.rows.unknownProcess', 'Unknown process'))
+  const processLabel = getWorkspacePortProcessLabel(port)
   const canStop = canStopWorkspacePort(port)
   const openBrowserLabel = t(
     'auto.components.status.bar.ports.status.popover.rows.085f4f0334',
@@ -220,15 +221,24 @@ export function PortRow({
         <div className="relative flex h-5 min-w-0 items-center">
           <Tooltip>
             <TooltipTrigger asChild>
+<<<<<<< ours
               <span
                 tabIndex={0}
                 className="block min-w-0 select-text truncate text-2xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {processLabel}
+||||||| base
+              <span className="block min-w-0 select-text truncate text-[11px] text-muted-foreground">
+                {processLabel}
+=======
+              <span className="flex min-w-0 select-text items-center gap-1 truncate text-[11px] text-muted-foreground">
+                {port.devServer ? <DevServerIcon id={port.devServer.id} size={12} /> : null}
+                <span className="min-w-0 truncate">{processLabel.label}</span>
+>>>>>>> theirs
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
-              {processLabel}
+              {formatWorkspacePortProcessTooltip(processLabel)}
             </TooltipContent>
           </Tooltip>
           <div className="absolute inset-y-0 right-0 flex items-center gap-0.5 rounded-md border border-border/40 bg-popover/95 px-0.5 can-hover:opacity-0 shadow-xs transition-opacity group-hover/port:opacity-100 group-focus-within/port:opacity-100">

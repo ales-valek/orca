@@ -184,7 +184,7 @@ export function buildWorktreeIssueEvidence(args: {
 }
 
 export function buildWorktreePortEvidence(
-  port: Readonly<{ port: number; processName?: string }>
+  port: Readonly<{ port: number; processName?: string; devServer?: { label: string } }>
 ): PaletteComposedEvidence | null {
   return composePaletteEvidence({
     id: `port:${port.port}`,
@@ -197,7 +197,11 @@ export function buildWorktreePortEvidence(
         profile: 'identifier',
         identifier: { kind: 'port' }
       },
-      { key: 'process', text: port.processName ?? '', profile: 'structured-label' }
+      {
+        key: 'process',
+        text: port.devServer?.label ?? port.processName ?? '',
+        profile: 'structured-label'
+      }
     ]
   })
 }
