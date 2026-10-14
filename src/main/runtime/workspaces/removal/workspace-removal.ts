@@ -117,18 +117,9 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
           )
         }
         const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
-        if (expectedOwnership && (!repo || repo.connectionId || isFolderRepo(repo))) {
-          throw new Error('mission_member_worktree_ownership_unverified')
-        }
-        if (!expectedOwnership) {
-          await guardGenericMissionWorktreeRemoval({
-            store,
-            removalTarget,
-            repo,
-            stopSessionPtys: (workspaceId) =>
-              this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
-          })
-        }
+        const stopPtys = (id: string) => this.stopPtysForDestructiveWorktreeRemoval(id)
+        const missionGuard = missionRemovalGuard(stopPtys, store, removalTarget, expectedOwnership)
+        await missionGuard.beforeRemoval(repo)
         const removalHostId = repo ? (cleanupHostId ?? getRepoExecutionHostId(repo)) : cleanupHostId
         const purgeRemovedWorktree = (): Promise<void> =>
           this.purgeRemovedWorktree(store, removalTarget.id, removalTarget.repoId, removalHostId)

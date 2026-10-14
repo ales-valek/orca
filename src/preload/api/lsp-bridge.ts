@@ -1,13 +1,19 @@
 import { ipcRenderer } from 'electron'
+import type {
+  LspChangeDocumentArgs,
+  LspCloseDocumentArgs,
+  LspDiagnosticsPayload,
+  LspOpenDocumentArgs,
+  LspRequestArgs
+} from '../../shared/lsp-types'
 import type { PreloadApi } from '../api-types'
-import type { LspDiagnosticsPayload } from '../../shared/lsp-types'
 
 export const lspApi = {
-  openDocument: (args) => ipcRenderer.invoke('lsp:openDocument', args),
-  changeDocument: (args) => ipcRenderer.invoke('lsp:changeDocument', args),
-  closeDocument: (args) => ipcRenderer.invoke('lsp:closeDocument', args),
-  request: (args) => ipcRenderer.invoke('lsp:request', args),
-  onDiagnostics: (callback) => {
+  openDocument: (args: LspOpenDocumentArgs) => ipcRenderer.invoke('lsp:openDocument', args),
+  changeDocument: (args: LspChangeDocumentArgs) => ipcRenderer.invoke('lsp:changeDocument', args),
+  closeDocument: (args: LspCloseDocumentArgs) => ipcRenderer.invoke('lsp:closeDocument', args),
+  request: (args: LspRequestArgs) => ipcRenderer.invoke('lsp:request', args),
+  onDiagnostics: (callback: (payload: LspDiagnosticsPayload) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: LspDiagnosticsPayload): void =>
       callback(payload)
     ipcRenderer.on('lsp:diagnostics', listener)
