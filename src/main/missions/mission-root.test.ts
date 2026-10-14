@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   assertOwnedMissionRoot,
   ensureMissionRoot,
+  MISSION_SETUP_LOG_NAME,
   removeMissionRoot,
   resolveMissionRootPath,
   resolveMissionsBaseDir,
@@ -287,6 +288,22 @@ describe('removeMissionRoot', () => {
     ).toMatchObject({ missionId: fixture.missionId, links: [] })
     expect(existsSync(path.join(fixture.rootPath, 'NOTES.md'))).toBe(true)
     expect(readlinkSync(path.join(fixture.rootPath, 'user-link'))).toBe(userTarget)
+  })
+
+  it('removes the setup hook log with an otherwise empty root but keeps it beside user files', () => {
+    const fixture = rootFixture()
+    ensureFixture(fixture)
+    writeFileSync(path.join(fixture.rootPath, MISSION_SETUP_LOG_NAME), 'log')
+
+    expect(removeMissionRoot(fixture)).toEqual({ removed: true, preservedEntries: [] })
+    expect(existsSync(fixture.rootPath)).toBe(false)
+
+    ensureFixture(fixture)
+    writeFileSync(path.join(fixture.rootPath, MISSION_SETUP_LOG_NAME), 'log')
+    writeFileSync(path.join(fixture.rootPath, 'NOTES.md'), 'keep')
+
+    expect(removeMissionRoot(fixture)).toEqual({ removed: false, preservedEntries: ['NOTES.md'] })
+    expect(existsSync(path.join(fixture.rootPath, MISSION_SETUP_LOG_NAME))).toBe(true)
   })
 
   it('preserves a managed link whose target was replaced externally', () => {

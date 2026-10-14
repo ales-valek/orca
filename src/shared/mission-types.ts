@@ -54,3 +54,33 @@ export type MissionDeleteResult = {
   error?: string
   warning?: string
 }
+
+export type RuntimeMissionMemberRecord = {
+  repoId: string
+  repoName: string | null
+  worktreeId: string | null
+  worktreePath: string | null
+  branch: string
+  error?: string
+}
+
+/** CLI/runtime projection of a Mission with member worktree locations resolved. */
+export type RuntimeMissionRecord = {
+  id: string
+  name: string
+  branch: string
+  rootPath: string | null
+  members: RuntimeMissionMemberRecord[]
+}
+
+export type RuntimeMissionList = { missions: RuntimeMissionRecord[] }
+
+export type RuntimeMissionShow = { mission: RuntimeMissionRecord }
+
+export type RuntimeMissionMutationResult = {
+  mission: RuntimeMissionRecord
+  memberResults: MissionMemberResult[]
+}
+
+export type RuntimeMissionRemoveResult = MissionDeleteResult & { missionId: string }
+export type RuntimeMissionSession = { missionId: string; folderId: string; folderPath: string }

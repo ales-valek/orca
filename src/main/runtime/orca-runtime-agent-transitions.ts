@@ -7,7 +7,7 @@ import { HEADLESS_RUNTIME_WINDOW_ID } from '../../shared/runtime-session-contrac
 import { parsePaneKey } from '../../shared/stable-pane-id'
 import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree/id'
-import { OrcaRuntimeWithMissionOwnership } from './orca-runtime-mission-ownership'
+import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
 import { getRuntimeDesktopSurface } from './runtime-desktop-surface'
 import type { AgentStatusStoreView } from './sidebar-inputs/workspace-activity-facts-producer'
 import { subscribeHookStatusTitles } from './terminal/layout/hook-status-title-subscription'
@@ -28,7 +28,7 @@ function unrefTimer(run: () => void, delayMs: number): { cancel: () => void } {
 }
 
 /** All hosts/builds own transition detection and windowless phone pushes. */
-export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMissionOwnership {
+export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMissionCommands {
   readonly agentTransitions = new AgentTransitionDetector({
     resolveTabWorktreeId: (tabId) => this.tabs.get(tabId)?.worktreeId,
     subscribeToPtyExit: (ptyId, listener) => this.subscribeToPtyExit(ptyId, listener),
