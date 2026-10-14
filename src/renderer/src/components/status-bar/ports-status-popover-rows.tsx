@@ -221,20 +221,12 @@ export function PortRow({
         <div className="relative flex h-5 min-w-0 items-center">
           <Tooltip>
             <TooltipTrigger asChild>
-<<<<<<< ours
               <span
                 tabIndex={0}
-                className="block min-w-0 select-text truncate text-2xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex min-w-0 select-text items-center gap-1 truncate text-2xs text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                {processLabel}
-||||||| base
-              <span className="block min-w-0 select-text truncate text-[11px] text-muted-foreground">
-                {processLabel}
-=======
-              <span className="flex min-w-0 select-text items-center gap-1 truncate text-[11px] text-muted-foreground">
                 {port.devServer ? <DevServerIcon id={port.devServer.id} size={12} /> : null}
                 <span className="min-w-0 truncate">{processLabel.label}</span>
->>>>>>> theirs
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>

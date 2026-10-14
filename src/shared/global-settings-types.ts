@@ -40,7 +40,8 @@ import type {
   OpenInApplication,
   SourceControlGroupOrder,
   SourceControlViewMode,
-  TaskViewPresetId
+  TaskViewPresetId,
+  WorkspaceSidebarPositionSettings
 } from './ui-chrome-types'
 import type { WorktreeVisibilityDefaults } from './repo-types'
 
@@ -501,6 +502,6 @@ export type GlobalSettings = GlobalSettingsBase & {
   voiceDictationModeDefaultedToAuto?: boolean
   /** Transcript full-text search consent + retention. Absent means off; nothing indexes until the user opts in. */
   aiVaultSearch?: AiVaultSearchSettings
-}
+} & WorkspaceSidebarPositionSettings
 
 export type { OrcaWorkspaceLayout } from './orca-workspace-layout'
