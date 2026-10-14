@@ -7,7 +7,10 @@ import {
   findMissionOwnedWorktreeCandidates,
   type MissionOwnedWorktree
 } from './mission-worktree-ownership'
-import { assertMissionWorktreeOwnershipMarker } from './mission-worktree-ownership-marker'
+import {
+  assertMissionWorktreeOwnershipMarker,
+  resolveMissionWorktreeBranch
+} from './mission-worktree-ownership-marker'
 
 function ownershipCandidateKey(candidate: MissionOwnedWorktree): string {
   const parsed = splitWorktreeId(candidate.worktreeId)
@@ -36,7 +39,7 @@ export class MissionMemberOwnershipRecovery {
       return null
     }
     const worktree = inspection.worktree
-    const branch = worktree.branch.replace(/^refs\/heads\//, '')
+    const branch = resolveMissionWorktreeBranch(worktree)
     const parsedCandidate = splitWorktreeId(candidate.worktreeId)
     if (
       parsedCandidate?.repoId !== repoId ||

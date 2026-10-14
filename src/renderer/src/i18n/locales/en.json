@@ -7338,7 +7338,8 @@
         "MissionMemberRows": {
           "2f310bd75a": "Remove project and delete workspace?",
           "539f206f0e": "This deletes the Mission workspace for {{value0}}. Git work that cannot be deleted safely is preserved on its branch.",
-          "1d08535a23": "Delete workspace"
+          "1d08535a23": "Delete workspace",
+          "4a98f907ae": "Retry"
         },
         "AddWslHostDialogBody": {
           "added": "{{value0}} added."
