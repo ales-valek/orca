@@ -444,6 +444,13 @@ import {
   ManagedServerSelector,
   ManagedServerUpdate
 } from './managed-server-params'
+import {
+  MissionAddReposParams,
+  MissionCreateParams,
+  MissionPathParams,
+  MissionRemoveParams,
+  MissionSelectorParams
+} from './mission-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat-params'
 import {
   NotificationGetMissedSinceParams,
@@ -1262,6 +1269,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'managedServer.update': ManagedServerUpdate,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
+  'mission.addRepos': MissionAddReposParams,
+  'mission.create': MissionCreateParams,
+  'mission.forPath': MissionPathParams,
+  'mission.list': null,
+  'mission.remove': MissionRemoveParams,
+  'mission.session': MissionSelectorParams,
+  'mission.show': MissionSelectorParams,
   'mobileRelay.hosts.list': null,
   'mobileRelay.hosts.worktrees': MobileRelayHostWorktreesParamsSchema,
   'mobileRelay.projectSections': null,
