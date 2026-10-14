@@ -30,9 +30,7 @@ describe('shouldLoadChangedLineDiffForEditFile', () => {
   })
 
   it('loads the diff baseline for files changed only in the branch comparison', () => {
-    const branchEntries: GitBranchChangeEntry[] = [
-      { path: 'src/file.ts', status: 'modified' }
-    ]
+    const branchEntries: GitBranchChangeEntry[] = [{ path: 'src/file.ts', status: 'modified' }]
 
     expect(shouldLoadChangedLineDiffForEditFile(makeFile(), [], branchEntries)).toBe(true)
   })

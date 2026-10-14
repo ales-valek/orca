@@ -179,7 +179,6 @@ export default function MonacoEditor({
     onContentChange
   })
   useMonacoLsp({ mountedEditor, filePath, language, worktreeId, liveTail })
-
   const annotations = useMonacoMarkdownAnnotations({
     mountedEditor,
     editorContainerRef,
