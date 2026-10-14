@@ -10,6 +10,7 @@ import { getLocalProjectWorktreeGitOptionsForRuntime } from '../project-runtime-
 import { recoverMissionWorktreeCreateIntent } from '../missions/mission-worktree-create-intent'
 import {
   readMissionWorktreeOwnershipMarker,
+  resolveMissionWorktreeBranch,
   type MissionWorktreeOwnershipProof
 } from '../missions/mission-worktree-ownership-marker'
 import { withTimeoutResult } from './runtime-async-boundaries'
@@ -125,7 +126,7 @@ export class OrcaRuntimeWithMissionOwnership extends OrcaRuntimeWithMigrationCat
         parsedProofId?.repoId !== repoId ||
         !parsedProofId.worktreePath ||
         !areWorktreePathsEqual(parsedProofId.worktreePath, worktree.path) ||
-        worktree.branch.replace(/^refs\/heads\//, '') !== branchName
+        resolveMissionWorktreeBranch(worktree) !== branchName
       ) {
         throw new Error('mission_member_worktree_ownership_unverified')
       }

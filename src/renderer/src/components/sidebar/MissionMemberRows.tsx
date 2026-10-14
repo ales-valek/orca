@@ -56,12 +56,15 @@ export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.
       {mission.members.map((member) => {
         const repo = repoById.get(member.repoId)
         const candidate = member.worktreeId ? worktreeById.get(member.worktreeId) : undefined
+        const candidateBranch = candidate?.branch.replace(/^refs\/heads\//, '')
         const worktree =
           candidate &&
           candidate.repoId === member.repoId &&
           member.worktreeInstanceId &&
           candidate.instanceId === member.worktreeInstanceId &&
-          candidate.branch.replace(/^refs\/heads\//, '') === mission.branchName
+          // Why: a rebase/bisect detaches HEAD (empty branch) on the same verified checkout;
+          // only a different branch means the member checkout was repurposed.
+          (candidateBranch === mission.branchName || candidateBranch === '')
             ? candidate
             : undefined
         const error =
@@ -98,9 +101,25 @@ export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.
                 />
               </div>
               {error ? (
-                <p className="truncate px-2 pb-1 text-[11px] text-destructive" title={error}>
-                  {formatMissionMemberError(error)}
-                </p>
+                <div className="flex min-w-0 items-center gap-1 px-2 pb-1">
+                  <p className="min-w-0 flex-1 truncate text-[11px] text-destructive" title={error}>
+                    {formatMissionMemberError(error)}
+                  </p>
+                  {/* Why: a durable error outlives its cause (e.g. a finished rebase); re-verifying
+                      a live member clears it without creating anything. */}
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="shrink-0"
+                    aria-label={translate(
+                      'auto.components.sidebar.MissionMemberRows.4a98f907ae',
+                      'Retry'
+                    )}
+                    onClick={() => void recreateMissionMemberWorktree(mission.id, member.repoId)}
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </Button>
+                </div>
               ) : null}
             </div>
           )

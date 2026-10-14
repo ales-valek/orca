@@ -1,5 +1,5 @@
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
-import { OrcaRuntimeWithMissionOwnership } from './orca-runtime-mission-ownership'
+import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
 import type {
   AgentLaunchTabPublished,
@@ -27,7 +27,7 @@ import type { RuntimeReferenceFindParams } from '../../shared/runtime-reference-
 import { getRepoExecutionHostId } from '../../shared/execution-host'
 import type { TerminalCreateOptions } from './runtime-terminal-contracts'
 
-class OrcaRuntimeService extends OrcaRuntimeWithMissionOwnership {
+class OrcaRuntimeService extends OrcaRuntimeWithMissionCommands {
   private async selectReferenceCatalogWorkspace(selector: string, cwd?: string) {
     const catalog = listReferenceWorkspaces(
       this.requireStore(),
@@ -81,7 +81,7 @@ class OrcaRuntimeService extends OrcaRuntimeWithMissionOwnership {
     })
   }
 
-  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMissionOwnership>) {
+  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMissionCommands>) {
     super(...args)
     // Why: the runtime listing re-runs a scan the worktree-change generation overtook and re-lists
     // through this runtime's scan cache, so a worktree change must reach both. The desktop IPC

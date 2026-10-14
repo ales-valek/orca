@@ -1,6 +1,7 @@
 import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 import { JIRA_HANDLER_GROUP } from './jira-handler-group'
+import { LINEAR_HANDLER_GROUP } from './linear-handler-group'
 import { REFERENCE_HANDLER_GROUP } from './reference-handler-group'
 
 export type HandlerGroup = {
@@ -97,6 +98,19 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
       'worktree rm'
     ],
     load: async () => (await import('./handlers/worktree.js')).WORKTREE_HANDLERS
+  },
+  {
+    name: 'mission',
+    keys: [
+      'mission list',
+      'mission show',
+      'mission current',
+      'mission create',
+      'mission session',
+      'mission add-repo',
+      'mission rm'
+    ],
+    load: async () => (await import('./handlers/mission.js')).MISSION_HANDLERS
   },
   {
     name: 'file',
@@ -249,39 +263,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     ],
     load: async () => (await import('./handlers/managed-server.js')).MANAGED_SERVER_HANDLERS
   },
-  {
-    name: 'linear',
-    keys: [
-      'linear save-issue',
-      'linear list-issues',
-      'linear relation add',
-      'linear relation remove',
-      'linear issue',
-      'linear search',
-      'linear team list',
-      'linear team members',
-      'linear team states',
-      'linear team labels',
-      'linear project list',
-      'linear list',
-      'linear status set',
-      'linear assignee set',
-      'linear assignee clear',
-      'linear priority set',
-      'linear priority clear',
-      'linear estimate set',
-      'linear estimate clear',
-      'linear due-date set',
-      'linear due-date clear',
-      'linear label add',
-      'linear label remove',
-      'linear label set',
-      'linear comment add',
-      'linear attach',
-      'linear create'
-    ],
-    load: async () => (await import('./handlers/linear.js')).LINEAR_HANDLERS
-  },
+  LINEAR_HANDLER_GROUP,
   {
     name: 'vm',
     keys: ['vm recipe doctor'],

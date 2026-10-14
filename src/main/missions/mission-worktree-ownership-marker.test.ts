@@ -7,6 +7,7 @@ import {
   assertMissionWorktreeOwnershipMarker,
   hasMissionWorktreeOwnershipMarker,
   readMissionWorktreeOwnershipMarker,
+  resolveMissionWorktreeBranch,
   type MissionWorktreeOwnershipProof,
   writeMissionWorktreeOwnershipMarker
 } from './mission-worktree-ownership-marker'
@@ -176,4 +177,35 @@ describe('Mission worktree ownership marker Git integration', () => {
       ).not.toThrow()
     }
   )
+
+  it('keeps the Mission branch while a rebase has detached HEAD in the member worktree', () => {
+    const { repoPath, rootPath } = createCommittedRepo()
+    writeFileSync(path.join(repoPath, 'file.txt'), 'base\n')
+    git(repoPath, ['add', 'file.txt'])
+    git(repoPath, ['commit', '--quiet', '-m', 'base'])
+    const baseBranch = git(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])
+    git(repoPath, ['branch', 'mission/referral'])
+    writeFileSync(path.join(repoPath, 'file.txt'), 'main\n')
+    git(repoPath, ['commit', '--quiet', '-am', 'main change'])
+    const worktreePath = path.join(rootPath, 'member')
+    git(repoPath, ['worktree', 'add', '--quiet', worktreePath, 'mission/referral'])
+    writeFileSync(path.join(worktreePath, 'file.txt'), 'mission\n')
+    git(worktreePath, ['commit', '--quiet', '-am', 'mission change'])
+    // Git reports the member as `detached` (no branch) until the conflicted rebase ends.
+    expect(() => git(worktreePath, ['rebase', '--quiet', baseBranch])).toThrow()
+    expect(git(worktreePath, ['status', '--porcelain=2', '--branch'])).toContain(
+      '# branch.head (detached)'
+    )
+
+    expect(resolveMissionWorktreeBranch({ path: worktreePath, branch: '' })).toBe(
+      'mission/referral'
+    )
+
+    git(worktreePath, ['rebase', '--abort'])
+    expect(
+      resolveMissionWorktreeBranch({ path: worktreePath, branch: 'refs/heads/mission/referral' })
+    ).toBe('mission/referral')
+    git(worktreePath, ['checkout', '--quiet', '--detach'])
+    expect(resolveMissionWorktreeBranch({ path: worktreePath, branch: '' })).toBe('')
+  })
 })

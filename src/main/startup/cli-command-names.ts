@@ -43,6 +43,7 @@ export const CLI_COMMAND_NAMES = [
   'keypress',
   'jira',
   'linear',
+  'mission',
   'mouse',
   'network',
   'open',

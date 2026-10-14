@@ -250,4 +250,78 @@ describe('MissionList', () => {
     expect(container.textContent).toContain('Workspace missing')
     expect(container.querySelector('button[aria-label="Recreate"]')).not.toBeNull()
   })
+
+  it.each([
+    ['keeps a member mid-rebase (detached HEAD) as a live workspace', '', false],
+    ['reports a member checked out on another branch as missing', 'refs/heads/main', true]
+  ])('%s', (_title, branch, missing) => {
+    const member = makeWorktree({
+      id: `${TEST_REPO.id}::/tmp/referral`,
+      repoId: TEST_REPO.id,
+      instanceId: 'member-instance',
+      branch
+    })
+    const mission: Mission = {
+      id: 'm1',
+      name: 'Referral',
+      branchName: 'mission/referral',
+      members: [
+        {
+          repoId: TEST_REPO.id,
+          worktreeId: member.id,
+          worktreeInstanceId: 'member-instance',
+          addedAt: 1
+        }
+      ],
+      tabOrder: 0,
+      createdAt: 1,
+      updatedAt: 1
+    }
+    seedMissionListState({
+      missions: [mission],
+      worktreesByRepo: { [TEST_REPO.id]: [member] }
+    })
+
+    const container = renderMissionList()
+
+    expect(container.textContent?.includes('Workspace missing')).toBe(missing)
+  })
+
+  it('lets a live member re-verify a stale durable error', async () => {
+    const worktree = makeWorktree({
+      id: `${TEST_REPO.id}::/tmp/referral`,
+      repoId: TEST_REPO.id,
+      instanceId: 'instance-1',
+      branch: 'refs/heads/mission/referral'
+    })
+    const recreateMissionMemberWorktree = vi.fn()
+    const mission: Mission = {
+      id: 'm1',
+      name: 'Referral',
+      branchName: 'mission/referral',
+      members: [
+        {
+          repoId: TEST_REPO.id,
+          worktreeId: worktree.id,
+          worktreeInstanceId: 'instance-1',
+          lastError: 'mission_member_worktree_ownership_unverified',
+          addedAt: 1
+        }
+      ],
+      tabOrder: 0,
+      createdAt: 1,
+      updatedAt: 1
+    }
+    seedMissionListState({
+      missions: [mission],
+      worktreesByRepo: { [TEST_REPO.id]: [worktree] },
+      recreateMissionMemberWorktree
+    })
+    const container = renderMissionList()
+
+    const retry = container.querySelector<HTMLButtonElement>('button[aria-label="Retry"]')
+    expect(retry).not.toBeNull()
+    await act(async () => retry?.click())
+    expect(recreateMissionMemberWorktree).toHaveBeenCalledWith('m1', TEST_REPO.id)
+  })
 })

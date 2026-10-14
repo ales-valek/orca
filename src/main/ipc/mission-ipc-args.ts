@@ -54,3 +54,7 @@ export function parseMissionIpcArgs<T>(schema: z.ZodType<T>, value: unknown, err
   }
   throw new Error(errorCode)
 }
+
+export type MissionCreateInput = z.infer<typeof MissionCreateArgs>
+export type MissionAddMembersInput = z.infer<typeof MissionAddMembersArgs>
+export type MissionDeleteInput = z.infer<typeof MissionDeleteArgs>
