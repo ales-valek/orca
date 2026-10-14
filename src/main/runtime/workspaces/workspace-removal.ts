@@ -36,12 +36,7 @@ import { removeStaleLocalWorktreeRegistration } from '../../local-worktree-remov
 import { cleanupUnusedWorktreePushTargetRemote } from '../../ipc/worktree-remote'
 import { removeRuntimeRegisteredLocalWorktree } from '../runtime-registered-local-worktree-removal'
 import { removeOrphanOrFolderWorktree } from './workspace-registration-removal'
-import { isFolderRepo } from '../../../shared/repo-kind'
-import {
-  assertScopedMissionWorktreeOwnership,
-  guardGenericMissionWorktreeRemoval,
-  teardownOwningMissionSession
-} from '../runtime-mission-worktree-removal-guard'
+import { missionRemovalGuard } from '../runtime-mission-worktree-removal-guard'
 
 export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateManagedRemoteWorktree {
   abstract forgetStructuredSessionMail(sessionId: string): void
@@ -137,18 +132,9 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           )
         }
         const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
-        if (expectedOwnership && (!repo || repo.connectionId || isFolderRepo(repo))) {
-          throw new Error('mission_member_worktree_ownership_unverified')
-        }
-        if (!expectedOwnership) {
-          await guardGenericMissionWorktreeRemoval({
-            store,
-            removalTarget,
-            repo,
-            stopSessionPtys: (workspaceId) =>
-              this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
-          })
-        }
+        const stopPtys = (id: string) => this.stopPtysForDestructiveWorktreeRemoval(id)
+        const missionGuard = missionRemovalGuard(stopPtys, store, removalTarget, expectedOwnership)
+        await missionGuard.beforeRemoval(repo)
         const removalHostId = repo ? (cleanupHostId ?? getRepoExecutionHostId(repo)) : cleanupHostId
         const purgeRemovedWorktree = (): void =>
           this.purgeRemovedWorktree(store, removalTarget.id, removalTarget.repoId, removalHostId)
@@ -187,18 +173,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           registeredWorktrees,
           removalHome
         )
-        if (expectedOwnership && repo) {
-          assertScopedMissionWorktreeOwnership({
-            repo,
-            registeredPath: registeredWorktree?.path,
-            removedMeta,
-            expectedOwnership,
-            removalTarget
-          })
-          await teardownOwningMissionSession(store, expectedOwnership.missionId, (workspaceId) =>
-            this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
-          )
-        }
+        await missionGuard.afterRegistrationLookup(repo, registeredWorktree?.path, removedMeta)
         if (this.retryFailedLocalRemoval(route, removalTarget, registeredWorktrees, options)) {
           return { removing: true }
         }
@@ -275,13 +250,10 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           repo: repo!,
           target: removalTarget,
           registeredWorktree,
-          registeredWorktrees,
-          removedMeta,
           removedPushTarget,
-          removalTarget,
           store,
-          route,
-          localWorktreeGitOptions,
+          localOptions: localWorktreeGitOptions,
+          hasLocalOptions: Object.keys(localWorktreeGitOptions).length > 0,
           force,
           runHooks,
           allowFailedArchiveHook,
@@ -293,17 +265,11 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
               allowUnverifiedStop: allowUnverifiedPtyStop
             }),
           closeWatchers: (path) => this.closeFileWatchersForRemoval(path),
-          assertOwnership: expectedOwnership
-            ? (): void => {
-                assertScopedMissionWorktreeOwnership({
-                  repo: repo!,
-                  registeredPath: registeredWorktree.path,
-                  removedMeta,
-                  expectedOwnership,
-                  removalTarget
-                })
-              }
-            : undefined,
+          assertOwnership: missionGuard.ownershipAssertion(
+            repo!,
+            registeredWorktree.path,
+            removedMeta
+          ),
           preserveBranchHead: (result, fallbackHead) =>
             this.preservedBranchCleanup.preserveHead(result, fallbackHead),
           finishRemoval: (result, rememberBranch, fallbackHead) => {

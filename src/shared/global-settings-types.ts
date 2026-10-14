@@ -1,3 +1,4 @@
+import type { EditorChromeSettings } from './editor-chrome-settings'
 import type { NativeChatGlobalSettings } from './native-chat-appearance-settings'
 import type { ExecutionHostId } from './execution-host'
 import type { OrcaWorkspaceLayout } from './orca-workspace-layout'
@@ -50,7 +51,9 @@ export type { WorktreeVisibilityDefaults } from './repo-types'
 /** MiniMax account region used to select the quota endpoint. */
 export type MiniMaxEndpoint = 'overseas' | 'cn'
 
-export type GlobalSettings = NativeChatGlobalSettings & {
+type GlobalSettingsBase = NativeChatGlobalSettings & EditorChromeSettings
+
+export type GlobalSettings = GlobalSettingsBase & {
   workspaceDir: string
   /** Host-owned defaults used when a repository has no explicit visibility override. */
   worktreeVisibilityDefaults?: WorktreeVisibilityDefaults
@@ -83,21 +86,6 @@ export type GlobalSettings = NativeChatGlobalSettings & {
   uiLanguage: UiLanguage
   appIcon: AppIconId
   appFontFamily: string
-  editorAutoSave: boolean
-  editorAutoSaveDelayMs: number
-  editorMinimapEnabled: boolean
-  /** Monaco editor theme for dark mode. Defaults to 'dark-modern'. */
-  editorThemeDark?: string
-  /** Monaco editor theme for light mode. Defaults to 'vs'. */
-  editorThemeLight?: string
-  /** Current-line git blame annotation. Absent on older profiles; treated as on. */
-  editorGitLineBlameEnabled?: boolean
-  /** Tints lines that differ from the git baseline in the regular (non-diff) editor view. */
-  editorChangedLineHighlightsEnabled: boolean
-  /** Opt-in code-editor font; empty (the default) keeps following `terminalFontFamily`. */
-  editorFontFamily?: string
-  /** Defaults on for profiles saved before file-editor wrapping became configurable. */
-  editorWordWrap?: boolean
   /** Persisted opt-out for browser spellcheck noise in rich Markdown editing surfaces. */
   richMarkdownSpellcheckEnabled?: boolean
   /** Whether local markdown review note controls and the review panel are shown. */

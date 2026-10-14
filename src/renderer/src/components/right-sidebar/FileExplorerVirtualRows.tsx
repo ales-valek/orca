@@ -11,7 +11,6 @@ import type { FileExplorerRowProjection } from './file-explorer-row-projection'
 import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
 import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
 import type { WorkspaceFileDragSource } from '@/lib/workspace-file-drag'
-import type { ExecutionHostId } from '../../../../shared/execution-host'
 import type { PluginIconThemeRegistration } from '../../../../shared/plugins/plugin-icon-theme-artifact'
 
 type FileExplorerVirtualRowsProps = {

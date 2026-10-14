@@ -132,6 +132,7 @@ export const GIT_METHODS = [
   }),
   defineMethod({
     name: 'git.blame',
+    permission: 'workspace',
     params: GitBlame,
     handler: async (params, { runtime }) =>
       runtime.getRuntimeGitBlame(
