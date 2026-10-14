@@ -15,9 +15,9 @@ export function shouldLoadChangedLineDiffForEditFile(
     gitStatusEntries?.some(
       (entry) => entry.path === file.relativePath && entry.status !== 'deleted'
     ) ||
-      gitBranchEntries?.some(
-        (entry) => entry.path === file.relativePath && entry.status !== 'deleted'
-      )
+    gitBranchEntries?.some(
+      (entry) => entry.path === file.relativePath && entry.status !== 'deleted'
+    )
   )
 }
 

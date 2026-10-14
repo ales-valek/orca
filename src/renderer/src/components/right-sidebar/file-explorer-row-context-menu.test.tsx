@@ -97,6 +97,8 @@ function renderRevealItem(
     <FileExplorerRowContextMenu
       node={fileNode}
       isExpanded={false}
+      folderColor={null}
+      onFolderColorChange={vi.fn()}
       deleteShortcutLabel=""
       targetDir="/repo/src"
       targetDepth={1}
