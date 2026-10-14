@@ -31,10 +31,25 @@ vi.mock('../missions/mission-root', () => missionRootMocks)
 const ownershipMarkerMocks = vi.hoisted(() => ({
   assertMissionWorktreeOwnershipMarker: vi.fn(),
   hasMissionWorktreeOwnershipMarker: vi.fn(() => true),
-  removeMissionWorktreeOwnershipMarker: vi.fn()
+  removeMissionWorktreeOwnershipMarker: vi.fn(),
+  // Why: harness worktrees have no Git admin dir, so only the HEAD branch can apply.
+  resolveMissionWorktreeBranch: vi.fn((worktree: { branch: string }) =>
+    worktree.branch.replace(/^refs\/heads\//, '')
+  )
 }))
 
 vi.mock('../missions/mission-worktree-ownership-marker', () => ownershipMarkerMocks)
+
+const setupHookMocks = vi.hoisted(() => ({
+  runMissionSetupHook: vi.fn(async () => {})
+}))
+
+// Why: never execute the developer's real ~/.orca/hooks/mission-setup from tests.
+vi.mock('../missions/mission-setup-hook', () => setupHookMocks)
+
+export function getSetupHookMocks(): typeof setupHookMocks {
+  return setupHookMocks
+}
 
 export function getMissionRootMocks(): MissionRootMockSet {
   return missionRootMocks
@@ -276,7 +291,8 @@ export function makeFakeRuntime(store: FakeStore) {
       > => ({ status: 'found', candidates: [] })
     ),
     removeManagedWorktree: vi.fn(async () => ({})),
-    teardownWorkspaceProcesses: vi.fn(async () => {})
+    teardownWorkspaceProcesses: vi.fn(async () => {}),
+    attachMissionOperations: vi.fn((_operations: unknown) => {})
   }
 }
 

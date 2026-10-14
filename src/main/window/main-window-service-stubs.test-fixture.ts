@@ -30,6 +30,7 @@ type RuntimeStub = {
   markRendererReloadCancelled: MockFn
   markGraphReloadFailed: MockFn
   markGraphUnavailable: MockFn
+  attachMissionOperations: MockFn
 }
 
 export function createMainWindowServiceStub(
@@ -67,7 +68,8 @@ export function createRuntime(): RuntimeStub {
     markRendererReloading: vi.fn(),
     markRendererReloadCancelled: vi.fn(),
     markGraphReloadFailed: vi.fn(),
-    markGraphUnavailable: vi.fn()
+    markGraphUnavailable: vi.fn(),
+    attachMissionOperations: vi.fn()
   }
 }
 

@@ -99,6 +99,19 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/worktree.js')).WORKTREE_HANDLERS
   },
   {
+    name: 'mission',
+    keys: [
+      'mission list',
+      'mission show',
+      'mission current',
+      'mission create',
+      'mission session',
+      'mission add-repo',
+      'mission rm'
+    ],
+    load: async () => (await import('./handlers/mission.js')).MISSION_HANDLERS
+  },
+  {
     name: 'file',
     keys: ['file open', 'file diff', 'file open-changed'],
     load: async () => (await import('./handlers/file.js')).FILE_HANDLERS
