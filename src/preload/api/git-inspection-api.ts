@@ -20,6 +20,7 @@ import type {
 export type GitInspectionApi = {
   status: (args: {
     worktreePath: string
+    authorizedParentPath?: string
     connectionId?: string
     admissionTier?: 'interactive' | 'status' | 'background'
     includeIgnored?: boolean

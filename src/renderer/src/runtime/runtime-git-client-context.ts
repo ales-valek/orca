@@ -56,6 +56,7 @@ export type RuntimeGitContext = {
   prefs?: RuntimeGitPrefs | null
   worktreeId: string | null | undefined
   worktreePath: string
+  authorizedParentPath?: string
   connectionId?: string
 }
 

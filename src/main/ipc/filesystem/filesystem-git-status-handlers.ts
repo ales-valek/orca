@@ -23,6 +23,7 @@ import {
   findKnownHugeFolderPathsToIgnore
 } from '../../git/huge-folder-ignore'
 import { resolveRegisteredWorktreePath } from '../registered-worktree-roots-cache'
+import { resolveNestedRepositoryPath } from '../nested-repository-path-auth'
 import { validateGitRelativeFilePath } from '../filesystem-path-containment'
 import {
   getLocalGitOptionsForRegisteredWorktree,
@@ -43,6 +44,7 @@ export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerCo
       event,
       args: {
         worktreePath: string
+        authorizedParentPath?: string
         connectionId?: string
         admissionTier?: GitAdmissionTier
         includeIgnored?: boolean
@@ -69,7 +71,9 @@ export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerCo
       }
       try {
         requireReachableGitRoute(getConnectionExecutionHostId(args.connectionId))
-        const worktreePath = await resolveRegisteredWorktreePath(args.worktreePath, store)
+        const worktreePath = args.authorizedParentPath
+          ? await resolveNestedRepositoryPath(args.worktreePath, args.authorizedParentPath, store)
+          : await resolveRegisteredWorktreePath(args.worktreePath, store)
         // Why: one registered-worktree lookup feeds both — status polls this
         // handler, and the scan walks every repo's worktree meta.
         const repo = getLocalRepoForRegisteredWorktree(store, args.worktreePath, worktreePath)
