@@ -420,6 +420,7 @@
             "conflictsSection": "Conflicts",
             "createPrIntentConfigureAi": "Add a commit message or configure Source Control AI settings.",
             "createPrIntentGenerateFailed": "Could not generate a commit message. Add one and retry.",
+            "e131cd7128": "Source Control is only available for Git repositories",
             "discardFailedSampleMore_one": "{{paths}}, +{{count}} more",
             "discardFailedSampleMore_other": "{{paths}}, +{{count}} more",
             "discardFailed_one": "Failed to discard {{count}} file",
