@@ -30,6 +30,8 @@ import { EMPTY_PROJECT_GROUPS, type VirtualizedWorktreeViewportProps } from './v
 import { useWorktreeDropCommitContext } from '../drag/use-drop-commit-context'
 import { buildWorktreeVirtualRowContext } from './virtual-row-context'
 import { renderWorktreeVirtualRow } from '../rows/virtual-row-dispatch'
+import { getProjectHighlightBands, getProjectHighlightSections } from './project-highlight-bands'
+import { renderProjectHighlightBands } from './project-highlight-band-layer'
 
 const WORKTREE_SIDEBAR_SCROLL_STYLE: React.CSSProperties = {
   // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
@@ -202,6 +204,22 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     hasDirectScrollInput: scrollSuppression.hasDirectScrollInput,
     shouldSkipScrollAnchorRestore: scrollSuppression.shouldSkipScrollAnchorRestore
   })
+
+  const projectHighlightSections = useMemo(
+    () => getProjectHighlightSections(renderRows, groupBy),
+    [renderRows, groupBy]
+  )
+  const projectHighlightBands =
+    projectHighlightSections.length > 0 && virtualItems.length > 0
+      ? getProjectHighlightBands({
+          sections: projectHighlightSections,
+          rows: renderRows,
+          firstHeaderIndex,
+          measurements: virtualization.virtualizer.measurementsCache,
+          visibleStartIndex: Math.min(...virtualItems.map((item) => item.index)),
+          visibleEndIndex: Math.max(...virtualItems.map((item) => item.index))
+        })
+      : []
 
   const { toggleGroupWithScrollAnchor, getLineageToggleHandler } = useGroupToggleWithScrollAnchor({
     scrollRef,
@@ -383,6 +401,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
           className="relative w-full"
           style={{ height: `${virtualization.virtualizer.getTotalSize()}px` }}
         >
+          {renderProjectHighlightBands(projectHighlightBands)}
           {renderWorktreeSidebarDropIndicators({
             headerDrag,
             worktreeDragState: runtime.worktreeDragState
