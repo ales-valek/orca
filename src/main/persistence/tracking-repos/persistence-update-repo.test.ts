@@ -188,4 +188,38 @@ describe('Store', () => {
     ).rejects.toThrow('The project changed while Orca was checking it')
     expect(write).not.toHaveBeenCalled()
   })
+  it('updateRepo persists the sidebar highlight across reloads', async () => {
+    const store = await createStore()
+    store.addRepo(makeRepo())
+
+    expect(store.updateRepo('r1', { sidebarHighlight: true })!.sidebarHighlight).toBe(true)
+
+    store.flush()
+    const reloaded = await createStore()
+    expect(reloaded.getRepo('r1')!.sidebarHighlight).toBe(true)
+
+    expect(reloaded.updateRepo('r1', { sidebarHighlight: false })!.sidebarHighlight).toBe(false)
+  })
+
+  it('updateRepo ignores non-boolean sidebar highlight updates', async () => {
+    const store = await createStore()
+    store.addRepo(makeRepo({ sidebarHighlight: true }))
+
+    // Why: IPC payloads are untyped at runtime; JSON.parse models a malformed renderer value.
+    const updated = store.updateRepo('r1', { sidebarHighlight: JSON.parse('"yes"') })
+
+    expect(updated!.sidebarHighlight).toBe(true)
+  })
+
+  it('getRepo does not expose non-boolean persisted sidebar highlight values', async () => {
+    writeDataFile({
+      ...getDefaultPersistedState(testState.dir),
+      repos: [makeRepo({ sidebarHighlight: JSON.parse('"yes"') })]
+    })
+
+    const store = await createStore()
+
+    expect(store.getRepo('r1')!.sidebarHighlight).toBeUndefined()
+  })
+
 })

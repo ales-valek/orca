@@ -80,6 +80,7 @@ export function sanitizeRepoUpdatesForPersistence<
       | 'forkSyncMode'
       | 'agentWorkspaceTrust'
       | 'defaultJiraProject'
+      | 'sidebarHighlight'
       | 'customWorktreeVisibilitySources'
       | 'worktreeVisibilitySourcePreferences'
     >
@@ -146,6 +147,9 @@ export function sanitizeRepoUpdatesForPersistence<
     } else {
       sanitized.projectHostSetupMethod = setupMethod
     }
+  }
+  if ('sidebarHighlight' in sanitized && typeof sanitized.sidebarHighlight !== 'boolean') {
+    delete sanitized.sidebarHighlight
   }
   if ('forkSyncMode' in sanitized) {
     const forkSyncMode = sanitizeForkSyncMode(sanitized.forkSyncMode)

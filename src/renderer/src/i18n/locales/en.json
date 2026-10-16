@@ -9074,6 +9074,8 @@
           "913c55833d": "Custom repo color {{value0}}",
           "0e5f0693c1": "Choose custom repo color",
           "642dc29c6d": "Color",
+          "7a3c1e9f52": "Highlight project in sidebar",
+          "4b8d2f6a13": "Tint the project and all its workspaces with this color.",
           "549d126081": "Reset",
           "4e2a14f967": "Repo Icon",
           "d71df44587": "Failed to resolve the GitHub repo.",

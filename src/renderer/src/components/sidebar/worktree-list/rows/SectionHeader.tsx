@@ -28,6 +28,10 @@ import { getSidebarHeaderVisual } from './header-visuals'
 import { resolveProjectGroupHeaderColor } from './project-header-color'
 import { ProjectHeaderActions } from './ProjectHeaderActions'
 import {
+  getProjectHighlightColorForHeader,
+  getProjectHighlightStyle
+} from '../viewport/project-highlight-bands'
+import {
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
 } from './indentation'
@@ -155,6 +159,9 @@ export function renderWorktreeSectionHeaderRow(
     headerKey: row.key,
     badgeColor: row.repo?.badgeColor
   })
+  const projectHighlightColor = isActiveStickyHeader
+    ? getProjectHighlightColorForHeader(row, ctx.groupBy)
+    : undefined
   const folderBackedProjectGroup =
     isProjectGroupHeader &&
     !row.repo &&
@@ -194,13 +201,21 @@ export function renderWorktreeSectionHeaderRow(
         args.hasHeaderTopSpacing && !isActiveStickyHeader && 'pt-1',
         isActiveStickyHeader
           ? cn(
-              'sticky z-20 bg-worktree-sidebar',
+              'sticky z-20',
+              // Why: a pinned header must stay opaque; highlighted projects keep their band tint.
+              projectHighlightColor ? 'worktree-project-highlight' : 'bg-worktree-sidebar',
               // Why: when a host card is pinned, the group tier pins flush beneath it, not at the viewport top.
               args.hasStickyHost ? 'top-[35px]' : '-top-px'
             )
           : 'absolute top-0'
       )}
-      style={isActiveStickyHeader ? undefined : { transform: getVirtualRowTransform(vItem.start) }}
+      style={
+        isActiveStickyHeader
+          ? projectHighlightColor
+            ? getProjectHighlightStyle(projectHighlightColor)
+            : undefined
+          : { transform: getVirtualRowTransform(vItem.start) }
+      }
     >
       <ProjectHeaderHostTooltip label={label} context={hostContext}>
         <div

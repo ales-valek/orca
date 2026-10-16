@@ -33,6 +33,8 @@ import { buildWorktreeVirtualRowContext } from './virtual-row-context'
 import type { RepoHeaderProjectActions } from '../rows/repo-header-project-actions'
 import { getRepoOwnerWorktreeVisibilityDefaults } from '../../../../store/slices/worktrees/listing/worktree-visibility-defaults-by-host'
 import { renderWorktreeVirtualRow } from '../rows/virtual-row-dispatch'
+import { getProjectHighlightBands, getProjectHighlightSections } from './project-highlight-bands'
+import { renderProjectHighlightBands } from './project-highlight-band-layer'
 
 const EMPTY_HOST_OPTIONS: NonNullable<VirtualizedWorktreeViewportProps['hostOptions']> = []
 
@@ -219,6 +221,22 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     shouldSkipScrollAnchorRestore: scrollSuppression.shouldSkipScrollAnchorRestore
   })
 
+  const projectHighlightSections = useMemo(
+    () => getProjectHighlightSections(renderRows, groupBy),
+    [renderRows, groupBy]
+  )
+  const projectHighlightBands =
+    projectHighlightSections.length > 0 && virtualItems.length > 0
+      ? getProjectHighlightBands({
+          sections: projectHighlightSections,
+          rows: renderRows,
+          firstHeaderIndex,
+          measurements: virtualization.virtualizer.measurementsCache,
+          visibleStartIndex: Math.min(...virtualItems.map((item) => item.index)),
+          visibleEndIndex: Math.max(...virtualItems.map((item) => item.index))
+        })
+      : []
+
   const { toggleGroupWithScrollAnchor, getLineageToggleHandler } = useGroupToggleWithScrollAnchor({
     scrollRef,
     toggleGroup
@@ -399,6 +417,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
           className="relative w-full"
           style={{ height: `${virtualization.virtualizer.getTotalSize()}px` }}
         >
+          {renderProjectHighlightBands(projectHighlightBands)}
           {renderWorktreeSidebarDropIndicators({
             headerDrag,
             worktreeDragState: runtime.worktreeDragState
