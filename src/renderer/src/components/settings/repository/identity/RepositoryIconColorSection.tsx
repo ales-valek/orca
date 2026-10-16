@@ -5,17 +5,22 @@ import {
 } from '../../../../../../shared/repo-badge-color'
 import { Label } from '../../../ui/label'
 import { ColorPicker } from '../../../ui/color-picker'
+import { SettingsSwitchRow } from '../../SettingsFormControls'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
 type RepositoryIconColorSectionProps = {
   badgeColor: string | null | undefined
   onBadgeColorChange: (color: string) => void
+  sidebarHighlight: boolean
+  onSidebarHighlightChange: (enabled: boolean) => void
 }
 
 export function RepositoryIconColorSection({
   badgeColor,
-  onBadgeColorChange
+  onBadgeColorChange,
+  sidebarHighlight,
+  onSidebarHighlightChange
 }: RepositoryIconColorSectionProps): React.JSX.Element {
   const selectedBadgeColor = normalizeRepoBadgeColor(badgeColor) ?? DEFAULT_REPO_BADGE_COLOR
   const isPresetBadgeColor = REPO_COLORS.some((color) => color === selectedBadgeColor)
@@ -67,6 +72,18 @@ export function RepositoryIconColorSection({
           className="h-7 px-2"
         />
       </div>
+      <SettingsSwitchRow
+        label={translate(
+          'auto.components.settings.RepositoryIconPicker.7a3c1e9f52',
+          'Highlight project in sidebar'
+        )}
+        description={translate(
+          'auto.components.settings.RepositoryIconPicker.4b8d2f6a13',
+          'Tint the project and all its workspaces with this color.'
+        )}
+        checked={sidebarHighlight}
+        onChange={() => onSidebarHighlightChange(!sidebarHighlight)}
+      />
     </div>
   )
 }
