@@ -8,8 +8,10 @@ import { SHOW_UI_LANGUAGE_SETTING } from '@/i18n/supported-languages'
 import { getStatusBarToggles } from './appearance-status-bar-search'
 import { getUsagePercentageDisplayEntry } from './appearance-usage-percentage-search'
 import { getMenuBarIconEntries, getSystemTrayEntries } from './appearance-system-presence-search'
+import { getCustomCssEntries } from './appearance-custom-css-search'
 
 export {
+  getCustomCssEntries,
   getMenuBarIconEntries,
   getStatusBarToggles,
   getSystemTrayEntries,
@@ -26,7 +28,16 @@ export const getThemeEntries = createLocalizedCatalog((): SettingsSearchEntry[] 
     keywords: [
       ...translateSearchKeyword('auto.components.settings.appearance.search.262fe1d24f', 'dark'),
       ...translateSearchKeyword('auto.components.settings.appearance.search.44d873fd18', 'light'),
-      ...translateSearchKeyword('auto.components.settings.appearance.search.3a9b69d734', 'system')
+      ...translateSearchKeyword('auto.components.settings.appearance.search.3a9b69d734', 'system'),
+      'dracula',
+      'nord',
+      'tokyo night',
+      'catppuccin',
+      'solarized',
+      'github',
+      'palette',
+      'preset',
+      'terminal sync'
     ]
   }
 ])
@@ -284,6 +295,7 @@ export function getAppearancePaneSearchEntries(
     ...getSidebarEntries(),
     ...getAppIconEntries(),
     ...getSystemTrayEntries(options),
-    ...getMenuBarIconEntries(options)
+    ...getMenuBarIconEntries(options),
+    ...getCustomCssEntries()
   ]
 }

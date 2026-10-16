@@ -18,6 +18,9 @@ import {
 } from './remote-browser-page-input-model'
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/app-keyboard-router'
 
+const MENU_ITEM_CLASS =
+  'relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50'
+
 export function useRemoteBrowserPageContextMenu({
   busy,
   browserTabUrl,
@@ -178,15 +181,11 @@ export function RemoteBrowserPageContextMenu({
         role="menu"
         data-testid="remote-browser-context-menu"
         style={{ left: contextMenu.x, top: contextMenu.y }}
-        className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-black/14 bg-[rgba(255,255,255,0.82)] p-1 text-black shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:text-white dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)]"
+        className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-border bg-popover/85 p-1 text-popover-foreground shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)]"
       >
         {contextMenu.linkUrl ? (
           <>
-            <button
-              role="menuitem"
-              className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-              onClick={onOpenLinkInOrcaBrowser}
-            >
+            <button role="menuitem" className={MENU_ITEM_CLASS} onClick={onOpenLinkInOrcaBrowser}>
               {translate(
                 'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
                 'Open Link In Orca Browser'
@@ -194,7 +193,7 @@ export function RemoteBrowserPageContextMenu({
             </button>
             <button
               role="menuitem"
-              className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+              className={MENU_ITEM_CLASS}
               onClick={() => {
                 const targetUrl = normalizeExternalBrowserUrl(contextMenu.linkUrl!)
                 if (targetUrl) {
@@ -210,7 +209,7 @@ export function RemoteBrowserPageContextMenu({
             </button>
             <button
               role="menuitem"
-              className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+              className={MENU_ITEM_CLASS}
               onClick={() => {
                 void window.api.ui.writeClipboardText(contextMenu.linkUrl ?? '')
                 onDismiss()
@@ -228,7 +227,7 @@ export function RemoteBrowserPageContextMenu({
           <>
             <button
               role="menuitem"
-              className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+              className={MENU_ITEM_CLASS}
               onClick={() => {
                 void window.api.ui.writeClipboardText(contextMenu.selectionText)
                 onDismiss()
@@ -241,21 +240,21 @@ export function RemoteBrowserPageContextMenu({
         ) : null}
         <button
           role="menuitem"
-          className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+          className={MENU_ITEM_CLASS}
           onClick={() => onNavigate('browser.back')}
         >
           {translate('auto.components.browser.pane.BrowserPane.40edfa75cb', 'Back')}
         </button>
         <button
           role="menuitem"
-          className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+          className={MENU_ITEM_CLASS}
           onClick={() => onNavigate('browser.forward')}
         >
           {translate('auto.components.browser.pane.BrowserPane.250a9b3e42', 'Forward')}
         </button>
         <button
           role="menuitem"
-          className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+          className={MENU_ITEM_CLASS}
           onClick={() => onNavigate('browser.reload')}
         >
           {translate('auto.components.browser.pane.BrowserPane.0e080d820e', 'Reload')}
@@ -263,7 +262,7 @@ export function RemoteBrowserPageContextMenu({
         <div className="my-1 h-px bg-border/70" />
         <button
           role="menuitem"
-          className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+          className={MENU_ITEM_CLASS}
           onClick={() => {
             const targetUrl = normalizeExternalBrowserUrl(contextMenu.pageUrl)
             if (targetUrl) {
@@ -279,7 +278,7 @@ export function RemoteBrowserPageContextMenu({
         </button>
         <button
           role="menuitem"
-          className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
+          className={MENU_ITEM_CLASS}
           onClick={() => {
             void window.api.ui.writeClipboardText(contextMenu.pageUrl)
             onDismiss()

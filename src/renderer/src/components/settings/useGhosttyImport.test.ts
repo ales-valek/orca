@@ -1,6 +1,7 @@
 import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GhosttyImportPreview, GlobalSettings } from '../../../../shared/global-settings-types'
+import type { GhosttyImportPreview } from '../../../../shared/ghostty-import-preview'
+import type { GlobalSettings } from '../../../../shared/global-settings-types'
 
 const mockStateValues: unknown[] = []
 let mockStateIndex = 0

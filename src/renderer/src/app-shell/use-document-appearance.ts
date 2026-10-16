@@ -6,6 +6,7 @@ import { useAppStore } from '../store'
 
 export function useDocumentAppearance(): void {
   const theme = useAppStore((s) => s.settings?.theme)
+  const themePreset = useAppStore((s) => s.settings?.themePreset)
   const appFontFamily = useAppStore((s) => s.settings?.appFontFamily)
 
   useEffect(() => {
@@ -14,22 +15,22 @@ export function useDocumentAppearance(): void {
     }
 
     if (theme === 'dark') {
-      applyDocumentTheme('dark')
+      applyDocumentTheme('dark', { themePreset })
       return undefined
     } else if (theme === 'light') {
-      applyDocumentTheme('light')
+      applyDocumentTheme('light', { themePreset })
       return undefined
     }
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    applyDocumentTheme('system')
+    applyDocumentTheme('system', { themePreset })
     const handler = (): void => {
-      applyDocumentTheme('system')
+      applyDocumentTheme('system', { themePreset })
       // System theme changes don't mutate the store, so mobile terminal colors need an explicit graph republish.
       scheduleRuntimeGraphSync()
     }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [theme])
+  }, [theme, themePreset])
 
   useEffect(() => {
     document.documentElement.style.setProperty(

@@ -2,6 +2,7 @@ import type React from 'react'
 import { useLayoutEffect, useState } from 'react'
 import { AppWindow, PanelLeft, TerminalSquare } from 'lucide-react'
 
+import type { AppThemePresetId } from '../../../../shared/app-theme-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 
 import { AppearanceSection } from './AppearanceSection'
@@ -16,6 +17,7 @@ import {
   getAppearancePaneSearchEntries,
   getLanguageEntries,
   getLayoutEntries,
+  getCustomCssEntries,
   getMenuBarIconEntries,
   getSidebarEntries,
   getStatusBarEntries,
@@ -45,7 +47,7 @@ export { getAppearancePaneSearchEntries }
 type AppearancePaneProps = {
   settings: GlobalSettings
   updateSettings: (updates: Partial<GlobalSettings>) => void
-  applyTheme: (theme: 'system' | 'dark' | 'light') => void
+  applyTheme: (theme: 'system' | 'dark' | 'light', themePreset?: AppThemePresetId) => void
   fontSuggestions: string[]
   terminalFontSuggestions: string[]
   onRequestFontSuggestions?: () => void
@@ -138,7 +140,8 @@ export function AppearancePane({
     ...(SHOW_UI_LANGUAGE_SETTING ? getLanguageEntries() : []),
     ...getTitlebarEntries(),
     ...getSystemTrayEntries({ showSystemTray: isDesktopWindows }),
-    ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac })
+    ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac }),
+    ...getCustomCssEntries()
   ]
   const terminalSearchEntries = [
     { title: terminalTitle },
@@ -219,6 +222,7 @@ export function AppearancePane({
             onRequestFontSuggestions={onRequestFontSuggestions}
             isDesktopMac={isDesktopMac}
             isDesktopWindows={isDesktopWindows}
+            systemPrefersDark={systemPrefersDark}
             forceVisiblePrimary={interfaceLabelMatches}
           />
         </AppearanceSection>

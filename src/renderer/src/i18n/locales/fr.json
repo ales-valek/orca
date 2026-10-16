@@ -308,6 +308,14 @@
         "sharper": "Plus net",
         "terminalControlledHint": "Défini par l’interface du terminal.",
         "terminalControlledTooltip": "Suit l’interface du terminal. Désactivez Utiliser l’interface du terminal pour le modifier."
+      },
+      "customCss": {
+        "title": "CSS personnalisé",
+        "description": "Charge ~/.orca/custom.css par-dessus le thème intégré. Les modifications s'appliquent dès que vous enregistrez le fichier.",
+        "openFile": "Ouvrir custom.css",
+        "revealFile": "Révéler dans le gestionnaire de fichiers",
+        "tooLarge": "custom.css dépasse {{limit}} Ko et n'a pas été chargé.",
+        "unreadable": "Impossible de lire custom.css : {{message}}"
       }
     },
     "browser": {

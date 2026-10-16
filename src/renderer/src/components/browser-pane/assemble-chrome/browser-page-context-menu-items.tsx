@@ -15,7 +15,7 @@ import type { BrowserPageContextMenuState } from '../describe-page/browser-page-
 
 // Programmatic menu focus represents keyboard navigation, so use focus rather than focus-visible.
 const MENU_ITEM_CLASS =
-  'relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 focus:bg-black/8 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-white/14 dark:focus:bg-white/14'
+  'relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50'
 
 const SEARCH_LABEL_MAX_CHARS = 32
 

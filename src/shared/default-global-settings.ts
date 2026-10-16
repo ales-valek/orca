@@ -41,6 +41,8 @@ export function buildDefaultSettings(args: {
     branchPrefixCustom: '',
     jiraIssueKeyCasing: 'lowercase',
     theme: 'system',
+    themePreset: 'default',
+    syncTerminalThemeWithInterface: true,
     leftSidebarAppearanceMode: 'default',
     leftSidebarTintColor: DEFAULT_LEFT_SIDEBAR_TINT_COLOR,
     leftSidebarTintOpacity: DEFAULT_LEFT_SIDEBAR_TINT_OPACITY,
@@ -111,6 +113,7 @@ export function buildDefaultSettings(args: {
     terminalFocusFollowsMouse: false,
     windowBackgroundBlur: false,
     minimizeToTrayOnClose: false,
+    customCssEnabled: false,
     // Why: default-on everywhere so it round-trips across platforms; only darwin acts on it.
     showMenuBarIcon: true,
     terminalClipboardOnSelect: false,

@@ -1,5 +1,5 @@
 import { ipcRenderer } from 'electron'
-import type { GhosttyImportPreview } from '../../shared/global-settings-types'
+import type { GhosttyImportPreview } from '../../shared/ghostty-import-preview'
 import type {
   WarpThemeImportPreview,
   WarpThemeImportSource

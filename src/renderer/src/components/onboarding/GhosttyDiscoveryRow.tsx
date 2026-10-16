@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import type { GhosttyImportPreview } from '../../../../shared/global-settings-types'
+import type { GhosttyImportPreview } from '../../../../shared/ghostty-import-preview'
 import ghosttyIcon from '../../../../../resources/ghostty.svg'
 import { translate } from '@/i18n/i18n'
 import type { DiscoveryState } from './ThemeStep'

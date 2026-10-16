@@ -1,9 +1,11 @@
+import type { CustomCssSnapshot } from '../../shared/custom-css'
 import type { KeybindingActionId, KeybindingFileSnapshot } from '../../shared/keybindings'
 import type {
   WarpThemeImportPreview,
   WarpThemeImportSource
 } from '../../shared/terminal-custom-themes'
-import type { GhosttyImportPreview, GlobalSettings } from '../../shared/global-settings-types'
+import type { GhosttyImportPreview } from '../../shared/ghostty-import-preview'
+import type { GlobalSettings } from '../../shared/global-settings-types'
 
 export type SettingsApi = {
   get: () => Promise<GlobalSettings>
@@ -31,4 +33,11 @@ export type KeybindingsApi = {
   openFile: () => Promise<KeybindingFileSnapshot>
   revealFile: () => Promise<KeybindingFileSnapshot>
   onChanged: (callback: (snapshot: KeybindingFileSnapshot) => void) => () => void
+}
+
+export type CustomCssApi = {
+  get: () => Promise<CustomCssSnapshot>
+  openFile: () => Promise<CustomCssSnapshot>
+  revealFile: () => Promise<CustomCssSnapshot>
+  onChanged: (callback: (snapshot: CustomCssSnapshot) => void) => () => void
 }
