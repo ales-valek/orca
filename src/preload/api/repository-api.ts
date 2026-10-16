@@ -65,6 +65,7 @@ export type RepositoryApi = {
         | 'projectGroupId'
         | 'projectGroupOrder'
         | 'forkSyncMode'
+        | 'sidebarHighlight'
       >
     > & {
       externalWorktreeVisibility?: Repo['externalWorktreeVisibility'] | null

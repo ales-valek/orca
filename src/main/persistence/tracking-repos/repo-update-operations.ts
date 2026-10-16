@@ -103,6 +103,7 @@ export class RepoUpdatePersistenceOperations {
         | 'issueSourcePreference'
         | 'defaultJiraProject'
         | 'forkSyncMode'
+        | 'sidebarHighlight'
         | 'externalWorktreeVisibilityPromptDismissedAt'
         | 'externalWorktreeInboxBaselinePaths'
         | 'importedExternalWorktreePaths'
