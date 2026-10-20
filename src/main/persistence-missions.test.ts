@@ -142,7 +142,9 @@ describe('missions persistence', () => {
     const missions = store.getMissions()
     expect(missions).toHaveLength(1)
     expect(missions[0].name).toBe('Keep')
-    expect(missions[0].members).toEqual([{ repoId: 'r1', worktreeId: null, addedAt: 1 }])
+    expect(missions[0].members).toEqual([
+      { repoId: 'r1', worktreeId: null, worktreeInstanceId: null, lastError: null, addedAt: 1 }
+    ])
   })
 })
 
