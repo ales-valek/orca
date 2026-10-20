@@ -24,6 +24,7 @@ export function useWorktreeCardActivationActions({
   isActive,
   activationRowKey,
   onActivate,
+  useCustomActivationOnly = false,
   onWorktreeCardClick,
   onImmediateActivate,
   isDeleting,
@@ -40,6 +41,7 @@ export function useWorktreeCardActivationActions({
   | 'isActive'
   | 'activationRowKey'
   | 'onActivate'
+  | 'useCustomActivationOnly'
   | 'onWorktreeCardClick'
   | 'onImmediateActivate'
 > &
@@ -92,10 +94,12 @@ export function useWorktreeCardActivationActions({
         sshDisconnected: isSshDisconnected
       })
       onImmediateActivate?.(worktree.id, activationRowKey)
-      void activateWorktreeFromSidebar(
-        worktree.id,
-        worktree.hostId ?? (repo ? getRepoExecutionHostId(repo) : undefined)
-      )
+      if (!useCustomActivationOnly) {
+        void activateWorktreeFromSidebar(
+          worktree.id,
+          worktree.hostId ?? (repo ? getRepoExecutionHostId(repo) : undefined)
+        )
+      }
       onActivate?.()
     },
     [
@@ -109,6 +113,7 @@ export function useWorktreeCardActivationActions({
       activationRowKey,
       isSshDisconnected,
       onActivate,
+      useCustomActivationOnly,
       onWorktreeCardClick,
       onImmediateActivate,
       onSelectionGesture

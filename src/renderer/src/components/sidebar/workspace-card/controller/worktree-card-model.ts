@@ -45,6 +45,8 @@ export type WorktreeCardProps = {
   onLineageToggle?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isLineageDropTarget?: boolean
   onActivate?: () => void
+  /** Use when activation must first repair or materialize the target workspace. */
+  useCustomActivationOnly?: boolean
   onWorktreeCardClick?: () => void
   onImmediateActivate?: (worktreeId: string, rowKey: string | undefined) => void
   onSelectionGesture?: (event: React.MouseEvent<HTMLElement>, worktree: Worktree) => boolean

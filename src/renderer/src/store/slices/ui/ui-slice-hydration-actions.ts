@@ -281,7 +281,10 @@ export function createUiHydrationActions(set: UISliceSet, _get: UISliceGet): Par
           persistedUIReady: true
         }
         // Capture authoritative baseline before overlaying dirty/in-flight local fields or their diff vanishes (STA-5781). Nonnumeric width fallback may differ from main until the next drag.
-        const nextWriteBaseline = capturePersistedUIWriteBaseline(hydrated)
+        const nextWriteBaseline = capturePersistedUIWriteBaseline(
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sidebarListMode is assigned the projects|missions union above; spreading hydrateAgentReadState widens that field to string in the inferred object.
+          hydrated as PersistedUIWriteBaseline
+        )
         const previousBaseline = s.persistedUIWriteBaseline
         if (previousBaseline) {
           const pendingLocalEdits = diffPersistedUIWriteFields(

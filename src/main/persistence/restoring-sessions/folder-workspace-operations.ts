@@ -159,6 +159,9 @@ export class FolderWorkspacePersistenceOperations {
     if (!workspace) {
       return null
     }
+    if (workspace.missionId && (updates.name !== undefined || updates.folderPath !== undefined)) {
+      throw new Error('mission_workspace_managed_by_mission')
+    }
     const linkedUpdates = normalizeWorkspaceAttachmentUpdate(
       {
         linkedItems: workspace.linkedItems,
@@ -271,6 +274,9 @@ export class FolderWorkspacePersistenceOperations {
   }
 
   removeFolderWorkspace(id: string): boolean {
+    if (this.getFolderWorkspace(id)?.missionId) {
+      throw new Error('mission_workspace_managed_by_mission')
+    }
     const before = this.state.folderWorkspaces?.length ?? 0
     this.state.folderWorkspaces = (this.state.folderWorkspaces ?? []).filter(
       (workspace) => workspace.id !== id

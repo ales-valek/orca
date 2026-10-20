@@ -101,7 +101,7 @@ function normalizeCommonFolderWorkspaceFields(
 export function normalizeFolderWorkspaces(
   value: unknown,
   projectGroups: readonly ProjectGroup[],
-  missions: readonly Pick<Mission, 'id' | 'rootPath'>[] = []
+  missions: readonly Pick<Mission, 'id' | 'name' | 'rootPath'>[] = []
 ): FolderWorkspace[] {
   if (!Array.isArray(value)) {
     return []
@@ -125,10 +125,7 @@ export function normalizeFolderWorkspaces(
       typeof raw.missionId === 'string' && raw.missionId.length > 0 ? raw.missionId : null
     if (missionId) {
       const owningMission = missionsById.get(missionId)
-      const missionFolderPath =
-        typeof raw.folderPath === 'string' && raw.folderPath.trim().length > 0
-          ? raw.folderPath
-          : owningMission?.rootPath
+      const missionFolderPath = owningMission?.rootPath
       if (!owningMission || !missionFolderPath) {
         continue
       }
@@ -139,6 +136,7 @@ export function normalizeFolderWorkspaces(
         id: raw.id,
         projectGroupId: missionSentinelGroupId(owningMission.id),
         missionId: owningMission.id,
+        name: normalizeFolderWorkspaceName(owningMission.name),
         folderPath: missionFolderPath,
         connectionId: null
       })

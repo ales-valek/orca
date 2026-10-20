@@ -13,12 +13,11 @@ import {
   parseExecutionHostId,
   type ExecutionHostId
 } from '../../../../shared/execution-host'
+import { admitManagedWorktreeRemoval } from '../workspace-removal-admission'
 import { finishAcceptedWorktreeRemoval } from '../../../workspaces/removal/worktree-background-removal'
-import { preservedBranchCleanupScopeKey } from '../../../../shared/git/branches/preserved-branch-cleanup'
-import {
-  getRuntimeWorktreeRemovalOptionsKey,
-  type RemoveManagedWorktreeOptions,
-  type RuntimeWorktreeRemovalTarget
+import type {
+  RemoveManagedWorktreeOptions,
+  RuntimeWorktreeRemovalTarget
 } from '../catalog/runtime-worktree-selection'
 import { withWorktreeSpan } from '../../../observability/instrumentation'
 import {
@@ -32,6 +31,12 @@ import { removeRuntimeUnregisteredWorktree } from './runtime-unregistered-worktr
 import { removeStaleLocalWorktreeRegistration } from '../../../workspaces/removal/local-worktree-removal-recovery'
 import { cleanupUnusedWorktreePushTargetRemote } from '../../../ipc/worktree-remote'
 import { removeRuntimeRegisteredLocalWorktree } from './runtime-registered-local-worktree-removal'
+import { isFolderRepo } from '../../../shared/repo-kind'
+import {
+  assertScopedMissionWorktreeOwnership,
+  guardGenericMissionWorktreeRemoval,
+  teardownOwningMissionSession
+} from '../runtime-mission-worktree-removal-guard'
 import { removeOrphanOrFolderWorktree } from './workspace-registration-removal'
 import {
   assertWslMoveWorkspaceWritable,
@@ -75,7 +80,8 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
       runHooks = false,
       allowUnverifiedPtyStop = false,
       allowFailedArchiveHook = false,
-      hostId
+      hostId,
+      expectedOwnership
     } = options
     if (!this.store) {
       throw new Error('runtime_unavailable')
@@ -83,45 +89,21 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
     const store = this.store
     const cleanupHostId = parseExecutionHostId(hostId)?.id
     const removalTarget = await this.resolveWorktreeRemovalTarget(worktreeSelector, cleanupHostId)
-    // The repo row names the host; a caller may omit hostId for a worktree on another host.
-    const fenceOwner = resolveWorktreeRemovalRepoOwner(store, removalTarget.repoId, cleanupHostId)
-    const fenceHostId =
-      fenceOwner.kind === 'resolved' ? getRepoExecutionHostId(fenceOwner.repo) : cleanupHostId
-    if (isWslMoveSourceHost(fenceHostId)) {
-      assertWslMoveWorkspaceWritable(store, removalTarget.id)
-    }
-    // Why: a retry or a second client asking while Git still deletes joins that removal.
-    const pending = this.joinPendingWorktreeRemoval(removalTarget.id, options)
-    if (pending) {
-      return options.waitForBackgroundRemoval ? await pending : { removing: true }
-    }
-    const emitRemoved = (): void =>
-      this.emitWorktreeLifecycle({
-        kind: 'removed',
-        worktreeId: removalTarget.id,
-        path: removalTarget.path
-      })
-    const cleanupScopeKey = preservedBranchCleanupScopeKey({
-      worktreeId: removalTarget.id,
-      hostId: cleanupHostId
+    const admission = await admitManagedWorktreeRemoval({
+      store,
+      removalTarget,
+      cleanupHostId,
+      options,
+      joinPending: (worktreeId, removalOptions) =>
+        this.joinPendingWorktreeRemoval(worktreeId, removalOptions),
+      getInFlight: (scopeKey, worktreeId, optionsKey) =>
+        this.removeManagedWorktreeInFlight.get(scopeKey, worktreeId, optionsKey),
+      emitLifecycle: (event) => this.emitWorktreeLifecycle(event)
     })
-    const optionsKey = getRuntimeWorktreeRemovalOptionsKey({
-      force,
-      runHooks,
-      allowUnverifiedPtyStop,
-      allowFailedArchiveHook,
-      deleteBranch: options.deleteBranch
-    })
-    const inFlightRemoval = this.removeManagedWorktreeInFlight.get(
-      cleanupScopeKey,
-      removalTarget.id,
-      optionsKey
-    )
-    if (inFlightRemoval) {
-      return options.waitForBackgroundRemoval
-        ? finishAcceptedWorktreeRemoval(await inFlightRemoval, removalTarget.id, cleanupHostId)
-        : inFlightRemoval
+    if ('joined' in admission) {
+      return admission.joined
     }
+    const { emitRemoved } = admission
     const removal = (async (): Promise<RemoveWorktreeResult & { warning?: string }> => {
       return withWorktreeSpan({ stage: 'remove', path: removalTarget.path }, async () => {
         const repoOwner = resolveWorktreeRemovalRepoOwner(
@@ -135,6 +117,18 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
           )
         }
         const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
+        if (expectedOwnership && (!repo || repo.connectionId || isFolderRepo(repo))) {
+          throw new Error('mission_member_worktree_ownership_unverified')
+        }
+        if (!expectedOwnership) {
+          await guardGenericMissionWorktreeRemoval({
+            store,
+            removalTarget,
+            repo,
+            stopSessionPtys: (workspaceId) =>
+              this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
+          })
+        }
         const removalHostId = repo ? (cleanupHostId ?? getRepoExecutionHostId(repo)) : cleanupHostId
         const purgeRemovedWorktree = (): Promise<void> =>
           this.purgeRemovedWorktree(store, removalTarget.id, removalTarget.repoId, removalHostId)
@@ -170,6 +164,18 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
           registeredWorktrees,
           removalHome
         )
+        if (expectedOwnership && repo) {
+          assertScopedMissionWorktreeOwnership({
+            repo,
+            registeredPath: registeredWorktree?.path,
+            removedMeta,
+            expectedOwnership,
+            removalTarget
+          })
+          await teardownOwningMissionSession(store, expectedOwnership.missionId, (workspaceId) =>
+            this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
+          )
+        }
         await authorizeUnregisteredWindowsRemoval(
           !!registeredWorktree,
           repo!.path,
