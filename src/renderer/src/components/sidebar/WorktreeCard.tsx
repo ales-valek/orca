@@ -18,6 +18,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
   revealHighlightTone = 'default',
   selectedWorktrees,
   onActivate,
+  useCustomActivationOnly = false,
   onWorktreeCardClick,
   onImmediateActivate,
   onSelectionGesture,
@@ -42,7 +43,8 @@ const WorktreeCard = React.memo(function WorktreeCard({
   onLineageToggle,
   isLineageDropTarget = false,
   affiliateListMode = false,
-  statusPrDisplay = null
+  statusPrDisplay = null,
+  hideFolderPathLabel
 }: WorktreeCardProps): React.JSX.Element {
   const card = useWorktreeCardController({
     worktree,
@@ -55,6 +57,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
     revealHighlightTone,
     selectedWorktrees,
     onActivate,
+    useCustomActivationOnly,
     onWorktreeCardClick,
     onImmediateActivate,
     onSelectionGesture,
@@ -79,7 +82,8 @@ const WorktreeCard = React.memo(function WorktreeCard({
     onLineageToggle,
     isLineageDropTarget,
     affiliateListMode,
-    statusPrDisplay
+    statusPrDisplay,
+    hideFolderPathLabel
   })
 
   return <WorktreeCardSurface card={card} />
