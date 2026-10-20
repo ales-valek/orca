@@ -4,6 +4,7 @@ import {
 } from '../../../src/shared/onboarding-defaults'
 import { FEATURE_INTERACTION_IDS } from '../../../src/shared/feature-interactions'
 import { FEATURE_TIP_IDS } from '../../../src/shared/feature-tips'
+import { UI_LANGUAGE_ENGLISH } from '../../../src/shared/ui-language'
 
 const SEEN_FIRST_RUN_CONTEXTUAL_TOUR_IDS = [
   'workspace-board',
@@ -17,6 +18,8 @@ const SEEN_FIRST_RUN_FEATURE_INTERACTION_TIMESTAMP = Date.parse('2026-01-01T00:0
 export function getE2ECompletedOnboardingProfile() {
   return {
     settings: {
+      // Why: E2E locators use English labels and must not inherit the host OS locale.
+      uiLanguage: UI_LANGUAGE_ENGLISH,
       telemetry: {
         optedIn: true,
         installId: '00000000-0000-4000-8000-000000000000',

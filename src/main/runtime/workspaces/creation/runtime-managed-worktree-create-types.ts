@@ -29,6 +29,14 @@ export type RuntimeManagedWorktreeCreateArgs = {
   compareBaseRef?: string
   branchNameOverride?: string
   branchIntent?: CreateWorktreeArgs['branchIntent']
+  /** Keep this branch exact across member repos; only the checkout path may gain a suffix. */
+  requireExactBranchName?: boolean
+  /** Stamp the created worktree as owned by this Mission. */
+  missionId?: string
+  /** Absolute child of the Mission root. Replaces the usual workspace-dir path. */
+  worktreePathOverride?: string
+  /** Skip the idle shell when the caller will open the workspace itself. */
+  skipInitialTerminal?: boolean
   linkedIssue?: number | null
   linkedPR?: number | null
   linkedLinearIssue?: string

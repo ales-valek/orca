@@ -36,6 +36,12 @@ import {
 import { resolveRuntimeSetupDecision } from './runtime-local-worktree-setup'
 import { WorktreeCreateSetupChoiceRefusedError } from './worktree-create-setup-choice-refusal'
 import type { PreparationRearmHolder } from '../../../workspaces/creation/preparation/worktree-create-preparation'
+import { assertOwnedMissionRoot } from '../missions/mission-root'
+import { writeMissionWorktreeCreateIntent } from '../missions/mission-worktree-create-intent'
+import {
+  resolveMissionManagedWorktreeCreate,
+  stampMissionWorktreeAfterCreate
+} from './runtime-mission-worktree-create'
 import {
   localWorktreeCreateExecutionHost,
   type WorktreeCreateTimingRecorder
@@ -105,7 +111,9 @@ async function performRuntimeLocalWorktreeCreate<T>(
         error instanceof Error &&
         error.message === 'Setup decision required for this repository'
       ) {
-        throw new WorktreeCreateSetupChoiceRefusedError(error.message, { cause: error })
+        throw new WorktreeCreateSetupChoiceRefusedError(error.message, {
+          cause: error
+        })
       }
       throw error
     }
@@ -140,6 +148,11 @@ async function performRuntimeLocalWorktreeCreate<T>(
       'Could not resolve a default base ref for this repo. Pass an explicit --base and try again.'
     )
   }
+  const missionCreate = resolveMissionManagedWorktreeCreate({
+    request,
+    repo,
+    store
+  })
   const base = await resolveRuntimeLocalWorktreeCreateBase({
     repoPath: repo.path,
     baseBranch,
@@ -171,9 +184,26 @@ async function performRuntimeLocalWorktreeCreate<T>(
       remoteTrackingBase: base.remoteTrackingBase,
       localWorktreeGitOptions: worktreeGitOptions,
       hostedReviewExecutionContext: args.hostedReviewExecutionContext,
-      pathClaim
+      pathClaim,
+      missionWorktreePath: missionCreate.missionWorktreePath
     })
   )
+  if (missionCreate.missionRootOwnership) {
+    // Why: base resolution and fetches await external work; recheck the root
+    // at the last synchronous boundary before Git creates the child checkout.
+    assertOwnedMissionRoot(missionCreate.missionRootOwnership)
+  }
+  const missionCreateIntent =
+    missionCreate.missionRootOwnership && missionCreate.worktreeInstanceId
+      ? writeMissionWorktreeCreateIntent({
+          root: missionCreate.missionRootOwnership,
+          repoId: repo.id,
+          branchName: candidate.branchName,
+          worktreePath: candidate.worktreePath,
+          worktreeInstanceId: missionCreate.worktreeInstanceId,
+          preserveBranchOnDelete: candidate.checkoutExistingBranch
+        })
+      : null
   const releaseInFlightHold = await holdInFlightWorktreeCreate(
     repo.id,
     candidate.worktreePath,
@@ -196,6 +226,18 @@ async function performRuntimeLocalWorktreeCreate<T>(
       rearm: args.rearm,
       timing: args.timing
     })
+    if (request.missionId && missionCreate.worktreeInstanceId) {
+      await stampMissionWorktreeAfterCreate({
+        request,
+        repo,
+        created: git.created,
+        checkoutExistingBranch: candidate.checkoutExistingBranch,
+        worktreeInstanceId: missionCreate.worktreeInstanceId,
+        missionRootOwnership: missionCreate.missionRootOwnership,
+        missionCreateIntent,
+        localWorktreeGitOptions: worktreeGitOptions
+      })
+    }
     const materialized = await materializeRuntimeLocalWorktree({
       request,
       repo,
@@ -213,6 +255,7 @@ async function performRuntimeLocalWorktreeCreate<T>(
       displayNameKind: candidate.displayNameKind,
       effectiveSanitizedName: candidate.effectiveSanitizedName,
       effectiveCreatedWithAgent: args.createdWithAgent,
+      worktreeInstanceId: missionCreate.worktreeInstanceId ?? undefined,
       localWorktreeGitOptions: worktreeGitOptions,
       onMetadataPersisted: (worktree) => {
         releaseInFlightHold()

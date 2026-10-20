@@ -13,7 +13,7 @@ import type { StoreRuntimeState } from './store-runtime-state'
 import type { WriteSchedulingOperations } from './write-scheduling'
 import { scheduleSave } from './write-scheduling'
 
-type MissionPersistenceRuntime = Pick<StoreRuntimeState, 'state'>
+type MissionPersistenceRuntime = Pick<StoreRuntimeState, 'state' | 'flushOrThrow'>
 
 const missionPersistenceContext = Symbol('MissionPersistence')
 type MissionPersistenceContext = {
@@ -97,12 +97,45 @@ export class MissionPersistence {
     return true
   }
 
-  setMissionRootPath(missionId: string, rootPath: string): Mission | null {
+  deleteMissionAndFlush(missionId: string): boolean {
+    const state = this[missionPersistenceContext].runtime.state
+    const snapshot = {
+      missions: state.missions,
+      folderWorkspaces: state.folderWorkspaces,
+      workspaceSession: state.workspaceSession,
+      workspaceLineageByChildKey: { ...state.workspaceLineageByChildKey }
+    }
+    const deleted = this.deleteMission(missionId)
+    if (!deleted) {
+      return false
+    }
+    try {
+      this[missionPersistenceContext].runtime.flushOrThrow()
+      return true
+    } catch (error) {
+      // Why: ownership guards must stay live until Mission deletion is durable.
+      state.missions = snapshot.missions
+      state.folderWorkspaces = snapshot.folderWorkspaces
+      state.workspaceSession = snapshot.workspaceSession
+      state.workspaceLineageByChildKey = snapshot.workspaceLineageByChildKey
+      scheduleSave(this[missionPersistenceContext].scheduling)
+      throw error
+    }
+  }
+
+  setMissionRootPath(
+    missionId: string,
+    rootPath: string,
+    rootBasePath?: string | null
+  ): Mission | null {
     const mission = this.getMission(missionId)
     if (!mission) {
       return null
     }
     mission.rootPath = rootPath
+    if (rootBasePath !== undefined) {
+      mission.rootBasePath = rootBasePath
+    }
     mission.updatedAt = Date.now()
     scheduleSave(this[missionPersistenceContext].scheduling)
     return mission
@@ -117,16 +150,32 @@ export class MissionPersistence {
   }
 
   ensureMissionSessionWorkspace(missionId: string): FolderWorkspace {
-    const existing = this.getMissionSessionWorkspace(missionId)
-    if (existing) {
-      return existing
-    }
     const mission = this.getMission(missionId)
     if (!mission) {
       throw new Error('mission_not_found')
     }
     if (!mission.rootPath) {
       throw new Error('mission_root_not_ready')
+    }
+    const existing = this.getMissionSessionWorkspace(missionId)
+    if (existing) {
+      const projectGroupId = missionSentinelGroupId(mission.id)
+      if (
+        existing.name !== mission.name ||
+        existing.folderPath !== mission.rootPath ||
+        existing.projectGroupId !== projectGroupId ||
+        existing.connectionId !== null
+      ) {
+        // Why: Mission identity and root are authoritative; generic persisted
+        // folder-workspace fields must not permanently diverge across restarts.
+        existing.name = mission.name
+        existing.folderPath = mission.rootPath
+        existing.projectGroupId = projectGroupId
+        existing.connectionId = null
+        existing.updatedAt = Date.now()
+        scheduleSave(this[missionPersistenceContext].scheduling)
+      }
+      return existing
     }
     const now = Date.now()
     const workspace: FolderWorkspace = {
@@ -188,7 +237,13 @@ export class MissionPersistence {
         continue
       }
       existing.add(repoId)
-      mission.members.push({ repoId, worktreeId: null, addedAt: now })
+      mission.members.push({
+        repoId,
+        worktreeId: null,
+        worktreeInstanceId: null,
+        lastError: null,
+        addedAt: now
+      })
     }
     mission.updatedAt = now
     scheduleSave(this[missionPersistenceContext].scheduling)
@@ -209,7 +264,8 @@ export class MissionPersistence {
   setMissionMemberWorktree(
     missionId: string,
     repoId: string,
-    worktreeId: string | null
+    worktreeId: string | null,
+    worktreeInstanceId: string | null = null
   ): Mission | null {
     const mission = this.getMission(missionId)
     if (!mission) {
@@ -220,6 +276,23 @@ export class MissionPersistence {
       return null
     }
     member.worktreeId = worktreeId
+    member.worktreeInstanceId = worktreeInstanceId
+    member.lastError = null
+    mission.updatedAt = Date.now()
+    scheduleSave(this[missionPersistenceContext].scheduling)
+    return mission
+  }
+
+  setMissionMemberError(missionId: string, repoId: string, error: string | null): Mission | null {
+    const mission = this.getMission(missionId)
+    if (!mission) {
+      return null
+    }
+    const member = mission.members.find((entry) => entry.repoId === repoId)
+    if (!member) {
+      return null
+    }
+    member.lastError = error
     mission.updatedAt = Date.now()
     scheduleSave(this[missionPersistenceContext].scheduling)
     return mission

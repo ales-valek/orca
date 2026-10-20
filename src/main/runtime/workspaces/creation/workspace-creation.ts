@@ -29,6 +29,7 @@ import { workspaceLifecycleKey } from '../lifecycle/workspace-lifecycle-commands
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import { applyWorkspaceCreatePluginHook } from '../../../plugins/hooks/workspace-create-plugin-hook'
 import { withProjectWorktreeCreate } from '../../../workspaces/creation/worktree-create-in-flight'
+import { resolveMissionManagedWorktreeCreate } from '../runtime-mission-worktree-create'
 
 export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWithGetWorktreeTerminalProvisioningHost {
   protected abstract resolveLineageForWorktreeCreate(
@@ -87,6 +88,12 @@ export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWi
     events: RuntimeWorkspaceCreateEvents
   ): Promise<CreateWorktreeResult> {
     const store = this.requireStore()
+    // Reject SSH and folder repos before their create helpers can suffix a Mission branch.
+    resolveMissionManagedWorktreeCreate({
+      request: args,
+      repo,
+      store
+    })
     const onWorkspaceCreated = (worktreeId: string): void => {
       creation?.named(worktreeId)
       args.onWorkspaceCreated?.(worktreeId)

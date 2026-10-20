@@ -6,6 +6,7 @@ import {
 } from '../../../../shared/execution-host'
 import { splitWorktreeId } from '../../../../shared/worktree/id'
 import type { GitPushTarget } from '../../../../shared/worktree/types'
+import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
 
 export type RuntimeWorktreeRemovalTarget = {
   id: string
@@ -26,12 +27,19 @@ export type RemoveManagedWorktreeOptions = {
   hostId?: string
   /** Reply with the finished delete's result; otherwise a background delete replies on acceptance. */
   waitForBackgroundRemoval?: boolean
+  /** Mission lifecycle deletion proves this exact checkout before Git removes it. */
+  expectedOwnership?: MissionWorktreeOwnershipProof
 }
 
 export function getRuntimeWorktreeRemovalOptionsKey(
   options: Pick<
     RemoveManagedWorktreeOptions,
-    'force' | 'runHooks' | 'allowUnverifiedPtyStop' | 'allowFailedArchiveHook' | 'deleteBranch'
+    | 'force'
+    | 'runHooks'
+    | 'allowUnverifiedPtyStop'
+    | 'allowFailedArchiveHook'
+    | 'deleteBranch'
+    | 'expectedOwnership'
   >
 ): string {
   // Forced retries must not coalesce onto an attempt refusing unverified PTY stop.
@@ -45,7 +53,10 @@ export function getRuntimeWorktreeRemovalOptionsKey(
       : options.deleteBranch
         ? 'delete-branch'
         : 'keep-branch'
-  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}:${branchKey}`
+  const ownershipKey = options.expectedOwnership
+    ? `:mission:${options.expectedOwnership.missionId}:${options.expectedOwnership.worktreeInstanceId}`
+    : ''
+  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}:${branchKey}${ownershipKey}`
 }
 
 // Null host is host-unaware; unstamped legacy rows are adoptable, but either explicit host spelling must match exactly.
