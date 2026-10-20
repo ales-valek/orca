@@ -29,6 +29,8 @@ import {
   runWorkspaceLifecycleCommand,
   workspaceLifecycleKey
 } from '../../../runtime/workspaces/workspace-lifecycle-commands'
+import { isFolderRepo } from '../../../../shared/repo-kind'
+import { assertWorktreeIsNotMissionManaged } from '../../../missions/mission-removal-boundary'
 
 export function registerWorktreeRemovalHandlers(context: WorktreeIpcContext): void {
   const { store, options, worktreeRemovalsInFlight } = context
@@ -49,11 +51,19 @@ export function registerWorktreeRemovalHandlers(context: WorktreeIpcContext): vo
       throw new Error(`Repo not found: ${repoId}`)
     }
     assertWslMoveRepoWritable(store, repo)
+    assertWorktreeIsNotMissionManaged(
+      store,
+      args.worktreeId,
+      !repo.connectionId && !isFolderRepo(repo) ? { repoPath: repo.path, worktreePath } : undefined
+    )
     // Legacy callers omit hostId; the resolved repo supplies removal ownership.
     const removalHostId = getRepoExecutionHostId(repo)
     const pending = waitForPendingWorktreeRemoval(args.worktreeId, removalHostId)
     if (pending) {
-      return { ...(await pending), catalogVersion: getLocalWorktreeCatalogVersion(repoId) }
+      return {
+        ...(await pending),
+        catalogVersion: getLocalWorktreeCatalogVersion(repoId)
+      }
     }
     const inFlightKey = getWorktreeRemovalInFlightKey(args.worktreeId, removalHostId)
     const optionsKey = getWorktreeRemovalOptionsKey(args)

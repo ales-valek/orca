@@ -82,6 +82,12 @@ export function registerFolderWorkspaceHandlers(
         'invalid_folder_workspace_update_args'
       )
       const existing = store.getFolderWorkspace(args.folderWorkspaceId)
+      if (
+        existing?.missionId &&
+        (args.updates.name !== undefined || args.updates.folderPath !== undefined)
+      ) {
+        throw new Error('mission_workspace_managed_by_mission')
+      }
       const ref = { folderWorkspaceId: args.folderWorkspaceId }
       if (
         existing &&
@@ -125,6 +131,9 @@ export function registerFolderWorkspaceHandlers(
       rawArgs,
       'invalid_folder_workspace_delete_args'
     )
+    if (store.getFolderWorkspace(args.folderWorkspaceId)?.missionId) {
+      throw new Error('mission_workspace_managed_by_mission')
+    }
     // Runtime owns teardown of PTYs, browsers and sessions, plus success notifications.
     return (await runtime.deleteFolderWorkspace(args.folderWorkspaceId)).deleted
   })

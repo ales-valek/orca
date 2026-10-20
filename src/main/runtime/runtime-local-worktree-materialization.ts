@@ -41,6 +41,7 @@ export async function materializeRuntimeLocalWorktree<T>(args: {
   displayNameKind: CreateWorktreeArgs['displayNameKind']
   effectiveSanitizedName: string
   effectiveCreatedWithAgent?: TuiAgent
+  worktreeInstanceId?: string
   localWorktreeGitOptions: LocalGitExecOptions
   onMetadataPersisted: (worktree: Worktree) => T
   timing: WorktreeCreateTimingRecorder
@@ -62,6 +63,7 @@ export async function materializeRuntimeLocalWorktree<T>(args: {
     displayNameKind,
     effectiveSanitizedName,
     effectiveCreatedWithAgent,
+    worktreeInstanceId,
     localWorktreeGitOptions,
     timing
   } = args
@@ -76,7 +78,10 @@ export async function materializeRuntimeLocalWorktree<T>(args: {
   )
   const meta = timing.timeSync('persist_metadata', () =>
     store.setWorktreeMeta(hostWorktreeTargetForRepo(worktreeId, repo), {
-      instanceId: randomUUID(),
+      instanceId: worktreeInstanceId ?? randomUUID(),
+      // Why: path-keyed metadata can outlive a checkout; every creation must
+      // either stamp current Mission ownership or explicitly clear stale ownership.
+      missionId: request.missionId,
       ...getProjectHostSetupWorktreeMeta(store.getProjectHostSetups?.() ?? [], repo),
       lastActivityAt: now,
       createdAt: now,

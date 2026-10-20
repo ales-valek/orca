@@ -64,6 +64,7 @@ async function acceptRuntimeRegisteredLocalWorktreeRemoval(args: {
   acquireWatcherRemoval: (path: string) => Promise<{ finish: (removed: boolean) => Promise<void> }>
   stopPtys: () => Promise<void>
   closeWatchers: (path: string) => Promise<void>
+  assertOwnership?: () => void
   preserveBranchHead: (
     result: RemoveWorktreeResult | undefined,
     fallbackHead: string | undefined
@@ -150,6 +151,7 @@ async function acceptRuntimeRegisteredLocalWorktreeRemoval(args: {
     if (linkedPaths.length > 0) {
       await removeWorktreeLinkedPaths(canonicalPath, linkedPaths)
     }
+    args.assertOwnership?.()
     accepted = true
   } finally {
     if (!accepted) {
@@ -195,6 +197,7 @@ export type RuntimeLocalWorktreeRemovalFinishArgs = Pick<
   | 'force'
   | 'deleteBranch'
   | 'closeWatchers'
+  | 'assertOwnership'
   | 'preserveBranchHead'
   | 'finishRemoval'
 > & { target: { id: string } }
@@ -212,6 +215,7 @@ export async function finishRuntimeLocalWorktreeRemoval(
   let completed = false
   try {
     try {
+      args.assertOwnership?.()
       removalResult = args.preserveBranchHead(
         await removeWorktree(repo.path, canonicalPath, args.force, {
           ...(!args.deleteBranch ? { deleteBranch: args.deleteBranch } : {}),
@@ -237,6 +241,7 @@ export async function finishRuntimeLocalWorktreeRemoval(
         removalResult = recovered
         completed = true
       } else if (isOrphanedWorktreeError(error)) {
+        args.assertOwnership?.()
         await cleanupLocalOrphanedWorktreeDirectory(
           repo.path,
           canonicalPath,

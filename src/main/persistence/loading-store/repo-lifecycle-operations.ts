@@ -29,6 +29,7 @@ import type { StoreRuntimeState } from './store-runtime-state'
 import type { WriteSchedulingOperations } from './write-scheduling'
 import { scheduleSave } from './write-scheduling'
 import { pruneDeregisteredRepoUiResidue } from './repo-lifecycle-ui-residue'
+import { assertRepoIsNotMissionManaged } from '../../missions/mission-removal-boundary'
 import { isWslMoveProjectSessionFrozen } from '../moving-wsl-projects/wsl-move-scope-guard'
 import { dropOrcadTerminalRestoreHintsForWorktrees } from '../migrating-orcad-catalog/orcad-terminal-restore-hint-store'
 import { getRepoIdFromWorktreeId } from '../../../shared/worktree/id'
@@ -81,6 +82,12 @@ export class RepoLifecycleOperations {
   removeProjectForHost(target: RepoHostTarget): void {
     const id = target.id
     const hostId = getRepoExecutionHostId(target)
+    if (hostId === LOCAL_EXECUTION_HOST_ID) {
+      assertRepoIsNotMissionManaged(
+        this[repoLifecycleOperationsContext].runtime.state.missions ?? [],
+        id
+      )
+    }
     const repoRemoved = this[repoLifecycleOperationsContext].runtime.state.repos.some(
       (repo) => repo.id === id && getRepoExecutionHostId(repo) === hostId
     )
