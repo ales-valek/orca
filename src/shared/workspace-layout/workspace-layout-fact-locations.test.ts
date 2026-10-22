@@ -117,6 +117,22 @@ function populate(loaded: LoadedWorkspaceLayout): LoadedWorkspaceLayout {
   fill(loaded, 'tab.isPreview', true, terminal)
   fill(loaded, 'tab.agentSessionAgent', 'claude', terminal)
   fill(loaded, 'view.lastFocusedAt', { [GIT_KEY]: { 'tab-agent': 1, 'browser-1': 2 } })
+  const clusterWorkspace = loaded.layout.workspaces[GIT_KEY]
+  const clusterGroup = clusterWorkspace?.groups.find((group) => group.tabOrder.length > 0)
+  const clusterSelection = clusterGroup
+    ? loaded.desktopView.groups[GIT_KEY]?.[clusterGroup.id]
+    : undefined
+  if (clusterSelection && clusterGroup) {
+    clusterSelection.tabClusters = [
+      {
+        id: 'cluster-1',
+        name: 'Group',
+        color: 'blue',
+        collapsed: false,
+        tabIds: [clusterGroup.tabOrder[0]!]
+      }
+    ]
+  }
   fill(loaded, 'view.markdownFrontmatterVisible', { '/doc.md': true })
   fill(loaded, 'carried.activeConnectionIdsAtShutdown', ['target-1', 'target-2'])
   fill(loaded, 'carried.browserUrlHistory', [{ url: 'a' }, { url: 'b' }])

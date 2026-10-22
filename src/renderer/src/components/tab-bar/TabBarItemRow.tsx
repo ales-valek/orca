@@ -3,6 +3,7 @@ import { useAppStore } from '@/store'
 import { useTranslation } from 'react-i18next'
 import { shallow } from 'zustand/shallow'
 import type { GitFileStatus } from '../../../../shared/git-status-types'
+import type { TabClusterColor } from '../../../../shared/tab-types'
 import type { OpenFile } from '../../store/slices/editor'
 import SortableTab from './SortableTab'
 import TerminalSortableTab from './TerminalSortableTab'
@@ -12,6 +13,7 @@ import type { DropIndicator } from './drop-indicator'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import { getTabDragLabel, resolveTerminalItemTab, type TabBarItem } from './tab-bar-item-model'
 import type { TabBarItemActions } from './use-tab-bar-item-actions'
+import type { TabStripActivationModifiers } from './tab-strip-selection'
 import {
   useStructuredChatTabConversationName,
   useStructuredChatTabNamingFailure
@@ -41,6 +43,9 @@ type TabBarItemRowProps = {
   canCloseSplitPane: boolean
   /** This editor tab's own status, so a git status write re-renders only the tabs it changed. */
   gitStatus: GitFileStatus | null
+  /** Color of the tab group this tab belongs to, if any. */
+  clusterColor: TabClusterColor | undefined
+  isHighlighted: boolean
 }
 
 function TabBarItemRow({
@@ -61,7 +66,9 @@ function TabBarItemRow({
   viewModeTabId,
   canDuplicate,
   canCloseSplitPane,
-  gitStatus
+  gitStatus,
+  clusterColor,
+  isHighlighted
 }: TabBarItemRowProps): React.JSX.Element {
   // Why: the tabs' labels come from `translate()`, which a skipped render would leave in the old language.
   useTranslation()
@@ -88,6 +95,10 @@ function TabBarItemRow({
     hasTabsToRight,
     hasTabsToLeft,
     tabCount,
+    clusterColor,
+    isHighlighted,
+    onSelect: (modifiers: TabStripActivationModifiers) =>
+      actions.selectTab(item.unifiedTabId, modifiers),
     onTogglePin: () => actions.togglePinned(item),
     onCloseSplitPane: canCloseSplitPane ? actions.closeSplitPane : undefined,
     dragData,
