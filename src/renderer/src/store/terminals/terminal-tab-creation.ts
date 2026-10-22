@@ -2,6 +2,7 @@ import { resolveTerminalCreatedShell } from './terminal-created-shell'
 import { warnIfZCodeCannotOpenSession } from '@/components/terminal-pane/zcode-missing-tui-notice'
 import { clearWorktreeSleepIntent } from '@/lib/worktree-sleep-intent'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
+import { pushRecentTabId } from '../../../../shared/tab-group-history'
 import {
   isValidHostTerminalTabId,
   isValidMirroredHostTerminalTabId
@@ -16,7 +17,6 @@ import {
 import {
   ensureGroup,
   findTabByEntityInGroup,
-  pushRecentTabId,
   sanitizeRecentTabIds,
   updateGroup
 } from '../slices/tab-group-state'

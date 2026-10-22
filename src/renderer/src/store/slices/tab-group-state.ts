@@ -117,17 +117,6 @@ export function sanitizeRecentTabIds(recent: string[] | undefined, tabOrder: str
   return reversed.toReversed()
 }
 
-/** Move tabId to MRU tail, returning a new array. */
-export function pushRecentTabId(recent: string[] | undefined, tabId: string): string[] {
-  const base = recent ?? []
-  if (base.length > 0 && base.at(-1) === tabId) {
-    return base
-  }
-  const filtered = base.filter((id) => id !== tabId)
-  filtered.push(tabId)
-  return filtered
-}
-
 /** Prefer previous MRU tab on close; newly hydrated groups may know only the current tab, so fall back to visual neighbor. */
 export function pickNextActiveTab(
   tabOrder: string[],

@@ -5,11 +5,17 @@ import { useAppStore } from '@/store'
 import { useTabGroupWorkspaceModel } from '@/components/tab-group/useTabGroupWorkspaceModel'
 import { resolveGroupTabFromVisibleId } from '@/components/tab-group/tab-group-visible-id'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { getHiddenClusterTabIds } from '../../../../shared/tab-types'
 import { resolveFloatingWorkspaceSurfaceModel } from './floating-workspace-surface-model'
 
 const EMPTY_TERMINAL_TABS: readonly TerminalTab[] = []
 
-/** Project the focused group into the panel’s single titlebar; the body still renders all groups through the shared tree. */
+/**
+ * Shell chrome model for the floating panel: the shared per-group workspace model of the
+ * FOCUSED floating group, plus the derived fields the panel's titlebar strip, shortcuts,
+ * close policy and focus lifecycle read. The panel body renders every group through the
+ * shared tree; only the shell's one titlebar strip needs a focused-group projection.
+ */
 export function useFloatingWorkspaceChromeModel() {
   const surface = useAppStore(useShallow(resolveFloatingWorkspaceSurfaceModel))
   const focusedGroupId = surface.kind === 'workspace' ? surface.focusedGroupId : ''
@@ -18,7 +24,8 @@ export function useFloatingWorkspaceChromeModel() {
     worktreeId: FLOATING_TERMINAL_WORKTREE_ID
   })
   const { activeTab, group, groupTabs } = model
-  // Exclude stale tabs without entities so the strip and empty state agree.
+  // Why filtered: the strip and the emptiness decision only count tabs whose terminal entity
+  // still exists — a stale unified entry must fall back to the empty state, not a blank pane.
   const terminalEntities = useAppStore(
     (state) => state.tabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? EMPTY_TERMINAL_TABS
   )
@@ -56,27 +63,26 @@ export function useFloatingWorkspaceChromeModel() {
 
   const hasVisibleFloatingTabs = surface.kind === 'workspace'
 
-  // Cycle only through tabs whose entities still resolve and appear in the strip.
-  const visibleFloatingTabOrder = useMemo(
-    () =>
-      model.tabBarOrder.filter((visibleId) => {
-        const tab = resolveGroupTabFromVisibleId(groupTabs, visibleId)
-        if (!tab) {
-          return false
-        }
-        if (tab.contentType === 'terminal') {
-          return terminalItems.some((item) => item.unifiedTabId === tab.id)
-        }
-        if (tab.contentType === 'browser') {
-          return model.browserItems.some((item) => item.tabId === tab.id)
-        }
-        if (tab.contentType === 'simulator' || tab.contentType === 'agent-session') {
-          return true
-        }
-        return model.editorItems.some((item) => item.tabId === tab.id)
-      }),
-    [groupTabs, model.browserItems, model.editorItems, model.tabBarOrder, terminalItems]
-  )
+  // Why: numbered shortcuts follow the strip's visible members, not hidden collapsed tabs.
+  const visibleFloatingTabOrder = useMemo(() => {
+    const hiddenTabIds = group ? getHiddenClusterTabIds(group) : null
+    return model.tabBarOrder.filter((visibleId) => {
+      const tab = resolveGroupTabFromVisibleId(groupTabs, visibleId)
+      if (!tab || hiddenTabIds?.has(tab.id)) {
+        return false
+      }
+      if (tab.contentType === 'terminal') {
+        return terminalItems.some((item) => item.unifiedTabId === tab.id)
+      }
+      if (tab.contentType === 'browser') {
+        return model.browserItems.some((item) => item.tabId === tab.id)
+      }
+      if (tab.contentType === 'simulator' || tab.contentType === 'agent-session') {
+        return true
+      }
+      return model.editorItems.some((item) => item.tabId === tab.id)
+    })
+  }, [group, groupTabs, model.browserItems, model.editorItems, model.tabBarOrder, terminalItems])
   const activeClosableTab =
     activeTab &&
     visibleFloatingTabOrder.includes(

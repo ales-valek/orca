@@ -3,7 +3,12 @@
 import type { SleepingAgentSessionRecord } from '../agent-session/lifecycle/agent-session-resume'
 import type { BrowserWorkspace } from '../browser-workspace-types'
 import type { ClosedTerminalTabTombstonesByTabId } from './closed-terminal-tab-tombstones'
-import type { Tab, TabGroup, TabGroupLayoutNode } from '../tab-types'
+import {
+  tabClustersWithinOrder,
+  type Tab,
+  type TabGroup,
+  type TabGroupLayoutNode
+} from '../tab-types'
 import type { TerminalTab } from './terminal-tab-types'
 import type {
   PersistedOpenFile,
@@ -77,6 +82,7 @@ function saveWorkspace(
     .map((group) => {
       const selection = view.groups[key]?.[group.id]
       const activeTabId = selection?.activeTabId
+      const tabClusters = tabClustersWithinOrder(selection?.tabClusters, group.tabOrder)
       return {
         id: group.id,
         worktreeId,
@@ -86,7 +92,8 @@ function saveWorkspace(
           ? {
               recentTabIds: selection.recentTabIds.filter((tabId) => group.tabOrder.includes(tabId))
             }
-          : {})
+          : {}),
+        ...(tabClusters ? { tabClusters } : {})
       }
     })
   if (groups.length > 0) {

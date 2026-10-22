@@ -1,6 +1,7 @@
 import type { RuntimeMobileSessionTabGroup } from '../../../../shared/runtime-types'
 import type { TabGroup } from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
+import { pushRecentTabId } from '../../../../shared/tab-group-history'
 import type {
   MirroredAgentTab,
   MirroredBrowserTab,
@@ -12,7 +13,7 @@ import { clearHostSessionTabIdMappings, setHostSessionTabIdMapping } from './tra
 import { isWebSessionBrowserPlacementGroupReserved } from '../web-session-browser-placement'
 import { resolveWebSessionReorderedOrder } from '../web-session-reorder-intent'
 import { mapHostRecentTabIds } from './tab-group-layout-tree'
-import { pushRecentTabId, sanitizeRecentTabIds } from './state-equality-core'
+import { sanitizeRecentTabIds } from './state-equality-core'
 
 export function buildHostToLocalTabIdMap({
   terminalSurfaces,

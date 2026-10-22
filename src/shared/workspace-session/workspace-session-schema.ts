@@ -15,6 +15,7 @@ import { terminalSurfaceTombstoneSchema } from '../workspace-layout/terminal-sur
 import { parseExecutionHostId, type ExecutionHostId } from '../execution-host'
 import { isTuiAgent } from '../agent-launch/catalog/tui-agent-config'
 import { type WorkspaceKey, isWorkspaceKey } from '../workspace-scope'
+import { tabGroupSchema } from './workspace-session-tab-group-schema'
 import {
   browserHistoryEntriesSchema,
   workspaceDocHistoryEntriesSchema,
@@ -108,14 +109,6 @@ const tabSchema = z.object({
   isPinned: z.boolean().optional(),
   // Preserve chat mode on restore; unknown future values degrade to terminal and missing legacy values remain absent.
   viewMode: z.enum(['terminal', 'chat']).catch('terminal').optional()
-})
-
-const tabGroupSchema = z.object({
-  id: z.string(),
-  worktreeId: z.string(),
-  activeTabId: z.string().nullable(),
-  tabOrder: z.array(z.string()),
-  recentTabIds: z.array(z.string()).optional()
 })
 
 const tabGroupSplitDirectionSchema = z.enum(['horizontal', 'vertical'])

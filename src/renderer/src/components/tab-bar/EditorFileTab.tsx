@@ -34,6 +34,9 @@ import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { EditorFileTabCloseButton } from './EditorFileTabCloseButton'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { cn } from '@/lib/utils'
+import type { TabStripInteractionProps } from './tab-strip-selection'
+import { TabClusterMemberIndicator } from './TabClusterMemberIndicator'
 import { editorTabDocumentFolderAccess } from '@/lib/local-file-access'
 import { useTabCustomEditor } from '@/store/plugin-custom-editors'
 import { PluginContributionIcon } from '../plugins/PluginContributionIcon'
@@ -42,6 +45,9 @@ export default function EditorFileTab({
   file,
   isActive,
   isPinned,
+  clusterColor,
+  isHighlighted = false,
+  onSelect,
   hasTabsToRight,
   hasTabsToLeft,
   tabCount,
@@ -58,7 +64,7 @@ export default function EditorFileTab({
   dragData,
   dropIndicator,
   includeTopTabBorder = true
-}: EditorFileTabProps): React.JSX.Element {
+}: EditorFileTabProps & TabStripInteractionProps): React.JSX.Element {
   const worktree = useWorktreeById(file.worktreeId)
   const repo = useRepoById(worktree?.repoId ?? null)
   // Keep dragged tabs anchored; only the insertion bar moves.
@@ -207,7 +213,11 @@ export default function EditorFileTab({
 
   const dragListeners = isRenaming ? undefined : listeners
   const { onPointerDown, retirePendingActivation } = useTabStripPointerActivation({
-    onActivate,
+    onActivate: (modifiers) => {
+      if (!onSelect?.(modifiers)) {
+        onActivate()
+      }
+    },
     disabled: isRenaming
   })
   const handleMenuOpenChange = useTabContextMenuOpening(setMenuOpen, retirePendingActivation)
@@ -219,14 +229,17 @@ export default function EditorFileTab({
       data-tab-id={file.tabId ?? file.id}
       data-active={isActive ? 'true' : 'false'}
       data-pinned={isPinned ? 'true' : 'false'}
+      data-tab-highlighted={isHighlighted ? 'true' : undefined}
       {...attributes}
       {...dragListeners}
-      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={cn(
+        'w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none',
+        getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder }),
+        getDropIndicatorClasses(dropIndicator ?? null),
+        getTabRootStateClasses(isActive)
+      )}
       onPointerDown={(e) => {
-        onPointerDown(
-          e,
-          dragListeners?.onPointerDown as ((event: React.PointerEvent<Element>) => void) | undefined
-        )
+        onPointerDown(e, (event) => dragListeners?.onPointerDown?.(event))
       }}
       onDoubleClick={() => {
         if (isPreviewTab && onMakePermanent) {
@@ -251,6 +264,7 @@ export default function EditorFileTab({
       }}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
+      {clusterColor ? <TabClusterMemberIndicator color={clusterColor} /> : null}
       {isConflictReview ? (
         <ShieldAlert
           className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-orange-400' : 'text-orange-400/70'}`}
