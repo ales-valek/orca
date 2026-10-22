@@ -160,6 +160,17 @@
     var(--tab-active-foreground, var(--foreground))
   );
   --color-tab-inactive-foreground: var(--tab-inactive-foreground, var(--muted-foreground));
+  --color-tab-cluster-grey: var(--tab-cluster-grey);
+  --color-tab-cluster-blue: var(--tab-cluster-blue);
+  --color-tab-cluster-red: var(--tab-cluster-red);
+  --color-tab-cluster-yellow: var(--tab-cluster-yellow);
+  --color-tab-cluster-green: var(--tab-cluster-green);
+  --color-tab-cluster-pink: var(--tab-cluster-pink);
+  --color-tab-cluster-purple: var(--tab-cluster-purple);
+  --color-tab-cluster-cyan: var(--tab-cluster-cyan);
+  --color-tab-cluster-orange: var(--tab-cluster-orange);
+  --color-tab-strip-selection-surface: var(--tab-strip-selection-surface);
+  --color-tab-strip-selection-ring: var(--tab-strip-selection-ring);
   --color-git-graph-ref: var(--git-graph-ref);
   --color-git-graph-remote-ref: var(--git-graph-remote-ref);
   --color-git-graph-base-ref: var(--git-graph-base-ref);
@@ -310,6 +321,17 @@
   /* White --card can't be lifted, so light mode recesses inactive tabs to keep the active one lighter. */
   --tab-active: var(--tab-bar, var(--card));
   --tab-inactive: color-mix(in srgb, var(--foreground) 4%, var(--tab-bar, var(--card)));
+  --tab-cluster-grey: var(--color-gray-500);
+  --tab-cluster-blue: var(--color-blue-600);
+  --tab-cluster-red: var(--color-red-600);
+  --tab-cluster-yellow: var(--color-yellow-600);
+  --tab-cluster-green: var(--color-green-600);
+  --tab-cluster-pink: var(--color-pink-600);
+  --tab-cluster-purple: var(--color-purple-600);
+  --tab-cluster-cyan: var(--color-cyan-600);
+  --tab-cluster-orange: var(--color-orange-600);
+  --tab-strip-selection-surface: color-mix(in srgb, var(--foreground) 12%, var(--background));
+  --tab-strip-selection-ring: color-mix(in srgb, var(--foreground) 35%, transparent);
 }
 
 .dark {
@@ -426,6 +448,22 @@
   --split-divider-hover: #a1a1aa;
   --tab-active: color-mix(in srgb, var(--foreground) 6%, var(--tab-bar, var(--card)));
   --tab-inactive: var(--tab-bar, var(--card));
+  --tab-cluster-grey: var(--color-gray-400);
+  --tab-cluster-blue: var(--color-blue-400);
+  --tab-cluster-red: var(--color-red-400);
+  --tab-cluster-yellow: var(--color-yellow-400);
+  --tab-cluster-green: var(--color-green-400);
+  --tab-cluster-pink: var(--color-pink-400);
+  --tab-cluster-purple: var(--color-purple-400);
+  --tab-cluster-cyan: var(--color-cyan-400);
+  --tab-cluster-orange: var(--color-orange-400);
+  --tab-strip-selection-surface: color-mix(in srgb, var(--foreground) 12%, var(--background));
+  --tab-strip-selection-ring: color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+
+.terminal-tab-strip [data-tab-highlighted='true'] {
+  background: var(--tab-strip-selection-surface);
+  box-shadow: inset 0 0 0 1px var(--tab-strip-selection-ring);
 }
 
 /* Status and diff colors follow the chat scheme without copying the app palette. */

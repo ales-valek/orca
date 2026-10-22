@@ -1914,6 +1914,19 @@
         }
       }
     },
+    "tabCluster": {
+      "colors": {
+        "blue": "Blue",
+        "cyan": "Cyan",
+        "green": "Green",
+        "grey": "Grey",
+        "orange": "Orange",
+        "pink": "Pink",
+        "purple": "Purple",
+        "red": "Red",
+        "yellow": "Yellow"
+      }
+    },
     "workspace": {
       "cleanup": {
         "browse": {

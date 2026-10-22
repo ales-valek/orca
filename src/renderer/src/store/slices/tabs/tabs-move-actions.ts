@@ -1,12 +1,16 @@
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
+import { pushRecentTabId } from '../../../../../shared/tab-group-history'
 import { collapseGroupLayout } from '../../../../../shared/workspace-layout/tab-group-layout-tree'
 import { buildActiveSurfacePatch } from './tabs-surface'
+import {
+  applyTransferredTabClusterMembership,
+  getTabClusterInsertionIndex
+} from './tab-cluster-model'
+import { pickTabCloseSuccessor } from '../../../../../shared/tab-close-successor'
 import {
   findGroupAndWorktree,
   findGroupForTab,
   findTabAndWorktree,
-  pickNextActiveTab,
-  pushRecentTabId,
   sanitizeRecentTabIds
 } from '../tab-group-state'
 import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-order'
@@ -39,36 +43,43 @@ export function createTabsMoveActions(
         const sourceOrder = dedupeTabOrder(dedupedSourceGroupOrder.filter((id) => id !== tabId))
         // Stale target orders may already contain tabId; dedupe to prevent duplicate React keys (also guarded in dropUnifiedTab).
         const targetOrder = dedupeTabOrder(targetGroup.tabOrder.filter((id) => id !== tabId))
-        const targetIndex = Math.max(
-          0,
-          Math.min(opts?.index ?? targetOrder.length, targetOrder.length)
+        const targetIndex = getTabClusterInsertionIndex(
+          targetOrder,
+          targetGroup.tabClusters,
+          opts?.index ?? targetOrder.length
         )
         targetOrder.splice(targetIndex, 0, tabId)
         const nextActiveGroupIdByWorktree = {
           ...state.activeGroupIdByWorktree,
           [worktreeId]: opts?.activate ? targetGroupId : state.activeGroupIdByWorktree[worktreeId]
         }
-        const sourceRecentTabIds = sanitizeRecentTabIds(
-          (sourceGroup.recentTabIds ?? []).filter((id) => id !== tabId),
-          sourceOrder
+        const sourceActiveTabId =
+          sourceGroup.activeTabId === tabId
+            ? pickTabCloseSuccessor(sourceGroup, dedupedSourceGroupOrder, tabId)
+            : sourceGroup.activeTabId
+        const sanitizedSourceRecent = sanitizeRecentTabIds(sourceGroup.recentTabIds, sourceOrder)
+        const sourceRecentTabIds =
+          sourceActiveTabId && sourceActiveTabId !== sourceGroup.activeTabId
+            ? pushRecentTabId(sanitizedSourceRecent, sourceActiveTabId)
+            : sanitizedSourceRecent
+        const pinnedTabIds = new Set(
+          (state.unifiedTabsByWorktree[worktreeId] ?? [])
+            .filter((candidate) => candidate.isPinned)
+            .map((candidate) => candidate.id)
         )
         const nextGroups = (state.groupsByWorktree[worktreeId] ?? []).map((group) => {
           if (group.id === sourceGroup.id) {
-            return {
-              ...group,
-              activeTabId:
-                group.activeTabId === tabId
-                  ? // Why: keep MRU-aware selection so the user lands on their previously-focused tab, not a visual neighbor.
-                    pickNextActiveTab(
-                      dedupedSourceGroupOrder,
-                      sourceGroup.recentTabIds,
-                      tabId,
-                      state.unifiedTabsByWorktree[worktreeId]
-                    )
-                  : group.activeTabId,
-              tabOrder: sourceOrder,
-              recentTabIds: sourceRecentTabIds
-            }
+            return applyTransferredTabClusterMembership(
+              {
+                ...group,
+                activeTabId: sourceActiveTabId,
+                tabOrder: sourceOrder,
+                recentTabIds: sourceRecentTabIds
+              },
+              [tabId],
+              null,
+              pinnedTabIds
+            )
           }
           if (group.id === targetGroupId) {
             const sanitizedTargetRecent = sanitizeRecentTabIds(group.recentTabIds, targetOrder)

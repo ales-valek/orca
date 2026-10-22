@@ -1,6 +1,10 @@
 import type { RefObject } from 'react'
 import type { DragEndEvent } from '@dnd-kit/core'
+import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { useAppStore } from '../../store'
+import type { AppState } from '../../store/types'
+import { resolveHostSessionTabIdForWebSessionTab } from '../../runtime/web-session-tabs-sync/tracking-mappings'
+import { isWebTerminalSurfaceTabId } from '../../../../shared/terminal-surface-id'
 import { mirrorWebRuntimeTabMove } from '../tab-bar/web-runtime-tab-move-mirror'
 import { resolveTabInsertion } from './tab-insertion'
 import { resolveSourceGroupRestoreOnDrop } from './tab-drag-preview-target'
@@ -9,38 +13,54 @@ import {
   resolveActivePaneColumnSplitTarget,
   type TabGroupPanelGeometrySnapshot
 } from './tab-group-panel-split-target'
-import { isPaneDropData, isTabDragData, type TabDragItemData } from './tab-drag-data'
+import {
+  isPaneDropData,
+  isTabClusterDragData,
+  isTabDragData,
+  isTabStripDragData,
+  type TabStripDragItemData
+} from './tab-drag-data'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
 import { dropTabThroughLayoutOwner } from './tab-group-layout-owner-commands'
+import { resolveTabClusterDropTarget } from './tab-cluster-drop-target'
+import { getTabClusterSplitBlocker } from './tab-cluster-split-availability'
 
-type AppState = ReturnType<typeof useAppStore.getState>
-
-/** Commit splits/reorders/moves through the layout owner or window path, then finish or restore the drag snapshot. */
 export function commitTabDragDrop({
   event,
   worktreeId,
   dragGeometryRef,
   dropUnifiedTab,
-  reorderUnifiedTabs,
+  moveTabsInStrip,
+  moveTabCluster,
   finishDrag
 }: {
   event: DragEndEvent
   worktreeId: string
   dragGeometryRef: RefObject<TabGroupPanelGeometrySnapshot | null>
   dropUnifiedTab: AppState['dropUnifiedTab']
-  reorderUnifiedTabs: AppState['reorderUnifiedTabs']
-  finishDrag: (restoreSnapshot: boolean, activeData?: TabDragItemData) => void
+  moveTabsInStrip: AppState['moveTabsInStrip']
+  moveTabCluster: AppState['moveTabCluster']
+  finishDrag: (restoreSnapshot: boolean, activeData?: TabStripDragItemData) => void
 }): void {
   const activeData = event.active.data.current
   const overData = event.over?.data.current
-  let shouldRestorePreDragActivation = true
-
-  if (!isTabDragData(activeData) || activeData.worktreeId !== worktreeId) {
+  if (!isTabStripDragData(activeData) || activeData.worktreeId !== worktreeId) {
     finishDrag(true)
     return
   }
 
   const state = useAppStore.getState()
+  const sourceGroup = state.groupsByWorktree[worktreeId]?.find(
+    (group) => group.id === activeData.groupId
+  )
+  const movedTabIds = isTabClusterDragData(activeData)
+    ? sourceGroup?.tabClusters?.find((cluster) => cluster.id === activeData.clusterId)?.tabIds
+    : [activeData.unifiedTabId]
+  if (!movedTabIds?.length) {
+    finishDrag(true)
+    return
+  }
+
   const paneColumnSplit = resolveActivePaneColumnSplitTarget({
     event,
     groupsByWorktree: state.groupsByWorktree,
@@ -50,9 +70,15 @@ export function commitTabDragDrop({
     geometry: dragGeometryRef.current
   })
   if (paneColumnSplit) {
-    // End the drag now; main’s answer draws the requested pane placement.
+    if (isTabClusterDragData(activeData) && getTabClusterSplitBlocker(state, worktreeId)) {
+      finishDrag(true)
+      return
+    }
+    // Switch point: main places the tab beside the group first; the drag ends now, the move shows
+    // once main answers.
     if (
       ORCA_LAYOUT_OWNER_IS_MAIN &&
+      isTabDragData(activeData) &&
       dropTabThroughLayoutOwner(worktreeId, {
         kind: 'split',
         tabId: activeData.unifiedTabId,
@@ -63,12 +89,14 @@ export function commitTabDragDrop({
       finishDrag(true)
       return
     }
-    const moved = dropUnifiedTab(activeData.unifiedTabId, {
+    const target = {
       groupId: paneColumnSplit.groupId,
       splitDirection: paneColumnSplit.zone
-    })
-    if (moved) {
-      shouldRestorePreDragActivation = false
+    }
+    const moved = isTabClusterDragData(activeData)
+      ? moveTabCluster(activeData.groupId, activeData.clusterId, target)
+      : dropUnifiedTab(activeData.unifiedTabId, target)
+    if (moved && isTabDragData(activeData)) {
       mirrorWebRuntimeTabMove({
         kind: 'split',
         worktreeId,
@@ -77,146 +105,138 @@ export function commitTabDragDrop({
         splitDirection: paneColumnSplit.zone
       })
     }
-    finishDrag(
-      shouldRestorePreDragActivation,
-      resolveSourceGroupRestoreOnDrop(
-        activeData,
-        paneColumnSplit.groupId,
-        shouldRestorePreDragActivation
-      )
+    finishDrag(!moved, resolveSourceGroupRestoreOnDrop(activeData, paneColumnSplit.groupId, !moved))
+    return
+  }
+
+  if (isTabStripDragData(overData) && overData.worktreeId === worktreeId) {
+    const targetGroup = state.groupsByWorktree[worktreeId]?.find(
+      (group) => group.id === overData.groupId
     )
-    return
-  }
-
-  if (!event.over) {
-    finishDrag(true)
-    return
-  }
-
-  if (isTabDragData(overData)) {
-    if (activeData.unifiedTabId === overData.unifiedTabId) {
-      finishDrag(true)
-      return
-    }
-
-    const groups = state.groupsByWorktree[worktreeId] ?? []
-    const targetGroup = groups.find((group) => group.id === overData.groupId)
-    if (!targetGroup) {
-      finishDrag(true)
-      return
-    }
-
-    // Recompute insertion side at drop so the destination matches the drawn bar without stale closure state.
     const insertion = resolveTabInsertion(event, isTabDragData, getDragPointer)
-    if (!insertion) {
+    const target =
+      targetGroup && insertion
+        ? resolveTabClusterDropTarget({
+            activeDrag: activeData,
+            overData,
+            targetGroup,
+            side: insertion.side
+          })
+        : null
+    if (!targetGroup || !target) {
       finishDrag(true)
       return
     }
 
-    const overIndex = targetGroup.tabOrder.indexOf(overData.unifiedTabId)
-    const rawInsertIndex = overIndex + (insertion.side === 'right' ? 1 : 0)
-
-    if (activeData.groupId === overData.groupId) {
-      const oldIndex = targetGroup.tabOrder.indexOf(activeData.unifiedTabId)
-      // Adjust forward insertion after removing the source tab so the target slot does not shift left.
-      const nextIndex = oldIndex < rawInsertIndex ? rawInsertIndex - 1 : rawInsertIndex
-      if (oldIndex !== -1 && oldIndex !== nextIndex) {
-        const nextOrder = targetGroup.tabOrder.filter((id) => id !== activeData.unifiedTabId)
-        nextOrder.splice(nextIndex, 0, activeData.unifiedTabId)
-        if (
-          ORCA_LAYOUT_OWNER_IS_MAIN &&
-          dropTabThroughLayoutOwner(worktreeId, {
-            kind: 'reorder',
-            tabId: activeData.unifiedTabId,
-            groupId: overData.groupId,
-            tabOrder: nextOrder
-          })
-        ) {
-          finishDrag(true)
-          return
-        }
-        reorderUnifiedTabs(overData.groupId, nextOrder)
-        mirrorWebRuntimeTabMove({
-          kind: 'reorder',
-          worktreeId,
-          tabId: activeData.unifiedTabId,
-          targetGroupId: overData.groupId,
-          tabOrder: nextOrder
-        })
-      }
-    } else {
-      const index = overIndex === -1 ? targetGroup.tabOrder.length : rawInsertIndex
+    if (activeData.groupId === targetGroup.id) {
+      moveTabsInStrip(targetGroup.id, movedTabIds, target)
+      const nextOrder = useAppStore
+        .getState()
+        .groupsByWorktree[worktreeId]?.find((group) => group.id === targetGroup.id)?.tabOrder
       if (
-        ORCA_LAYOUT_OWNER_IS_MAIN &&
-        dropTabThroughLayoutOwner(worktreeId, {
-          kind: 'move',
-          tabId: activeData.unifiedTabId,
-          groupId: overData.groupId,
-          index
-        })
+        nextOrder &&
+        (nextOrder.length !== targetGroup.tabOrder.length ||
+          nextOrder.some((id, index) => id !== targetGroup.tabOrder[index]))
       ) {
-        finishDrag(true)
-        return
+        mirrorTabStripReorder(worktreeId, targetGroup.id, movedTabIds[0], nextOrder)
       }
-      const moved = dropUnifiedTab(activeData.unifiedTabId, {
-        groupId: overData.groupId,
-        index
-      })
-      if (moved) {
-        shouldRestorePreDragActivation = false
-        mirrorWebRuntimeTabMove({
-          kind: 'move-to-group',
-          worktreeId,
-          tabId: activeData.unifiedTabId,
-          targetGroupId: overData.groupId,
-          index
-        })
-      }
+      finishDrag(true)
+      return
     }
 
-    finishDrag(
-      shouldRestorePreDragActivation,
-      resolveSourceGroupRestoreOnDrop(activeData, overData.groupId, shouldRestorePreDragActivation)
-    )
+    if (
+      ORCA_LAYOUT_OWNER_IS_MAIN &&
+      isTabDragData(activeData) &&
+      dropTabThroughLayoutOwner(worktreeId, {
+        kind: 'move',
+        tabId: activeData.unifiedTabId,
+        groupId: targetGroup.id,
+        index: target.index
+      })
+    ) {
+      finishDrag(true)
+      return
+    }
+    const moved = isTabClusterDragData(activeData)
+      ? moveTabCluster(activeData.groupId, activeData.clusterId, {
+          groupId: targetGroup.id,
+          index: target.index
+        })
+      : dropUnifiedTab(activeData.unifiedTabId, {
+          groupId: targetGroup.id,
+          index: target.index,
+          clusterId: target.clusterId
+        })
+    if (moved) {
+      mirrorMovedTabs(worktreeId, targetGroup.id, movedTabIds)
+    }
+    finishDrag(!moved, resolveSourceGroupRestoreOnDrop(activeData, targetGroup.id, !moved))
     return
   }
 
-  if (isPaneDropData(overData)) {
-    if (activeData.groupId !== overData.groupId) {
-      if (
-        ORCA_LAYOUT_OWNER_IS_MAIN &&
-        dropTabThroughLayoutOwner(worktreeId, {
-          kind: 'move',
-          tabId: activeData.unifiedTabId,
-          groupId: overData.groupId
-        })
-      ) {
-        finishDrag(true)
-        return
-      }
-      const moved = dropUnifiedTab(activeData.unifiedTabId, {
+  if (
+    isPaneDropData(overData) &&
+    overData.worktreeId === worktreeId &&
+    activeData.groupId !== overData.groupId
+  ) {
+    if (
+      ORCA_LAYOUT_OWNER_IS_MAIN &&
+      isTabDragData(activeData) &&
+      dropTabThroughLayoutOwner(worktreeId, {
+        kind: 'move',
+        tabId: activeData.unifiedTabId,
         groupId: overData.groupId
       })
-      if (moved) {
-        shouldRestorePreDragActivation = false
-        mirrorWebRuntimeTabMove({
-          kind: 'move-to-group',
-          worktreeId,
-          tabId: activeData.unifiedTabId,
-          targetGroupId: overData.groupId
-        })
-      }
+    ) {
+      finishDrag(true)
+      return
     }
+    const moved = isTabClusterDragData(activeData)
+      ? moveTabCluster(activeData.groupId, activeData.clusterId, { groupId: overData.groupId })
+      : dropUnifiedTab(activeData.unifiedTabId, { groupId: overData.groupId })
+    if (moved) {
+      mirrorMovedTabs(worktreeId, overData.groupId, movedTabIds)
+    }
+    finishDrag(!moved, resolveSourceGroupRestoreOnDrop(activeData, overData.groupId, !moved))
+    return
   }
+  finishDrag(true)
+}
 
-  finishDrag(
-    shouldRestorePreDragActivation,
-    isPaneDropData(overData)
-      ? resolveSourceGroupRestoreOnDrop(
-          activeData,
-          overData.groupId,
-          shouldRestorePreDragActivation
-        )
-      : undefined
-  )
+function mirrorMovedTabs(
+  worktreeId: string,
+  targetGroupId: string,
+  tabIds: readonly string[]
+): void {
+  const targetOrder = useAppStore
+    .getState()
+    .groupsByWorktree[worktreeId]?.find((group) => group.id === targetGroupId)?.tabOrder
+  for (const tabId of tabIds) {
+    const index = targetOrder?.indexOf(tabId)
+    mirrorWebRuntimeTabMove({
+      kind: 'move-to-group',
+      worktreeId,
+      tabId,
+      targetGroupId,
+      ...(index !== undefined && index !== -1 ? { index } : {})
+    })
+  }
+}
+
+function mirrorTabStripReorder(
+  worktreeId: string,
+  targetGroupId: string,
+  draggedTabId: string,
+  tabOrder: string[]
+): void {
+  const state = useAppStore.getState()
+  const environmentId = getRuntimeEnvironmentIdForWorktree(state, worktreeId)
+  const tabId = environmentId
+    ? (tabOrder.find(
+        (id) =>
+          isWebTerminalSurfaceTabId(id) ||
+          resolveHostSessionTabIdForWebSessionTab(state, { environmentId, worktreeId, tabId: id })
+      ) ?? draggedTabId)
+    : draggedTabId
+  mirrorWebRuntimeTabMove({ kind: 'reorder', worktreeId, tabId, targetGroupId, tabOrder })
 }
