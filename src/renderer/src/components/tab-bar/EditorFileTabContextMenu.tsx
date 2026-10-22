@@ -23,6 +23,8 @@ import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
 import { CopyTabIdMenuItem } from './CopyTabIdMenuItem'
 import { isVirtualEditorFile } from '@/store/slices/editor/tabs/editor-tab-content-type'
 import { CloseSplitPaneMenuItem } from './CloseSplitPaneMenuItem'
+import { TabClusterMenuSection } from './TabClusterMenuSection'
+import { useTabClusterMenuCloseAction } from './use-tab-cluster-menu-close-action'
 
 type EditorFileTabContextMenuProps = {
   open: boolean
@@ -89,6 +91,7 @@ export function EditorFileTabContextMenu({
   const renameShortcut = useOptionalShortcutLabel('tab.rename')
   const closeShortcut = useOptionalShortcutLabel('tab.close')
   const closeAllShortcut = useOptionalShortcutLabel('tab.closeAll')
+  const clusterMenuAction = useTabClusterMenuCloseAction()
   const revealOwner = useAppStore((s) =>
     getWorkspaceFileRevealOwner(s, file.worktreeId, {
       connectionId: file.externalSshTargetId ?? repoConnectionId,
@@ -112,6 +115,9 @@ export function EditorFileTabContextMenu({
         sideOffset={0}
         align="start"
         onCloseAutoFocus={(event) => {
+          if (clusterMenuAction.runAfterClose(event)) {
+            return
+          }
           if (!skipMenuFocusRestoreRef.current) {
             return
           }
@@ -145,6 +151,15 @@ export function EditorFileTabContextMenu({
             : translate('auto.components.tab.bar.EditorFileTabContextMenu.fdd29eb669', 'Pin Tab')}
         </DropdownMenuItem>
         <CopyTabIdMenuItem unifiedTabId={unifiedTabId} />
+        {open ? (
+          <TabClusterMenuSection
+            worktreeId={file.worktreeId}
+            groupId={groupId}
+            tabId={unifiedTabId}
+            isPinned={isPinned}
+            onQueueNewCluster={clusterMenuAction.queueAfterClose}
+          />
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => !isPinned && onClose()} disabled={isPinned}>
           <X className="size-3.5" />

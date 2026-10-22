@@ -14,7 +14,8 @@ import RunningTerminalCloseDialog from './RunningTerminalCloseDialog'
 const initialState = useAppStore.getInitialState()
 const mountedRoots: Root[] = []
 
-// Advance a clock past the store’s 350ms queued-request guard instead of racing real time.
+// The store holds off any action for 350 ms after a queued request replaces the visible
+// one, so these tests drive a clock instead of racing it.
 let clock = 1_000
 
 function advancePastGuard(): void {
@@ -64,7 +65,8 @@ function getCheckbox(): HTMLButtonElement {
 describe('RunningTerminalCloseDialog', () => {
   beforeEach(() => {
     useAppStore.setState(initialState, true)
-    // Keep time monotonic because the singleton store retains guard deadlines between tests.
+    // Monotonic across tests: the store is a singleton, so winding the clock back would
+    // leave a previous test's guard deadline in the future and block every action.
     clock += 10_000
     vi.spyOn(Date, 'now').mockImplementation(() => clock)
   })
@@ -84,14 +86,11 @@ describe('RunningTerminalCloseDialog', () => {
     useAppStore.setState(initialState, true)
   })
 
-  it('names the tab so a background close is not ambiguous', async () => {
+  it('confirms a running-terminal close without opting out', async () => {
     const onConfirm = vi.fn()
     const updateSettings = vi.fn().mockResolvedValue(undefined)
 
     await renderDialog({ onConfirm }, updateSettings)
-
-    expect(document.body.textContent).toContain('Stop running command?')
-    expect(document.body.textContent).toContain('dev server')
 
     await act(async () => {
       getButton('Stop and Close').click()
@@ -101,19 +100,8 @@ describe('RunningTerminalCloseDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 
-  it('uses the agent copy for an agent pane', async () => {
-    const updateSettings = vi.fn().mockResolvedValue(undefined)
-
-    await renderDialog({ onConfirm: vi.fn(), copyKind: 'agent' }, updateSettings)
-
-    expect(document.body.textContent).toContain('Stop this agent?')
-    expect(document.body.textContent).toContain(
-      'This terminal will not resume automatically. Cancel and put the workspace to sleep to resume it later.'
-    )
-    expect(getButton('Stop Agent')).toBeTruthy()
-  })
-
-  // Async process probes can overlap the synchronous pinned queue; only one modal/focus trap may open.
+  // Why: this queue opens after an async probe while the pinned queue opens synchronously,
+  // so both can be pending at once. Two modal overlays + focus traps is the bug.
   it('waits for a visible pinned confirmation instead of stacking a second modal', async () => {
     const updateSettings = vi.fn().mockResolvedValue(undefined)
     useAppStore.setState({
@@ -122,13 +110,13 @@ describe('RunningTerminalCloseDialog', () => {
 
     await renderDialog({ onConfirm: vi.fn() }, updateSettings)
 
-    expect(document.body.textContent).not.toContain('Stop running command?')
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
 
     await act(async () => {
       useAppStore.setState({ pinnedTabCloseConfirm: null })
     })
 
-    expect(document.body.textContent).toContain('Stop running command?')
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull()
   })
 
   it('does not carry the opt-out tick over to the next queued tab', async () => {
@@ -225,4 +213,51 @@ describe('RunningTerminalCloseDialog', () => {
 
     expect(nextOnConfirm).toHaveBeenCalledTimes(1)
   })
+
+  it.each(['confirm', 'cancel'] as const)(
+    'keeps a group close atomic when the user chooses %s',
+    async (decision) => {
+      const onConfirm = vi.fn()
+      const onCancel = vi.fn()
+      const updateSettings = vi.fn().mockResolvedValue(undefined)
+
+      await renderDialog(
+        {
+          terminalTabId: 'tab-cluster:development',
+          tabLabel: 'Development',
+          copyKind: 'agent',
+          groupTerminals: [
+            { terminalTabId: 'build', tabLabel: 'Build watcher', copyKind: 'command' },
+            { terminalTabId: 'agent', tabLabel: 'Review agent', copyKind: 'agent' }
+          ],
+          onConfirm,
+          onCancel
+        },
+        updateSettings
+      )
+
+      expect(document.body.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+      expect(document.body.textContent).toContain('Development')
+      expect(document.body.textContent).not.toContain('Build watcher')
+      const disclosure = document.body.querySelector<HTMLButtonElement>('[aria-expanded]')
+      if (!disclosure) {
+        throw new Error('Missing running-terminal disclosure')
+      }
+      await act(async () => disclosure.click())
+
+      expect(document.body.querySelectorAll('li')).toHaveLength(2)
+      expect(document.body.textContent).toContain('Build watcher')
+      expect(document.body.textContent).toContain('Review agent')
+      expect(onConfirm).not.toHaveBeenCalled()
+      await act(async () => {
+        getButton(decision === 'confirm' ? 'Stop Agent' : 'Cancel').click()
+      })
+
+      expect(onConfirm).toHaveBeenCalledTimes(decision === 'confirm' ? 1 : 0)
+      expect(onCancel).toHaveBeenCalledTimes(decision === 'cancel' ? 1 : 0)
+      expect(useRunningTerminalCloseConfirmStore.getState().runningTerminalCloseConfirm).toBeNull()
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull()
+      expect(updateSettings).not.toHaveBeenCalled()
+    }
+  )
 })

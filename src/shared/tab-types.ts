@@ -73,6 +73,33 @@ export type Tab = {
   lastFocusedAt?: number
 }
 
+// ─── Tab Cluster ────────────────────────────────────────────────────
+// Why: Chrome-style named group inside ONE pane's strip; "TabGroup" already means a split pane.
+export const TAB_CLUSTER_COLORS = [
+  'grey',
+  'blue',
+  'red',
+  'yellow',
+  'green',
+  'pink',
+  'purple',
+  'cyan',
+  'orange'
+] as const
+export type TabClusterColor = (typeof TAB_CLUSTER_COLORS)[number]
+
+export type TabCluster = {
+  id: string
+  /** Empty string renders a color-only chip. */
+  name: string
+  color: TabClusterColor
+  collapsed: boolean
+  /** Member unified tab ids: unpinned, present in the pane, contiguous and in pane tabOrder order. */
+  tabIds: string[]
+  /** While collapsed: the member that was active when the group collapsed, kept visible after you leave it. */
+  shownTabId?: string
+}
+
 export type TabGroup = {
   id: string
   worktreeId: string
@@ -81,4 +108,38 @@ export type TabGroup = {
   /** Per-group MRU, newest last, restores the previous tab on close instead of a visual neighbor.
    * Legacy sessions omit it; hydration seeds from activeTabId so split groups keep independent histories. */
   recentTabIds?: string[]
+  /** Named, collapsible tab clusters within this pane's strip. Absent when the pane has none. */
+  tabClusters?: TabCluster[]
+}
+
+/** Clusters whose members are still in `tabOrder`, dropping a cluster that lost all of them. */
+export function tabClustersWithinOrder(
+  clusters: readonly TabCluster[] | undefined,
+  tabOrder: readonly string[]
+): TabCluster[] | undefined {
+  if (!clusters?.length) {
+    return undefined
+  }
+  const live = new Set(tabOrder)
+  const kept = clusters
+    .map((cluster) => ({ ...cluster, tabIds: cluster.tabIds.filter((id) => live.has(id)) }))
+    .filter((cluster) => cluster.tabIds.length > 0)
+  return kept.length > 0 ? kept : undefined
+}
+
+export function getHiddenClusterTabIds(
+  group: Pick<TabGroup, 'tabClusters' | 'activeTabId'>
+): ReadonlySet<string> {
+  const hidden = new Set<string>()
+  for (const cluster of group.tabClusters ?? []) {
+    if (!cluster.collapsed) {
+      continue
+    }
+    for (const id of cluster.tabIds) {
+      if (id !== group.activeTabId && id !== cluster.shownTabId) {
+        hidden.add(id)
+      }
+    }
+  }
+  return hidden
 }

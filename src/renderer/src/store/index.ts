@@ -73,6 +73,7 @@ import {
 } from '@/lib/renderer-memory-profile'
 import { estimateStateCollectionKB } from '@/lib/state-collection-byte-estimate'
 import { registerWindowsPathAccessEnvironments } from '@/lib/windows-path-access'
+import { installTabClusterInvariant } from './slices/tabs/tab-cluster-invariant'
 
 // Dev-only churn probe cannot be armed in shipped builds; avoid its per-write wrapper. Cascade probe stays enabled for field crash telemetry.
 const withDevelopmentStoreProbes = (createState: StateCreator<AppState, [], []>) =>
@@ -150,6 +151,8 @@ export const useAppStore = create<AppState>()(
     import.meta.env.DEV || e2eConfig.exposeStore
   )
 )
+
+installTabClusterInvariant(useAppStore)
 
 registerHttpLinkStoreAccessor(() => useAppStore.getState(), useAppStore.subscribe)
 registerHttpLinkGroupActionAvailability((request) =>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { TAB_DRAG_ACTIVATION_DISTANCE_PX } from '../tab-group/useTabDragSplit'
 import { beginTabStripPointerGesture } from './tab-strip-pointer-gesture'
+import type { TabStripActivationModifiers } from './tab-strip-selection'
 
 /** Activate from release displacement, not asynchronously cleared drag state, so drags stay inactive and post-drag clicks still work. */
 function isGuestHoldingKeyboard(): boolean {
@@ -11,7 +12,7 @@ export function useTabStripPointerActivation({
   onActivate,
   disabled = false
 }: {
-  onActivate: () => void
+  onActivate: (modifiers: TabStripActivationModifiers) => void
   disabled?: boolean
 }): {
   onPointerDown: (
@@ -37,6 +38,11 @@ export function useTabStripPointerActivation({
       cleanupRef.current?.()
       const startX = event.clientX
       const startY = event.clientY
+      const modifiers: TabStripActivationModifiers = {
+        metaKey: event.metaKey === true,
+        ctrlKey: event.ctrlKey === true,
+        shiftKey: event.shiftKey === true
+      }
       const releaseTabStripPointerGesture = beginTabStripPointerGesture()
       // Forgive one focus restoration when a press starts in a guest-blurred embedder; that press is leaving the guest.
       let pendingGuestFocusHandoff = isGuestHoldingKeyboard()
@@ -56,7 +62,7 @@ export function useTabStripPointerActivation({
         cleanup()
         // Use final release coordinates because packaged Chromium can deliver a stale first move after focus.
         if (!wasDrag) {
-          onActivateRef.current()
+          onActivateRef.current(modifiers)
         }
       }
       const onPointerCancel = (): void => {

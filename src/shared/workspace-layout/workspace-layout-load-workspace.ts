@@ -226,9 +226,20 @@ export function loadWorkspace(args: WorkspaceLoadArgs): WorkspaceLayout {
       aliases.size > 0 && group.recentTabIds
         ? { recentTabIds: group.recentTabIds.map(kept) }
         : group
+    const clusters =
+      aliases.size > 0 && group.tabClusters
+        ? {
+            tabClusters: group.tabClusters.map((cluster) => ({
+              ...cluster,
+              tabIds: cluster.tabIds.map(kept),
+              ...(cluster.shownTabId ? { shownTabId: kept(cluster.shownTabId) } : {})
+            }))
+          }
+        : group
     childRecord(view.groups, key)[group.id] ??= {
       activeTabId: group.activeTabId && kept(group.activeTabId),
-      ...pickStoredFields(recent, ['recentTabIds'])
+      ...pickStoredFields(recent, ['recentTabIds']),
+      ...pickStoredFields(clusters, ['tabClusters'])
     }
   }
   const groups = resolveGroupOrder({

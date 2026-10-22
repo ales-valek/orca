@@ -36,6 +36,10 @@ import { useBrowserAgentDrivesAnyPage } from '../browser-pane/agent-cursor/brows
 import { CopyTabIdMenuItem } from './CopyTabIdMenuItem'
 import { CloseSplitPaneMenuItem } from './CloseSplitPaneMenuItem'
 import { useAppStore } from '@/store'
+import type { TabStripInteractionProps } from './tab-strip-selection'
+import { TabClusterMemberIndicator } from './TabClusterMemberIndicator'
+import { TabClusterMenuSection } from './TabClusterMenuSection'
+import { useTabClusterMenuCloseAction } from './use-tab-cluster-menu-close-action'
 
 export function formatBrowserTabUrlLabel(url: string): string {
   if (url === ORCA_BROWSER_BLANK_URL || url === 'about:blank') {
@@ -69,6 +73,9 @@ export default function BrowserTab({
   tab,
   isActive,
   isPinned,
+  clusterColor,
+  isHighlighted = false,
+  onSelect,
   hasTabsToRight,
   tabCount,
   onActivate,
@@ -80,7 +87,7 @@ export default function BrowserTab({
   dragData,
   dropIndicator,
   includeTopTabBorder = true
-}: {
+}: TabStripInteractionProps & {
   tab: BrowserTabState
   isActive: boolean
   isPinned: boolean
@@ -106,6 +113,7 @@ export default function BrowserTab({
   })
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
+  const clusterMenuAction = useTabClusterMenuCloseAction()
 
   // Only HTTP(S) URLs can open in the system browser; disable unsupported or malformed destinations.
   const openInBrowserUrl = redactKagiSessionToken(getLiveBrowserUrl(tab.id) ?? tab.url)
@@ -147,7 +155,13 @@ export default function BrowserTab({
   }, [menuOpen])
 
   // Activate on pointer-up so drag gestures cannot switch tabs mid-drag.
-  const { onPointerDown: onTabPointerDown } = useTabStripPointerActivation({ onActivate })
+  const { onPointerDown: onTabPointerDown } = useTabStripPointerActivation({
+    onActivate: (modifiers) => {
+      if (!onSelect?.(modifiers)) {
+        onActivate()
+      }
+    }
+  })
   const slotProps = useTabStripSlotProps(tab.id, isActive)
 
   const tabRoot = (
@@ -156,14 +170,18 @@ export default function BrowserTab({
       data-tab-id={tab.id}
       data-active={isActive ? 'true' : 'false'}
       data-pinned={isPinned ? 'true' : 'false'}
+      data-tab-highlighted={isHighlighted ? 'true' : undefined}
       {...attributes}
       {...listeners}
-      className={`${TAB_ROOT_WIDTH_CLASSES} group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={cn(
+        TAB_ROOT_WIDTH_CLASSES,
+        'group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none',
+        getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder }),
+        getDropIndicatorClasses(dropIndicator ?? null),
+        getTabRootStateClasses(isActive)
+      )}
       onPointerDown={(e) => {
-        onTabPointerDown(
-          e,
-          listeners?.onPointerDown as ((event: React.PointerEvent<Element>) => void) | undefined
-        )
+        onTabPointerDown(e, (event) => listeners?.onPointerDown?.(event))
       }}
       onMouseDown={(e) => {
         if (e.button === 1) {
@@ -183,6 +201,7 @@ export default function BrowserTab({
       }}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
+      {clusterColor ? <TabClusterMemberIndicator color={clusterColor} /> : null}
       {/* Keep browser identity distinct on inactive tabs too; muted icons look disabled. */}
       {agentDriving ? (
         // Why: the dimmed favicon keeps the site recognizable under the agent's arrow.
@@ -284,6 +303,7 @@ export default function BrowserTab({
           )}
           sideOffset={0}
           align="start"
+          onCloseAutoFocus={clusterMenuAction.runAfterClose}
         >
           <TabWorkspaceLayoutMenuSection
             unifiedTabId={dragData.unifiedTabId}
@@ -312,6 +332,15 @@ export default function BrowserTab({
             </DropdownMenuItem>
           ) : null}
           <CopyTabIdMenuItem unifiedTabId={dragData.unifiedTabId} />
+          {menuOpen ? (
+            <TabClusterMenuSection
+              worktreeId={dragData.worktreeId}
+              groupId={dragData.groupId}
+              tabId={dragData.unifiedTabId}
+              isPinned={isPinned}
+              onQueueNewCluster={clusterMenuAction.queueAfterClose}
+            />
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => !isPinned && onClose()} disabled={isPinned}>
             <X className="size-3.5" />

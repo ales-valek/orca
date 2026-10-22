@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 import type { WindowsTerminalCapabilities } from '@/lib/windows-terminal-capabilities'
+import type { TabGroup } from '../../../../shared/tab-types'
+import type { TabStripSelection } from '@/store/slices/tabs/tabs-slice-contract'
 
 /** Share the write-gate harness across separate platform files because platform detection runs at module load. */
 export type TabBarProbeState = {
@@ -9,6 +11,9 @@ export type TabBarProbeState = {
   gitStatusByWorktree: Record<string, never[]>
   unifiedTabsByWorktree: Record<string, never[]>
   activeGroupIdByWorktree: Record<string, string>
+  groupsByWorktree: Record<string, TabGroup[]>
+  tabSelectionByGroupId: Record<string, TabStripSelection>
+  setTabSelection: (groupId: string, selection: TabStripSelection | null) => void
   activeRepoId: string | null
   activeWorktreeId: string | null
   endpointProjects: unknown[]
@@ -42,6 +47,9 @@ export async function createTabBarProbeStore(): Promise<TabBarProbeStore> {
       gitStatusByWorktree: {},
       unifiedTabsByWorktree: {},
       activeGroupIdByWorktree: {},
+      groupsByWorktree: {},
+      tabSelectionByGroupId: {},
+      setTabSelection: noop,
       activeRepoId: null,
       activeWorktreeId: null,
       endpointProjects: [],
@@ -82,6 +90,7 @@ const DETECTED_AGENTS = Object.freeze({ detectedIds: Object.freeze([]) })
 const CREATE_MENU = Object.freeze({})
 const ITEM_PROJECTION = Object.freeze({
   orderedItems: Object.freeze([]),
+  visibleItems: Object.freeze([]),
   activeVisibleTabId: null,
   tabStripLayoutKey: 'probe'
 })

@@ -64,10 +64,11 @@ export {
   makeUnifiedTab,
   makeTabGroup
 } from './store-session-test-harness'
+import { installTabClusterInvariant } from './tabs/tab-cluster-invariant'
 
 export function createTestStore() {
   // Why the record middleware: views of one file share a record only through it, as in the app.
-  return create<AppState>()(
+  const store = create<AppState>()(
     withEditorBufferRecords<AppState>(
       (...a) => ({
         ...createRepoSlice(...a),
@@ -124,6 +125,8 @@ export function createTestStore() {
       true
     )
   )
+  installTabClusterInvariant(store)
+  return store
 }
 
 export function seedStore(

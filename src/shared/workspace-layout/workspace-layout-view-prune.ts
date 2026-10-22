@@ -4,6 +4,7 @@ import {
   getWorktreeIdFromHostIdentity,
   isWorktreeHostIdentity
 } from '../worktree/host-qualified-identity'
+import { tabClustersWithinOrder } from '../tab-types'
 import { filterRecord, withoutKey } from './stored-record-fields'
 import { collectLayoutLeafIdsInOrder } from './terminal-pane-tree'
 import { editorFileKey, holdsEditorFileId } from './workspace-layout-editor-tab-file'
@@ -77,12 +78,14 @@ export function pruneViewRecord(
     for (const group of workspaces[key]?.groups ?? []) {
       const selection = byGroup[group.id]
       if (selection) {
-        const { activeTabId, recentTabIds } = selection
+        const { activeTabId, recentTabIds, tabClusters } = selection
+        const keptClusters = tabClustersWithinOrder(tabClusters, group.tabOrder)
         byGroup[group.id] = {
           activeTabId: activeTabId && group.tabOrder.includes(activeTabId) ? activeTabId : null,
           ...(recentTabIds
             ? { recentTabIds: recentTabIds.filter((id) => group.tabOrder.includes(id)) }
-            : {})
+            : {}),
+          ...(keptClusters ? { tabClusters: keptClusters } : {})
         }
       }
     }

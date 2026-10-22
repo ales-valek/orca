@@ -9,8 +9,9 @@ import {
 import {
   canDropTabIntoPaneBody,
   isPaneDropData,
-  isTabDragData,
-  type TabDragItemData
+  isTabClusterDragData,
+  isTabStripDragData,
+  type TabStripDragItemData
 } from './tab-drag-data'
 import {
   isDesktopCreatedTabInFrameDrawnServerWorkspace,
@@ -141,7 +142,7 @@ export function resolvePanelEdgePaneColumnSplit({
   panelRect: providedPanelRect,
   bodyRect: providedBodyRect
 }: {
-  activeDrag: TabDragItemData
+  activeDrag: TabStripDragItemData
   targetGroupId: string
   worktreeId: string
   pointer: { x: number; y: number }
@@ -181,12 +182,19 @@ export function resolvePanelEdgePaneColumnSplit({
   const sourceGroup = (groupsByWorktree[worktreeId] ?? []).find(
     (group) => group.id === activeDrag.groupId
   )
+  const cluster = isTabClusterDragData(activeDrag)
+    ? sourceGroup?.tabClusters?.find((item) => item.id === activeDrag.clusterId)
+    : null
+  const sourceTabCount =
+    cluster && sourceGroup?.tabOrder.every((id) => cluster.tabIds.includes(id))
+      ? 1
+      : serverTabCount(worktreeId, sourceGroup?.tabOrder ?? [])
   if (
     isPaneColumnSplitDropNoOp({
       sourceGroupId: activeDrag.groupId,
       targetGroupId,
       splitDirection: zone,
-      sourceTabCount: serverTabCount(worktreeId, sourceGroup?.tabOrder ?? []),
+      sourceTabCount,
       layout: layoutByWorktree[worktreeId]
     })
   ) {
@@ -229,14 +237,14 @@ export function resolveActivePaneColumnSplitTarget({
 }): ActivePaneColumnSplitTarget | null {
   const activeData = event.active.data.current
   const pointer = getDragPointer(event)
-  if (!isTabDragData(activeData) || !pointer) {
+  if (!isTabStripDragData(activeData) || activeData.worktreeId !== worktreeId || !pointer) {
     return null
   }
 
   const overData = event.over?.data.current
   const panelHit = findTabGroupPanelUnderPointer(worktreeId, pointer, { geometry })
 
-  if (isTabDragData(overData)) {
+  if (isTabStripDragData(overData)) {
     // Reserve tab-strip hovers for insertion/reordering; create splits only on pane-body edges.
     if (!panelHit || pointer.y < panelHit.panelRect.top + TAB_GROUP_TAB_STRIP_HEIGHT_PX) {
       return null
@@ -245,7 +253,7 @@ export function resolveActivePaneColumnSplitTarget({
 
   const targetGroupId =
     panelHit?.groupId ??
-    (isTabDragData(overData) ? overData.groupId : null) ??
+    (isTabStripDragData(overData) ? overData.groupId : null) ??
     (isPaneDropData(overData) ? overData.groupId : null)
 
   if (!targetGroupId) {

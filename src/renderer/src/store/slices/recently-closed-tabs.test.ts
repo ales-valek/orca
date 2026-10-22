@@ -333,7 +333,7 @@ describe('reopenClosedTerminalTab', () => {
 
 describe('restoreRecentlyClosedTabPosition', () => {
   it('selects the unified tab in the captured group when an entity is shared', () => {
-    const reordered = vi.fn()
+    const store = makeSeededStore()
     const otherTab = makeUnifiedTab({
       id: 'other-tab',
       entityId: 'shared-file',
@@ -355,7 +355,7 @@ describe('restoreRecentlyClosedTabPosition', () => {
       worktreeId: WT,
       contentType: 'editor'
     })
-    const state = {
+    seedStore(store, {
       tabBarOrderByWorktree: { [WT]: ['shared-file'] },
       groupsByWorktree: {
         [WT]: [
@@ -374,27 +374,19 @@ describe('restoreRecentlyClosedTabPosition', () => {
         ]
       },
       unifiedTabsByWorktree: { [WT]: [otherTab, capturedTab, capturedSibling] }
-    }
+    })
 
-    restoreRecentlyClosedTabPosition(
-      () => ({
-        ...state,
-        setTabBarOrder: vi.fn(),
-        reorderUnifiedTabs: reordered
-      }),
-      WT,
-      'shared-file',
-      { groupId: 'captured-group', groupIndex: 0 }
-    )
+    restoreRecentlyClosedTabPosition(store.getState, WT, 'shared-file', {
+      groupId: 'captured-group',
+      groupIndex: 0
+    })
 
-    // A switch-on build also marks the reorder as one main already made.
-    expect(reordered).toHaveBeenCalledWith(
-      'captured-group',
-      ['captured-tab', 'captured-sibling'],
-      ORCA_LAYOUT_OWNER_IS_MAIN
-        ? { recordInteraction: false, layoutOwnerHandled: true }
-        : { recordInteraction: false }
-    )
+    const groups = store.getState().groupsByWorktree[WT]
+    expect(groups.find((group) => group.id === 'captured-group')?.tabOrder).toEqual([
+      'captured-tab',
+      'captured-sibling'
+    ])
+    expect(groups.find((group) => group.id === 'other-group')?.tabOrder).toEqual(['other-tab'])
   })
 
   it('does not reuse a stale flat index after group drag reordering', async () => {

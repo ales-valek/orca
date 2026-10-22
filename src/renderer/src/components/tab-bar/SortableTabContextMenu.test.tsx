@@ -12,7 +12,8 @@ const storeMock = vi.hoisted(() => ({
   state: {
     keybindings: {},
     unifiedTabsByWorktree: {},
-    groupsByWorktree: {}
+    groupsByWorktree: {},
+    tabSelectionByGroupId: {}
   } as Record<string, unknown>
 }))
 
@@ -49,6 +50,10 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 }))
 
 vi.mock('lucide-react', () => ({
+  Folder: () => null,
+  FolderInput: () => null,
+  FolderMinus: () => null,
+  FolderPlus: () => null,
   ArrowDown: () => null,
   ArrowLeft: () => null,
   ArrowRight: () => null,
@@ -180,6 +185,7 @@ beforeEach(() => {
   moveMock.moveTabToNewPaneColumn.mockClear()
   storeMock.state = {
     keybindings: {},
+    tabSelectionByGroupId: {},
     groupsByWorktree: {
       'wt-1': [
         {
