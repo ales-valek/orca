@@ -16,6 +16,8 @@ import type { NativeChatTabSession } from './tab-session-history-switch'
 import { CopyTabIdMenuItem } from './CopyTabIdMenuItem'
 import { useAllowAutoClose } from './use-allow-auto-close'
 import { CloseSplitPaneMenuItem } from './CloseSplitPaneMenuItem'
+import { TabClusterMenuSection } from './TabClusterMenuSection'
+import { useTabClusterMenuCloseAction } from './use-tab-cluster-menu-close-action'
 
 const TAB_COLORS = [
   {
@@ -140,6 +142,7 @@ export function SortableTabContextMenu({
 
   const closeShortcut = useOptionalShortcutLabel('tab.close')
   const renameShortcut = useOptionalShortcutLabel('tab.rename')
+  const clusterMenuAction = useTabClusterMenuCloseAction()
   // Keep the route back from chat even while switching terminals into chat is disabled.
   const showTerminalViewSwitch = canToggleViewMode && isChatView && onToggleViewMode !== undefined
 
@@ -155,6 +158,7 @@ export function SortableTabContextMenu({
     <ContextMenuContent
       animation="none"
       className="min-w-[13rem] max-w-[calc(100vw-1rem)] whitespace-nowrap"
+      onCloseAutoFocus={clusterMenuAction.runAfterClose}
     >
       <TerminalTabSplitMenuSection
         unifiedTabId={unifiedTabId}
@@ -203,6 +207,15 @@ export function SortableTabContextMenu({
         </ContextMenuItem>
       ) : null}
       <CopyTabIdMenuItem menuKind="context" unifiedTabId={unifiedTabId} />
+      {open ? (
+        <TabClusterMenuSection
+          worktreeId={tab.worktreeId}
+          groupId={groupId}
+          tabId={unifiedTabId}
+          isPinned={isPinned}
+          onQueueNewCluster={clusterMenuAction.queueAfterClose}
+        />
+      ) : null}
       <ContextMenuSeparator />
       <ContextMenuItem onSelect={() => !isPinned && onClose(tab.id)} disabled={isPinned}>
         <X className="size-3.5" />

@@ -14,7 +14,8 @@ import RunningTerminalCloseDialog from './RunningTerminalCloseDialog'
 const initialState = useAppStore.getInitialState()
 const mountedRoots: Root[] = []
 
-// Advance a clock past the store’s 350ms queued-request guard instead of racing real time.
+// The store holds off any action for 350 ms after a queued request replaces the visible
+// one, so these tests drive a clock instead of racing it.
 let clock = 1_000
 
 function advancePastGuard(): void {
@@ -91,13 +92,13 @@ describe('RunningTerminalCloseDialog', () => {
 
     await renderDialog({ onConfirm: vi.fn() }, updateSettings)
 
-    expect(document.body.textContent).not.toContain('Stop running command?')
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
 
     await act(async () => {
       useAppStore.setState({ pinnedTabCloseConfirm: null })
     })
 
-    expect(document.body.textContent).toContain('Stop running command?')
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull()
   })
 
   it('drops a queued prompt once the user opts out of asking again', async () => {
@@ -129,4 +130,51 @@ describe('RunningTerminalCloseDialog', () => {
     expect(nextOnConfirm).toHaveBeenCalledTimes(1)
     expect(document.body.textContent).not.toContain('build watcher')
   })
+
+  it.each(['confirm', 'cancel'] as const)(
+    'keeps a group close atomic when the user chooses %s',
+    async (decision) => {
+      const onConfirm = vi.fn()
+      const onCancel = vi.fn()
+      const updateSettings = vi.fn().mockResolvedValue(undefined)
+
+      await renderDialog(
+        {
+          terminalTabId: 'tab-cluster:development',
+          tabLabel: 'Development',
+          copyKind: 'agent',
+          groupTerminals: [
+            { terminalTabId: 'build', tabLabel: 'Build watcher', copyKind: 'command' },
+            { terminalTabId: 'agent', tabLabel: 'Review agent', copyKind: 'agent' }
+          ],
+          onConfirm,
+          onCancel
+        },
+        updateSettings
+      )
+
+      expect(document.body.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+      expect(document.body.textContent).toContain('Development')
+      expect(document.body.textContent).not.toContain('Build watcher')
+      const disclosure = document.body.querySelector<HTMLButtonElement>('[aria-expanded]')
+      if (!disclosure) {
+        throw new Error('Missing running-terminal disclosure')
+      }
+      await act(async () => disclosure.click())
+
+      expect(document.body.querySelectorAll('li')).toHaveLength(2)
+      expect(document.body.textContent).toContain('Build watcher')
+      expect(document.body.textContent).toContain('Review agent')
+      expect(onConfirm).not.toHaveBeenCalled()
+      await act(async () => {
+        getButton(decision === 'confirm' ? 'Stop Agent' : 'Cancel').click()
+      })
+
+      expect(onConfirm).toHaveBeenCalledTimes(decision === 'confirm' ? 1 : 0)
+      expect(onCancel).toHaveBeenCalledTimes(decision === 'cancel' ? 1 : 0)
+      expect(useRunningTerminalCloseConfirmStore.getState().runningTerminalCloseConfirm).toBeNull()
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull()
+      expect(updateSettings).not.toHaveBeenCalled()
+    }
+  )
 })

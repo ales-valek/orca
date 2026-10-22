@@ -1,8 +1,12 @@
 import { useAppStore } from '@/store/index'
 import { useRunningTerminalCloseConfirmStore } from '@/store/slices/tabs/closing/running-terminal-close-confirm'
+import { useState } from 'react'
 import CloseTerminalDialog from './CloseTerminalDialog'
 
-/** Store-driven running-process confirmation lets tab/group/floating closes share the pane keyboard guard outside React context. */
+/** Hosts the running-process close confirmation for tab-level closes (tab-strip X,
+ *  middle-click, tab menu, tab groups, floating panel) so they share the prompt Cmd+W
+ *  already raised. Store-driven, like PinnedTabCloseDialog, because those closes run
+ *  outside any pane's React tree. */
 export default function RunningTerminalCloseDialog(): React.JSX.Element {
   const request = useRunningTerminalCloseConfirmStore((state) => state.runningTerminalCloseConfirm)
   const confirmClose = useRunningTerminalCloseConfirmStore(
@@ -15,15 +19,29 @@ export default function RunningTerminalCloseDialog(): React.JSX.Element {
     (state) => state.dismissRunningTerminalClose
   )
   const updateSettings = useAppStore((state) => state.updateSettings)
-  // Process probes can overlap the synchronous pinned queue; wait instead of stacking modal focus traps.
+  // Why: this queue is async (it opens after a probe) while the pinned queue is synchronous,
+  // so both can be pending at once. Wait rather than stack two modal overlays and focus traps.
   const pinnedRequest = useAppStore((state) => state.pinnedTabCloseConfirm)
+  // Why: the dialog stays mounted while it fades out; without the last request its copy
+  // flips to the single-terminal default mid-animation.
+  const [lastRequest, setLastRequest] = useState(request)
+  if (request !== null && request !== lastRequest) {
+    setLastRequest(request)
+  }
+  const shown = request ?? lastRequest
 
   return (
     <CloseTerminalDialog
       open={request !== null && pinnedRequest === null}
-      copyKind={request?.copyKind ?? 'command'}
-      {...(request?.tabLabel ? { tabLabel: request.tabLabel } : {})}
-      // Pass the queued subject so checkbox reset runs even while the dialog stays open.
+      copyKind={shown?.copyKind ?? 'command'}
+      tabLabel={shown?.tabLabel ?? ''}
+      terminals={shown?.groupTerminals?.map((terminal) => ({
+        key: terminal.terminalTabId,
+        label: terminal.tabLabel,
+        copyKind: terminal.copyKind
+      }))}
+      // Why: a queued request swaps tabs in the already-open dialog, so the reopen reset
+      // never runs; naming the subject is what clears the previous tab's opt-out tick.
       {...(request ? { subjectKey: request.terminalTabId } : {})}
       onCancel={dismissClose}
       onConfirm={(dontAskAgain) => {

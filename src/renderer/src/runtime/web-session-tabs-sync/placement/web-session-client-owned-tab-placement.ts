@@ -1,10 +1,9 @@
 import { structuredLaunchSlotIds } from '@/lib/agent-session/launch/structured-agent-session-launch-persistence'
 import type { TabGroup, TabGroupLayoutNode } from '../../../../../shared/tab-types'
-import {
-  pickNextActiveTab,
-  pushRecentTabId,
-  sanitizeRecentTabIds
-} from '../../../store/slices/tabs/tab-selection-history'
+import { pushRecentTabId } from '../../../../../shared/tab-group-history'
+import { sanitizeRecentTabIds } from '../../../store/slices/tabs/tab-selection-history'
+import { rekeyTabClusterMembers } from '../../../store/slices/tabs/tab-cluster-model'
+import { pickTabCloseSuccessor } from '../../../../../shared/tab-close-successor'
 
 /** A snapshot tab the client has not placed yet, plus the group it should join. */
 export type ClientOwnedAdoptedTab = {
@@ -98,8 +97,12 @@ export function reconcileClientOwnedTabPlacement(
             ...group,
             tabOrder: group.tabOrder.map(rekeyTabId),
             activeTabId: group.activeTabId ? rekeyTabId(group.activeTabId) : group.activeTabId,
-            recentTabIds: (group.recentTabIds ?? []).map(rekeyTabId)
+            recentTabIds: (group.recentTabIds ?? []).map(rekeyTabId),
+            tabClusters: rekeyTabClusterMembers(group.tabClusters, input.rekeyedTabIds)
           }
+    if (rekeyed !== group && !rekeyed.tabClusters) {
+      delete rekeyed.tabClusters
+    }
     const slots = structuredLaunchSlotIds(input.worktreeId, group.id)
     working.set(group.id, {
       group: rekeyed,
@@ -201,9 +204,7 @@ export function reconcileClientOwnedTabPlacement(
     const activeTabId =
       intentActive ??
       (displacedActive && repairOrder
-        ? (pickNextActiveTab(repairOrder, group.recentTabIds, displacedActive) ??
-          realOrder[0] ??
-          null)
+        ? (pickTabCloseSuccessor(group, repairOrder, displacedActive) ?? realOrder[0] ?? null)
         : (group.activeTabId ?? realOrder[0] ?? null))
     const validActiveTabId =
       activeTabId && realOrder.includes(activeTabId) ? activeTabId : (realOrder[0] ?? null)

@@ -8,9 +8,10 @@ export { landOnEmptiedWorktree } from './tabs-empty-workspace'
 import { retireRemovedNativeChatDraftPositions } from '@/components/native-chat/drafts/native-chat-draft-position-retirement'
 import { retireStructuredAgentSessionReadOwner } from '@/components/native-chat/session/structured/read/structured-agent-session-read-owner-registry'
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
+import { pushRecentTabId } from '../../../../../shared/tab-group-history'
 import { collapseGroupLayout } from '../../../../../shared/workspace-layout/tab-group-layout-tree'
 import { findGroupForTab, findTabAndWorktree } from './tab-group-state'
-import { pickNextActiveTab, sanitizeRecentTabIds } from './tab-selection-history'
+import { sanitizeRecentTabIds } from './tab-selection-history'
 import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-order'
 import { buildActiveSurfacePatch } from './tabs-surface'
 import { beginStructuredAgentSessionTabClose } from '@/runtime/native-chat/tab-retirement/structured-agent-session-tab-retirement'
@@ -20,6 +21,7 @@ import {
 } from '@/lib/agent-session/launch/structured-agent-session-launch-registry'
 import { clearWebSessionFocusIntentIfMatches } from '@/runtime/web-session-tabs-sync/navigation/web-session-focus-intent'
 import { ownsGlobalSelection } from '../../workspaces/selection/global-selection-owner'
+import { pickTabCloseSuccessor } from '../../../../../shared/tab-close-successor'
 import {
   structuredAgentSessionFocusOwner,
   structuredAgentSessionTargetForTab
@@ -109,17 +111,13 @@ export function createTabsCloseActions(
         group?.activeTabId === tabId
           ? wasLastTab
             ? null
-            : pickNextActiveTab(
-                dedupedGroupOrder,
-                group.recentTabIds,
-                tabId,
-                state.unifiedTabsByWorktree[worktreeId]
-              )
+            : pickTabCloseSuccessor(group, dedupedGroupOrder, tabId)
           : (group?.activeTabId ?? null)
-      const nextRecentTabIds = sanitizeRecentTabIds(
-        (group?.recentTabIds ?? []).filter((id) => id !== tabId),
-        remainingOrder
-      )
+      const sanitizedRecent = sanitizeRecentTabIds(group?.recentTabIds, remainingOrder)
+      const nextRecentTabIds =
+        nextActiveTabId && group && nextActiveTabId !== group.activeTabId
+          ? pushRecentTabId(sanitizedRecent, nextActiveTabId)
+          : sanitizedRecent
       const terminalEntityId = tab.contentType === 'terminal' ? tab.entityId : null
 
       const closeHere = (): void =>

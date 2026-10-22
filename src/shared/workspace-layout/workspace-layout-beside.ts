@@ -77,7 +77,10 @@ function sessionFieldsOwnedBy<Owner extends SessionFieldOwner>(
 /** The desktop window's own view record, stored in today's selection fields for downgrades. */
 export type DesktopLayoutView = Pick<WorkspaceSessionState, ViewSessionField> & {
   /** Workspace key → group id. */
-  groups: Record<string, Record<string, Pick<TabGroup, 'activeTabId' | 'recentTabIds'>>>
+  groups: Record<
+    string,
+    Record<string, Pick<TabGroup, 'activeTabId' | 'recentTabIds' | 'tabClusters'>>
+  >
   /** Workspace key → tab id. */
   lastFocusedAt: Record<string, Record<string, number>>
   /** Terminal tab id → focused and expanded pane. */

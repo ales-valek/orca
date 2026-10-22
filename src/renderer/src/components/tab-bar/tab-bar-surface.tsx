@@ -29,6 +29,8 @@ import ClientHostedBrowserTabRows from './ClientHostedBrowserTabRows'
 import type { ClientHostedBrowserRow } from '../../../../shared/client-hosted-browser-rows'
 import { advanceAgentSessionsTourPastNewTab } from '@/components/contextual-tours/agent-sessions-tour-new-tab'
 
+import type { TabBarClusterInteractions } from './use-tab-bar-cluster-interactions'
+import { TabClusterChip } from './TabClusterChip'
 const EMPTY_CLIENT_HOSTED_ROWS: readonly ClientHostedBrowserRow[] = []
 
 export function renderTabBarSurface(
@@ -37,6 +39,7 @@ export function renderTabBarSurface(
     runtime,
     createMenu,
     itemProjection,
+    clusterInteractions,
     tabStripNavigation,
     tabStripDragScroll,
     activeClientHostedBrowserRowId,
@@ -47,6 +50,7 @@ export function renderTabBarSurface(
     runtime: TabBarRuntimeModel
     createMenu: TabBarCreateMenuController
     itemProjection: TabBarItemProjection
+    clusterInteractions: TabBarClusterInteractions
     tabStripNavigation: ReturnType<typeof useTabStripOverflowNavigation>
     tabStripDragScroll: ReturnType<typeof useTabStripDragScrollHandlers>
     activeClientHostedBrowserRowId: string | null
@@ -95,7 +99,14 @@ export function renderTabBarSurface(
     queueFocusAfterNewTabMenuClose,
     showStaticCreateMenuItems
   } = createMenu
-  const { orderedItems, sortableIds, dropIndicatorByVisibleId } = itemProjection
+  const {
+    orderedItems,
+    stripItems,
+    visibleItems,
+    sortableIds,
+    dropIndicatorByVisibleId,
+    clusterByUnifiedTabId
+  } = itemProjection
   const clientHostedBrowserRows = props.clientHostedBrowserRows ?? EMPTY_CLIENT_HOSTED_ROWS
   const {
     tabStripRef,
@@ -107,7 +118,10 @@ export function renderTabBarSurface(
   const singleTab = orderedItems.length + clientHostedBrowserRows.length === 1
   const includeTopTabBorder = tabStripChrome !== 'floating-panel'
   const renderedItems = renderTabBarItems({
-    items: orderedItems,
+    items: visibleItems,
+    allItems: orderedItems,
+    clusterByUnifiedTabId,
+    highlightedTabIds: clusterInteractions.highlightedTabIds,
     props,
     runtime,
     actions: itemActions,
@@ -115,6 +129,7 @@ export function renderTabBarSurface(
     includeTopTabBorder,
     activeClientHostedBrowserRowId
   })
+  let visibleItemIndex = 0
 
   return (
     <div ref={surfaceRef} className="flex items-stretch h-full overflow-hidden flex-1 min-w-0">
@@ -162,9 +177,32 @@ export function renderTabBarSurface(
             ]
               .filter(Boolean)
               .join(' ')}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Escape' &&
+                !(event.target instanceof HTMLInputElement) &&
+                clusterInteractions.highlightedTabIds.size > 0
+              ) {
+                event.stopPropagation()
+                clusterInteractions.clearSelection()
+              }
+            }}
           >
             <TabStripTooltipProvider>
-              {renderedItems}
+              {stripItems.map((item) =>
+                item.type === 'cluster' ? (
+                  <TabClusterChip
+                    key={item.id}
+                    cluster={item.data}
+                    groupId={resolvedGroupId}
+                    worktreeId={worktreeId}
+                    onClose={() => clusterInteractions.closeCluster(item.data)}
+                    dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+                  />
+                ) : (
+                  renderedItems[visibleItemIndex++]
+                )
+              )}
               {clientHostedBrowserRows.length > 0 ? (
                 <ClientHostedBrowserTabRows
                   rows={clientHostedBrowserRows}

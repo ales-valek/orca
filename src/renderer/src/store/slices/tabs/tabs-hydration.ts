@@ -17,8 +17,9 @@ import {
 import { sanitizeRecentTabIds } from './tab-selection-history'
 import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-order'
 import { restoresSavedContentTab } from '../../../../../shared/workspace-layout/saved-editor-tab-restore'
+import { normalizeTabGroupClusters, rekeyTabClusterMembers } from './tabs/tab-cluster-model'
 
-type HydratedTabState = {
+export type HydratedTabState = {
   unifiedTabsByWorktree: Record<string, Tab[]>
   groupsByWorktree: Record<string, TabGroup[]>
   activeGroupIdByWorktree: Record<string, string>
@@ -155,6 +156,9 @@ export function buildHydratedTabState(
     }
 
     const hydratedTabsForWorktree = tabsByWorktree[worktreeId] ?? []
+    const pinnedTabIds = new Set(
+      hydratedTabsForWorktree.filter((tab) => tab.isPinned).map((tab) => tab.id)
+    )
     const tabIdAliasesByGroup = tabIdAliasesByWorktree[worktreeId]
     const tabOwners = resolveTabGroupOwners(hydratedTabsForWorktree, groups, tabIdAliasesByGroup)
     const validatedGroups = appendOwnedTabIdsToGroups(groups, tabOwners).map((g) => {
@@ -181,12 +185,18 @@ export function buildHydratedTabState(
         activeTabId && sanitizedRecent.at(-1) !== activeTabId
           ? [...sanitizedRecent.filter((id) => id !== activeTabId), activeTabId]
           : sanitizedRecent
-      return {
-        ...g,
-        tabOrder,
-        activeTabId,
-        recentTabIds
-      }
+      return normalizeTabGroupClusters(
+        {
+          ...g,
+          tabOrder,
+          activeTabId,
+          recentTabIds,
+          tabClusters: tabIdAliases
+            ? rekeyTabClusterMembers(g.tabClusters, tabIdAliases)
+            : g.tabClusters
+        },
+        pinnedTabIds
+      )
     })
     const hydratedGroups = validatedGroups.filter((group, index) => {
       const hadTabsBeforeHydration = groups[index]?.tabOrder.length > 0

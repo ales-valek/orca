@@ -1,7 +1,7 @@
 import type { AppState } from '../../types'
 import type { TabsSlice, TabsSliceSet } from './tabs-slice-contract'
 
-function previewActiveSurfacePatch(
+export function previewActiveSurfacePatch(
   state: AppState,
   worktreeId: string,
   groupId: string,

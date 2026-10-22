@@ -171,7 +171,8 @@ const GROUP = {
   worktreeId: WORKTREE,
   activeTabId: { from: 'viewGroup.activeTabId', via: ['group.tabOrder'] },
   tabOrder: TAB_ORDER,
-  recentTabIds: { from: 'viewGroup.recentTabIds', via: ['group.tabOrder'] }
+  recentTabIds: { from: 'viewGroup.recentTabIds', via: ['group.tabOrder'] },
+  tabClusters: { from: 'viewGroup.tabClusters', via: ['group.tabOrder'] }
 } as const satisfies Record<keyof TabGroup, DiskFieldWritten>
 
 const LAYOUT = {

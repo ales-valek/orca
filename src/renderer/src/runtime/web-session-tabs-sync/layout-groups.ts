@@ -3,12 +3,13 @@ import type { TabGroup } from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 import type { MirroredAgentTab, MirroredBrowserTab, MirroredEditorTab } from './state'
 import type { RuntimeMobileSessionTerminalClientTab } from '../../../../shared/runtime-mobile-session-tab-contracts'
+import { pushRecentTabId } from '../../../../shared/tab-group-history'
 import { toWebTerminalSurfaceTabId } from '../../../../shared/workspace-layout/terminal-surface-id'
 import { clearHostSessionTabIdMappings, setHostSessionTabIdMapping } from './tracking-mappings'
 import { isWebSessionBrowserPlacementGroupReserved } from '../browser/placement/web-session-browser-placement'
 import { resolveWebSessionReorderedOrder } from './navigation/web-session-reorder-intent'
 import { mapHostRecentTabIds } from './tab-group-layout-tree'
-import { pushRecentTabId, sanitizeRecentTabIds } from './state-equality-core'
+import { sanitizeRecentTabIds } from './state-equality-core'
 
 export function buildHostToLocalTabIdMap({
   terminalSurfaces,

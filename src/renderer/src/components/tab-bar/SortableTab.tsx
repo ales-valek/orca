@@ -5,6 +5,7 @@ import { X, Minimize2, Pin } from 'lucide-react'
 import { stripLeadingAgentTitleDecoration } from '../../../../shared/agent-status/title/agent-title-decoration'
 import { getAgentLabel } from '@/lib/agent-catalog/agent-catalog'
 import { basename } from '@/lib/path'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { TabHoverCard } from './TabHoverCard'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
@@ -40,13 +41,16 @@ import type { StructuredChatTabNamingFailure } from '@/runtime/native-chat/namin
 import { useNativeChatNamingFailure } from './use-native-chat-naming-failure'
 import { NativeChatNamingErrorBlock, NativeChatNamingFailedDialog } from './NativeChatNamingFailure'
 
+import type { TabStripActivationModifiers, TabStripInteractionProps } from './tab-strip-selection'
+import { TabClusterMemberIndicator } from './TabClusterMemberIndicator'
+
 /** What the strip draws for a terminal or native chat tab; never a source of agent identity. */
 type SortableTabModel = Pick<
   TerminalTab,
   'id' | 'worktreeId' | 'title' | 'customTitle' | 'color' | 'shellOverride' | 'launchAgent'
 >
 
-export type SortableTabProps = {
+export type SortableTabProps = TabStripInteractionProps & {
   tab: SortableTabModel
   /** The tab's agent, resolved by the caller from its own source of truth (pane signals or the chat's provider). */
   agent: TerminalAgent | null
@@ -92,6 +96,9 @@ export default function SortableTab({
   isActive,
   isPinned,
   isExpanded,
+  clusterColor,
+  isHighlighted = false,
+  onSelect,
   onActivate,
   onClose,
   onCloseOthers,
@@ -150,7 +157,10 @@ export default function SortableTab({
     setRenameValue,
     handleRenameOpen,
     commitRename,
-    cancelRename,
+    onRenameKeyDown,
+    onRenameKeyUp,
+    onRenameCompositionStart,
+    onRenameCompositionEnd,
     setRenameInputElement
   } = useSortableTabRename({
     tabId: tab.id,
@@ -189,9 +199,14 @@ export default function SortableTab({
 
   // Why: while editing, drop drag listeners so typing can't start a drag; attributes stay spread to keep dnd-kit a11y.
   const dragListeners = isEditing ? undefined : listeners
-  const handleActivate = useCallback(() => {
-    onActivate(tab.id)
-  }, [onActivate, tab.id])
+  const handleActivate = useCallback(
+    (modifiers: TabStripActivationModifiers) => {
+      if (!onSelect?.(modifiers)) {
+        onActivate(tab.id)
+      }
+    },
+    [onActivate, onSelect, tab.id]
+  )
   // Why: defer activation to pointer-up so a drag doesn't switch tabs or steal focus mid-gesture (tab-strip-pointer-activation).
   const { onPointerDown, retirePendingActivation } = useTabStripPointerActivation({
     onActivate: handleActivate,
@@ -207,12 +222,18 @@ export default function SortableTab({
       data-tab-id={tab.id}
       data-tab-title={tabTitle}
       data-pinned={isPinned ? 'true' : 'false'}
+      data-tab-highlighted={isHighlighted ? 'true' : undefined}
       // Expose rendered selection so E2E catches visual regressions missed by store-only assertions.
       data-active={isActive ? 'true' : 'false'}
       data-agent-activity-status={activityStatus}
       {...attributes}
       {...dragListeners}
-      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={cn(
+        'w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none',
+        getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder }),
+        getDropIndicatorClasses(dropIndicator ?? null),
+        getTabRootStateClasses(isActive)
+      )}
       onDoubleClick={(e) => {
         if (isEditing) {
           return
@@ -221,10 +242,7 @@ export default function SortableTab({
         handleRenameOpen()
       }}
       onPointerDown={(e) => {
-        onPointerDown(
-          e,
-          dragListeners?.onPointerDown as ((event: React.PointerEvent<Element>) => void) | undefined
-        )
+        onPointerDown(e, (event) => dragListeners?.onPointerDown?.(event))
       }}
       // Why: block middle-click auto-scroll; don't close here — removing the element pre-mouseup triggers a Linux X11 paste.
       onMouseDown={preventMiddleButtonDefault}
@@ -244,6 +262,7 @@ export default function SortableTab({
       }}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
+      {clusterColor ? <TabClusterMemberIndicator color={clusterColor} /> : null}
       {showUnreadActivity && (
         // Why: a real DOM child keeps both drop-indicator pseudo-elements free and pointer events reaching the tab.
         <span aria-hidden className="pointer-events-none absolute inset-0 bg-amber-500/10" />
@@ -271,6 +290,9 @@ export default function SortableTab({
           onChange={(event) => setRenameValue(event.target.value)}
           onBlur={commitRename}
           onKeyDown={onRenameKeyDown}
+          onKeyUp={onRenameKeyUp}
+          onCompositionStart={onRenameCompositionStart}
+          onCompositionEnd={onRenameCompositionEnd}
           // Why: stop bubbling so clicking inside the input doesn't activate the tab or start a dnd-kit drag.
           onPointerDown={(event) => event.stopPropagation()}
           onMouseDown={(event) => {

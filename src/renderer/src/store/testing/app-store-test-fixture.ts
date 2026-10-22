@@ -58,6 +58,7 @@ import '@/i18n/i18n'
 import { withEditorBufferRecords } from '../slices/editor/buffers/editor-buffer-record-lifecycle'
 import { withAgentConversationRetention } from '../slices/agent-status/agent-conversation-retention'
 import { TEST_REPO } from '../repos/repo.test-fixture'
+import { installTabClusterInvariant } from '../slices/tabs/tab-cluster-invariant'
 
 const withTestStorePolicies = (creator: StateCreator<AppState, [], []>, check: boolean) =>
   withEditorBufferRecords(withAgentConversationRetention(creator), check)
@@ -66,7 +67,7 @@ export function createTestStore(
   isClaudeAgent: Parameters<typeof createTerminalSlice>[3] = undefined
 ) {
   // Why the record middleware: views of one file share a record only through it, as in the app.
-  return create<AppState>()(
+  const store = create<AppState>()(
     withTestStorePolicies(
       (...a) => ({
         ...createRepoSlice(...a),
@@ -125,6 +126,8 @@ export function createTestStore(
       true
     )
   )
+  installTabClusterInvariant(store)
+  return store
 }
 
 export function seedStore(

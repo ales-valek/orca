@@ -137,6 +137,7 @@ export function renderFloatingTerminalPanelSurface(
                   expandedPaneByTabId={expandedPaneByTabId}
                   onActivate={model.commands.activateTerminal}
                   onClose={closeFloatingItemConfirmed}
+                  onCloseTabs={model.commands.closeMany}
                   onCloseOthers={closeOthers}
                   onCloseToRight={closeToRight}
                   onCloseToLeft={closeToLeft}

@@ -2,6 +2,7 @@ import { resolveTerminalCreatedShell } from './terminal-created-shell'
 import { warnIfZCodeCannotOpenSession } from '@/components/terminal-pane/provider-notices/zcode-capability/zcode-missing-tui-notice'
 import { clearWorktreeSleepIntent } from '@/lib/worktree-sleep-intent'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
+import { pushRecentTabId } from '../../../../shared/tab-group-history'
 import {
   isValidHostTerminalTabId,
   isValidMirroredHostTerminalTabId
@@ -11,7 +12,7 @@ import { singlePaneLayoutSnapshot } from './terminal-single-pane-layout'
 import { isTerminalLeafId } from '../../../../shared/workspace-layout/stable-pane-id'
 import { buildOrphanTerminalCleanupPatch, getOrphanTerminalIds } from './terminal-orphan-cleanup'
 import { ensureGroup, findTabByEntityInGroup, updateGroup } from '../slices/tabs/tab-group-state'
-import { pushRecentTabId, sanitizeRecentTabIds } from '../slices/tabs/tab-selection-history'
+import { sanitizeRecentTabIds } from '../slices/tabs/tab-selection-history'
 import { dedupeTabOrder } from '../../../../shared/workspace-layout/tab-order'
 import { createNonSecureContextUuid as createBrowserUuid } from '../../../../shared/non-secure-context-uuid'
 import { emptySplitGroup, insertSplitGroup } from '../slices/tabs/tabs-group-actions'

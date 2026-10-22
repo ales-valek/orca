@@ -1,4 +1,5 @@
 import type { TabGroup } from '../../../../shared/tab-types'
+import { pushRecentTabId } from '../../../../shared/tab-group-history'
 import type { prepareWebSessionTabsSnapshotUnified } from './apply-preparation-unified'
 import { toWebTerminalSurfaceTabId } from '../../../../shared/workspace-layout/terminal-surface-id'
 import {
@@ -8,7 +9,7 @@ import {
 import { peekWebSessionTerminalPlacementGroup } from '../hosted-terminals/placement/web-session-terminal-placement'
 import { reconcileClientOwnedTabPlacement } from './placement/web-session-client-owned-tab-placement'
 import { buildMirroredHostGroups, retainClientPlacedMirroredTabs } from './layout-groups'
-import { sanitizeRecentTabIds, pushRecentTabId } from './state-equality-core'
+import { sanitizeRecentTabIds } from './state-equality-core'
 import { pruneTabGroupLayout } from './tab-group-layout-tree'
 import type { WebSessionTabsSyncState } from './state'
 import { isSplitLandingGroup } from '../../store/slices/tabs/split-landing-groups'

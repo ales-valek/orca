@@ -10,6 +10,7 @@ import {
   type TypeCyclableTab
 } from '@/components/terminal/tab-type-cycle'
 import { activateCycledTabOnOwner } from '@/lib/workspace/tabs/cycled-tab-owner-activation'
+import { getHiddenClusterTabIds } from '../../../shared/tab-types'
 
 type AppStoreState = ReturnType<typeof useAppStore.getState>
 
@@ -21,21 +22,25 @@ type CycleContext = {
 }
 
 /** Resolve active workspace/nav for either cycle action; null means nothing to cycle. */
-function resolveCycleContext(): CycleContext | null {
+function resolveCycleContext(includeHidden = false): CycleContext | null {
   const store = useAppStore.getState()
   const worktreeId = store.activeWorktreeId
   if (!worktreeId) {
-    return null
-  }
-  // Cycle the visible group’s order so keyboard navigation follows dragged tabs.
-  const allTabIds = getActiveTabNavOrder(store, worktreeId)
-  if (allTabIds.length <= 1) {
     return null
   }
   const activeGroupId = store.activeGroupIdByWorktree[worktreeId]
   const group = activeGroupId
     ? (store.groupsByWorktree[worktreeId] ?? []).find((candidate) => candidate.id === activeGroupId)
     : undefined
+  // Cycle the visible group’s order so keyboard navigation follows dragged tabs.
+  const navTabs = getActiveTabNavOrder(store, worktreeId)
+  const hiddenTabIds = group && !includeHidden ? getHiddenClusterTabIds(group) : null
+  const allTabIds = hiddenTabIds?.size
+    ? navTabs.filter((entry) => !hiddenTabIds.has(entry.tabId ?? entry.id))
+    : navTabs
+  if (allTabIds.length <= 1) {
+    return null
+  }
   // Prefer exact unified tab IDs for split copies; fall back to backing IDs only without a valid group selection, keeping ID domains separate.
   const groupTabIdInNav =
     group?.activeTabId && allTabIds.some((entry) => entry.tabId === group.activeTabId)
@@ -247,9 +252,9 @@ function shouldUseWorktreeTerminalFallback(
   return false
 }
 
-/** Ctrl+Tab quick-toggles MRU across visible types in the active group. */
+/** Ctrl+Tab quick-toggles MRU across every tab in the active group, including collapsed ones. */
 export function handleSwitchRecentTab(): boolean {
-  const ctx = resolveCycleContext()
+  const ctx = resolveCycleContext(true)
   if (!ctx) {
     return false
   }
@@ -290,6 +295,14 @@ export function handleSwitchTerminalTab(direction: number): boolean {
     const visibleTerminalIds = new Set(activeGroupTerminalTabs.map((tab) => tab.id))
     cycleTabs.push(...worktreeTerminalTabs.filter((tab) => !visibleTerminalIds.has(tab.id)))
   }
+  const groupId = store.activeGroupIdByWorktree?.[worktreeId]
+  const group = (store.groupsByWorktree?.[worktreeId] ?? []).find(
+    (candidate) => candidate.id === groupId
+  )
+  const hiddenTabIds = group ? getHiddenClusterTabIds(group) : null
+  const visibleCycleTabs = hiddenTabIds?.size
+    ? cycleTabs.filter((entry) => !hiddenTabIds.has(entry.tabId ?? entry.id))
+    : cycleTabs
   // Prefiltered terminal navigation must use the active entity’s domain, never a stale background terminal ID under structured focus.
   const activeTab = store.getActiveTab(worktreeId)
   const currentId = getActiveEntityIdForTabType(
@@ -300,7 +313,7 @@ export function handleSwitchTerminalTab(direction: number): boolean {
     activeTab?.contentType === 'agent-session' ? activeTab.entityId : null
   )
   const next = getNextTerminalCycleTab(
-    cycleTabs,
+    visibleCycleTabs,
     {
       type: store.activeTabType,
       id: currentId ?? '',

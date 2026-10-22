@@ -1,6 +1,7 @@
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
+import { pushRecentTabId } from '../../../../../shared/tab-group-history'
 import { findTabAndWorktree, findTabByEntityInGroup } from './tab-group-state'
-import { pushRecentTabId, sanitizeRecentTabIds } from './tab-selection-history'
+import { sanitizeRecentTabIds } from './tab-selection-history'
 import { selectActiveTabForWorktree } from './active-tab-selection'
 import type { Tab } from '../../../../../shared/tab-types'
 import type { AppState } from '../../types'

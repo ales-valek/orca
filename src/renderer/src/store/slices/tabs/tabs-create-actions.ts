@@ -4,10 +4,11 @@ import { structuredLaunchSlotIds } from '@/lib/agent-session/launch/structured-a
 import { createNonSecureContextUuid as createBrowserUuid } from '../../../../../shared/non-secure-context-uuid'
 import { getActiveExecutionHostIdForWorktree } from '@/lib/workspace/ownership/unified-tab-host-ownership'
 import type { Tab, TabGroup } from '../../../../../shared/tab-types'
+import { pushRecentTabId } from '../../../../../shared/tab-group-history'
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
 import { buildActiveSurfacePatch } from './tabs-surface'
 import { ensureGroup, findGroupForTab, updateGroup } from './tab-group-state'
-import { pushRecentTabId, sanitizeRecentTabIds } from './tab-selection-history'
+import { sanitizeRecentTabIds } from './tab-selection-history'
 import {
   applyTabOrderSortValues,
   canReplacePreviewContentType,
@@ -19,6 +20,7 @@ import { emptySplitGroup, insertSplitGroup } from './tabs-group-actions'
 import { folderWorkspaceToWorktree } from '../../../../../shared/folder-workspaces/folder-workspace-worktree'
 import { createdTabPreviewFlag } from './tab-preview-flag'
 import { selectFolderWorkspaces } from '../../workspaces/catalog/workspace-record-fields'
+import { getTabClusterForTab, normalizeTabGroupClusters } from './tab-cluster-model'
 
 export function createTabsCreateActions(
   set: TabsSliceSet,
@@ -136,6 +138,29 @@ export function createTabsCreateActions(
         const nextRecent = shouldActivate
           ? pushRecentTabId(sanitizedRecent, created.id)
           : sanitizedRecent
+        const anchorCluster =
+          placement.anchorTabId && nextOrder.includes(placement.anchorTabId) && !created.isPinned
+            ? getTabClusterForTab(group.tabClusters, placement.anchorTabId)
+            : null
+        const nextGroup = normalizeTabGroupClusters(
+          {
+            ...group,
+            activeTabId: nextActiveTabId,
+            tabOrder: nextOrder,
+            recentTabIds: nextRecent,
+            tabClusters: anchorCluster
+              ? group.tabClusters?.map((cluster) =>
+                  cluster.id === anchorCluster.id
+                    ? { ...cluster, tabIds: [...cluster.tabIds, id] }
+                    : cluster
+                )
+              : group.tabClusters
+          },
+          new Set([
+            ...nextTabs.filter((tab) => tab.isPinned).map((tab) => tab.id),
+            ...(created.isPinned ? [id] : [])
+          ])
+        )
         return {
           unifiedTabsByWorktree: {
             ...state.unifiedTabsByWorktree,
@@ -143,12 +168,7 @@ export function createTabsCreateActions(
           },
           groupsByWorktree: {
             ...groupsByWorktree,
-            [worktreeId]: updateGroup(groupsByWorktree[worktreeId] ?? [], {
-              ...group,
-              activeTabId: nextActiveTabId,
-              tabOrder: nextOrder,
-              recentTabIds: nextRecent
-            })
+            [worktreeId]: updateGroup(groupsByWorktree[worktreeId] ?? [], nextGroup)
           },
           activeGroupIdByWorktree,
           layoutByWorktree: {
