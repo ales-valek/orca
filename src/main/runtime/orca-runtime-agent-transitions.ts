@@ -6,10 +6,13 @@ import { installExternalConversations } from '../external-conversations/external
 import { HEADLESS_RUNTIME_WINDOW_ID } from '../../shared/runtime-session-contracts'
 import { parsePaneKey } from '../../shared/stable-pane-id'
 import { parseWorkspaceKey } from '../../shared/workspace-scope'
-import { getRepoIdFromWorktreeId } from '../../shared/worktree/id'
+import { getRepoIdFromWorktreeId, worktreeIdsEqual } from '../../shared/worktree/id'
 import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
 import { getRuntimeDesktopSurface } from './runtime-desktop-surface'
-import type { AgentStatusStoreView } from './sidebar-inputs/workspace-activity-facts-producer'
+import {
+  getLiveAgentRowPane,
+  type AgentStatusStoreView
+} from './sidebar-inputs/workspace-activity-facts-producer'
 import { subscribeHookStatusTitles } from './terminal/layout/hook-status-title-subscription'
 import { TerminalWorkerTurnStops } from './orchestration/terminal-worker-turn-stops'
 import type { WorkerTerminalResourceRow } from './orchestration/worker-terminal-ownership'
@@ -71,6 +74,7 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
   }
 
   private connectorCloud: ConnectorCloud | null = null
+  private agentStatusStore: AgentStatusStoreView | null = null
 
   /** The desktop's link to the Orca Cloud connector; null in `orca serve` and in builds without cloud auth. */
   getConnectorCloud(): ConnectorCloud | null {
@@ -131,12 +135,26 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
     const detachTitles = subscribe
       ? subscribeHookStatusTitles({ subscribeEnrichedStatus: subscribe }, this)
       : () => {}
+    this.agentStatusStore = store
     return () => {
       detachCrew()
       this.crewChanges.notify(new Set(['status', 'names']))
+      if (this.agentStatusStore === store) {
+        this.agentStatusStore = null
+      }
       detachTitles()
       detachTransitions()
     }
+  }
+
+  /** True while a fresh, unfinished agent row (working or awaiting the user mid-turn) is attributed to the worktree. */
+  isWorktreeAgentWorking(worktreeId: string): boolean {
+    const now = Date.now()
+    const resolveTabWorktreeId = (tabId: string) => this.tabs.get(tabId)?.worktreeId
+    return (this.agentStatusStore?.getStatusSnapshot() ?? []).some((row) => {
+      const pane = getLiveAgentRowPane(row, resolveTabWorktreeId, now)
+      return pane !== null && worktreeIdsEqual(pane.worktreeId, worktreeId)
+    })
   }
 
   private readTerminalAgentWorkspaceLabels(
