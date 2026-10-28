@@ -13,12 +13,16 @@ const TOKEN = 'huly-secret-token-123'
 let directory = ''
 let api: FakeHulyApi
 let createdWith: string[] = []
+let createFailsWithAuth = false
 
-function createConnection(): HulyConnection {
+function createConnection(store = createHulyCredentialStore(directory)): HulyConnection {
   return new HulyConnection({
-    store: createHulyCredentialStore(directory),
+    store,
     createApi: async (_info, token) => {
       createdWith.push(token)
+      if (createFailsWithAuth) {
+        throw new Error('ERROR: platform:status:TokenExpired {}')
+      }
       return api
     }
   })
@@ -28,6 +32,7 @@ beforeEach(() => {
   directory = mkdtempSync(join(tmpdir(), 'orca-huly-connection-'))
   api = new FakeHulyApi()
   createdWith = []
+  createFailsWithAuth = false
   setSecretStore({
     isEncryptionAvailable: () => true,
     encryptString: (value) => Buffer.from(`enc:${Buffer.from(value).toString('base64')}`),
@@ -104,6 +109,45 @@ describe('HulyConnection', () => {
 
     await connection.withApi((client) => client.listProjects())
     expect(createdWith).toEqual([TOKEN, TOKEN])
+  })
+
+  it('maps an expired token on lazy reconnect to huly_auth_required', async () => {
+    vi.useFakeTimers()
+    const connection = createConnection()
+    await connection.connect({ ...INFO, token: TOKEN })
+    await vi.advanceTimersByTimeAsync(60_000)
+    createFailsWithAuth = true
+
+    await expect(connection.withApi((client) => client.listProjects())).rejects.toThrow(
+      'huly_auth_required'
+    )
+    expect(connection.getStatus()).toEqual({ connected: true, info: INFO })
+  })
+
+  it('accepts https and loopback http server URLs only', async () => {
+    const connection = createConnection()
+
+    await expect(
+      connection.connect({ serverUrl: 'http://huly.example.test', workspace: 'acme', token: TOKEN })
+    ).rejects.toThrow('huly_server_url_must_be_https')
+    expect(createdWith).toEqual([])
+    await expect(
+      connection.connect({ serverUrl: 'http://localhost:8087', workspace: 'acme', token: TOKEN })
+    ).resolves.toMatchObject({ connected: true })
+  })
+
+  it('closes the validated client when saving the credentials fails', async () => {
+    const store = createHulyCredentialStore(directory)
+    const connection = createConnection({
+      ...store,
+      save: () => {
+        throw new Error('disk full')
+      }
+    })
+
+    await expect(connection.connect({ ...INFO, token: TOKEN })).rejects.toThrow('disk full')
+    expect(api.closed).toBe(true)
+    expect(connection.getStatus()).toEqual({ connected: false })
   })
 
   it('forgets the credentials on disconnect', async () => {
