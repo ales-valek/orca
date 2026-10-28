@@ -167,14 +167,17 @@ export async function revertPreviewTrackedEdits(
     if (tracked.length === 0) {
       return
     }
+    const reverse = {
+      ...gitOptionsForWorktree(previewPath),
+      stdin: tracked.map((file) => file.diff).join('')
+    }
+    // Why: unstaging first would lose the user's staging if the reverse patch then failed.
+    await gitExecFileAsync(['apply', '-R', '--unidiff-zero', '--check'], reverse)
     await bulkUnstageFiles(
       previewPath,
       tracked.map((file) => file.file)
     )
-    await gitExecFileAsync(['apply', '-R', '--unidiff-zero'], {
-      ...gitOptionsForWorktree(previewPath),
-      stdin: tracked.map((file) => file.diff).join('')
-    })
+    await gitExecFileAsync(['apply', '-R', '--unidiff-zero'], reverse)
   })
 }
 
