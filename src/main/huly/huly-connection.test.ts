@@ -162,4 +162,34 @@ describe('HulyConnection', () => {
       'huly_not_connected'
     )
   })
+
+  it('redacts the submitted token from a failed connect', async () => {
+    const connection = new HulyConnection({
+      store: createHulyCredentialStore(directory),
+      createApi: async () => {
+        throw new Error(
+          `socket failed for wss://huly.example.test/_transactor/${TOKEN}?x=1 (${TOKEN})`
+        )
+      }
+    })
+
+    const failure = await connection.connect({ ...INFO, token: ` ${TOKEN} ` }).catch((e) => e)
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure.message).not.toContain(TOKEN)
+    expect(failure.message).toContain('_transactor/<redacted>')
+    expect(String(failure.stack)).not.toContain(TOKEN)
+  })
+
+  it('redacts a transactor URL token from a failed call', async () => {
+    const connection = createConnection()
+    await connection.connect({ ...INFO, token: TOKEN })
+    api.listProjects = async () => {
+      throw new Error(`closed wss://huly.example.test/_transactor/${TOKEN}`)
+    }
+
+    await expect(connection.withApi((client) => client.listProjects())).rejects.toThrow(
+      'closed wss://huly.example.test/_transactor/<redacted>'
+    )
+  })
 })
