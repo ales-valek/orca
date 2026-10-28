@@ -1,9 +1,13 @@
 import { isTuiAgent } from '../../../../shared/tui-agent-config'
 import {
+  MissionAbsorbParams,
   MissionAddReposParams,
+  MissionAddTaskParams,
   MissionCreateParams,
   MissionPathParams,
   MissionRemoveParams,
+  MissionRemoveTaskParams,
+  MissionRestackParams,
   MissionSelectorParams
 } from '../../../../shared/rpc-contract/mission-params'
 import { defineMethod } from '../core'
@@ -57,5 +61,31 @@ export const MISSION_METHODS = [
     params: MissionRemoveParams,
     handler: async (params, { runtime }) =>
       runtime.removeMission(params.mission, params.deleteWorktrees)
+  }),
+  defineMethod({
+    name: 'mission.addTask',
+    permission: 'workspace',
+    params: MissionAddTaskParams,
+    handler: async (params, { runtime }) =>
+      runtime.addMissionTask(params.mission, params.repo, params.title, params.ref)
+  }),
+  defineMethod({
+    name: 'mission.removeTask',
+    permission: 'workspace',
+    params: MissionRemoveTaskParams,
+    handler: async (params, { runtime }) => runtime.removeMissionTask(params.mission, params.repo)
+  }),
+  defineMethod({
+    name: 'mission.restack',
+    permission: 'workspace',
+    params: MissionRestackParams,
+    handler: async (params, { runtime }) => runtime.restackMission(params.mission, params.repo)
+  }),
+  defineMethod({
+    name: 'mission.absorb',
+    permission: 'workspace',
+    params: MissionAbsorbParams,
+    handler: async (params, { runtime }) =>
+      runtime.absorbMissionPreview(params.mission, params.repo, params.choose)
   })
 ]

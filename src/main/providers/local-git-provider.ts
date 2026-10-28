@@ -1,3 +1,4 @@
+import { notifyMissionWorktreeRebased } from '../missions/mission-rebase-notification'
 import { gitSyncForkDefaultBranch } from '../git/fork-sync'
 import type { GitRuntimeOptions } from '../git/git-runtime-options'
 import { checkIgnoredPaths } from '../git/check-ignored-paths'
@@ -125,8 +126,10 @@ export function createLocalGitProvider(options: LocalGitProviderOptions = {}): L
     pullBranch: (worktreePath, pushTarget) => gitPull(worktreePath, pushTarget, interactive),
     fastForwardBranch: (worktreePath, pushTarget) =>
       gitFastForward(worktreePath, pushTarget, interactive),
-    rebaseFromBase: (worktreePath, baseRef) =>
-      gitPullRebaseFromBase(worktreePath, baseRef, interactive),
+    rebaseFromBase: async (worktreePath, baseRef) => {
+      await gitPullRebaseFromBase(worktreePath, baseRef, interactive)
+      notifyMissionWorktreeRebased(worktreePath)
+    },
     fetchRemote: (worktreePath, pushTarget) => gitFetch(worktreePath, pushTarget, interactive),
     syncForkDefaultBranch: (worktreePath, expectedUpstream) =>
       gitSyncForkDefaultBranch(worktreePath, expectedUpstream, interactive),

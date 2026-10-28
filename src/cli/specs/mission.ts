@@ -74,6 +74,63 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
     examples: ['orca mission add-repo referral --repo name:mobile']
   },
   {
+    path: ['mission', 'task', 'add'],
+    summary: 'Append a task layer above a Mission repo stack, with its own branch and worktree',
+    usage:
+      'orca mission task add <selector> --repo <selector> --title <title> [--ref <key>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'repo', 'title', 'ref'],
+    positionalArgs: ['mission'],
+    notes: [
+      MISSION_SELECTOR_NOTE,
+      '--repo is one registered repo selector that is already a Mission member.',
+      '--ref is an external tracker key such as OMP-951; it names the task branch and selects the task for --choose.'
+    ],
+    examples: ['orca mission task add kiosek --repo name:eshop --title "Cart totals" --ref OMP-951']
+  },
+  {
+    path: ['mission', 'task', 'rm'],
+    destructive: true,
+    summary: 'Remove the top task layer of a Mission repo stack and delete its worktree',
+    usage: 'orca mission task rm <selector> --repo <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'repo'],
+    positionalArgs: ['mission'],
+    notes: [
+      MISSION_SELECTOR_NOTE,
+      'Only the top task can be removed. A layer with uncommitted changes is refused.'
+    ],
+    examples: ['orca mission task rm kiosek --repo name:eshop']
+  },
+  {
+    path: ['mission', 'restack'],
+    summary: 'Rebase task layers onto their parents and move the preview along',
+    usage: 'orca mission restack <selector> [--repo <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'repo'],
+    positionalArgs: ['mission'],
+    notes: [
+      MISSION_SELECTOR_NOTE,
+      'Without --repo every member repo is restacked. Layers with uncommitted changes, a working agent or a conflict are left alone and reported.'
+    ],
+    examples: ['orca mission restack kiosek', 'orca mission restack kiosek --repo name:eshop']
+  },
+  {
+    path: ['mission', 'absorb'],
+    summary: 'Move edits made in the preview worktree into the task layers that own them',
+    usage:
+      'orca mission absorb <selector> --repo <selector> [--choose <file:line=taskRef>...] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'repo', 'choose'],
+    repeatableFlags: ['choose'],
+    positionalArgs: ['mission'],
+    notes: [
+      MISSION_SELECTOR_NOTE,
+      'Exits 1 and lists file:line of every hunk that more than one task could own; resolve each with --choose.',
+      'taskRef is a task tracker key, task branch name or task id.'
+    ],
+    examples: [
+      'orca mission absorb kiosek --repo name:eshop',
+      'orca mission absorb kiosek --repo name:eshop --choose src/cart.ts:42=OMP-951'
+    ]
+  },
+  {
     path: ['mission', 'rm'],
     destructive: true,
     summary: 'Delete a Mission and its member worktrees',
