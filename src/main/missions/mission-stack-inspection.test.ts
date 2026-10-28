@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Mission } from '../../shared/mission-types'
-import { inspectMissionStacks, type LayerPushTips } from './mission-stack-inspection'
+import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'
+import { inspectMissionStacks } from './mission-stack-inspection'
 
 const mission: Mission = {
   id: 'm1',
@@ -44,7 +44,7 @@ function getStatesBySlot(report: MissionRestackReport | undefined): Record<strin
 describe('inspectMissionStacks', () => {
   it('inspects only repos with tasks and marks moved published layers as needs-push', async () => {
     const inspectRepo = vi.fn(async () => r1Report)
-    const tips = new Map<string, LayerPushTips>([
+    const tips = new Map<string, MissionLayerPushTips>([
       ['mission/referral', { localTip: 'm', pushedTip: 'm' }],
       ['mission-task/referral/t1', { localTip: 'new', pushedTip: 'old' }]
     ])

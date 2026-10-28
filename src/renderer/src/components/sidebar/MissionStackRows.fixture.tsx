@@ -103,7 +103,8 @@ function defineStackFixture(
       worktreesByRepo: { [repo.id]: worktrees },
       missions: [mission],
       missionStackReports: { m1: [{ repoId: repo.id, layers }] },
-      missionSlotErrors: slotErrors
+      missionSlotErrors: slotErrors,
+      missionStackReportsStale: { m1: Object.keys(slotErrors).length > 0 }
     },
     render: () => (
       <ConfirmationDialogProvider>

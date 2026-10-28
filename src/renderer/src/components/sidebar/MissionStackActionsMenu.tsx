@@ -56,10 +56,10 @@ export function MissionStackActionsMenu({
       toast.success(
         result.applied > 0
           ? translate(
-              'auto.components.sidebar.MissionStackActionsMenu.5beff8fa13',
-              'Moved {{value0}} preview edits into their tasks.',
+              'components.missions.stack.movedPreviewEdits',
+              'Moved {{count}} preview edits into their tasks.',
               {
-                value0: result.applied
+                count: result.applied
               }
             )
           : translate(
@@ -85,9 +85,9 @@ export function MissionStackActionsMenu({
       if (open > 0) {
         toast.success(
           translate(
-            'auto.components.sidebar.MissionStackActionsMenu.380d1a8f89',
-            '{{value0}} pull requests open for this stack.',
-            { value0: open }
+            'components.missions.stack.openPullRequests',
+            '{{count}} pull requests open for this stack.',
+            { count: open }
           )
         )
       }
