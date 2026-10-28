@@ -1,19 +1,25 @@
 import { resolve as resolvePath } from 'node:path'
 import type {
+  RuntimeMissionAbsorbResult,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
   RuntimeMissionRemoveResult,
+  RuntimeMissionRestackResult,
   RuntimeMissionSession,
-  RuntimeMissionShow
+  RuntimeMissionShow,
+  RuntimeMissionTaskResult
 } from '../../shared/mission-types'
 import type { CommandHandler } from '../dispatch'
 import { getOptionalStringFlag, getRepeatedStringFlag, getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
 import {
+  formatMissionAbsorb,
   formatMissionList,
   formatMissionMutation,
   formatMissionRemove,
-  formatMissionShow
+  formatMissionRestack,
+  formatMissionShow,
+  formatMissionTask
 } from '../mission-format'
 import { RuntimeClientError } from '../runtime/types'
 
@@ -23,6 +29,29 @@ function getRequiredRepoSelectors(flags: Map<string, string | boolean>): string[
     throw new RuntimeClientError('invalid_argument', 'Missing required --repo')
   }
   return repos
+}
+
+function getChoiceOverrides(
+  flags: Map<string, string | boolean>
+): Record<string, string> | undefined {
+  const choices = getRepeatedStringFlag(flags, 'choose')
+  if (choices.length === 0) {
+    return undefined
+  }
+  const overrides: Record<string, string> = {}
+  for (const choice of choices) {
+    const split = choice.lastIndexOf('=')
+    const hunk = choice.slice(0, split)
+    const taskRef = choice.slice(split + 1)
+    if (split < 1 || !/:\d+$/.test(hunk) || taskRef.length === 0) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        `Invalid --choose "${choice}"; expected <file:line=taskRef>`
+      )
+    }
+    overrides[hunk] = taskRef
+  }
+  return overrides
 }
 
 export const MISSION_HANDLERS: Record<string, CommandHandler> = {
@@ -81,6 +110,46 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
       repos: getRequiredRepoSelectors(flags)
     })
     printResult(result, json, formatMissionMutation)
+  },
+  'mission task add': async ({ flags, client, json }) => {
+    const result = await client.call<RuntimeMissionTaskResult>('mission.addTask', {
+      mission: getRequiredStringFlag(flags, 'mission'),
+      repo: getRequiredStringFlag(flags, 'repo'),
+      title: getRequiredStringFlag(flags, 'title'),
+      ref: getOptionalStringFlag(flags, 'ref')
+    })
+    printResult(result, json, formatMissionTask)
+    if (result.result.error) {
+      process.exitCode = 1
+    }
+  },
+  'mission task rm': async ({ flags, client, json }) => {
+    const result = await client.call<RuntimeMissionTaskResult>('mission.removeTask', {
+      mission: getRequiredStringFlag(flags, 'mission'),
+      repo: getRequiredStringFlag(flags, 'repo')
+    })
+    printResult(result, json, formatMissionTask)
+    if (result.result.error) {
+      process.exitCode = 1
+    }
+  },
+  'mission restack': async ({ flags, client, json }) => {
+    const result = await client.call<RuntimeMissionRestackResult>('mission.restack', {
+      mission: getRequiredStringFlag(flags, 'mission'),
+      repo: getOptionalStringFlag(flags, 'repo')
+    })
+    printResult(result, json, formatMissionRestack)
+  },
+  'mission absorb': async ({ flags, client, json }) => {
+    const result = await client.call<RuntimeMissionAbsorbResult>('mission.absorb', {
+      mission: getRequiredStringFlag(flags, 'mission'),
+      repo: getRequiredStringFlag(flags, 'repo'),
+      choose: getChoiceOverrides(flags)
+    })
+    printResult(result, json, formatMissionAbsorb)
+    if (result.result.ambiguous.length > 0) {
+      process.exitCode = 1
+    }
   },
   'mission rm': async ({ flags, client, json }) => {
     const result = await client.call<RuntimeMissionRemoveResult>('mission.remove', {

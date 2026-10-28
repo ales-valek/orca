@@ -90,6 +90,15 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
     this.agentTransitions.subscribe((change) => this.terminalAgentPhonePush.observe(change))
     this.agentTransitions.subscribe((change) => this.terminalWorkerTurnStops.observe(change))
     this.agentTransitions.subscribe((change) => this.workerAutoReleaseActivity.observePane(change))
+    this.agentTransitions.subscribe((change) => {
+      if (
+        change.kind === 'moved' &&
+        change.workspace.sshHostId === null &&
+        (change.to === 'done' || change.to === 'rest')
+      ) {
+        this.notifyMissionAgentTurnEnded(change.workspace.worktreeId)
+      }
+    })
     const saveMovedWorkerSessions = watchMovedWorkerResumeSessions(
       this,
       () => this._orchestrationDb

@@ -35,3 +35,29 @@ export const MissionRemoveParams = z.object({
   mission: MissionSelectorField,
   deleteWorktrees: z.boolean()
 })
+
+const MissionRepoSelector = requiredString('Missing repo selector')
+
+export const MissionAddTaskParams = z.object({
+  mission: MissionSelectorField,
+  repo: MissionRepoSelector,
+  title: requiredString('Missing task title'),
+  ref: OptionalString
+})
+
+export const MissionRemoveTaskParams = z.object({
+  mission: MissionSelectorField,
+  repo: MissionRepoSelector
+})
+
+export const MissionRestackParams = z.object({
+  mission: MissionSelectorField,
+  repo: OptionalString
+})
+
+export const MissionAbsorbParams = z.object({
+  mission: MissionSelectorField,
+  repo: MissionRepoSelector,
+  /** `file:line` of an ambiguous hunk mapped to a task ref (tracker key, branch or id). */
+  choose: z.record(z.string(), requiredString('Missing task ref')).optional()
+})
