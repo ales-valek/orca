@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
+import { isMissionSlot } from '../../shared/mission-task-stack'
+import type { MissionSlot } from '../../shared/mission-types'
 import { isFolderRepo } from '../../shared/repo-kind'
 import type { Repo } from '../../shared/repo-types'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
@@ -27,6 +29,20 @@ export function resolveMissionManagedWorktreeCreate(args: {
   store: RuntimeStore
 }): MissionManagedWorktreeCreate {
   const { request, repo, store } = args
+  if (
+    request.missionSlot !== undefined &&
+    (!request.missionId || !isMissionSlot(request.missionSlot))
+  ) {
+    throw new Error('Mission slot requires a valid slot and its Mission.')
+  }
+  if (
+    request.missionSlot !== undefined &&
+    request.missionSlot !== 'member' &&
+    request.worktreePathOverride === undefined
+  ) {
+    // Why: only an in-root create writes the crash intent that recovers a non-member slot.
+    throw new Error('Mission slot worktrees must be created inside the Mission root.')
+  }
   if (request.requireExactBranchName) {
     if (!request.branchNameOverride) {
       throw new Error('Exact branch creation requires branchNameOverride.')
@@ -86,6 +102,12 @@ export function resolveMissionManagedWorktreeCreate(args: {
   }
 }
 
+export function getNonMemberMissionSlotStamp(slot: MissionSlot | undefined): {
+  missionSlot?: Exclude<MissionSlot, 'member'>
+} {
+  return slot === undefined || slot === 'member' ? {} : { missionSlot: slot }
+}
+
 export async function stampMissionWorktreeAfterCreate(args: {
   request: RuntimeManagedWorktreeCreateArgs
   repo: Repo
@@ -111,7 +133,8 @@ export async function stampMissionWorktreeAfterCreate(args: {
         repoId: args.repo.id,
         worktreeId,
         worktreeInstanceId: args.worktreeInstanceId,
-        ...(args.checkoutExistingBranch ? { preserveBranchOnDelete: true } : {})
+        ...(args.checkoutExistingBranch ? { preserveBranchOnDelete: true } : {}),
+        ...getNonMemberMissionSlotStamp(args.request.missionSlot)
       }
     })
   } catch (error) {

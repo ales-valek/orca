@@ -1,4 +1,6 @@
+import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { MissionSlot } from '../../shared/mission-types'
 import {
   assignOwnedWorktree,
   getSetupHookMocks,
@@ -24,6 +26,7 @@ vi.mock('electron', () => ({
 
 import { registerMissionHandlers } from '../ipc/missions'
 import { MissionOperations } from './mission-operations'
+import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 
 const setupHookMocks = getSetupHookMocks()
 
@@ -121,5 +124,86 @@ describe('MissionOperations', () => {
 
     expect(window.webContents.send).toHaveBeenCalledWith('repos:changed')
     expect(handlers.get('missions:list')!({})).toEqual([expect.objectContaining({ id: 'm1' })])
+  })
+})
+
+describe('MissionMemberOwnershipRecovery slots', () => {
+  const taskBranch = 'mission-task/referral/t1'
+
+  function seedMemberAndTask() {
+    const store = makeFakeStore()
+    store.createMission({ name: 'Referral', repoIds: ['r1'] })
+    const member = assignOwnedWorktree(store, 'r1')
+    store.addMissionTask('m1', { repoId: 'r1', title: 'T1', branchName: taskBranch })
+    const branchById = new Map<string, string>([[member.worktreeId, 'mission/referral']])
+    const runtime = makeFakeRuntime(store)
+    runtime.inspectManagedWorktreeForOwnership.mockImplementation(async (id: string) => {
+      const meta = store.getWorktreeMeta(id)
+      return meta?.instanceId
+        ? {
+            status: 'found' as const,
+            worktree: {
+              id,
+              path: id.slice(id.indexOf('::') + 2),
+              repoId: 'r1',
+              branch: branchById.get(id) ?? 'unknown',
+              instanceId: meta.instanceId
+            }
+          }
+        : { status: 'missing' as const }
+    })
+    const addTaskWorktree = (name: string, slot: MissionSlot) => {
+      const worktreeId = `r1::${path.join(path.sep, 'wt', name)}`
+      const worktreeInstanceId = `instance-${name}`
+      store.setWorktreeMeta(worktreeId, {
+        instanceId: worktreeInstanceId,
+        missionId: 'm1',
+        missionSlot: slot
+      })
+      branchById.set(worktreeId, taskBranch)
+      return { worktreeId, worktreeInstanceId }
+    }
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the shared Mission IPC fakes implement every store/runtime method recovery calls.
+    const recovery = new MissionMemberOwnershipRecovery(store as never, runtime as never)
+    return { store, runtime, recovery, member, addTaskWorktree }
+  }
+
+  it('recovers each slot of one repo without treating the other slot as ambiguous', async () => {
+    const { store, runtime, recovery, member, addTaskWorktree } = seedMemberAndTask()
+    const task = addTaskWorktree('r1-task', 'task:task-1')
+    const mission = store.getMission('m1')!
+
+    await expect(recovery.recoverLiveOwnedWorktree(mission, 'r1', 'member')).resolves.toEqual(
+      member
+    )
+    await expect(recovery.recoverLiveOwnedWorktree(mission, 'r1', 'task:task-1')).resolves.toEqual(
+      task
+    )
+    expect(runtime.findManagedWorktreesForMissionOwnership).toHaveBeenLastCalledWith(
+      'm1',
+      'r1',
+      taskBranch,
+      'task:task-1'
+    )
+    expect(store.getWorktreeMeta(task.worktreeId)).toMatchObject({ missionSlot: 'task:task-1' })
+  })
+
+  it('still refuses two live owners of the same slot', async () => {
+    const { store, recovery, addTaskWorktree } = seedMemberAndTask()
+    addTaskWorktree('r1-task', 'task:task-1')
+    addTaskWorktree('r1-task-copy', 'task:task-1')
+
+    await expect(
+      recovery.recoverLiveOwnedWorktree(store.getMission('m1')!, 'r1', 'task:task-1')
+    ).rejects.toThrow('mission_member_owned_worktree_ambiguous')
+  })
+
+  it('fails closed when the slot has no known branch', async () => {
+    const { store, runtime, recovery } = seedMemberAndTask()
+
+    await expect(
+      recovery.recoverLiveOwnedWorktree(store.getMission('m1')!, 'r1', 'task:missing')
+    ).rejects.toThrow('mission_member_worktree_ownership_unverified')
+    expect(runtime.findManagedWorktreesForMissionOwnership).not.toHaveBeenCalled()
   })
 })

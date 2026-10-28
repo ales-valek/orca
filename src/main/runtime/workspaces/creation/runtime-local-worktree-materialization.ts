@@ -23,6 +23,7 @@ import type { RuntimeStore } from '../../runtime-store-contract'
 import { attributedSparsePresetId } from '../../../ipc/sparse-preset-attribution'
 import type { WorktreeCreateTimingRecorder } from '../../../workspaces/creation/worktree-create-timing'
 import { hostWorktreeTargetForRepo } from '../../../persistence/host-qualified-worktree-meta'
+import { getNonMemberMissionSlotStamp } from './runtime-mission-worktree-create'
 
 export async function materializeRuntimeLocalWorktree<T>(args: {
   request: RuntimeManagedWorktreeCreateArgs
@@ -82,6 +83,7 @@ export async function materializeRuntimeLocalWorktree<T>(args: {
       // Why: path-keyed metadata can outlive a checkout; every creation must
       // either stamp current Mission ownership or explicitly clear stale ownership.
       missionId: request.missionId,
+      missionSlot: getNonMemberMissionSlotStamp(request.missionSlot).missionSlot,
       ...getProjectHostSetupWorktreeMeta(store.getProjectHostSetups?.() ?? [], repo),
       lastActivityAt: now,
       createdAt: now,
