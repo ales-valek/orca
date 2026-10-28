@@ -9,6 +9,7 @@ import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { AppState } from '../types'
+import { createMissionStackSlice, type MissionStackSlice } from './mission-stack-actions'
 
 // Why: missions and their session workspaces live in this app's own catalog, never a runtime's.
 const LOCAL_CATALOG_OWNER = { runtimeEnvironmentId: null }
@@ -24,6 +25,7 @@ export type MissionsSlice = {
     branchName?: string
     repoIds: string[]
     sessionAgent?: TuiAgent
+    orchestratorRepoId?: string
   }) => Promise<MissionCreateResult | null>
   renameMission: (missionId: string, name: string) => Promise<void>
   deleteMission: (
@@ -34,7 +36,7 @@ export type MissionsSlice = {
   removeMissionMember: (missionId: string, repoId: string, deleteWorktree: boolean) => Promise<void>
   recreateMissionMemberWorktree: (missionId: string, repoId: string) => Promise<void>
   ensureMissionSession: (missionId: string) => Promise<FolderWorkspace | null>
-}
+} & MissionStackSlice
 
 export const missionMemberErrorKey = (missionId: string, repoId: string): string =>
   `${missionId}:${repoId}`
@@ -68,6 +70,7 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
   }
 
   return {
+    ...createMissionStackSlice(set, get),
     missions: [],
     missionMemberErrors: {},
 

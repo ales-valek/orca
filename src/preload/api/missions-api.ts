@@ -1,9 +1,14 @@
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
+import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   Mission,
+  MissionAbsorbResult,
   MissionCreateResult,
   MissionDeleteResult,
-  MissionMemberResult
+  MissionMemberResult,
+  MissionStackPullRequestsResult,
+  MissionStackPushResult,
+  MissionTaskResult
 } from '../../shared/mission-types'
 import type { TuiAgent } from '../../shared/tui-agent'
 
@@ -14,6 +19,7 @@ export type MissionsApi = {
     branchName?: string
     repoIds: string[]
     sessionAgent?: TuiAgent
+    orchestratorRepoId?: string
   }) => Promise<MissionCreateResult>
   update: (args: {
     missionId: string
@@ -31,4 +37,31 @@ export type MissionsApi = {
     repoId: string
   }) => Promise<MissionMemberResult>
   ensureSession: (args: { missionId: string }) => Promise<FolderWorkspace>
+  /** Read-only layer states of every repo stack in the Mission. */
+  inspectStacks: (args: { missionId: string }) => Promise<MissionRestackReport[]>
+  addTask: (args: {
+    missionId: string
+    repoId: string
+    title: string
+    externalRef?: string
+  }) => Promise<MissionTaskResult>
+  /** Removes the repo's top task and deletes its worktree; `taskId` guards a stale view. */
+  removeTask: (args: {
+    missionId: string
+    repoId: string
+    taskId: string
+  }) => Promise<MissionTaskResult>
+  restack: (args: { missionId: string; repoId?: string }) => Promise<MissionRestackReport[]>
+  /** `overrides` maps an ambiguous hunk's `file:line` to the task id that takes it. */
+  absorb: (args: {
+    missionId: string
+    repoId: string
+    overrides?: Record<string, string>
+  }) => Promise<MissionAbsorbResult>
+  createStackPullRequests: (args: {
+    missionId: string
+    repoId: string
+    draft?: boolean
+  }) => Promise<MissionStackPullRequestsResult>
+  pushStack: (args: { missionId: string; repoId: string }) => Promise<MissionStackPushResult>
 }

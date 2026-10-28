@@ -48,6 +48,36 @@ export const MissionSelectorArgs = z.object({
   missionId: z.string().min(1)
 })
 
+export const MissionAddTaskArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1),
+  title: z.string().trim().min(1),
+  externalRef: z.string().trim().min(1).optional()
+})
+
+export const MissionRemoveTaskArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1),
+  taskId: z.string().min(1)
+})
+
+export const MissionRestackArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1).optional()
+})
+
+export const MissionAbsorbArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1),
+  overrides: z.record(z.string(), z.string().min(1)).optional()
+})
+
+export const MissionStackPullRequestsArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1),
+  draft: z.boolean().optional()
+})
+
 export function parseMissionIpcArgs<T>(schema: z.ZodType<T>, value: unknown, errorCode: string): T {
   const result = schema.safeParse(value)
   if (result.success) {
