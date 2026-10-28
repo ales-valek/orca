@@ -1,3 +1,4 @@
+import { normalizeHostedReviewBaseRef } from '../../shared/hosted-review-refs'
 import type { MissionEvent } from '../../shared/huly/huly-status-rules'
 import { getRepoTaskStack } from '../../shared/mission-task-stack'
 import type {
@@ -5,8 +6,10 @@ import type {
   MissionStackPullRequestsResult,
   MissionTaskResult
 } from '../../shared/mission-types'
+import type { Repo } from '../../shared/repo-types'
 import type { Store } from '../persistence'
 import type { MissionPullRequestMerge } from './mission-stack-merge-notification'
+import { resolveLocalMissionDefaultBaseBranch } from './mission-stack-pull-request-git'
 
 export type MissionEventListener = (event: MissionEvent) => unknown
 
@@ -22,13 +25,31 @@ export function getStackPrCreatedTaskIds(
     .map((task) => task.id)
 }
 
-/** The merged head layer plus the layers below it that the same stack merge took along. */
-export function getMergedMissionEvents(
+export type MissionMergeCandidate = { repoId: string; event: MissionEvent }
+
+/** Layers a merge took along, before checking its base: a merged task layer plus the layers
+ *  below it, or every layer of the repo when the mission branch itself was merged. */
+export function getMissionMergeCandidates(
   missions: readonly Mission[],
   getRepoPath: (repoId: string) => string | null,
   merge: MissionPullRequestMerge
-): MissionEvent[] {
+): MissionMergeCandidate[] {
+  const toCandidate = (mission: Mission, repoId: string, taskIds: string[]) => ({
+    repoId,
+    event: { kind: 'stack-merged' as const, missionId: mission.id, taskIds }
+  })
   return missions.flatMap((mission) => {
+    if (mission.branchName === merge.headBranch) {
+      return mission.members
+        .filter((member) => getRepoPath(member.repoId) === merge.repoPath)
+        .map((member) =>
+          toCandidate(
+            mission,
+            member.repoId,
+            getRepoTaskStack(mission, member.repoId).map((task) => task.id)
+          )
+        )
+    }
     const head = (mission.tasks ?? []).find(
       (task) => task.branchName === merge.headBranch && getRepoPath(task.repoId) === merge.repoPath
     )
@@ -39,7 +60,7 @@ export function getMergedMissionEvents(
     const taskIds = getRepoTaskStack(mission, head.repoId)
       .filter((task) => task.order >= lowestOrder && task.order <= head.order)
       .map((task) => task.id)
-    return [{ kind: 'stack-merged' as const, missionId: mission.id, taskIds }]
+    return [toCandidate(mission, head.repoId, taskIds)]
   })
 }
 
@@ -65,7 +86,10 @@ export function emitMissionEvent(
 export class MissionEventReporter {
   constructor(
     private readonly store: Pick<Store, 'getMission' | 'getMissions' | 'getRepo'>,
-    private readonly listener: MissionEventListener | undefined
+    private readonly listener: MissionEventListener | undefined,
+    private readonly getDefaultBaseBranch: (
+      repo: Repo
+    ) => Promise<string> = resolveLocalMissionDefaultBaseBranch
   ) {}
 
   taskAdded(missionId: string, result: MissionTaskResult): MissionTaskResult {
@@ -94,10 +118,28 @@ export class MissionEventReporter {
     return result
   }
 
-  pullRequestMerged(merge: MissionPullRequestMerge): void {
+  /** Only a merge into the repo's default base counts; resolves after the events were emitted. */
+  async pullRequestMerged(merge: MissionPullRequestMerge): Promise<void> {
     const getRepoPath = (repoId: string) => this.store.getRepo(repoId)?.path ?? null
-    for (const event of getMergedMissionEvents(this.store.getMissions(), getRepoPath, merge)) {
-      emitMissionEvent(this.listener, event)
+    const candidates = getMissionMergeCandidates(this.store.getMissions(), getRepoPath, merge)
+    const defaultBases = new Map<string, Promise<string | null>>()
+    for (const { repoId, event } of candidates) {
+      const repo = this.store.getRepo(repoId)
+      if (!repo) {
+        continue
+      }
+      if (!defaultBases.has(repoId)) {
+        defaultBases.set(
+          repoId,
+          this.getDefaultBaseBranch(repo).catch((error: unknown) => {
+            console.error('[missions] could not resolve the default base branch:', error)
+            return null
+          })
+        )
+      }
+      if ((await defaultBases.get(repoId)) === normalizeHostedReviewBaseRef(merge.baseBranch)) {
+        emitMissionEvent(this.listener, event)
+      }
     }
   }
 }

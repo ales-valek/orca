@@ -73,6 +73,7 @@ export async function mergePR(
           notifyMissionPullRequestMerged({
             repoPath,
             headBranch: restData.headRefName,
+            baseBranch: restData.stack.baseRefName,
             mergedCount: restData.stack.position
           })
         }
@@ -101,8 +102,13 @@ export async function mergePR(
       env: { ...process.env, GH_PROMPT_DISABLED: '1' }
     })
     invalidateReviewLookupsAfterPRMutation(repoPath, connectionId)
-    if (restData.headRefName) {
-      notifyMissionPullRequestMerged({ repoPath, headBranch: restData.headRefName, mergedCount: 1 })
+    if (restData.headRefName && restData.baseRefName) {
+      notifyMissionPullRequestMerged({
+        repoPath,
+        headBranch: restData.headRefName,
+        baseBranch: restData.baseRefName,
+        mergedCount: 1
+      })
     }
     return { ok: true }
   } catch (err) {
