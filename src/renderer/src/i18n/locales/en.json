@@ -7362,7 +7362,8 @@
           "507155ae18": "Some workspaces could not be created. You can retry from the mission list.",
           "e85049f72a": "Could not create the mission. Try again.",
           "009decc6e5": "Done",
-          "ba57f70473": "Agent"
+          "ba57f70473": "Agent",
+          "4956049559": "Orchestrator project (optional)"
         },
         "MissionDeleteDialog": {
           "7c84ee0d7d": "Delete Mission",
@@ -7391,7 +7392,15 @@
           "83e2a3cc38": "1 project"
         },
         "MissionMemberErrorCopy": {
-          "c8affe1f4b": "This repository has no commits or default branch yet. Make an initial commit (or set a default branch in Project Settings), then retry."
+          "c8affe1f4b": "This repository has no commits or default branch yet. Make an initial commit (or set a default branch in Project Settings), then retry.",
+          "cfd47e3be8": "Only the top task of a stack can be removed.",
+          "3563c694af": "The top task has no workspace. Remove it before adding another task.",
+          "9409032ab5": "A task layer has uncommitted changes or a working agent. Absorb needs every affected layer clean and idle.",
+          "3ccbd3cb94": "The stack is out of date. Restack it, then absorb again.",
+          "72c7c43c95": "A task layer has uncommitted changes. Commit or discard them, then retry.",
+          "8f57524962": "A workspace inside the mission folder cannot be kept. Remove it together with its workspace.",
+          "9b92a95d43": "Stacked pull requests are supported only for GitHub repositories.",
+          "96dae2fc71": "The orchestrator project cannot also be a mission project."
         },
         "MissionMemberRows": {
           "2f310bd75a": "Remove project and delete workspace?",
@@ -7485,6 +7494,55 @@
           "openingProject": "Opening project...",
           "openingFolder": "Opening folder...",
           "chooseFolder": "Choose a folder..."
+        },
+        "MissionAbsorbDialog": {
+          "1b2ad78b4d": "Choose Task Layers",
+          "7f655cbe89": "These preview edits touch lines owned by more than one task. Pick the task that takes each edit. Nothing is absorbed until every edit has a task.",
+          "b40fdd566e": "Task for {{value0}}",
+          "9f6ad094a2": "Choose task",
+          "5e082e7cc4": "Cancel",
+          "ff7ffe51d3": "Absorbing...",
+          "d4a0733f96": "Absorb"
+        },
+        "MissionAddTaskDialog": {
+          "4d09a9a0ed": "Could not add the task. Try again.",
+          "de2ee3046d": "Add Task",
+          "5f616845f8": "The task gets its own branch and workspace on top of the {{value0}} stack.",
+          "f078e5c302": "Title",
+          "46e5204bbf": "Tracker key (optional)",
+          "db438f7de9": "Cancel",
+          "13921025b4": "Adding..."
+        },
+        "MissionLayerStateBadge": {
+          "55243cad04": "Current",
+          "c487f09511": "Stale",
+          "1fdc238b72": "Blocked",
+          "2f054d9d41": "Conflict",
+          "72e9110ad5": "Needs push"
+        },
+        "MissionOrchestratorRepoPicker": {
+          "8501d7774b": "None"
+        },
+        "MissionStackActionsMenu": {
+          "5beff8fa13": "Moved {{value0}} preview edits into their tasks.",
+          "79d129156d": "No preview edits to absorb.",
+          "380d1a8f89": "{{value0}} pull requests open for this stack.",
+          "cd047f3f64": "Stack actions",
+          "aefbb3d1aa": "Add task",
+          "4c981beb64": "Restack",
+          "1daa793591": "Absorb preview edits",
+          "d1f2f963c2": "Create pull requests"
+        },
+        "MissionStackRows": {
+          "1310031885": "Pushing...",
+          "9414629caf": "Preview",
+          "1ad5a140a2": "Pushed {{value0}} rewritten layers.",
+          "7f9fcbbbb2": "Push rewritten layers",
+          "9b611165e0": "Remove task and delete workspace?",
+          "3ef7b62ac7": "This deletes the workspace of {{value0}}. Git work that cannot be deleted safely is preserved on its branch.",
+          "c47dd46ba2": "Delete workspace",
+          "6739390591": "Workspace missing",
+          "a463ece8dd": "Remove task"
         },
         "DeleteNestedWorktreesDialog": {
           "unsupportedHost": "This host does not support nested worktree deletion."
