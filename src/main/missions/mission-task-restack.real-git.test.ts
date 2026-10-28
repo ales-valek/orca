@@ -1,136 +1,22 @@
-import { execFileSync } from 'node:child_process'
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Mission, MissionTask } from '../../shared/mission-types'
-import type { Repo } from '../../shared/repo-types'
 import { getBranchTip } from '../git/stack-layer-git'
-import { MissionTaskRestack, type MissionTaskRestackDeps } from './mission-task-restack'
+import { MissionTaskRestack } from './mission-task-restack'
+import {
+  commitFile,
+  createTaskStackFixture,
+  git,
+  removeTaskStackFixtures,
+  tipOf,
+  type TaskStackFixture
+} from './mission-task-stack-test-fixture'
 
-const tempRoots: string[] = []
-const MISSION_BRANCH = 'mission/x'
-const PREVIEW_BRANCH = 'mission-preview/x'
-
-function git(cwd: string, args: string[]): string {
-  return execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim()
+function createStack(): Promise<TaskStackFixture> {
+  return createTaskStackFixture(['t1', 't2', 't3'])
 }
 
-async function commitFile(cwd: string, file: string, content: string, message: string) {
-  await writeFile(path.join(cwd, file), content, 'utf8')
-  git(cwd, ['add', file])
-  git(cwd, ['commit', '-q', '-m', message])
-  return git(cwd, ['rev-parse', 'HEAD'])
-}
-
-type StackFixture = {
-  root: string
-  mission: Mission
-  paths: Record<'member' | 't1' | 't2' | 't3' | 'preview', string>
-  bases: Map<string, string>
-  deps: MissionTaskRestackDeps
-}
-
-// Three task layers on a mission branch, each in its own worktree, with a preview on top.
-async function createStack(): Promise<StackFixture> {
-  const parent = await realpath(await mkdtemp(path.join(tmpdir(), 'orca-task-restack-')))
-  tempRoots.push(parent)
-  const root = path.join(parent, 'repo')
-  git(parent, ['init', '-q', '-b', 'main', root])
-  git(root, ['config', 'user.email', 'ada@example.com'])
-  git(root, ['config', 'user.name', 'Ada Lovelace'])
-  git(root, ['config', 'commit.gpgSign', 'false'])
-  await commitFile(root, 'base.txt', 'base\n', 'base')
-  const addWorktree = (name: string, branch: string, from: string): string => {
-    const target = path.join(parent, name)
-    git(root, ['worktree', 'add', '-q', '-b', branch, target, from])
-    return target
-  }
-  const member = addWorktree('member', MISSION_BRANCH, 'main')
-  const missionTip = await commitFile(member, 'mission.txt', 'mission\n', 'mission')
-  const tasks: MissionTask[] = []
-  const taskPaths: Record<string, string> = {}
-  let parentBranch = MISSION_BRANCH
-  let parentTip = missionTip
-  for (const id of ['t1', 't2', 't3'] as const) {
-    const branchName = `mission-task/x/${id}`
-    taskPaths[id] = addWorktree(id, branchName, parentBranch)
-    const tip = await commitFile(taskPaths[id], `${id}.txt`, `${id}\n`, id)
-    tasks.push({
-      id,
-      repoId: 'r1',
-      order: tasks.length + 1,
-      title: id,
-      branchName,
-      worktreeId: `r1::${taskPaths[id]}`,
-      parentBaseSha: parentTip,
-      addedAt: 0
-    })
-    parentBranch = branchName
-    parentTip = tip
-  }
-  const paths: StackFixture['paths'] = {
-    member,
-    t1: taskPaths.t1,
-    t2: taskPaths.t2,
-    t3: taskPaths.t3,
-    preview: addWorktree('preview', PREVIEW_BRANCH, parentBranch)
-  }
-  const mission: Mission = {
-    id: 'm1',
-    name: 'X',
-    branchName: MISSION_BRANCH,
-    members: [{ repoId: 'r1', worktreeId: `r1::${member}`, addedAt: 0 }],
-    tasks,
-    // Why: preview creation records the top-task tip it started from.
-    previews: [{ repoId: 'r1', worktreeId: `r1::${paths.preview}`, followedSha: parentTip }],
-    tabOrder: 0,
-    createdAt: 0,
-    updatedAt: 0
-  }
-  const repo: Repo = { id: 'r1', path: root, displayName: 'repo', badgeColor: '#000', addedAt: 0 }
-  const bases = new Map<string, string>()
-  const deps: MissionTaskRestackDeps = {
-    store: {
-      getRepo: (repoId) => (repoId === 'r1' ? repo : undefined),
-      setMissionTaskParentBaseSha: (_missionId, taskId, sha) => {
-        bases.set(taskId, sha)
-        const task = mission.tasks?.find((entry) => entry.id === taskId)
-        if (task) {
-          task.parentBaseSha = sha
-        }
-        return mission
-      },
-      setMissionTaskPendingParentBaseSha: (_missionId, taskId, sha) => {
-        const task = mission.tasks?.find((entry) => entry.id === taskId)
-        if (task) {
-          task.pendingParentBaseSha = sha
-        }
-        return mission
-      },
-      setMissionPreviewFollowedSha: (_missionId, repoId, sha) => {
-        const preview = mission.previews?.find((entry) => entry.repoId === repoId)
-        if (preview) {
-          preview.followedSha = sha
-        }
-        return mission
-      },
-      flushPendingOrThrowAsync: async () => {}
-    },
-    isWorktreeAgentWorking: () => false
-  }
-  return { root, mission, paths, bases, deps }
-}
-
-function tipOf(cwd: string): string {
-  return git(cwd, ['rev-parse', 'HEAD'])
-}
-
-async function amendTask1(paths: StackFixture['paths']): Promise<string> {
+async function amendTask1(paths: TaskStackFixture['paths']): Promise<string> {
   await writeFile(path.join(paths.t1, 't1.txt'), 't1 amended\n', 'utf8')
   git(paths.t1, ['commit', '-q', '--amend', '-a', '-m', 't1 amended'])
   return tipOf(paths.t1)
@@ -148,7 +34,7 @@ function layerOf(
 }
 
 // t2 and t1 both add shared.txt, so restacking t2 onto t1 stops in a rebase conflict.
-async function createConflictingStack(): Promise<StackFixture> {
+async function createConflictingStack(): Promise<TaskStackFixture> {
   const fixture = await createStack()
   const { mission, paths } = fixture
   await commitFile(paths.t2, 'shared.txt', 'from t2\n', 't2 shared')
@@ -161,9 +47,7 @@ async function createConflictingStack(): Promise<StackFixture> {
   return fixture
 }
 
-afterEach(async () => {
-  await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })))
-})
+afterEach(removeTaskStackFixtures)
 
 describe('MissionTaskRestack', () => {
   it('inspects without writing, then rebases every layer above an amended task and moves the preview', async () => {
