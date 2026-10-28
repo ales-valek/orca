@@ -64,6 +64,8 @@ allowBuilds:
   electron-winstaller: false
   esbuild: true
   msw: false
+  # msgpackr (Huly client) falls back to pure JS; skipping the native addon avoids Electron rebuilds.
+  msgpackr-extract: false
   node-pty: true
   ssh2: false
   '@orca/windows-registry': false

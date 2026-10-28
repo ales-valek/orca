@@ -31,7 +31,11 @@ const BUNDLED_MAIN_DEPENDENCIES = new Set([
   'remark-parse',
   'remark-gfm',
   // Windows NSIS copies app.asar before external resources; bootstrap must not race resources/node_modules.
-  'zod'
+  'zod',
+  // Huly client: bundling resolves its nested versions (copied node_modules are flattened) into a lazy chunk.
+  '@hcengineering/api-client',
+  '@hcengineering/text-core',
+  '@hcengineering/text-markdown'
 ])
 // Official CI alone injects ORCA_BUILD_IDENTITY (stable|rc) and ORCA_POSTHOG_WRITE_KEY secrets; other builds substitute literal null.
 // Compile-time substitution gates telemetry at module load without runtime env fallback; declarations live in src/types/build-constants.d.ts.
