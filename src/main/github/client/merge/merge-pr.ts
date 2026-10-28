@@ -9,6 +9,7 @@ import { detectRepositoryMergeMetadata } from './../detect/repository-merge-meta
 import type { PullRequestLookupData } from './../lookup/pull-request-lookup-data'
 import { getRestPRByNumber, getPRByNumber } from './../lookup/pr-number-lookup'
 import { STACK_METADATA_UNAVAILABLE_ERROR } from './../lookup/pr-stack-summary-cache'
+import { notifyMissionPullRequestMerged } from '../../../missions/mission-stack-merge-notification'
 export async function mergePR(
   repoPath: string,
   prNumber: number,
@@ -56,16 +57,25 @@ export async function mergePR(
       )
       release()
       concurrencySlotHeld = false
+      const mergeAction = mergeMetadata.mergeQueueRequired === true ? 'merge_queue' : 'direct_merge'
       const result = await mergeGitHubPRStack({
         repository: ownerRepo,
         prNumber,
         method,
-        mergeAction: mergeMetadata.mergeQueueRequired === true ? 'merge_queue' : 'direct_merge',
+        mergeAction,
         headSha: restData.headRefOid,
         ghOptions
       })
       if (result.ok) {
         invalidateReviewLookupsAfterPRMutation(repoPath, connectionId)
+        // Why: an enqueued stack is not merged yet; GitHub merges every PR below this one with it.
+        if (mergeAction === 'direct_merge' && restData.headRefName) {
+          notifyMissionPullRequestMerged({
+            repoPath,
+            headBranch: restData.headRefName,
+            mergedCount: restData.stack.position
+          })
+        }
       }
       return result
     }
@@ -91,6 +101,9 @@ export async function mergePR(
       env: { ...process.env, GH_PROMPT_DISABLED: '1' }
     })
     invalidateReviewLookupsAfterPRMutation(repoPath, connectionId)
+    if (restData.headRefName) {
+      notifyMissionPullRequestMerged({ repoPath, headBranch: restData.headRefName, mergedCount: 1 })
+    }
     return { ok: true }
   } catch (err) {
     const message =
