@@ -37,11 +37,13 @@ import {
   inspectMissionStacks,
   type MissionStackInspectionDeps
 } from './mission-stack-inspection'
-import { readLocalMissionPushTips } from './mission-stack-pull-request-git'
+import { createLocalMissionStackInspectionDeps } from './mission-stack-pull-request-git'
 import { MissionStackPublisher } from './mission-stack-publisher'
 import type { MissionStackPullRequestsResult } from './mission-stack-pull-requests'
 import { MissionRestackTrigger } from './mission-restack-trigger'
 import { MissionTaskRestack } from './mission-task-restack'
+import { MissionEventReporter, type MissionEventListener } from './mission-events'
+import type { MissionPullRequestMerge } from './mission-stack-merge-notification'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -62,6 +64,8 @@ export type MissionOperationsOptions = {
   isWorktreeAgentWorking?: (worktreeId: string) => boolean
   /** A stack mutation or restack ran, so layer states may differ even without a record change. */
   notifyStacksChanged?: (missionId: string) => void
+  /** Orca-initiated layer events (created, PR opened, merged); called fire-and-forget. */
+  onMissionEvent?: MissionEventListener
 }
 
 /** Mission mutations shared by the desktop IPC handlers and the runtime RPC (`orca mission`). */
@@ -76,6 +80,7 @@ export class MissionOperations {
   private readonly deletion: MissionDeletion
   private readonly publisher: MissionStackPublisher
   private readonly runSetupHook: MissionSetupHookRunner
+  private readonly events: MissionEventReporter
 
   constructor(
     private readonly store: Store,
@@ -84,6 +89,7 @@ export class MissionOperations {
     options: MissionOperationsOptions = {}
   ) {
     this.runSetupHook = options.runSetupHook ?? runMissionSetupHook
+    this.events = new MissionEventReporter(store, options.onMissionEvent)
     const isWorktreeAgentWorking = options.isWorktreeAgentWorking ?? (() => false)
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
     const restacker = new MissionTaskRestack({ store, isWorktreeAgentWorking })
@@ -100,16 +106,7 @@ export class MissionOperations {
       restacker: restacker,
       isWorktreeAgentWorking
     })
-    this.stackInspection = {
-      inspectRepo: this.inspectRepo,
-      readPushTips: async (repoId, branches) => {
-        const repo = store.getRepo(repoId)
-        if (!repo) {
-          throw new Error('mission_member_not_found')
-        }
-        return readLocalMissionPushTips(repo, branches)
-      }
-    }
+    this.stackInspection = createLocalMissionStackInspectionDeps(store, this.inspectRepo)
     this.publisher = new MissionStackPublisher(store, this.memberLifecycle, (mission, repoId) =>
       inspectMissionRepoStack(mission, repoId, this.stackInspection)
     )
@@ -247,8 +244,8 @@ export class MissionOperations {
     return inspectMissionStacks(mission, this.stackInspection)
   }
 
-  addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
-    return this.tasks.addTask(args)
+  async addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
+    return this.events.taskAdded(args.missionId, await this.tasks.addTask(args))
   }
 
   removeTopTask(args: MissionRemoveTopTaskInput): Promise<MissionTaskResult> {
@@ -266,6 +263,11 @@ export class MissionOperations {
   /** An agent in a Mission worktree finished a turn; restacks its repo after a short quiet period. */
   onAgentTurnEnded(worktreeId: string): void {
     this.restackTrigger.onAgentTurnEnded(worktreeId)
+  }
+
+  /** Orca merged a PR (stack); reports the merged task layers of any Mission. */
+  onPullRequestMerged(merge: MissionPullRequestMerge): void {
+    this.events.pullRequestMerged(merge)
   }
 
   /** A manual pull-rebase finished in this worktree; restacks if it is a Mission member checkout. */
@@ -294,12 +296,15 @@ export class MissionOperations {
   }
 
   /** Pushes and opens a PR for each layer of a repo's stack, bottom-up; the preview never gets one. */
-  createStackPullRequests(args: {
+  async createStackPullRequests(args: {
     missionId: string
     repoId: string
     draft?: boolean
   }): Promise<MissionStackPullRequestsResult> {
-    return this.publisher.createStackPullRequests(args)
+    return this.events.stackPullRequestsCreated(
+      args,
+      await this.publisher.createStackPullRequests(args)
+    )
   }
 
   /** Force-with-lease push of layers that moved since their last push; only on explicit user action. */
