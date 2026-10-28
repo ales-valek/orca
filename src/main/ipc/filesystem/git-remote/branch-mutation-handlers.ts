@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import type { GitPushTarget } from '../../../../shared/worktree/types'
+import { notifyMissionWorktreeRebased } from '../../../missions/mission-rebase-notification'
 import { gitFastForward, gitPull, gitPullRebaseFromBase, gitPush } from '../../../git/remote'
 import { validateGitPushTarget } from '../../../git/push-target-validation'
 import { resolveRegisteredWorktreePath } from '../../worktrees/removal/registered-worktree-roots-cache'
@@ -157,6 +158,7 @@ export function registerGitRemoteBranchMutationHandlers(context: FilesystemHandl
         ...gitOptions,
         admissionTier: 'interactive'
       })
+      notifyMissionWorktreeRebased(worktreePath)
     }
   )
 }

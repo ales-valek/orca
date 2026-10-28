@@ -241,4 +241,188 @@ describe('orca mission commands', () => {
     expect(process.exitCode).toBe(1)
     process.exitCode = priorExitCode
   })
+
+  it('adds a task through mission.addTask with the tracker ref', async () => {
+    queueFixtures(callMock, okFixture('req_1', { mission: MISSION, task: null }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(
+      [
+        'mission',
+        'task',
+        'add',
+        'kiosek',
+        '--repo',
+        'name:eshop',
+        '--title',
+        'X',
+        '--ref',
+        'OMP-951'
+      ],
+      '/tmp'
+    )
+
+    expect(callMock).toHaveBeenCalledWith('mission.addTask', {
+      mission: 'kiosek',
+      repo: 'name:eshop',
+      title: 'X',
+      ref: 'OMP-951'
+    })
+  })
+
+  it('removes the top task through mission.removeTask', async () => {
+    queueFixtures(callMock, okFixture('req_1', { mission: MISSION, task: null }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['mission', 'task', 'rm', 'kiosek', '--repo', 'name:eshop'], '/tmp')
+
+    expect(callMock).toHaveBeenCalledWith('mission.removeTask', {
+      mission: 'kiosek',
+      repo: 'name:eshop'
+    })
+  })
+
+  it('exits non-zero when a task operation reports an error', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_1', { mission: MISSION, task: null, error: 'mission_task_not_found' })
+    )
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const priorExitCode = process.exitCode
+
+    await main(['mission', 'task', 'rm', 'kiosek', '--repo', 'name:eshop'], '/tmp')
+
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('error: mission_task_not_found')
+    expect(process.exitCode).toBe(1)
+    process.exitCode = priorExitCode
+  })
+
+  it('restacks one repo or the whole Mission and prints layer states', async () => {
+    const reports = [
+      {
+        repoId: 'repo-api',
+        layers: [
+          { slot: 'member', state: 'current' },
+          { slot: 'task:a', state: 'blocked', reason: 'Uncommitted changes' }
+        ]
+      }
+    ]
+    queueFixtures(callMock, okFixture('req_1', { reports }), okFixture('req_2', { reports }))
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['mission', 'restack', 'kiosek', '--repo', 'name:api'], '/tmp')
+    await main(['mission', 'restack', 'kiosek'], '/tmp')
+
+    expect(callMock).toHaveBeenNthCalledWith(1, 'mission.restack', {
+      mission: 'kiosek',
+      repo: 'name:api'
+    })
+    expect(callMock).toHaveBeenNthCalledWith(2, 'mission.restack', { mission: 'kiosek' })
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('task:a  blocked (Uncommitted changes)')
+  })
+
+  it('sends --choose pairs to absorb as a record', async () => {
+    queueFixtures(callMock, okFixture('req_1', { applied: 2, ambiguous: [] }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(
+      [
+        'mission',
+        'absorb',
+        'kiosek',
+        '--repo',
+        'name:eshop',
+        '--choose',
+        'src/a.ts:12=OMP-1',
+        '--choose',
+        'src/b.ts:3=OMP-2'
+      ],
+      '/tmp'
+    )
+
+    expect(callMock).toHaveBeenCalledWith('mission.absorb', {
+      mission: 'kiosek',
+      repo: 'name:eshop',
+      choose: { 'src/a.ts:12': 'OMP-1', 'src/b.ts:3': 'OMP-2' }
+    })
+  })
+
+  it('exits non-zero and lists ambiguous hunks when absorb is unresolved', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_1', {
+        applied: 1,
+        ambiguous: [
+          {
+            file: 'src/a.ts',
+            line: 12,
+            candidateTaskIds: ['a', 'b'],
+            candidateRefs: ['OMP-1', 'OMP-2']
+          }
+        ]
+      })
+    )
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const priorExitCode = process.exitCode
+
+    await main(['mission', 'absorb', 'kiosek', '--repo', 'name:eshop'], '/tmp')
+
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('src/a.ts:12')
+    expect(process.exitCode).toBe(1)
+    process.exitCode = priorExitCode
+  })
+
+  it('rejects a malformed --choose value', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const priorExitCode = process.exitCode
+
+    await main(['mission', 'absorb', 'kiosek', '--repo', 'name:eshop', '--choose', 'nope'], '/tmp')
+
+    expect(callMock).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+    process.exitCode = priorExitCode
+  })
+
+  it('prints each stack bottom-up with state, branch and path', async () => {
+    const mission = {
+      ...MISSION,
+      stacks: [
+        {
+          repoId: 'repo-api',
+          repoName: 'api',
+          layers: [
+            {
+              slot: 'member',
+              title: null,
+              externalRef: null,
+              branch: 'mission/referral',
+              worktreePath: '/missions/referral/api',
+              state: 'current'
+            },
+            {
+              slot: 'task:a',
+              title: 'First',
+              externalRef: 'OMP-1',
+              branch: 'mission-task/referral/omp-1',
+              worktreePath: '/missions/referral/api--omp-1',
+              state: 'stale',
+              reason: 'parent moved'
+            }
+          ]
+        }
+      ]
+    }
+    queueFixtures(callMock, okFixture('req_1', { mission }))
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['mission', 'show', 'Referral'], '/tmp')
+
+    const output = logSpy.mock.calls.flat().join('\n')
+    expect(output).toContain('stack api (repo-api):')
+    expect(output).toContain(
+      'task:a  OMP-1  stale (parent moved)  mission-task/referral/omp-1  /missions/referral/api--omp-1'
+    )
+    expect(output.indexOf('member  ')).toBeLessThan(output.indexOf('task:a  '))
+  })
 })

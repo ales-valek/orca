@@ -30,6 +30,7 @@ import {
   type MissionRestackInput
 } from './mission-task-operations'
 import { MissionTaskAbsorb, type MissionAbsorbResult } from './mission-task-absorb'
+import { MissionRestackTrigger } from './mission-restack-trigger'
 import { MissionTaskRestack } from './mission-task-restack'
 
 function toErrorMessage(error: unknown): string {
@@ -56,6 +57,9 @@ export class MissionOperations {
   readonly memberLifecycle: MissionMemberLifecycle
   private readonly tasks: MissionTaskOperations
   private readonly absorber: MissionTaskAbsorb
+  /** Read-only layer states of a repo's stack; takes no lock and writes nothing. */
+  readonly inspectRepo: MissionTaskRestack['inspectRepo']
+  private readonly restackTrigger: MissionRestackTrigger
   private readonly runSetupHook: MissionSetupHookRunner
 
   constructor(
@@ -68,8 +72,17 @@ export class MissionOperations {
     const isWorktreeAgentWorking = options.isWorktreeAgentWorking ?? (() => false)
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
     const restacker = new MissionTaskRestack({ store, isWorktreeAgentWorking })
+    this.inspectRepo = restacker.inspectRepo.bind(restacker)
     this.tasks = new MissionTaskOperations(store, this.memberLifecycle, notifyChanged, restacker)
-    this.absorber = new MissionTaskAbsorb({ store, restacker, isWorktreeAgentWorking })
+    this.absorber = new MissionTaskAbsorb({
+      store,
+      restacker: restacker,
+      isWorktreeAgentWorking
+    })
+    this.restackTrigger = new MissionRestackTrigger({
+      store,
+      restack: (input) => this.restack(input)
+    })
   }
 
   list(): Mission[] {
@@ -185,6 +198,16 @@ export class MissionOperations {
     return this.tasks.restack(args)
   }
 
+  /** An agent in a Mission worktree finished a turn; restacks its repo after a short quiet period. */
+  onAgentTurnEnded(worktreeId: string): void {
+    this.restackTrigger.onAgentTurnEnded(worktreeId)
+  }
+
+  /** A manual pull-rebase finished in this worktree; restacks if it is a Mission member checkout. */
+  onWorktreeRebased(worktreePath: string): void {
+    this.restackTrigger.onWorktreeRebased(worktreePath)
+  }
+
   /** Moves the preview's edits into the task layers that own them, then restacks the repo. */
   absorb(args: MissionAbsorbInput): Promise<MissionAbsorbResult> {
     return this.memberLifecycle.run(args.missionId, async () => {
@@ -231,7 +254,11 @@ export class MissionOperations {
         // Why: the Mission PTY may have a cwd inside a link; stop it before unlinking.
         await this.memberLifecycle.teardownSession(mission)
       } catch (error) {
-        return { deleted: false, memberResults: [], error: toErrorMessage(error) }
+        return {
+          deleted: false,
+          memberResults: [],
+          error: toErrorMessage(error)
+        }
       }
       return args.deleteWorktrees
         ? this.deleteWithWorktrees(mission)
@@ -252,7 +279,11 @@ export class MissionOperations {
       // Why: marker removal is safe only after Mission/session deletion is durable.
       deleted = await this.store.deleteMissionAndFlush(mission.id)
     } catch (error) {
-      return { deleted: false, memberResults: [], error: toErrorMessage(error) }
+      return {
+        deleted: false,
+        memberResults: [],
+        error: toErrorMessage(error)
+      }
     }
     if (deleted) {
       this.memberLifecycle.detachDeletedMissionOwnership(recoveredMission)

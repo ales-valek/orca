@@ -136,4 +136,83 @@ describe('toRuntimeMissionRecord', () => {
       ]
     })
   })
+
+  it('projects stacks bottom-up with member, tasks, then preview', () => {
+    const root = path.join(tmp, 'root')
+    const mission = makeMission({
+      id: 'm1',
+      name: 'Kiosek',
+      rootPath: root,
+      members: [{ repoId: 'r1', worktreeId: `r1::${root}/api`, addedAt: 1 }],
+      tasks: [
+        {
+          id: 'b',
+          repoId: 'r1',
+          order: 2,
+          title: 'Second',
+          branchName: 'mission-task/kiosek/b',
+          worktreeId: `r1::${root}/api--b`,
+          parentBaseSha: null,
+          addedAt: 2
+        },
+        {
+          id: 'a',
+          repoId: 'r1',
+          order: 1,
+          title: 'First',
+          branchName: 'mission-task/kiosek/omp-1',
+          worktreeId: `r1::${root}/api--omp-1`,
+          parentBaseSha: null,
+          externalRef: 'OMP-1',
+          addedAt: 1
+        }
+      ],
+      previews: [{ repoId: 'r1', worktreeId: `r1::${root}/api--preview` }]
+    })
+    const record = toRuntimeMissionRecord({ getRepo: () => ({ displayName: 'API' }) }, mission)
+
+    expect(record.stacks).toHaveLength(1)
+    expect(record.stacks?.[0].layers.map((layer) => layer.slot)).toEqual([
+      'member',
+      'task:a',
+      'task:b',
+      'preview'
+    ])
+    expect(record.stacks?.[0].layers[1]).toEqual({
+      slot: 'task:a',
+      title: 'First',
+      externalRef: 'OMP-1',
+      branch: 'mission-task/kiosek/omp-1',
+      worktreePath: `${root}/api--omp-1`
+    })
+    expect(record.stacks?.[0].layers[3].branch).toBe('mission-preview/kiosek')
+  })
+
+  it('omits stacks and orchestrator for a Mission without tasks', () => {
+    const mission = makeMission({
+      id: 'm1',
+      name: 'Legacy',
+      members: [{ repoId: 'r1', worktreeId: null, addedAt: 1 }]
+    })
+    const record = toRuntimeMissionRecord({ getRepo: () => null }, mission)
+
+    expect(record).not.toHaveProperty('stacks')
+    expect(record).not.toHaveProperty('orchestrator')
+  })
+
+  it('projects the orchestrator worktree', () => {
+    const mission = makeMission({
+      id: 'm1',
+      name: 'Orch',
+      orchestratorRepoId: 'r9',
+      orchestrator: { repoId: 'r9', worktreeId: `r9::${tmp}/orch` }
+    })
+    const record = toRuntimeMissionRecord({ getRepo: () => null }, mission)
+
+    expect(record.orchestrator).toEqual({
+      repoId: 'r9',
+      worktreePath: `${tmp}/orch`,
+      branch: 'mission/orch'
+    })
+  })
 })
