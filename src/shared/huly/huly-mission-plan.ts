@@ -26,14 +26,20 @@ function byNumber(a: HulyIssue, b: HulyIssue): number {
 }
 
 function isSkipped(issue: HulyIssue, settings: HulyProjectSettings): boolean {
-  return issue.status.category === 'Won' || settings.skipStatusNames.includes(issue.status.name)
+  return (
+    issue.status.category === 'Won' ||
+    issue.status.category === 'Lost' ||
+    settings.skipStatusNames.includes(issue.status.name)
+  )
 }
 
 function isPermutation(candidate: string[], tasks: HulyPlannedTask[]): boolean {
   const expected = new Set(tasks.map((task) => task.issue.identifier))
-  return candidate.length === tasks.length && new Set(candidate).size === expected.size
-    ? candidate.every((identifier) => expected.has(identifier))
-    : false
+  return (
+    candidate.length === tasks.length &&
+    new Set(candidate).size === tasks.length &&
+    candidate.every((identifier) => expected.has(identifier))
+  )
 }
 
 // Kahn's algorithm with a number-ordered ready queue; leftovers are the cycle.
