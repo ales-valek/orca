@@ -143,6 +143,7 @@ export function HulyProjectSettingsSection(props: {
             <HulyComponentRepoMapEditor
               components={catalog.result.value.components}
               repos={eligibleRepos}
+              allRepos={repos}
               map={current.componentRepoMap}
               onChange={(componentRepoMap) => save({ componentRepoMap })}
             />
