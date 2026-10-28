@@ -7358,7 +7358,8 @@
           "8f57524962": "A workspace inside the mission folder cannot be kept. Remove it together with its workspace.",
           "9b92a95d43": "Stacked pull requests are supported only for GitHub repositories.",
           "96dae2fc71": "The orchestrator project cannot also be a mission project.",
-          "5d1c0e7a43": "These task layers are not up to date: {{value0}}. Restack, then create the pull requests again."
+          "5d1c0e7a43": "These task layers are not up to date: {{value0}}. Restack, then create the pull requests again.",
+          "invalidBranchName": "The branch name is not a valid Git branch name."
         },
         "MissionMemberRows": {
           "2f310bd75a": "Remove project and delete workspace?",
@@ -7503,12 +7504,14 @@
           "warnings": "The Mission was created, but some steps failed.",
           "title": "New Mission from Huly milestone",
           "description": "Each repository gets a stack of task branches, one per open issue, ordered by the issues' blocked-by relations.",
+          "cancel": "Cancel",
+          "create": "Create Mission"
+        },
+        "MissionHulyCreateFields": {
           "name": "Mission Name",
           "branch": "Branch",
           "orchestrator": "Orchestrator project (optional)",
-          "agent": "Agent",
-          "cancel": "Cancel",
-          "create": "Create Mission"
+          "agent": "Agent"
         },
         "MissionHulyMilestonePicker": {
           "project": "Project",
@@ -7561,7 +7564,8 @@
           "removedNote": "Their task layers stay in the Mission.",
           "movedRepo": "Moved to another repository",
           "movedRepoNote": "Their task layers stay in their current repository.",
-          "movedRepoDetail": "{{from}} to {{to}}"
+          "movedRepoDetail": "{{from}} to {{to}}",
+          "appendedNone": "No new tasks were appended."
         },
         "DeleteNestedWorktreesDialog": {
           "unsupportedHost": "This host does not support nested worktree deletion."
@@ -19392,6 +19396,9 @@
         "requestFailed": "The Huly request failed.",
         "connectAuthRejected": "Huly rejected this token.",
         "connectFailed": "Could not connect to Huly: {{detail}}"
+      },
+      "HulyReconnectNotice": {
+        "reconnect": "Reconnect Huly"
       },
       "AgentStateDot": {
         "working": "Working",

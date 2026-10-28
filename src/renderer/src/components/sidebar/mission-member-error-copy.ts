@@ -48,6 +48,11 @@ const STACK_ERROR_COPY: Record<string, (detail: string) => string> = {
       'These task layers are not up to date: {{value0}}. Restack, then create the pull requests again.',
       { value0: detail }
     ),
+  invalid_mission_branch_name: () =>
+    translate(
+      'auto.components.sidebar.MissionMemberErrorCopy.invalidBranchName',
+      'The branch name is not a valid Git branch name.'
+    ),
   mission_orchestrator_repo_is_member: () =>
     translate(
       'auto.components.sidebar.MissionMemberErrorCopy.96dae2fc71',
