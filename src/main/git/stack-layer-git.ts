@@ -210,7 +210,8 @@ export async function commitFixup(
       const commitArgs =
         'fixupOf' in target ? [`--fixup=${target.fixupOf}`] : ['-m', target.message]
       try {
-        await gitExecFileAsync(['apply', '--3way', '--index'], {
+        // Why: absorb sends zero-context hunks placed at exact lines of the layer's own file.
+        await gitExecFileAsync(['apply', '--3way', '--index', '--unidiff-zero'], {
           ...operationOptions,
           stdin: patch
         })
@@ -238,6 +239,40 @@ export async function autosquashLayer(
     options
   )
   return result.status === 'conflict' ? result : { status: 'squashed' }
+}
+
+/** Commits in `base..tip`, newest first. */
+export async function listLayerCommits(
+  worktreePath: string,
+  base: string,
+  tip: string,
+  options: GitRuntimeOptions = {}
+): Promise<string[]> {
+  if (base.startsWith('-') || tip.startsWith('-')) {
+    throw new Error('Invalid revision')
+  }
+  const { stdout } = await gitExecFileAsync(
+    ['rev-list', `${base}..${tip}`],
+    gitReadOptionsForWorktree(worktreePath, options)
+  )
+  return stdout.split('\n').filter(Boolean)
+}
+
+/** Puts a layer back on `tip`, abandoning an unfinished rebase; only for layers verified clean first. */
+export async function restoreLayerTip(
+  worktreePath: string,
+  tip: string,
+  options: GitRuntimeOptions = {}
+): Promise<void> {
+  await runWithGitWorktreeOperationLock(worktreePath, options.signal, () =>
+    runWithGitReadCacheInvalidation(async () => {
+      const operationOptions = gitOptionsForWorktree(worktreePath, options)
+      if ((await detectConflictOperation(worktreePath, options).catch(() => null)) === 'rebase') {
+        await gitExecFileAsync(['rebase', '--abort'], operationOptions)
+      }
+      await gitExecFileAsync(['reset', '-q', '--hard', tip], operationOptions)
+    })
+  )
 }
 
 function getGitErrorReason(error: unknown): string {
