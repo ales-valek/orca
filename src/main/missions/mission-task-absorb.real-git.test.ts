@@ -206,6 +206,24 @@ describe('MissionTaskAbsorb', () => {
     expect(tipOf(paths.t2)).toBe(t2Tip)
   })
 
+  it('refuses a layer moved off its parent although its recorded base still matches', async () => {
+    const fixture = await createAbsorbStack()
+    const { mission, paths } = fixture
+    // Why: t2 keeps its tree but leaves t1's tip; autosquash onto that tip would drag t1 into it.
+    const moved = git(paths.t2, ['commit-tree', 'HEAD^{tree}', '-p', 'HEAD~1', '-m', 'moved'])
+    git(paths.t1, ['commit', '-q', '--amend', '-m', 't1 extends mission (amended)'])
+    git(paths.t2, ['reset', '-q', '--hard', moved])
+    mission.tasks![1].parentBaseSha = tipOf(paths.t1)
+    git(paths.preview, ['reset', '-q', '--hard', tipOf(paths.t2)])
+    await writeFile(path.join(paths.preview, 'extra.txt'), 'extra\n', 'utf8')
+    const t2Tip = tipOf(paths.t2)
+
+    await expect(createAbsorb(fixture).absorbRepo(mission, 'r1')).rejects.toThrow(
+      'mission_absorb_stack_stale'
+    )
+    expect(tipOf(paths.t2)).toBe(t2Tip)
+  })
+
   it('restores every rewritten layer and keeps the preview edits when a higher layer fails', async () => {
     const fixture = await createAbsorbStack()
     const { mission, paths, root } = fixture
