@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Mission, MissionSource, MissionTask } from '../mission-types'
-import { diffMissionAgainstPlan } from './huly-mission-refresh'
+import { diffMissionAgainstPlan, insertAppendedIntoImportedOrder } from './huly-mission-refresh'
 import { buildMissionPlanFromMilestone } from './huly-mission-plan'
 import type { HulyProjectSettings } from './huly-project-settings'
 import type { HulyIssue, HulyStatus } from './huly-types'
@@ -181,5 +181,90 @@ describe('diffMissionAgainstPlan', () => {
     const diff = diffMissionAgainstPlan(mission, plan(base))
     expect(diff.appendable).toEqual([])
     expect(diff.nonAppendable).toEqual([])
+  })
+
+  it('anchors on ids still in importedOrder when their task was removed', () => {
+    const mission = makeMission([task('eshop', 'OMP-1', 1), task('eshop', 'OMP-2', 2)], {
+      eshop: ['OMP-1', 'OMP-2', 'OMP-3']
+    })
+    const items = [
+      issue(1),
+      issue(2, { blockedBy: ['OMP-1'] }),
+      issue(3, { blockedBy: ['OMP-2', 'OMP-4'] }),
+      issue(4, { blockedBy: ['OMP-2'] })
+    ]
+    const diff = diffMissionAgainstPlan(mission, plan(items))
+    expect(diff.appendable).toEqual([])
+    expect(diff.nonAppendable).toEqual([
+      { repoId: 'eshop', identifier: 'OMP-4', reason: 'inserted-in-middle' }
+    ])
+  })
+
+  it('reports a new issue without a repo mapping as non-appendable', () => {
+    const items = [...base, issue(8, { componentId: 'c-unknown' })]
+    expect(diffMissionAgainstPlan(baseMission, plan(items)).nonAppendable).toEqual([
+      { repoId: null, identifier: 'OMP-8', reason: 'unmapped' }
+    ])
+  })
+
+  it('reports new issues in a blockedBy cycle as blocked-cycle', () => {
+    const items = [
+      ...base,
+      issue(7, { componentId: 'c-admin', blockedBy: ['OMP-8'] }),
+      issue(8, { componentId: 'c-admin', blockedBy: ['OMP-7'] })
+    ]
+    const diff = diffMissionAgainstPlan(baseMission, plan(items))
+    expect(diff.appendable).toEqual([])
+    expect(diff.nonAppendable).toEqual([
+      { repoId: 'admin', identifier: 'OMP-7', reason: 'blocked-cycle' },
+      { repoId: 'admin', identifier: 'OMP-8', reason: 'blocked-cycle' }
+    ])
+  })
+
+  it('keeps tasks of a repo in a cycle out of removed', () => {
+    const items = [issue(1, { blockedBy: ['OMP-2'] }), issue(2, { blockedBy: ['OMP-1'] })]
+    expect(diffMissionAgainstPlan(baseMission, plan(items)).removed).toEqual([])
+  })
+
+  it('reports a task whose component lost its mapping as removed', () => {
+    const items = [issue(1), issue(2, { blockedBy: ['OMP-1'], componentId: 'c-unknown' })]
+    const diff = diffMissionAgainstPlan(baseMission, plan(items))
+    expect(diff.removed).toEqual(['OMP-2'])
+    expect(diff.movedRepo).toEqual([])
+  })
+
+  it('does not append an issue blocked, even transitively, by a non-appendable one', () => {
+    const items = [
+      issue(1),
+      issue(2, { blockedBy: ['OMP-1', 'OMP-5'] }),
+      issue(5),
+      issue(6, { blockedBy: ['OMP-5'] }),
+      issue(7, { blockedBy: ['OMP-6'] }),
+      issue(9, { blockedBy: ['OMP-2'] })
+    ]
+    const diff = diffMissionAgainstPlan(baseMission, plan(items))
+    expect(diff.appendable.map((entry) => entry.issues.map((i) => i.identifier))).toEqual([
+      ['OMP-9']
+    ])
+    expect(diff.nonAppendable).toEqual([
+      { repoId: 'eshop', identifier: 'OMP-5', reason: 'inserted-in-middle' },
+      { repoId: 'eshop', identifier: 'OMP-6', reason: 'blocked-by-pending' },
+      { repoId: 'eshop', identifier: 'OMP-7', reason: 'blocked-by-pending' }
+    ])
+  })
+})
+
+describe('insertAppendedIntoImportedOrder', () => {
+  it('puts appended ids at their plan position among recorded ids', () => {
+    expect(
+      insertAppendedIntoImportedOrder(
+        ['OMP-1', 'OMP-2', 'OMP-3'],
+        ['OMP-4', 'OMP-5'],
+        ['OMP-1', 'OMP-2', 'OMP-3', 'OMP-4', 'OMP-5']
+      )
+    ).toEqual(['OMP-1', 'OMP-2', 'OMP-3', 'OMP-4', 'OMP-5'])
+    expect(
+      insertAppendedIntoImportedOrder(['OMP-1', 'OMP-3'], ['OMP-2'], ['OMP-1', 'OMP-2', 'OMP-3'])
+    ).toEqual(['OMP-1', 'OMP-2', 'OMP-3'])
   })
 })
