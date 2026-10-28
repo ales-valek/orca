@@ -29,10 +29,18 @@ import {
   type MissionRemoveTopTaskInput,
   type MissionRestackInput
 } from './mission-task-operations'
+import { MissionTaskAbsorb, type MissionAbsorbResult } from './mission-task-absorb'
 import { MissionTaskRestack } from './mission-task-restack'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+export type MissionAbsorbInput = {
+  missionId: string
+  repoId: string
+  /** `file:line` of an ambiguous hunk mapped to the task id that should take it. */
+  overrides?: Record<string, string>
 }
 
 type MissionSetupHookRunner = (mission: Mission, event: MissionSetupHookEvent) => Promise<void>
@@ -47,6 +55,7 @@ export type MissionOperationsOptions = {
 export class MissionOperations {
   readonly memberLifecycle: MissionMemberLifecycle
   private readonly tasks: MissionTaskOperations
+  private readonly absorber: MissionTaskAbsorb
   private readonly runSetupHook: MissionSetupHookRunner
 
   constructor(
@@ -58,12 +67,9 @@ export class MissionOperations {
     this.runSetupHook = options.runSetupHook ?? runMissionSetupHook
     const isWorktreeAgentWorking = options.isWorktreeAgentWorking ?? (() => false)
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
-    this.tasks = new MissionTaskOperations(
-      store,
-      this.memberLifecycle,
-      notifyChanged,
-      new MissionTaskRestack({ store, isWorktreeAgentWorking })
-    )
+    const restacker = new MissionTaskRestack({ store, isWorktreeAgentWorking })
+    this.tasks = new MissionTaskOperations(store, this.memberLifecycle, notifyChanged, restacker)
+    this.absorber = new MissionTaskAbsorb({ store, restacker, isWorktreeAgentWorking })
   }
 
   list(): Mission[] {
@@ -177,6 +183,26 @@ export class MissionOperations {
 
   restack(args: MissionRestackInput): Promise<MissionRestackReport[]> {
     return this.tasks.restack(args)
+  }
+
+  /** Moves the preview's edits into the task layers that own them, then restacks the repo. */
+  absorb(args: MissionAbsorbInput): Promise<MissionAbsorbResult> {
+    return this.memberLifecycle.run(args.missionId, async () => {
+      const mission = this.store.getMission(args.missionId)
+      if (!mission) {
+        throw new Error('mission_not_found')
+      }
+      if (!mission.members.some((member) => member.repoId === args.repoId)) {
+        throw new Error('mission_member_not_found')
+      }
+      requireNativeLocalMissionRepos(this.store, [args.repoId])
+      try {
+        return await this.absorber.absorbRepo(mission, args.repoId, args.overrides)
+      } finally {
+        // Why: a failed absorb may still have recorded restack bases or the preview's followed tip.
+        this.notifyChanged()
+      }
+    })
   }
 
   /** Removes a member's task stack top-down, then its worktree; any refusal keeps the member.
