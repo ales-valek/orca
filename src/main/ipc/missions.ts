@@ -86,7 +86,7 @@ export function registerMissionHandlers(
   // Why: `orca mission` RPC must share this instance so per-Mission locks and UI refreshes match IPC.
   runtime.attachMissionOperations(operations)
   setMissionWorktreeRebasedListener((worktreePath) => operations.onWorktreeRebased(worktreePath))
-  setMissionPullRequestMergedListener((merge) => operations.onPullRequestMerged(merge))
+  setMissionPullRequestMergedListener((merge) => void operations.onPullRequestMerged(merge))
 
   ipcMain.handle('missions:list', (): Mission[] => operations.list())
 

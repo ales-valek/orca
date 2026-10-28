@@ -265,9 +265,9 @@ export class MissionOperations {
     this.restackTrigger.onAgentTurnEnded(worktreeId)
   }
 
-  /** Orca merged a PR (stack); reports the merged task layers of any Mission. */
-  onPullRequestMerged(merge: MissionPullRequestMerge): void {
-    this.events.pullRequestMerged(merge)
+  /** Orca merged a PR (stack); reports task layers that reached the repo's default base. */
+  onPullRequestMerged(merge: MissionPullRequestMerge): Promise<void> {
+    return this.events.pullRequestMerged(merge)
   }
 
   /** A manual pull-rebase finished in this worktree; restacks if it is a Mission member checkout. */

@@ -1,7 +1,8 @@
-/** `headBranch`'s PR and the `mergedCount - 1` PRs stacked below it were merged by Orca. */
+/** `headBranch`'s PR and the `mergedCount - 1` PRs stacked below it were merged by Orca into `baseBranch`. */
 export type MissionPullRequestMerge = {
   repoPath: string
   headBranch: string
+  baseBranch: string
   mergedCount: number
 }
 

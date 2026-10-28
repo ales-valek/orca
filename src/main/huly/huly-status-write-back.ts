@@ -61,16 +61,17 @@ export class HulyStatusWriteBack {
         return result
       }
       const mismatch = this.getConnectionMismatch(source)
+      let isMissionChanged = false
       for (const task of tasks) {
         const outcome = mismatch ?? (await this.writeTask(source.project, rule, task))
-        this.recordOutcome(mission.id, task, outcome, result)
+        isMissionChanged = this.recordOutcome(mission.id, task, outcome, result) || isMissionChanged
+      }
+      if (isMissionChanged) {
+        this.deps.notifyChanged?.()
       }
     } catch (error) {
       // Why: write-back is advisory; the Mission operation that emitted the event already succeeded.
       result.warnings.push(`${WARNING_PREFIX}${toErrorMessage(error)}`)
-    }
-    if (result.warnings.length > 0) {
-      this.deps.notifyChanged?.()
     }
     return result
   }
@@ -111,25 +112,31 @@ export class HulyStatusWriteBack {
     }
   }
 
+  /** Returns whether the task record changed. */
   private recordOutcome(
     missionId: string,
     task: LinkedTask,
     outcome: { written: boolean } | { warning: string },
     result: HulyStatusWriteBackResult
-  ): void {
+  ): boolean {
     const slot: MissionSlot = `task:${task.id}`
+    const isOwnError = task.lastError?.startsWith(WARNING_PREFIX) === true
     if ('warning' in outcome) {
       const warning = `${WARNING_PREFIX}${outcome.warning}`
       result.warnings.push(warning)
+      // Why: a layer error says the checkout is broken; a Huly warning must not hide it.
+      if (task.lastError && !isOwnError) {
+        return false
+      }
       this.deps.store.setMissionSlotError(missionId, task.repoId, slot, warning)
-      return
+      return true
     }
     if (outcome.written) {
       result.written.push(task.externalRef)
     }
-    if (task.lastError?.startsWith(WARNING_PREFIX)) {
+    if (isOwnError) {
       this.deps.store.setMissionSlotError(missionId, task.repoId, slot, null)
-      this.deps.notifyChanged?.()
     }
+    return isOwnError
   }
 }
