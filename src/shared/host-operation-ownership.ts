@@ -34,6 +34,7 @@ export const HOST_OPERATION_OWNERSHIP = {
   gitlab: 'credential',
   host: 'host',
   hostedReview: 'credential',
+  huly: 'host',
   jira: 'scope-picked',
   layout: 'host',
   linear: 'scope-picked',
