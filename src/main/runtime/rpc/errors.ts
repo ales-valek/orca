@@ -52,6 +52,10 @@ import { AGENT_LAUNCH_SESSION_ALREADY_EXISTS_CODE } from '../../../shared/agent-
 import { AGENT_LAUNCH_TAB_CLOSED_CODE } from '../../../shared/agent-launch/contracts/agent-launch-tab-closed'
 import { AGENT_LAUNCH_TARGET_FORBIDDEN_CODE } from '../../../shared/agent-launch/contracts/agent-launch-target-forbidden'
 import {
+  HULY_MESSAGE_ERROR_CODES,
+  HULY_STRUCTURED_ERROR_CODES
+} from '../../../shared/huly/huly-error-codes'
+import {
   parseTerminalSpawnDeferral,
   TERMINAL_SPAWN_DEFERRED_CODE
 } from '../../../shared/terminal/pty/admission/spawn-admission-contract'
@@ -109,7 +113,8 @@ const RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   'connectors_disabled',
   'external_conversation_not_found',
   ...CONNECTOR_REPLY_ERROR_CODES,
-  ...AGENT_SESSION_RPC_ERROR_CODES
+  ...AGENT_SESSION_RPC_ERROR_CODES,
+  ...HULY_MESSAGE_ERROR_CODES
 ])
 
 const COMPUTER_PASSTHROUGH_CODES: ReadonlySet<string> = new Set(Object.values(COMPUTER_ERROR_CODES))
@@ -119,8 +124,8 @@ const STRUCTURED_RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   WORKTREE_CREATE_COLLISION_CODE,
   WORKTREE_CREATE_EXACT_NAME_TAKEN_CODE,
   AGENT_LAUNCH_SURFACE_UNAVAILABLE_CODE,
-  // Carries the unmapped issues and blockedBy cycles so clients can list them.
-  'huly_plan_unresolved',
+  // huly_plan_unresolved carries the unmapped issues and blockedBy cycles so clients can list them.
+  ...HULY_STRUCTURED_ERROR_CODES,
   'worktree_id_requires_full_path',
   // A workspace selector's choices ride in data; a plain Error('selector_ambiguous') keeps the bare code.
   'selector_ambiguous',
