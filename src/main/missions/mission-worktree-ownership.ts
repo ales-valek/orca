@@ -1,3 +1,4 @@
+import { getMissionSlotBranch } from '../../shared/mission-task-stack'
 import type { Mission, MissionSlot } from '../../shared/mission-types'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
@@ -55,6 +56,31 @@ export function getMissionRepoSlots(
     }
   }
   return slots
+}
+
+/** Non-member slots that may hold a live worktree, including a preview not yet recorded. */
+export function getMissionRepoNonMemberSlots(mission: Mission, repoId: string): MissionSlot[] {
+  const slots = getMissionRepoSlots(mission, repoId).filter((slot) => slot !== 'member')
+  if (!slots.includes('preview') && getMissionSlotBranch(mission, repoId, 'preview')) {
+    slots.push('preview')
+  }
+  return slots
+}
+
+/** Writes one slot's pointer; member keeps its dedicated setter. */
+export function writeMissionSlotPointer(
+  store: Store,
+  missionId: string,
+  repoId: string,
+  slot: MissionSlot,
+  worktreeId: string | null,
+  worktreeInstanceId: string | null
+): void {
+  if (slot === 'member') {
+    store.setMissionMemberWorktree(missionId, repoId, worktreeId, worktreeInstanceId)
+  } else {
+    store.setMissionSlotWorktree(missionId, repoId, slot, worktreeId, worktreeInstanceId)
+  }
 }
 
 /** Persistence is untrusted input here: all three ownership stamps must agree

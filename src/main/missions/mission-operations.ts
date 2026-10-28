@@ -3,7 +3,8 @@ import type {
   Mission,
   MissionCreateResult,
   MissionDeleteResult,
-  MissionMemberResult
+  MissionMemberResult,
+  MissionTaskResult
 } from '../../shared/mission-types'
 import type {
   MissionAddMembersInput,
@@ -20,6 +21,11 @@ import {
   syncMissionRootIfPresent
 } from './mission-root-sync'
 import { runMissionSetupHook, type MissionSetupHookEvent } from './mission-setup-hook'
+import {
+  MissionTaskOperations,
+  type MissionAddTaskInput,
+  type MissionRemoveTopTaskInput
+} from './mission-task-operations'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -30,6 +36,7 @@ type MissionSetupHookRunner = (mission: Mission, event: MissionSetupHookEvent) =
 /** Mission mutations shared by the desktop IPC handlers and the runtime RPC (`orca mission`). */
 export class MissionOperations {
   readonly memberLifecycle: MissionMemberLifecycle
+  private readonly tasks: MissionTaskOperations
 
   constructor(
     private readonly store: Store,
@@ -38,6 +45,7 @@ export class MissionOperations {
     private readonly runSetupHook: MissionSetupHookRunner = runMissionSetupHook
   ) {
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
+    this.tasks = new MissionTaskOperations(store, this.memberLifecycle, notifyChanged)
   }
 
   list(): Mission[] {
@@ -141,6 +149,14 @@ export class MissionOperations {
     })
   }
 
+  addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
+    return this.tasks.addTask(args)
+  }
+
+  removeTopTask(args: MissionRemoveTopTaskInput): Promise<MissionTaskResult> {
+    return this.tasks.removeTopTask(args)
+  }
+
   async delete(args: MissionDeleteInput): Promise<MissionDeleteResult> {
     return this.memberLifecycle.run(args.missionId, async () => {
       const mission = this.store.getMission(args.missionId)
@@ -190,7 +206,16 @@ export class MissionOperations {
     // Why: removeWorktree reassigns members; iterate a snapshot so removals don't skip entries.
     const members = [...mission.members]
     for (const member of members) {
-      memberResults.push(await this.memberLifecycle.removeWorktree(mission, member))
+      // Why: layers are checked out above the member branch, so they go first, top-down.
+      const stack = await this.tasks.removeRepoStack(mission, member.repoId)
+      if (stack.error) {
+        memberResults.push({ repoId: member.repoId, worktreeId: member.worktreeId, ...stack })
+        continue
+      }
+      const current = this.store.getMission(mission.id) ?? mission
+      const removed = await this.memberLifecycle.removeWorktree(current, member)
+      const warning = [stack.warning, removed.warning].filter(Boolean).join(' ')
+      memberResults.push({ ...removed, ...(warning ? { warning } : {}) })
     }
     const remaining = this.store.getMission(mission.id)
     // Why: keep a Mission with an undeletable worktree visible for a safe retry.
