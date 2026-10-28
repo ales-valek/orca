@@ -1,22 +1,28 @@
 import {
   createMissionTaskBranchName,
-  getMissionPreviewBranch,
-  getMissionSlotBranch,
-  getMissionTaskParentBranch,
+  getMissionTaskBranchPrefix,
   getRepoTaskStack,
   getTopMissionTask
 } from '../../shared/mission-task-stack'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
-import type { Mission, MissionTask, MissionTaskResult } from '../../shared/mission-types'
-import type { Repo } from '../../shared/repo-types'
+import type {
+  Mission,
+  MissionMemberResult,
+  MissionSlot,
+  MissionTaskResult
+} from '../../shared/mission-types'
 import type { Store } from '../persistence'
-import { getBranchTip, getMergeBase } from '../git/stack-layer-git'
+import { listLocalBranchesUnder } from '../git/mission-branch-refs'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from './mission-root-sync'
-import { getMissionSlotDirectoryName } from './mission-slot-worktrees'
+import {
+  joinWarnings,
+  MissionTaskLayerWorktrees,
+  type LayerOutcome
+} from './mission-task-layer-worktrees'
 import type { MissionTaskRestack } from './mission-task-restack'
-import { getMissionOwnedWorktree, getMissionSlotRecord } from './mission-worktree-ownership'
+import { getMissionOwnedWorktree } from './mission-worktree-ownership'
 
 export type MissionAddTaskInput = {
   missionId: string
@@ -36,30 +42,28 @@ export type MissionRemoveTopTaskInput = {
 
 export type MissionRestackInput = { missionId: string; repoId?: string }
 
-type LayerOutcome = { error?: string; warning?: string }
+export type MissionRecreateSlotInput = {
+  missionId: string
+  repoId: string
+  slot: Exclude<MissionSlot, 'member'>
+}
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-function joinWarnings(warnings: (string | undefined)[]): LayerOutcome {
-  const present = warnings.filter((warning): warning is string => Boolean(warning))
-  return present.length > 0 ? { warning: present.join(' ') } : {}
-}
-
-/** The last branch segment, e.g. `omp-1` of `mission-task/referral/omp-1`; unique per Mission. */
-function getTaskDirectorySuffix(task: Pick<MissionTask, 'branchName'>): string {
-  return task.branchName.slice(task.branchName.lastIndexOf('/') + 1)
-}
-
 /** Task layers stacked above the mission branch and the preview above them. */
 export class MissionTaskOperations {
+  private readonly layers: MissionTaskLayerWorktrees
+
   constructor(
     private readonly store: Store,
     private readonly lifecycle: MissionMemberLifecycle,
     private readonly notifyChanged: () => void,
     private readonly restacker: MissionTaskRestack
-  ) {}
+  ) {
+    this.layers = new MissionTaskLayerWorktrees(store, lifecycle)
+  }
 
   addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
     return this.lifecycle.run(args.missionId, async () => {
@@ -85,10 +89,15 @@ export class MissionTaskOperations {
         return { mission, task: null, error: 'mission_task_parent_missing' }
       }
       const rooted = ensureMissionRootStrict(this.store, mission)
+      // Why: a removed task keeps its branch; reusing the name would fail to create the layer.
+      const existingBranches = await listLocalBranchesUnder(
+        repo.path,
+        getMissionTaskBranchPrefix(rooted)
+      )
       const task = this.store.addMissionTask(mission.id, {
         repoId: args.repoId,
         title: args.title,
-        branchName: createMissionTaskBranchName(rooted, args),
+        branchName: createMissionTaskBranchName(rooted, args, existingBranches),
         externalRef: args.externalRef ?? null,
         externalId: args.externalId ?? null
       })
@@ -103,7 +112,7 @@ export class MissionTaskOperations {
         throw error
       }
       this.notifyChanged()
-      const created = await this.createTaskLayer(mission.id, task, repo)
+      const created = await this.layers.createTaskLayer(mission.id, task, repo)
       const outcome = created.error
         ? created
         : joinWarnings([
@@ -137,7 +146,20 @@ export class MissionTaskOperations {
         return { mission, task, error: 'mission_task_not_top' }
       }
       const isLastTask = getRepoTaskStack(mission, args.repoId).length === 1
-      const outcome = await this.removeTaskLayer(mission.id, task, args.deleteWorktree, isLastTask)
+      const removed = await this.layers.removeTaskLayer(
+        mission.id,
+        task,
+        args.deleteWorktree,
+        isLastTask
+      )
+      // Why: the preview still shows the removed layer until it follows the new top task.
+      const outcome =
+        removed.error || isLastTask
+          ? removed
+          : joinWarnings([
+              removed.warning,
+              (await this.followNewTop(mission.id, args.repoId)).warning
+            ])
       syncMissionRootIfPresent(this.store, mission.id)
       this.notifyChanged()
       return { mission: this.store.getMission(mission.id) ?? mission, task, ...outcome }
@@ -171,10 +193,34 @@ export class MissionTaskOperations {
     })
   }
 
+  /** Recreates a missing task, preview or orchestrator checkout, then realigns the stack. */
+  recreateSlotWorktree(args: MissionRecreateSlotInput): Promise<MissionMemberResult> {
+    return this.lifecycle.run(args.missionId, async () => {
+      const mission = this.store.getMission(args.missionId)
+      if (!mission) {
+        throw new Error('mission_not_found')
+      }
+      requireNativeLocalMissionRepos(this.store, [args.repoId])
+      const repo = this.store.getRepo(args.repoId)
+      if (!repo) {
+        return { repoId: args.repoId, worktreeId: null, error: 'mission_member_not_found' }
+      }
+      const rooted = ensureMissionRootStrict(this.store, mission)
+      const created = await this.layers.recreateSlot(rooted, repo, args.slot)
+      const realigned =
+        created.error || args.slot === 'orchestrator'
+          ? {}
+          : await this.followNewTop(mission.id, args.repoId)
+      syncMissionRootIfPresent(this.store, mission.id)
+      this.notifyChanged()
+      return { ...created, ...joinWarnings([created.warning, realigned.warning]) }
+    })
+  }
+
   /** Top-down teardown of a repo's stack: preview, then tasks from the top. Caller holds the run lock. */
   async removeRepoStack(mission: Mission, repoId: string): Promise<LayerOutcome> {
     const warnings: (string | undefined)[] = []
-    const preview = await this.removePreview(mission, repoId, true)
+    const preview = await this.layers.removePreview(mission, repoId, true)
     if (preview.error) {
       return preview
     }
@@ -184,7 +230,7 @@ export class MissionTaskOperations {
       if (!top) {
         break
       }
-      const removed = await this.removeTaskLayer(mission.id, top, true, false)
+      const removed = await this.layers.removeTaskLayer(mission.id, top, true, false)
       if (removed.error) {
         return removed
       }
@@ -209,107 +255,7 @@ export class MissionTaskOperations {
       const detail = preview.reason ? `${preview.state}: ${preview.reason}` : preview.state
       return { warning: `Preview did not follow the new top task (${detail}).` }
     } catch (error) {
-      return { warning: `Restack after adding the task failed: ${toErrorMessage(error)}` }
+      return { warning: `Restack after the stack changed failed: ${toErrorMessage(error)}` }
     }
-  }
-
-  private async createTaskLayer(
-    missionId: string,
-    task: MissionTask,
-    repo: Repo
-  ): Promise<LayerOutcome> {
-    const mission = this.store.getMission(missionId)
-    if (!mission) {
-      return { error: 'mission_not_found' }
-    }
-    const parentBranch = getMissionTaskParentBranch(mission, task)
-    const directoryBase = getMissionSlotDirectoryName(repo.displayName, repo.id)
-    const created = await this.lifecycle.createSlotWorktree(mission, repo.id, `task:${task.id}`, {
-      branchName: task.branchName,
-      baseBranch: parentBranch,
-      directoryName: `${directoryBase}--${getTaskDirectorySuffix(task)}`
-    })
-    if (created.error) {
-      return { error: created.error }
-    }
-    const warnings: string[] = []
-    // Why: an existing task branch is checked out as-is; its fork point, not the
-    // parent tip, keeps the first restack from replaying foreign commits.
-    const parentBaseSha = await getMergeBase(repo.path, parentBranch, task.branchName)
-    if (parentBaseSha) {
-      this.store.setMissionTaskParentBaseSha(missionId, task.id, parentBaseSha)
-    } else {
-      warnings.push(`Could not resolve where ${task.branchName} forks from ${parentBranch}.`)
-    }
-    const current = this.store.getMission(missionId) ?? mission
-    if (!getMissionSlotRecord(current, repo.id, 'preview')?.worktreeId) {
-      const preview = await this.lifecycle.createSlotWorktree(current, repo.id, 'preview', {
-        branchName: getMissionPreviewBranch(current),
-        baseBranch: task.branchName,
-        directoryName: `${directoryBase}--preview`
-      })
-      if (preview.error) {
-        warnings.push(`Preview worktree was not created: ${preview.error}`)
-      } else {
-        const followedSha = await getBranchTip(repo.path, task.branchName)
-        if (followedSha) {
-          this.store.setMissionPreviewFollowedSha(missionId, repo.id, followedSha)
-        }
-      }
-    }
-    return joinWarnings(warnings)
-  }
-
-  private async removePreview(
-    mission: Mission,
-    repoId: string,
-    deleteWorktree: boolean
-  ): Promise<LayerOutcome> {
-    const current = this.store.getMission(mission.id) ?? mission
-    if (!getMissionSlotBranch(current, repoId, 'preview')) {
-      return {}
-    }
-    const removed = await this.lifecycle.removeSlotWorktree(
-      current,
-      repoId,
-      'preview',
-      deleteWorktree
-    )
-    return removed.error ? { error: removed.error } : joinWarnings([removed.warning])
-  }
-
-  /** Task worktree first, so a dirty layer refuses before its preview is touched; record last. */
-  private async removeTaskLayer(
-    missionId: string,
-    task: MissionTask,
-    deleteWorktree: boolean,
-    withPreview: boolean
-  ): Promise<LayerOutcome> {
-    const mission = this.store.getMission(missionId)
-    if (!mission) {
-      return { error: 'mission_not_found' }
-    }
-    const removed = await this.lifecycle.removeSlotWorktree(
-      mission,
-      task.repoId,
-      `task:${task.id}`,
-      deleteWorktree
-    )
-    if (removed.error) {
-      return { error: removed.error }
-    }
-    // Why: the preview branch resolves only while the repo still records a task.
-    const preview = withPreview
-      ? await this.removePreview(mission, task.repoId, deleteWorktree)
-      : {}
-    if (preview.error) {
-      return { error: preview.error, ...joinWarnings([removed.warning]) }
-    }
-    try {
-      this.store.removeMissionTask(mission.id, task.id)
-    } catch (error) {
-      return { error: toErrorMessage(error) }
-    }
-    return joinWarnings([removed.warning, preview.warning])
   }
 }

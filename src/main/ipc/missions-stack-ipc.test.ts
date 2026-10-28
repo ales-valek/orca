@@ -96,6 +96,26 @@ describe('missions stack IPC', () => {
     })
   })
 
+  it('forwards a recreate of a non-member slot and rejects the member slot', async () => {
+    const recreate = vi
+      .spyOn(MissionOperations.prototype, 'recreateSlotWorktree')
+      .mockResolvedValue({ repoId: 'r1', worktreeId: 'r1::/wt' })
+    register()
+    await invoke('missions:recreateSlotWorktree', {
+      missionId: 'm1',
+      repoId: 'r1',
+      slot: 'task:t1'
+    })
+    await expect(
+      invoke('missions:recreateSlotWorktree', { missionId: 'm1', repoId: 'r1', slot: 'member' })
+    ).rejects.toThrow('invalid_mission_recreate_slot_args')
+    expect(recreate).toHaveBeenCalledExactlyOnceWith({
+      missionId: 'm1',
+      repoId: 'r1',
+      slot: 'task:t1'
+    })
+  })
+
   it('returns no stack reports for an unknown mission', async () => {
     register()
     await expect(invoke('missions:inspectStacks', { missionId: 'missing' })).resolves.toEqual([])
