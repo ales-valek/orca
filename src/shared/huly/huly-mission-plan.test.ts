@@ -45,7 +45,7 @@ describe('buildMissionPlanFromMilestone', () => {
       issues: [
         issue(978, { blockedBy: ['OMP-955'] }),
         issue(976, { blockedBy: ['OMP-951'] }),
-        issue(955),
+        issue(955, { blockedBy: ['OMP-976'] }),
         issue(957, { blockedBy: ['OMP-951'] }),
         issue(953, { blockedBy: ['OMP-951'] }),
         issue(951)
@@ -57,24 +57,62 @@ describe('buildMissionPlanFromMilestone', () => {
     expect(ids(plan.stacks[0].tasks)).toEqual([
       'OMP-951',
       'OMP-953',
-      'OMP-955',
       'OMP-957',
       'OMP-976',
+      'OMP-955',
       'OMP-978'
     ])
     expect(plan.stacks[0].tasks.every((task) => task.repoId === 'eshop')).toBe(true)
   })
 
-  it('puts MERGED IN MILESTONE and Won issues into skipped', () => {
+  it('places a lower-numbered issue after the higher-numbered issue blocking it', () => {
+    const plan = buildMissionPlanFromMilestone({
+      issues: [issue(1, { blockedBy: ['OMP-5'] }), issue(5)],
+      settings: makeSettings()
+    })
+    expect(ids(plan.stacks[0].tasks)).toEqual(['OMP-5', 'OMP-1'])
+  })
+
+  it('ignores an issue blocking itself', () => {
+    const plan = buildMissionPlanFromMilestone({
+      issues: [issue(1, { blockedBy: ['OMP-1'] })],
+      settings: makeSettings()
+    })
+    expect(plan.cycles).toEqual([])
+    expect(ids(plan.stacks[0].tasks)).toEqual(['OMP-1'])
+  })
+
+  it('returns empty arrays for an empty milestone', () => {
+    expect(buildMissionPlanFromMilestone({ issues: [], settings: makeSettings() })).toEqual({
+      stacks: [],
+      unmapped: [],
+      skipped: [],
+      cycles: [],
+      crossRepoDependencies: []
+    })
+  })
+
+  it('reports a cycle even when orderOverrides is a valid permutation', () => {
+    const plan = buildMissionPlanFromMilestone({
+      issues: [issue(1, { blockedBy: ['OMP-2'] }), issue(2, { blockedBy: ['OMP-1'] })],
+      settings: makeSettings(),
+      orderOverrides: { eshop: ['OMP-2', 'OMP-1'] }
+    })
+    expect(plan.cycles).toEqual([{ repoId: 'eshop', identifiers: ['OMP-1', 'OMP-2'] }])
+    expect(plan.stacks).toEqual([])
+  })
+
+  it('puts MERGED IN MILESTONE, Won and Lost issues into skipped', () => {
     const plan = buildMissionPlanFromMilestone({
       issues: [
         issue(2, { status: { name: 'MERGED IN MILESTONE', category: 'Active' } }),
         issue(1, { status: { name: 'Done', category: 'Won' } }),
+        issue(4, { status: { name: 'Canceled', category: 'Lost' } }),
         issue(3)
       ],
       settings: makeSettings()
     })
-    expect(plan.skipped.map((entry) => entry.identifier)).toEqual(['OMP-1', 'OMP-2'])
+    expect(plan.skipped.map((entry) => entry.identifier)).toEqual(['OMP-1', 'OMP-2', 'OMP-4'])
     expect(ids(plan.stacks[0].tasks)).toEqual(['OMP-3'])
   })
 
