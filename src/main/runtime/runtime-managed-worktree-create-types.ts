@@ -1,4 +1,5 @@
 import type { AgentLaunchPreferences } from '../../shared/agent-session-host-authority'
+import type { MissionSlot } from '../../shared/mission-types'
 import type { CreateWorktreeArgs } from '../../shared/worktree/create-types'
 import type {
   AutomationWorkspaceProvenance,
@@ -29,6 +30,8 @@ export type RuntimeManagedWorktreeCreateArgs = {
   requireExactBranchName?: boolean
   /** Stamp the created worktree as owned by this Mission. */
   missionId?: string
+  /** Mission slot the created worktree fills; absent means `'member'`. */
+  missionSlot?: MissionSlot
   /** Absolute child of the Mission root. Replaces the usual workspace-dir path. */
   worktreePathOverride?: string
   /** Skip the idle shell when the caller will open the workspace itself. */

@@ -7,12 +7,10 @@ import { mergeWorktree } from '../ipc/worktree-metadata-merge'
 import { listWorktreesStrict } from '../git/worktree'
 import { resolveLocalProjectRuntimeForRepo } from '../local-project-runtime-resolution'
 import { getLocalProjectWorktreeGitOptionsForRuntime } from '../project-runtime-git-options'
+import type { MissionSlot } from '../../shared/mission-types'
 import { recoverMissionWorktreeCreateIntent } from '../missions/mission-worktree-create-intent'
-import {
-  readMissionWorktreeOwnershipMarker,
-  resolveMissionWorktreeBranch,
-  type MissionWorktreeOwnershipProof
-} from '../missions/mission-worktree-ownership-marker'
+import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
+import { collectMissionSlotOwnershipProofs } from '../missions/mission-slot-marker-scan'
 import { withTimeoutResult } from './runtime-async-boundaries'
 import { RESOLVED_WORKTREE_REPO_TIMEOUT_MS } from './repo-worktree-row-resolution'
 import { localMissionWorktreeTarget } from '../missions/local-mission-worktree-target'
@@ -75,7 +73,8 @@ export abstract class OrcaRuntimeWithMissionOwnership extends OrcaRuntimeWithMig
   async findManagedWorktreesForMissionOwnership(
     missionId: string,
     repoId: string,
-    branchName: string
+    branchName: string,
+    slot: MissionSlot = 'member'
   ): Promise<ManagedMissionOwnershipScan> {
     const repo = this.store?.getRepo(repoId)
     if (!repo || repo.connectionId || isFolderRepo(repo)) {
@@ -102,35 +101,21 @@ export abstract class OrcaRuntimeWithMissionOwnership extends OrcaRuntimeWithMig
               missionId: mission.id
             },
             repoId,
+            slot,
             repoPath: repo.path,
             branchName,
             worktrees: scan.value
           })
         : null
     const candidates: MissionWorktreeOwnershipProof[] = recovered ? [recovered] : []
-    for (const worktree of scan.value) {
-      if (worktree.isMainWorktree || worktree.isBare) {
-        continue
-      }
-      const proof = readMissionWorktreeOwnershipMarker({
-        repoPath: repo.path,
-        worktreePath: worktree.path
-      })
-      if (!proof || proof.missionId !== missionId) {
-        continue
-      }
-      if (proof.repoId !== repoId) {
-        throw new Error('mission_member_worktree_ownership_unverified')
-      }
-      const parsedProofId = splitWorktreeIdForFilesystem(proof.worktreeId)
-      if (
-        parsedProofId?.repoId !== repoId ||
-        !parsedProofId.worktreePath ||
-        !areWorktreePathsEqual(parsedProofId.worktreePath, worktree.path) ||
-        resolveMissionWorktreeBranch(worktree) !== branchName
-      ) {
-        throw new Error('mission_member_worktree_ownership_unverified')
-      }
+    for (const proof of collectMissionSlotOwnershipProofs({
+      missionId,
+      repoId,
+      repoPath: repo.path,
+      branchName,
+      slot,
+      worktrees: scan.value
+    })) {
       if (
         !candidates.some(
           (candidate) =>
@@ -147,7 +132,8 @@ export abstract class OrcaRuntimeWithMissionOwnership extends OrcaRuntimeWithMig
       this.store?.setWorktreeMeta(localMissionWorktreeTarget(proof.worktreeId), {
         missionId,
         instanceId: proof.worktreeInstanceId,
-        preserveBranchOnDelete: proof.preserveBranchOnDelete
+        preserveBranchOnDelete: proof.preserveBranchOnDelete,
+        missionSlot: proof.missionSlot
       })
     }
     return { status: 'found', candidates }

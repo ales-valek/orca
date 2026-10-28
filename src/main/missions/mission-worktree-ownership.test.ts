@@ -53,4 +53,19 @@ describe('Mission worktree ownership', () => {
       { worktreeId: 'r1::/one', worktreeInstanceId: 'i1' }
     ])
   })
+
+  it('keys candidates by slot and counts meta without a slot as the member', () => {
+    const store = makeStore({
+      'r1::/legacy': { missionId: 'm1', instanceId: 'i1' },
+      'r1::/preview': { missionId: 'm1', instanceId: 'i2', missionSlot: 'preview' },
+      'r1::/task': { missionId: 'm1', instanceId: 'i3', missionSlot: 'task:t1' }
+    })
+    const legacy = [{ worktreeId: 'r1::/legacy', worktreeInstanceId: 'i1' }]
+    expect(findMissionOwnedWorktreeCandidates(store as never, 'm1', 'r1')).toEqual(legacy)
+    expect(findMissionOwnedWorktreeCandidates(store as never, 'm1', 'r1', 'member')).toEqual(legacy)
+    expect(findMissionOwnedWorktreeCandidates(store as never, 'm1', 'r1', 'preview')).toEqual([
+      { worktreeId: 'r1::/preview', worktreeInstanceId: 'i2' }
+    ])
+    expect(findMissionOwnedWorktreeCandidates(store as never, 'm1', 'r1', 'task:t2')).toEqual([])
+  })
 })
