@@ -7,11 +7,8 @@ import type { MissionAddTaskInput } from '../missions/mission-task-operations'
 import { FakeHulyApi } from './fake-huly-api'
 import { HulyConnection } from './huly-connection'
 import type { HulyCredentialStore } from './huly-credential-store'
-import {
-  HulyMissionImport,
-  resolveHulyMilestoneId,
-  resolveHulyProject
-} from './huly-mission-import'
+import { HulyMissionImport } from './huly-mission-import'
+import { resolveHulyMilestoneId, resolveHulyProject } from './huly-milestone-selectors'
 
 const TODO: HulyStatus = { name: 'Todo', category: 'ToDo' }
 const MERGED: HulyStatus = { name: 'MERGED IN MILESTONE', category: 'Active' }
@@ -243,7 +240,8 @@ describe('HulyMissionImport.createMissionFromMilestone', () => {
       .filter((args) => args.repoId === 'eshop')
       .map((args) => args.externalRef)
     expect(eshopRefs).toEqual(overridden)
-    expect(setMissionSource.mock.calls[0][1].importedOrder.eshop).toEqual(ESHOP_ORDER)
+    expect(setMissionSource.mock.calls[0][1].importedOrder).toEqual({})
+    expect(mission.source?.importedOrder.eshop).toEqual(ESHOP_ORDER)
   })
 
   it('keeps adding other repos after a repo fails, warns, and still writes the brief', async () => {
@@ -382,6 +380,69 @@ describe('HulyMissionImport.refreshMissionFromHuly', () => {
 
     expect(result.warnings.join('\n')).toContain('not added: OMP-980')
     expect(mission.source?.importedOrder.eshop).toEqual(ESHOP_ORDER)
+  })
+
+  it('offers the issues of a repo whose first layer failed at import', async () => {
+    failingRepo = 'eshop'
+    const { importer } = await importKiosek()
+    failingRepo = null
+
+    const { diff } = await importer.refreshMissionFromHuly({ missionId: mission.id, apply: false })
+
+    expect(mission.source?.importedOrder.eshop).toEqual([])
+    expect(mission.source?.importedOrder.admin).toEqual(['OMP-960'])
+    expect(diff.appendable).toEqual([{ repoId: 'eshop', issues: expect.any(Array) }])
+    expect(diff.appendable[0].issues.map((issue) => issue.identifier)).toEqual(ESHOP_ORDER)
+  })
+
+  it('rewrites the brief from the real stacks after a refresh', async () => {
+    const { importer, writeBrief } = await importKiosek()
+    const swapped: Record<string, number> = { 'OMP-953': 3, 'OMP-957': 2 }
+    mission = {
+      ...mission,
+      tasks: (mission.tasks ?? []).map((task) =>
+        task.externalRef && swapped[task.externalRef]
+          ? { ...task, order: swapped[task.externalRef] }
+          : task
+      )
+    }
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(956, { blockedBy: ['OMP-955'] }),
+      createIssue(979, { blockedBy: ['OMP-978'] })
+    ])
+
+    await importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+
+    const brief = writeBrief.mock.calls[0][1]
+    const eshopTable = brief.split('### eshop')[1].split('###')[0]
+    const rowOrder = ['OMP-951', 'OMP-957', 'OMP-953', 'OMP-976', 'OMP-955', 'OMP-978', 'OMP-979']
+    expect(rowOrder.map((ref, index) => eshopTable.includes(`| ${index + 1} | ${ref} |`))).toEqual(
+      rowOrder.map(() => true)
+    )
+    expect(eshopTable).not.toContain('OMP-956')
+    expect(brief.split('## Not in the stacks')[1]).toContain('- OMP-956 Issue 956 (eshop)')
+  })
+
+  it('appends each issue once when two applies run at the same time', async () => {
+    const { importer, addTask } = await importKiosek()
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(979, { blockedBy: ['OMP-978'] }),
+      createIssue(965, { componentId: 'c-admin', blockedBy: ['OMP-960'] })
+    ])
+
+    const [first, second] = await Promise.all([
+      importer.refreshMissionFromHuly({ missionId: mission.id, apply: true }),
+      importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+    ])
+
+    expect(addTask.mock.calls.map(([args]) => args.externalRef).sort()).toEqual([
+      'OMP-965',
+      'OMP-979'
+    ])
+    expect(first.applied).toHaveLength(2)
+    expect(second.applied).toEqual([])
   })
 
   it('reads Huly before any write', async () => {
