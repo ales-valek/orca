@@ -15,21 +15,16 @@ import {
   getHulyProjectSettings,
   type HulyProjectSettings
 } from '../../../../shared/huly/huly-project-settings'
-import type { HulyProjectSummary } from '../../../../shared/huly/huly-types'
 import { isRendererMissionEligibleRepo } from '../sidebar/mission-repo-eligibility'
 import { HulyComponentRepoMapEditor } from './HulyComponentRepoMapEditor'
 import { HulyMultiSelect } from './HulyMultiSelect'
 import { HulyStatusRuleEditor } from './HulyStatusRuleEditor'
 import { SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
-import { useHulyProjectCatalog, useHulyProjects } from './use-huly-project-catalog'
-
-function getDefaultProject(
-  projects: readonly HulyProjectSummary[],
-  configured: Record<string, unknown>
-): string | null {
-  const configuredProject = projects.find((project) => project.identifier in configured)
-  return (configuredProject ?? projects[0])?.identifier ?? null
-}
+import {
+  getDefaultHulyProject,
+  useHulyProjectCatalog,
+  useHulyProjects
+} from './use-huly-project-catalog'
 
 function LoadError(props: { message: string; onRetry: () => void }): React.JSX.Element {
   return (
@@ -61,7 +56,7 @@ export function HulyProjectSettingsSection(props: {
 
   const hulyProjects = useMemo(() => settings?.hulyProjects ?? {}, [settings?.hulyProjects])
   const projectList = projects.result.state === 'ready' ? projects.result.value : []
-  const project = pickedProject ?? getDefaultProject(projectList, hulyProjects)
+  const project = pickedProject ?? getDefaultHulyProject(projectList, hulyProjects)
   const catalog = useHulyProjectCatalog(project, props.onAuthRequired)
   const eligibleRepos = useMemo(
     () =>
