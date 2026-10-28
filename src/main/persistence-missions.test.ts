@@ -153,6 +153,114 @@ describe('missions persistence', () => {
   })
 })
 
+describe('mission slot persistence', () => {
+  beforeEach(() => {
+    testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
+  })
+
+  afterEach(async () => {
+    await closeTestStores()
+    rmSync(testState.dir, { recursive: true, force: true })
+  })
+
+  function createSlotStore() {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: ['r1', 'r2'].map((id) => ({
+        id,
+        path: join(sep, 'tmp', id),
+        displayName: id,
+        badgeColor: '#000',
+        addedAt: 1
+      })),
+      worktreeMeta: {},
+      settings: {},
+      ui: {},
+      githubCache: { pr: {}, issue: {} }
+    })
+    const store = createStore()
+    return { store, mission: store.createMission({ name: 'Referral', repoIds: ['r1', 'r2'] }) }
+  }
+
+  it('stacks tasks per repo and only removes the top layer', () => {
+    const { store, mission } = createSlotStore()
+    const first = store.addMissionTask(mission.id, {
+      repoId: 'r1',
+      title: 'One',
+      branchName: 'mission-task/referral/one'
+    })
+    const second = store.addMissionTask(mission.id, {
+      repoId: 'r1',
+      title: 'Two',
+      branchName: 'mission-task/referral/two'
+    })
+    const other = store.addMissionTask(mission.id, {
+      repoId: 'r2',
+      title: 'Other',
+      branchName: 'mission-task/referral/other'
+    })
+    expect([first?.order, second?.order, other?.order]).toEqual([1, 2, 1])
+    expect(
+      store.addMissionTask(mission.id, { repoId: 'ghost', title: 'x', branchName: 'x' })
+    ).toBeNull()
+
+    expect(() => store.removeMissionTask(mission.id, first!.id)).toThrow('mission_task_not_top')
+    expect(store.removeMissionTask(mission.id, second!.id)?.tasks).toHaveLength(2)
+    expect(store.removeMissionTask(mission.id, first!.id)?.tasks).toHaveLength(1)
+  })
+
+  it('creates and removes preview and orchestrator slot entries', () => {
+    const { store, mission } = createSlotStore()
+    store.setMissionSlotWorktree(mission.id, 'r1', 'preview', 'r1::/p', 'i1')
+    expect(store.getMission(mission.id)?.previews).toEqual([
+      { repoId: 'r1', worktreeId: 'r1::/p', worktreeInstanceId: 'i1', lastError: null }
+    ])
+    store.setMissionSlotError(mission.id, 'r1', 'preview', 'boom')
+    expect(store.getMission(mission.id)?.previews?.[0].lastError).toBe('boom')
+    store.setMissionSlotWorktree(mission.id, 'r1', 'preview', null, null)
+    expect(store.getMission(mission.id)?.previews).toEqual([])
+
+    expect(store.setMissionSlotWorktree(mission.id, 'r1', 'orchestrator', 'r1::/o')).toBeNull()
+    store.getMission(mission.id)!.orchestratorRepoId = 'r1'
+    store.setMissionSlotWorktree(mission.id, 'r1', 'orchestrator', 'r1::/o', 'i2')
+    expect(store.getMission(mission.id)?.orchestrator?.worktreeId).toBe('r1::/o')
+    store.setMissionSlotWorktree(mission.id, 'r1', 'orchestrator', null, null)
+    expect(store.getMission(mission.id)?.orchestrator).toBeNull()
+  })
+
+  it('routes task and member slots to their entries', () => {
+    const { store, mission } = createSlotStore()
+    const task = store.addMissionTask(mission.id, {
+      repoId: 'r1',
+      title: 'One',
+      branchName: 'mission-task/referral/one'
+    })!
+    store.setMissionSlotWorktree(mission.id, 'r1', `task:${task.id}`, 'r1::/t', 'i3')
+    store.setMissionSlotError(mission.id, 'r1', `task:${task.id}`, 'failed')
+    expect(store.getMission(mission.id)?.tasks?.[0]).toMatchObject({
+      worktreeId: 'r1::/t',
+      worktreeInstanceId: 'i3',
+      lastError: 'failed'
+    })
+    expect(store.setMissionSlotWorktree(mission.id, 'r2', `task:${task.id}`, 'x')).toBeNull()
+    store.setMissionSlotWorktree(mission.id, 'r2', 'member', 'r2::/m', 'i4')
+    expect(store.getMission(mission.id)?.members[1].worktreeId).toBe('r2::/m')
+  })
+
+  it('persists a task parent base sha across reload', async () => {
+    const { store, mission } = createSlotStore()
+    const task = store.addMissionTask(mission.id, {
+      repoId: 'r1',
+      title: 'One',
+      branchName: 'mission-task/referral/one'
+    })!
+    store.setMissionTaskParentBaseSha(mission.id, task.id, 'abc123')
+    store.flushOrThrow()
+    const reloaded = createStore()
+    expect(reloaded.getMission(mission.id)?.tasks?.[0].parentBaseSha).toBe('abc123')
+  })
+})
+
 describe('mission session workspaces', () => {
   beforeEach(() => {
     testState.dir = mkdtempSync(join(tmpdir(), 'orca-test-'))
