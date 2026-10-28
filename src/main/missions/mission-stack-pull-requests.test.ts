@@ -121,17 +121,15 @@ describe('createMissionStackPullRequests', () => {
 
     await createMissionStackPullRequests({ mission, repoId: 'r1', draft: true }, deps)
 
-    const titles = [
+    const calls = [
       ...vi.mocked(deps.createHostedReview).mock.calls,
       ...vi.mocked(deps.createStackedHostedReview).mock.calls
     ].map(([, input]) => [input.head, input.title, input.draft, input.useTemplate])
-    expect(titles).toEqual(
-      expect.arrayContaining([
-        ['mission/referral', 'Referral', true, true],
-        ['mission-task/referral/omp-1', 'OMP-1: First', true, true],
-        ['mission-task/referral/second', 'Second', true, true]
-      ])
-    )
+    expect(calls).toEqual([
+      ['mission/referral', 'Referral', true, true],
+      ['mission-task/referral/omp-1', 'OMP-1: First', true, true],
+      ['mission-task/referral/second', 'Second', true, true]
+    ])
   })
 
   it('stops at the first failure and reports what was already created', async () => {
@@ -166,10 +164,25 @@ describe('createMissionStackPullRequests', () => {
     const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
 
     expect(result.error).toBeUndefined()
+    expect(result.skipped).toEqual([{ branch: 'mission/referral', url: 'u' }])
     expect(result.created.map((entry) => entry.branch)).toEqual([
       'mission-task/referral/omp-1',
       'mission-task/referral/second'
     ])
+  })
+
+  it('keeps the PRs created so far when a later creation call throws', async () => {
+    const { deps } = createDeps({
+      createStackedHostedReview: vi.fn().mockRejectedValue(new Error('gh exploded'))
+    })
+
+    const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
+
+    expect(result.created.map((entry) => entry.branch)).toEqual([
+      'mission/referral',
+      'mission-task/referral/omp-1'
+    ])
+    expect(result.error).toContain('gh exploded')
   })
 
   it('refuses non-GitHub providers without pushing', async () => {
@@ -179,6 +192,7 @@ describe('createMissionStackPullRequests', () => {
 
     expect(result).toEqual({
       created: [],
+      skipped: [],
       error: 'mission_stack_prs_unsupported_provider'
     })
     expect(deps.pushBranch).not.toHaveBeenCalled()
@@ -192,7 +206,7 @@ describe('createMissionStackPullRequests', () => {
     const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
 
     expect(result.created).toEqual([])
-    expect(result.error).toContain('rejected')
+    expect(result.error).toBe('Layer mission/referral was rewritten; push the stack first')
     expect(deps.createHostedReview).not.toHaveBeenCalled()
   })
 })
