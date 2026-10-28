@@ -10,7 +10,7 @@ import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Mission, MissionTask, MissionTaskResult } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import type { Store } from '../persistence'
-import { getMergeBase } from '../git/stack-layer-git'
+import { getBranchTip, getMergeBase } from '../git/stack-layer-git'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from './mission-root-sync'
@@ -250,6 +250,11 @@ export class MissionTaskOperations {
       })
       if (preview.error) {
         warnings.push(`Preview worktree was not created: ${preview.error}`)
+      } else {
+        const followedSha = await getBranchTip(repo.path, task.branchName)
+        if (followedSha) {
+          this.store.setMissionPreviewFollowedSha(missionId, repo.id, followedSha)
+        }
       }
     }
     return joinWarnings(warnings)

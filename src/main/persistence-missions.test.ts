@@ -259,6 +259,22 @@ describe('mission slot persistence', () => {
     const reloaded = createStore()
     expect(reloaded.getMission(mission.id)?.tasks?.[0].parentBaseSha).toBe('abc123')
   })
+
+  it('persists a pending task base and the tip a preview followed across reload', async () => {
+    const { store, mission } = createSlotStore()
+    const task = store.addMissionTask(mission.id, {
+      repoId: 'r1',
+      title: 'One',
+      branchName: 'mission-task/referral/one'
+    })!
+    store.setMissionSlotWorktree(mission.id, 'r1', 'preview', 'r1::/tmp/preview', 'instance')
+    store.setMissionTaskPendingParentBaseSha(mission.id, task.id, 'def456')
+    store.setMissionPreviewFollowedSha(mission.id, 'r1', 'abc123')
+    store.flushOrThrow()
+    const reloaded = createStore().getMission(mission.id)
+    expect(reloaded?.tasks?.[0].pendingParentBaseSha).toBe('def456')
+    expect(reloaded?.previews?.[0].followedSha).toBe('abc123')
+  })
 })
 
 describe('mission session workspaces', () => {
