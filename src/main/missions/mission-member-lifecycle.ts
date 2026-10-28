@@ -9,8 +9,10 @@ import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import {
-  findMissionOwnedWorktreeCandidates,
+  findMissionRepoOwnedWorktrees,
   getMissionOwnedWorktree,
+  getMissionRepoSlots,
+  getMissionSlotRecord,
   type MissionOwnedWorktree
 } from './mission-worktree-ownership'
 import {
@@ -227,7 +229,7 @@ export class MissionMemberLifecycle {
           throw new Error('mission_member_workspace_delete_required')
         }
       }
-      this.detachOwnership(mission, member)
+      this.detachOwnership(mission, member.repoId)
       this.store.removeMissionMember(mission.id, member.repoId)
       return { repoId: member.repoId, worktreeId: null }
     } catch (error) {
@@ -242,31 +244,35 @@ export class MissionMemberLifecycle {
   }
 
   detachDeletedMissionOwnership(mission: Mission): void {
-    for (const member of mission.members) {
-      this.detachOwnership(mission, member)
+    const repoIds = new Set(mission.members.map((member) => member.repoId))
+    if (mission.orchestratorRepoId) {
+      repoIds.add(mission.orchestratorRepoId)
+    }
+    for (const repoId of repoIds) {
+      this.detachOwnership(mission, repoId)
     }
   }
 
-  detachOwnership(mission: Mission, member: MissionMember): void {
-    const owned = getMissionOwnedWorktree(this.store, mission, member)
+  /** Clears Mission ownership of every slot's worktree in the repo; checkouts stay. */
+  detachOwnership(mission: Mission, repoId: string): void {
     const candidates = new Map<string, MissionOwnedWorktree>()
-    if (owned) {
-      candidates.set(owned.worktreeId, owned)
+    for (const slot of getMissionRepoSlots(mission, repoId)) {
+      const record = getMissionSlotRecord(mission, repoId, slot)
+      const owned = record ? getMissionOwnedWorktree(this.store, mission, record) : null
+      if (owned) {
+        candidates.set(owned.worktreeId, owned)
+      }
     }
-    for (const candidate of findMissionOwnedWorktreeCandidates(
-      this.store,
-      mission.id,
-      member.repoId
-    )) {
+    for (const candidate of findMissionRepoOwnedWorktrees(this.store, mission.id, repoId)) {
       candidates.set(candidate.worktreeId, candidate)
     }
     for (const candidate of candidates.values()) {
-      const repo = this.store.getRepo(member.repoId)
+      const repo = this.store.getRepo(repoId)
       const parsed = splitWorktreeId(candidate.worktreeId)
       if (repo && parsed) {
         const proof: MissionWorktreeOwnershipProof = {
           missionId: mission.id,
-          repoId: member.repoId,
+          repoId,
           worktreeId: candidate.worktreeId,
           worktreeInstanceId: candidate.worktreeInstanceId
         }
