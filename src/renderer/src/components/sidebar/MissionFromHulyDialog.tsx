@@ -1,8 +1,8 @@
-import React, { useId, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import AgentCombobox from '@/components/agent/AgentCombobox'
-import { formatHulyError } from '@/components/huly-error-copy'
+import { formatHulyError, isHulyAuthRequiredError } from '@/components/huly-error-copy'
+import { HulyReconnectNotice } from '@/components/huly-reconnect-notice'
 import {
   getDefaultHulyProject,
   useHulyProjects
@@ -16,23 +16,21 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { selectCanonicalProjects } from '@/store/project-host-setup-selector'
 import { getHulyProjectSettings } from '../../../../shared/huly/huly-project-settings'
 import type { HulyIssue } from '../../../../shared/huly/huly-types'
 import { slugifyMissionBranch } from '../../../../shared/missions'
+import { getRememberedComponentRepoMap } from './mission-huly-component-repo-memory'
 import { getOrderOverrides } from './mission-huly-plan-order'
+import { formatMissionMemberError } from './mission-member-error-copy'
 import { isRendererMissionEligibleRepo } from './mission-repo-eligibility'
 import { MissionHulyMilestonePicker } from './MissionHulyMilestonePicker'
 import { MissionHulyPlanBody } from './MissionHulyPlanBody'
 import type { MissionHulyPlanPicks } from './MissionHulyPlanView'
-import {
-  getEffectiveOrchestratorRepoId,
-  MissionOrchestratorRepoPicker
-} from './MissionOrchestratorRepoPicker'
+import { MissionHulyCreateFields } from './MissionHulyCreateFields'
+import { getEffectiveOrchestratorRepoId } from './MissionOrchestratorRepoPicker'
 import { useHulyMilestonePlan, useHulyMilestones } from './use-huly-milestone-plan'
 import { useMissionSessionAgent } from './use-mission-session-agent'
 
@@ -41,7 +39,11 @@ const EMPTY_PICKS: MissionHulyPlanPicks = {
   remembered: new Set(),
   orderByRepo: {}
 }
-const IGNORE_AUTH_REQUIRED = (): void => {}
+
+// Huly codes get Huly copy; Mission codes from the create path (e.g. an invalid branch) get Mission copy.
+function formatCreateError(error: unknown): string {
+  return formatMissionMemberError(formatHulyError(error))
+}
 
 /** "New Mission from Huly milestone": one task stack per repo, built from the milestone's issues. */
 export default function MissionFromHulyDialog(): React.JSX.Element {
@@ -55,18 +57,22 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
   const setSidebarListMode = useAppStore((s) => s.setSidebarListMode)
   const { sessionAgent, setSessionAgent, visibleAgents } = useMissionSessionAgent()
 
-  const nameId = useId()
-  const branchId = useId()
-  const orchestratorId = useId()
-  const hulyProjectsRead = useHulyProjects(IGNORE_AUTH_REQUIRED)
+  const [authRequired, setAuthRequired] = useState(false)
+  const reportAuthRequired = useCallback(() => setAuthRequired(true), [])
+  const hulyProjectsRead = useHulyProjects(reportAuthRequired)
   const hulyProjects = useMemo(() => settings?.hulyProjects ?? {}, [settings?.hulyProjects])
   const projectList = hulyProjectsRead.result.state === 'ready' ? hulyProjectsRead.result.value : []
   const [pickedProject, setPickedProject] = useState<string | null>(null)
   const project = pickedProject ?? getDefaultHulyProject(projectList, hulyProjects)
-  const milestonesRead = useHulyMilestones(project)
+  const milestonesRead = useHulyMilestones(project, reportAuthRequired)
   const [milestoneId, setMilestoneId] = useState<string | null>(null)
   const [picks, setPicks] = useState<MissionHulyPlanPicks>(EMPTY_PICKS)
-  const planState = useHulyMilestonePlan(project, milestoneId, picks.repoOverrides)
+  const planState = useHulyMilestonePlan(
+    project,
+    milestoneId,
+    picks.repoOverrides,
+    reportAuthRequired
+  )
   // null follows the milestone label and its slug.
   const [name, setName] = useState<string | null>(null)
   const [branch, setBranch] = useState<string | null>(null)
@@ -102,6 +108,7 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
     ready.plan.stacks.length > 0 &&
     ready.unmapped.every((issue) => picks.repoOverrides[issue.identifier]) &&
     effectiveName.trim().length > 0 &&
+    !authRequired &&
     !submitting
 
   function selectMilestone(next: string | null): void {
@@ -117,32 +124,34 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
     selectMilestone(null)
     setOrchestratorRepoId(null)
     setSubmitting(false)
+    setAuthRequired(false)
     closeModal()
   }
 
-  async function rememberComponentRepos(projectId: string, unmapped: HulyIssue[]): Promise<void> {
+  function reloadAfterReconnect(): void {
+    setAuthRequired(false)
+    setCreateError(null)
+    hulyProjectsRead.retry()
+    milestonesRead.retry()
+    if (planState.state === 'error' || planState.state === 'ready') {
+      planState.retry()
+    }
+  }
+
+  // Runs only after a successful create; updateSettings logs its own failures, so create never depends on it.
+  function rememberComponentRepos(projectId: string, unmapped: HulyIssue[]): void {
     const current = getHulyProjectSettings({ hulyProjects }, projectId)
-    const componentRepoMap = { ...current.componentRepoMap }
-    let changed = false
-    for (const issue of unmapped) {
-      const repoId = picks.repoOverrides[issue.identifier]
-      if (
-        issue.componentId !== null &&
-        repoId &&
-        picks.remembered.has(issue.identifier) &&
-        componentRepoMap[issue.componentId] !== repoId
-      ) {
-        componentRepoMap[issue.componentId] = repoId
-        changed = true
-      }
+    const componentRepoMap = getRememberedComponentRepoMap(
+      current.componentRepoMap,
+      unmapped,
+      picks
+    )
+    if (componentRepoMap) {
+      // Saving replaces the whole map, so every update carries the other projects too.
+      void updateSettings({
+        hulyProjects: { ...hulyProjects, [projectId]: { ...current, componentRepoMap } }
+      })
     }
-    if (!changed) {
-      return
-    }
-    // Saving replaces the whole map, so every update carries the other projects too.
-    await updateSettings({
-      hulyProjects: { ...hulyProjects, [projectId]: { ...current, componentRepoMap } }
-    })
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -155,7 +164,6 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
     const effectiveOrchestrator = getEffectiveOrchestratorRepoId(orchestratorRepoId, memberRepoIds)
     const orderOverrides = getOrderOverrides(ready.plan.stacks, picks.orderByRepo)
     try {
-      await rememberComponentRepos(project, ready.unmapped)
       const result = await createMissionFromMilestone({
         project,
         milestone: milestoneId,
@@ -168,6 +176,7 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
           : {}),
         ...(Object.keys(orderOverrides).length > 0 ? { orderOverrides } : {})
       })
+      rememberComponentRepos(project, ready.unmapped)
       if (result.warnings.length > 0) {
         toast.warning(
           translate(
@@ -180,7 +189,11 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
       setSidebarListMode('missions')
       resetAndClose()
     } catch (error) {
-      setCreateError(formatHulyError(error))
+      if (isHulyAuthRequiredError(error)) {
+        setAuthRequired(true)
+      } else {
+        setCreateError(formatCreateError(error))
+      }
       setSubmitting(false)
     }
   }
@@ -202,8 +215,10 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
             )}
           </DialogDescription>
         </DialogHeader>
+        {/* Outside the form: the connect dialog's events bubble through its portal to React parents. */}
+        {authRequired ? <HulyReconnectNotice onReconnected={reloadAfterReconnect} /> : null}
         <form className="min-w-0 space-y-4" onSubmit={handleSubmit}>
-          {hulyProjectsRead.result.state === 'error' ? (
+          {authRequired ? null : hulyProjectsRead.result.state === 'error' ? (
             <p role="alert" className="text-xs text-destructive">
               {hulyProjectsRead.result.message}
             </p>
@@ -224,63 +239,27 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
           )}
           <MissionHulyPlanBody
             planState={planState}
+            hideErrors={authRequired}
             repos={eligibleRepos}
             repoNameById={repoNameById}
             picks={picks}
             onPicksChange={setPicks}
           />
           {ready ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor={nameId} variant="settings">
-                  {translate('auto.components.sidebar.MissionFromHulyDialog.name', 'Mission Name')}
-                </Label>
-                <Input
-                  id={nameId}
-                  value={effectiveName}
-                  onChange={(event) => setName(event.target.value)}
-                  density="compact"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor={branchId} variant="settings">
-                  {translate('auto.components.sidebar.MissionFromHulyDialog.branch', 'Branch')}
-                </Label>
-                <Input
-                  id={branchId}
-                  value={branch ?? derivedBranch}
-                  onChange={(event) => setBranch(event.target.value)}
-                  variant="code"
-                  density="compact"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor={orchestratorId} variant="settings">
-                  {translate(
-                    'auto.components.sidebar.MissionFromHulyDialog.orchestrator',
-                    'Orchestrator project (optional)'
-                  )}
-                </Label>
-                <MissionOrchestratorRepoPicker
-                  id={orchestratorId}
-                  eligibleRepos={eligibleRepos}
-                  memberRepoIds={memberRepoIds}
-                  value={orchestratorRepoId}
-                  onChange={setOrchestratorRepoId}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label variant="settings">
-                  {translate('auto.components.sidebar.MissionFromHulyDialog.agent', 'Agent')}
-                </Label>
-                <AgentCombobox
-                  agents={visibleAgents}
-                  value={sessionAgent}
-                  onValueChange={setSessionAgent}
-                  triggerClassName="h-8 w-full border-input text-xs"
-                />
-              </div>
-            </div>
+            <MissionHulyCreateFields
+              name={effectiveName}
+              onNameChange={setName}
+              branch={branch}
+              derivedBranch={derivedBranch}
+              onBranchChange={setBranch}
+              eligibleRepos={eligibleRepos}
+              memberRepoIds={memberRepoIds}
+              orchestratorRepoId={orchestratorRepoId}
+              onOrchestratorRepoChange={setOrchestratorRepoId}
+              agents={visibleAgents}
+              agent={sessionAgent}
+              onAgentChange={setSessionAgent}
+            />
           ) : null}
           {createError ? (
             <p role="alert" className="text-xs text-destructive">

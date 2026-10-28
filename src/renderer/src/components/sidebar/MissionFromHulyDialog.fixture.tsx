@@ -103,3 +103,18 @@ export const plan = defineFixture({
   },
   render: () => <MissionFromHulyDialog />
 })
+
+export const reconnect = defineFixture({
+  width: 720,
+  store: { repos, activeModal: 'mission-create-huly' },
+  setup: () => {
+    installHulyApi()
+    window.api.huly.listProjects = async () => {
+      throw new Error('huly_auth_required')
+    }
+  },
+  interact: async () => {
+    await waitFor(() => document.querySelector('[role="alert"]'), 'reconnect notice')
+  },
+  render: () => <MissionFromHulyDialog />
+})
