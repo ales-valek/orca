@@ -39,8 +39,7 @@ export async function buildLayerWrites(
   involved: AbsorbLayer[],
   assignments: AbsorbAssignment[],
   edits: PreviewEdits,
-  previewPath: string,
-  previewHead: string
+  diffs: LayerToPreviewDiffs
 ): Promise<LayerWrite[]> {
   const writes: LayerWrite[] = []
   for (const layer of involved) {
@@ -53,7 +52,7 @@ export async function buildLayerWrites(
     if (groups.size === 0) {
       continue
     }
-    const placer = new LayerHunkPlacer(layer, previewPath, previewHead)
+    const placer = new LayerHunkPlacer(layer, diffs)
     const commits: LayerWrite['commits'] = []
     for (const [fixupOf, hunks] of groups) {
       const patches: string[] = []
@@ -84,28 +83,28 @@ export async function writeLayersThenRevertPreview(
   previewPath: string,
   files: PreviewEditFile[]
 ): Promise<void> {
-  const written: AbsorbLayer[] = []
+  // Why: a layer joins only once it holds an absorb commit; one refused as dirty was never ours to reset.
+  const written = new Set<AbsorbLayer>()
   try {
     for (const { layer, commits } of writes) {
-      written.push(layer)
-      if ((await commitAndSquashLayer(layer, commits)) === 'conflict') {
+      if ((await commitAndSquashLayer(layer, commits, written)) === 'conflict') {
         // Why: later commits of the layer touch neighbouring lines; folding into its tip keeps the edit in the layer.
         await restoreLayerTip(layer.worktreePath, layer.tip)
+        written.delete(layer)
         const tip = layer.commits[0] ?? null
         const retargeted = commits.map((commit) => ({
           ...commit,
           fixupOf: commit.fixupOf && tip
         }))
-        if ((await commitAndSquashLayer(layer, retargeted)) === 'conflict') {
+        if ((await commitAndSquashLayer(layer, retargeted, written)) === 'conflict') {
           throw new Error('mission_absorb_squash_conflict')
         }
       }
     }
     await revertPreviewTrackedEdits(previewPath, files)
   } catch (error) {
-    // Why: each written layer was verified clean on its recorded tip, so a hard reset loses nothing.
     const failures: string[] = []
-    for (const layer of written.toReversed()) {
+    for (const layer of [...written].toReversed()) {
       await restoreLayerTip(layer.worktreePath, layer.tip).catch((restoreError: unknown) =>
         failures.push(`${layer.task.branchName}: ${toErrorMessage(restoreError)}`)
       )
@@ -119,14 +118,17 @@ export async function writeLayersThenRevertPreview(
 
 async function commitAndSquashLayer(
   layer: AbsorbLayer,
-  commits: LayerWrite['commits']
+  commits: LayerWrite['commits'],
+  written: Set<AbsorbLayer>
 ): Promise<'done' | 'conflict'> {
   for (const { fixupOf, patch } of commits) {
     await commitFixup(
       layer.worktreePath,
       patch,
-      fixupOf ? { fixupOf } : { message: PLAIN_COMMIT_MESSAGE }
+      fixupOf ? { fixupOf } : { message: PLAIN_COMMIT_MESSAGE },
+      { unidiffZero: true }
     )
+    written.add(layer)
   }
   if (!commits.some(({ fixupOf }) => fixupOf)) {
     return 'done'
@@ -135,14 +137,71 @@ async function commitAndSquashLayer(
   return squashed.status === 'conflict' ? 'conflict' : 'done'
 }
 
+/** `-U0` diffs from each layer tip to the preview HEAD, read once per layer and file. */
+export class LayerToPreviewDiffs {
+  private readonly cache = new Map<string, Promise<ZeroContextHunk[]>>()
+
+  constructor(
+    private readonly previewPath: string,
+    private readonly previewHead: string
+  ) {}
+
+  read(layerTip: string, file: string): Promise<ZeroContextHunk[]> {
+    if (layerTip === this.previewHead) {
+      return Promise.resolve([])
+    }
+    const key = `${layerTip}\0${file}`
+    const cached = this.cache.get(key)
+    if (cached) {
+      return cached
+    }
+    const read = gitExecFileAsync(
+      [
+        'diff',
+        '-U0',
+        '--no-renames',
+        '--no-ext-diff',
+        '--no-textconv',
+        '--no-color',
+        layerTip,
+        this.previewHead,
+        '--',
+        `:(literal)${file}`
+      ],
+      gitReadOptionsForWorktree(this.previewPath)
+    ).then(({ stdout }) => parseZeroContextDiff(stdout).hunks)
+    this.cache.set(key, read)
+    return read
+  }
+}
+
+/** Task ids each text hunk can be placed in; whole-file changes are not limited here. */
+export async function getPlaceableTaskIds(
+  layers: { taskId: string; tip: string }[],
+  edits: PreviewEdits,
+  diffs: LayerToPreviewDiffs
+): Promise<Map<AbsorbHunk, Set<string>>> {
+  const placeable = new Map<AbsorbHunk, Set<string>>()
+  for (const [hunk, source] of edits.hunks) {
+    const taskIds = new Set<string>()
+    for (const layer of layers) {
+      const textHunk = source.hunk
+      if (!textHunk || mapHunkOntoLayer(textHunk, await diffs.read(layer.tip, hunk.file))) {
+        taskIds.add(layer.taskId)
+      }
+    }
+    placeable.set(hunk, taskIds)
+  }
+  return placeable
+}
+
 /** Places preview hunks at their lines in one layer's files, tracking hunks earlier commits added. */
 class LayerHunkPlacer {
   private readonly placedByFile = new Map<string, ZeroContextHunk[]>()
 
   constructor(
     private readonly layer: AbsorbLayer,
-    private readonly previewPath: string,
-    private readonly previewHead: string
+    private readonly diffs: LayerToPreviewDiffs
   ) {}
 
   async buildFilePatch(file: PreviewEditFile, hunks: (ZeroContextHunk | null)[]): Promise<string> {
@@ -150,7 +209,7 @@ class LayerHunkPlacer {
     if (textHunks.length < hunks.length) {
       return file.diff
     }
-    const layerToPreview = await this.diffLayerToPreview(file.file)
+    const layerToPreview = await this.diffs.read(this.layer.tip, file.file)
     const placed = this.placedByFile.get(file.file) ?? []
     const onLayer = textHunks.map((hunk) => {
       const mapped = mapHunkOntoLayer(hunk, layerToPreview)
@@ -170,27 +229,5 @@ class LayerHunkPlacer {
     // Why: without a blob id git applies at the layer's own lines instead of merging from the preview's.
     const header = file.header.filter((line) => !line.startsWith('index '))
     return buildZeroContextPatch(header, moved)
-  }
-
-  private async diffLayerToPreview(file: string): Promise<ZeroContextHunk[]> {
-    if (this.layer.tip === this.previewHead) {
-      return []
-    }
-    const { stdout } = await gitExecFileAsync(
-      [
-        'diff',
-        '-U0',
-        '--no-renames',
-        '--no-ext-diff',
-        '--no-textconv',
-        '--no-color',
-        this.layer.tip,
-        this.previewHead,
-        '--',
-        `:(literal)${file}`
-      ],
-      gitReadOptionsForWorktree(this.previewPath)
-    )
-    return parseZeroContextDiff(stdout).hunks
   }
 }

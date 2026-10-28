@@ -194,12 +194,17 @@ export async function resetPreviewKeep(
   )
 }
 
+export type CommitFixupOptions = GitRuntimeOptions & {
+  /** Accept zero-context hunks; only for patches whose line numbers are exact for this layer. */
+  unidiffZero?: boolean
+}
+
 /** Applies `patch` to the index and worktree and commits it as a fixup of a layer commit or with a message. */
 export async function commitFixup(
   worktreePath: string,
   patch: string,
   target: { fixupOf: string } | { message: string },
-  options: GitRuntimeOptions = {}
+  options: CommitFixupOptions = {}
 ): Promise<void> {
   await runWithGitWorktreeOperationLock(worktreePath, options.signal, () =>
     runWithGitReadCacheInvalidation(async () => {
@@ -210,8 +215,8 @@ export async function commitFixup(
       const commitArgs =
         'fixupOf' in target ? [`--fixup=${target.fixupOf}`] : ['-m', target.message]
       try {
-        // Why: absorb sends zero-context hunks placed at exact lines of the layer's own file.
-        await gitExecFileAsync(['apply', '--3way', '--index', '--unidiff-zero'], {
+        const applyArgs = ['apply', '--3way', '--index']
+        await gitExecFileAsync(options.unidiffZero ? [...applyArgs, '--unidiff-zero'] : applyArgs, {
           ...operationOptions,
           stdin: patch
         })
@@ -258,7 +263,10 @@ export async function listLayerCommits(
   return stdout.split('\n').filter(Boolean)
 }
 
-/** Puts a layer back on `tip`, abandoning an unfinished rebase; only for layers verified clean first. */
+/**
+ * Puts a layer back on `tip`, abandoning an unfinished rebase. Uses `reset --keep`, so it throws
+ * rather than overwrite edits made since; it never resets when the rebase state cannot be read.
+ */
 export async function restoreLayerTip(
   worktreePath: string,
   tip: string,
@@ -267,10 +275,13 @@ export async function restoreLayerTip(
   await runWithGitWorktreeOperationLock(worktreePath, options.signal, () =>
     runWithGitReadCacheInvalidation(async () => {
       const operationOptions = gitOptionsForWorktree(worktreePath, options)
-      if ((await detectConflictOperation(worktreePath, options).catch(() => null)) === 'rebase') {
+      const operation = await detectConflictOperation(worktreePath, options)
+      if (operation === 'rebase') {
         await gitExecFileAsync(['rebase', '--abort'], operationOptions)
+      } else if (operation !== 'unknown') {
+        throw new Error(`A ${operation} is in progress`)
       }
-      await gitExecFileAsync(['reset', '-q', '--hard', tip], operationOptions)
+      await gitExecFileAsync(['reset', '-q', '--keep', tip], operationOptions)
     })
   )
 }
