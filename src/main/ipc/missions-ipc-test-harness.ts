@@ -10,13 +10,22 @@ import type {
   OwnershipMarkerMockSet
 } from './missions-ipc-test-contracts'
 import { createFakeSlotStoreMethods } from './missions-ipc-test-slot-fakes'
+import { instanceIdForRepo, worktreeIdForRepo } from './missions-ipc-test-runtime-fake'
+
+export {
+  createStampedWorktree,
+  instanceIdForRepo,
+  makeFakeRuntime,
+  ownershipProofForRepo,
+  worktreeIdForRepo,
+  worktreePathForRepo,
+  wtR1Path,
+  wtR2Path
+} from './missions-ipc-test-runtime-fake'
 
 export const missionsBaseDir = path.join(path.sep, 'home', 'u', 'orca', 'missions')
 export const referralRootPath = path.join(missionsBaseDir, 'referral')
 const workspacesDir = path.join(path.sep, 'home', 'u', 'orca', 'workspaces')
-export const wtR1Path = path.join(path.sep, 'wt', 'r1')
-export const wtR2Path = path.join(path.sep, 'wt', 'r2')
-
 const missionRootMocks = vi.hoisted(() => ({
   MISSIONS_DIR_NAME: 'missions',
   ensureMissionRoot: vi.fn(),
@@ -58,27 +67,6 @@ export function getMissionRootMocks(): MissionRootMockSet {
 
 export function getOwnershipMarkerMocks(): OwnershipMarkerMockSet {
   return ownershipMarkerMocks
-}
-
-export function worktreePathForRepo(repoId: string): string {
-  return repoId === 'r1' ? wtR1Path : wtR2Path
-}
-
-export function worktreeIdForRepo(repoId: string): string {
-  return `${repoId}::${worktreePathForRepo(repoId)}`
-}
-
-export function instanceIdForRepo(repoId: string): string {
-  return `instance-${repoId}`
-}
-
-export function ownershipProofForRepo(repoId: string) {
-  return {
-    missionId: 'm1',
-    repoId,
-    worktreeId: worktreeIdForRepo(repoId),
-    worktreeInstanceId: instanceIdForRepo(repoId)
-  }
 }
 
 export function makeFakeStore(): FakeStore {
@@ -236,66 +224,6 @@ export function makeFakeStore(): FakeStore {
       return mission
     }),
     ...createFakeSlotStoreMethods(() => mission)
-  }
-}
-
-type CreateWorktreeArgs = {
-  repoSelector: string
-  branchNameOverride: string
-  missionId: string
-}
-
-export function createStampedWorktree(store: FakeStore, args: CreateWorktreeArgs) {
-  const repoId = args.repoSelector.slice('id:'.length)
-  const id = worktreeIdForRepo(repoId)
-  const instanceId = instanceIdForRepo(repoId)
-  store.setWorktreeMeta(id, { instanceId, missionId: args.missionId })
-  return {
-    worktree: {
-      id,
-      path: worktreePathForRepo(repoId),
-      repoId,
-      branch: args.branchNameOverride,
-      instanceId
-    }
-  }
-}
-
-export function makeFakeRuntime(store: FakeStore) {
-  return {
-    createManagedWorktree: vi.fn(async (args: CreateWorktreeArgs) =>
-      createStampedWorktree(store, args)
-    ),
-    inspectManagedWorktreeForOwnership: vi.fn(async (id: string): Promise<unknown> => {
-      const meta = store.getWorktreeMeta(id)
-      if (!meta?.instanceId) {
-        return { status: 'missing' as const }
-      }
-      return {
-        status: 'found' as const,
-        worktree: {
-          id,
-          path: id.slice(id.indexOf('::') + 2),
-          repoId: id.split('::', 1)[0],
-          branch: store.getMissions()[0]?.branchName ?? 'mission/referral',
-          instanceId: meta.instanceId
-        }
-      }
-    }),
-    findManagedWorktreesForMissionOwnership: vi.fn(
-      async (): Promise<
-        | {
-            status: 'found'
-            candidates: ReturnType<typeof ownershipProofForRepo>[]
-          }
-        | {
-            status: 'unavailable'
-          }
-      > => ({ status: 'found', candidates: [] })
-    ),
-    removeManagedWorktree: vi.fn(async () => ({})),
-    teardownWorkspaceProcesses: vi.fn(async () => {}),
-    attachMissionOperations: vi.fn((_operations: unknown) => {})
   }
 }
 

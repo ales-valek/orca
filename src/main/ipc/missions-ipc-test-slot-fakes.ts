@@ -1,46 +1,14 @@
 import { vi } from 'vitest'
 import type { Mission, MissionSlot, MissionTask } from '../../shared/mission-types'
 import { getTopMissionTask } from '../../shared/mission-task-stack'
+import {
+  applyMissionSlotError,
+  applyMissionSlotWorktree
+} from '../persistence/loading-store/mission-slot-mutations'
 import type { FakeMissionTaskInput } from './missions-ipc-test-contracts'
 
-type FakeSlotEntry = {
-  worktreeId: string | null
-  worktreeInstanceId?: string | null
-  lastError?: string | null
-}
-
-function findFakeSlotEntry(
-  mission: Mission | null,
-  repoId: string,
-  slot: MissionSlot
-): FakeSlotEntry | null {
-  if (!mission) {
-    return null
-  }
-  if (slot === 'member') {
-    return mission.members.find((entry) => entry.repoId === repoId) ?? null
-  }
-  if (slot === 'preview') {
-    mission.previews ??= []
-    let preview = mission.previews.find((entry) => entry.repoId === repoId)
-    if (!preview) {
-      preview = { repoId, worktreeId: null }
-      mission.previews.push(preview)
-    }
-    return preview
-  }
-  if (slot === 'orchestrator') {
-    if (mission.orchestratorRepoId !== repoId) {
-      return null
-    }
-    mission.orchestrator ??= { repoId, worktreeId: null }
-    return mission.orchestrator
-  }
-  const taskId = slot.slice('task:'.length)
-  return (mission.tasks ?? []).find((task) => task.id === taskId && task.repoId === repoId) ?? null
-}
-
 export function createFakeSlotStoreMethods(getMission: () => Mission | null) {
+  let nextTaskNumber = 1
   return {
     setMissionSlotWorktree: vi.fn(
       (
@@ -51,35 +19,26 @@ export function createFakeSlotStoreMethods(getMission: () => Mission | null) {
         worktreeInstanceId: string | null = null
       ) => {
         const mission = getMission()
-        const entry = findFakeSlotEntry(mission, repoId, slot)
-        if (!entry) {
-          return null
-        }
-        entry.worktreeId = worktreeId
-        entry.worktreeInstanceId = worktreeInstanceId
-        entry.lastError = null
-        return mission
+        return mission &&
+          applyMissionSlotWorktree(mission, repoId, slot, worktreeId, worktreeInstanceId)
+          ? mission
+          : null
       }
     ),
     setMissionSlotError: vi.fn(
       (_id: string, repoId: string, slot: MissionSlot, error: string | null) => {
         const mission = getMission()
-        const entry = findFakeSlotEntry(mission, repoId, slot)
-        if (!entry) {
-          return null
-        }
-        entry.lastError = error
-        return mission
+        return mission && applyMissionSlotError(mission, repoId, slot, error) ? mission : null
       }
     ),
     addMissionTask: vi.fn((_id: string, input: FakeMissionTaskInput) => {
       const mission = getMission()
-      if (!mission) {
+      if (!mission?.members.some((member) => member.repoId === input.repoId)) {
         return null
       }
       const task: MissionTask = {
         ...input,
-        id: `task-${(mission.tasks?.length ?? 0) + 1}`,
+        id: `task-${nextTaskNumber++}`,
         order: (getTopMissionTask(mission, input.repoId)?.order ?? 0) + 1,
         worktreeId: null,
         worktreeInstanceId: null,
@@ -92,9 +51,14 @@ export function createFakeSlotStoreMethods(getMission: () => Mission | null) {
     }),
     removeMissionTask: vi.fn((_id: string, taskId: string) => {
       const mission = getMission()
-      if (mission) {
-        mission.tasks = (mission.tasks ?? []).filter((task) => task.id !== taskId)
+      const task = mission?.tasks?.find((entry) => entry.id === taskId)
+      if (!mission || !task) {
+        return null
       }
+      if (getTopMissionTask(mission, task.repoId)?.id !== task.id) {
+        throw new Error('mission_task_not_top')
+      }
+      mission.tasks = (mission.tasks ?? []).filter((entry) => entry.id !== taskId)
       return mission
     }),
     setMissionTaskParentBaseSha: vi.fn((_id: string, taskId: string, sha: string) => {
