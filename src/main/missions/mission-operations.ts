@@ -60,6 +60,8 @@ export type MissionOperationsOptions = {
   runSetupHook?: MissionSetupHookRunner
   /** Restack never touches a layer whose agent is mid-turn; absent means no agent is ever busy. */
   isWorktreeAgentWorking?: (worktreeId: string) => boolean
+  /** A stack mutation or restack ran, so layer states may differ even without a record change. */
+  notifyStacksChanged?: (missionId: string) => void
 }
 
 /** Mission mutations shared by the desktop IPC handlers and the runtime RPC (`orca mission`). */
@@ -86,7 +88,13 @@ export class MissionOperations {
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
     const restacker = new MissionTaskRestack({ store, isWorktreeAgentWorking })
     this.inspectRepo = restacker.inspectRepo.bind(restacker)
-    this.tasks = new MissionTaskOperations(store, this.memberLifecycle, notifyChanged, restacker)
+    this.tasks = new MissionTaskOperations(
+      store,
+      this.memberLifecycle,
+      notifyChanged,
+      restacker,
+      options.notifyStacksChanged
+    )
     this.absorber = new MissionTaskAbsorb({
       store,
       restacker: restacker,
@@ -280,7 +288,7 @@ export class MissionOperations {
         return await this.absorber.absorbRepo(mission, args.repoId, args.overrides)
       } finally {
         // Why: a failed absorb may still have recorded restack bases or the preview's followed tip.
-        this.notifyChanged()
+        this.tasks.notifyStackChanged(args.missionId)
       }
     })
   }
