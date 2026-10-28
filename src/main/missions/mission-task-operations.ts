@@ -74,6 +74,11 @@ export class MissionTaskOperations {
       if (!getMissionOwnedWorktree(this.store, mission, member)) {
         return { mission, task: null, error: 'mission_member_worktree_missing' }
       }
+      const parent = getTopMissionTask(mission, args.repoId)
+      if (parent && !parent.worktreeId) {
+        // Why: a layer whose create failed has no checkout to stack on; remove or recreate it first.
+        return { mission, task: null, error: 'mission_task_parent_missing' }
+      }
       const rooted = ensureMissionRootStrict(this.store, mission)
       const task = this.store.addMissionTask(mission.id, {
         repoId: args.repoId,
@@ -120,13 +125,8 @@ export class MissionTaskOperations {
       if (task.id !== top?.id) {
         return { mission, task, error: 'mission_task_not_top' }
       }
-      const preview =
-        getRepoTaskStack(mission, args.repoId).length === 1
-          ? await this.removePreview(mission, args.repoId, args.deleteWorktree)
-          : {}
-      const outcome = preview.error
-        ? preview
-        : await this.removeTaskLayer(mission.id, task, args.deleteWorktree, preview.warning)
+      const isLastTask = getRepoTaskStack(mission, args.repoId).length === 1
+      const outcome = await this.removeTaskLayer(mission.id, task, args.deleteWorktree, isLastTask)
       syncMissionRootIfPresent(this.store, mission.id)
       this.notifyChanged()
       return { mission: this.store.getMission(mission.id) ?? mission, task, ...outcome }
@@ -146,7 +146,7 @@ export class MissionTaskOperations {
       if (!top) {
         break
       }
-      const removed = await this.removeTaskLayer(mission.id, top, true)
+      const removed = await this.removeTaskLayer(mission.id, top, true, false)
       if (removed.error) {
         return removed
       }
@@ -216,11 +216,12 @@ export class MissionTaskOperations {
     return removed.error ? { error: removed.error } : joinWarnings([removed.warning])
   }
 
+  /** Task worktree first, so a dirty layer refuses before its preview is touched; record last. */
   private async removeTaskLayer(
     missionId: string,
     task: MissionTask,
     deleteWorktree: boolean,
-    priorWarning?: string
+    withPreview: boolean
   ): Promise<LayerOutcome> {
     const mission = this.store.getMission(missionId)
     if (!mission) {
@@ -235,11 +236,18 @@ export class MissionTaskOperations {
     if (removed.error) {
       return { error: removed.error }
     }
+    // Why: the preview branch resolves only while the repo still records a task.
+    const preview = withPreview
+      ? await this.removePreview(mission, task.repoId, deleteWorktree)
+      : {}
+    if (preview.error) {
+      return { error: preview.error, ...joinWarnings([removed.warning]) }
+    }
     try {
       this.store.removeMissionTask(mission.id, task.id)
     } catch (error) {
       return { error: toErrorMessage(error) }
     }
-    return joinWarnings([priorWarning, removed.warning])
+    return joinWarnings([removed.warning, preview.warning])
   }
 }

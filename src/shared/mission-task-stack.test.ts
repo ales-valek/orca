@@ -47,6 +47,15 @@ describe('createMissionTaskBranchName', () => {
     )
   })
 
+  it('keeps task slugs off the reserved preview and orchestrator directory suffixes', () => {
+    expect(createMissionTaskBranchName(base, { title: 'Preview' })).toBe(
+      'mission-task/kiosek/preview-2'
+    )
+    expect(createMissionTaskBranchName(base, { title: 'x', externalRef: 'Orchestrator' })).toBe(
+      'mission-task/kiosek/orchestrator-2'
+    )
+  })
+
   it('suffixes a counter when the branch is already taken', () => {
     const tasks = [makeTask({ id: 't1', branchName: 'mission-task/kiosek/omp-951' })]
     expect(

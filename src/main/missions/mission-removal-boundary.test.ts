@@ -196,6 +196,22 @@ describe('Mission worktree removal boundary', () => {
       )
     })
 
+    it('blocks generic removal of a preview checkout by its live marker alone', () => {
+      readOwnershipMarker.mockReturnValue({
+        missionId: 'mission-1',
+        repoId: 'repo-1',
+        worktreeId,
+        worktreeInstanceId: 'instance-1',
+        missionSlot: 'preview'
+      })
+      const store = { getMissions: () => [taskMission()], getWorktreeMeta: () => undefined }
+
+      expect(() => assertWorktreeIsNotMissionManaged(store, worktreeId, target)).toThrow(
+        'mission_member_managed_by_mission'
+      )
+      expect(readCreateIntent).toHaveBeenCalled()
+    })
+
     it('blocks generic removal of a worktree a task record points at', () => {
       const pointed = taskMission()
       pointed.tasks![0].worktreeId = worktreeId
