@@ -1,13 +1,19 @@
-import type { MissionRestackLayer, MissionRestackReport } from '../../shared/mission-layer-state'
+import {
+  getMissionLayerPushInput,
+  isMissionLayerPushPending,
+  type MissionLayerPushTips,
+  type MissionRestackLayer,
+  type MissionRestackReport
+} from '../../shared/mission-layer-state'
 import { getMissionSlotBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
 import type { Mission } from '../../shared/mission-types'
 
-/** Local tip of a branch and its last pushed tip; a null pushed tip means it was never pushed. */
-export type LayerPushTips = { localTip: string | null; pushedTip: string | null }
-
 export type MissionStackInspectionDeps = {
   inspectRepo: (mission: Mission, repoId: string) => Promise<MissionRestackReport>
-  readPushTips: (repoId: string, branches: readonly string[]) => Promise<Map<string, LayerPushTips>>
+  readPushTips: (
+    repoId: string,
+    branches: readonly string[]
+  ) => Promise<Map<string, MissionLayerPushTips>>
 }
 
 function isPushableCurrentLayer(layer: MissionRestackLayer): boolean {
@@ -29,7 +35,7 @@ async function applyNeedsPush(
   if (branchBySlot.size === 0) {
     return report
   }
-  let tips: Map<string, LayerPushTips>
+  let tips: Map<string, MissionLayerPushTips>
   try {
     tips = await readPushTips(report.repoId, [...branchBySlot.values()])
   } catch {
@@ -40,8 +46,8 @@ async function applyNeedsPush(
     layers: report.layers.map((layer) => {
       const branch = branchBySlot.get(layer.slot)
       const tip = branch ? tips.get(branch) : undefined
-      // ponytail: a remote-tracking ref stands in for an open PR, the same heuristic pushStack uses.
-      return tip && tip.pushedTip !== null && tip.localTip !== tip.pushedTip
+      // Why: a current layer is exactly one whose parent did not move, so only the push rule remains.
+      return tip && isMissionLayerPushPending(getMissionLayerPushInput(tip))
         ? { ...layer, state: 'needs-push' }
         : layer
     })
