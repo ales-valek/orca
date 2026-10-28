@@ -198,7 +198,7 @@ packageExtensionsChecksum: sha256-TrarseUCmMKP0lVjkfyLP2TAvkGZMZzvzPxjKY48nrY=
 pnpmfileChecksum: sha256-6l6qdgUHKyTLYIQLx/UGfGRnEiFXxIaSlGMgK4mttEw=
 
 patchedDependencies:
-  '@hcengineering/client-resources@0.7.423': 100714fd9946a8ea3c9e07aff0000343a612230cc3d087375a040600ce0225aa
+  '@hcengineering/client-resources@0.7.423': 306b09afa2b5e768f7e5cf5cc521fb7d9b70d9c4540887646e1ddd07ff9c9c84
   '@tiptap/extension-list@3.31.3': afc553bf4f7cb888dfcdc30d52b7fed589176fd1987736fd72fd1f4f7173f299
   '@tiptap/markdown@3.31.3': 4fe6aebb0d868ea9e8977f371bd088e96d5018ea8cf83a7ae3f3f924b87ee7cf
   '@vscode/windows-process-tree@0.8.0': a09f2e8b2b4e73ef20c317af91f9e06c09abf62fa2c891d99b16f53047f596fd
@@ -9472,7 +9472,7 @@ snapshots:
     dependencies:
       '@hcengineering/account-client': 0.7.423
       '@hcengineering/client': 0.7.423
-      '@hcengineering/client-resources': 0.7.423(patch_hash=100714fd9946a8ea3c9e07aff0000343a612230cc3d087375a040600ce0225aa)
+      '@hcengineering/client-resources': 0.7.423(patch_hash=306b09afa2b5e768f7e5cf5cc521fb7d9b70d9c4540887646e1ddd07ff9c9c84)
       '@hcengineering/collaborator-client': 0.7.423
       '@hcengineering/core': 0.7.423
       '@hcengineering/platform': 0.7.423
@@ -9498,7 +9498,7 @@ snapshots:
       - prosemirror-view
       - utf-8-validate
 
-  '@hcengineering/client-resources@0.7.423(patch_hash=100714fd9946a8ea3c9e07aff0000343a612230cc3d087375a040600ce0225aa)':
+  '@hcengineering/client-resources@0.7.423(patch_hash=306b09afa2b5e768f7e5cf5cc521fb7d9b70d9c4540887646e1ddd07ff9c9c84)':
     dependencies:
       '@hcengineering/analytics': 0.7.423
       '@hcengineering/client': 0.7.423
