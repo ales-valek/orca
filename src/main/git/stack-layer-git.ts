@@ -71,6 +71,26 @@ export type LayerWorktreeSnapshot = {
   operation: GitConflictOperation
 }
 
+/** True or false when git decided whether `ancestor` is reachable from `descendant`; null when the probe failed. */
+export async function getCommitAncestry(
+  worktreePath: string,
+  ancestor: string,
+  descendant: string,
+  options: GitRuntimeOptions = {}
+): Promise<boolean | null> {
+  if (ancestor.startsWith('-') || descendant.startsWith('-')) {
+    return null
+  }
+  return gitExecFileAsync(
+    ['merge-base', '--is-ancestor', ancestor, descendant],
+    gitReadOptionsForWorktree(worktreePath, options)
+  ).then(
+    () => true,
+    // Why: only exit 1 means "not an ancestor"; a missing object, timeout or kill says nothing.
+    (error: unknown) => (isGitExitCode(error, 1) ? false : null)
+  )
+}
+
 /** True when `ancestor` is reachable from `descendant`; any failure reads false so callers fail closed. */
 export async function isAncestorCommit(
   worktreePath: string,
@@ -78,15 +98,16 @@ export async function isAncestorCommit(
   descendant: string,
   options: GitRuntimeOptions = {}
 ): Promise<boolean> {
-  if (ancestor.startsWith('-') || descendant.startsWith('-')) {
-    return false
-  }
-  return gitExecFileAsync(
-    ['merge-base', '--is-ancestor', ancestor, descendant],
-    gitReadOptionsForWorktree(worktreePath, options)
-  ).then(
-    () => true,
-    () => false
+  return (await getCommitAncestry(worktreePath, ancestor, descendant, options)) === true
+}
+
+function isGitExitCode(error: unknown, code: number): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === code &&
+    !('killed' in error && error.killed === true)
   )
 }
 
