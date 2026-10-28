@@ -71,4 +71,6 @@ export type MissionsApi = {
     draft?: boolean
   }) => Promise<MissionStackPullRequestsResult>
   pushStack: (args: { missionId: string; repoId: string }) => Promise<MissionStackPushResult>
+  /** Fires after a stack mutation or restack (manual or automatic) so layer states can be re-read. */
+  onStacksChanged: (callback: (event: { missionId: string }) => void) => () => void
 }

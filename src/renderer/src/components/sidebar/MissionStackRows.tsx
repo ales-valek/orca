@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Upload, X } from 'lucide-react'
+import { RefreshCw, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
@@ -138,6 +138,7 @@ function MissionStackLayerRow({
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
   const setActiveWorktree = useAppStore((s) => s.setActiveWorktree)
   const removeMissionTopTask = useAppStore((s) => s.removeMissionTopTask)
+  const recreateMissionSlotWorktree = useAppStore((s) => s.recreateMissionSlotWorktree)
   const confirm = useConfirmationDialog()
 
   const record = layer.record
@@ -204,6 +205,15 @@ function MissionStackLayerRow({
                   'Workspace missing'
                 )}
               </span>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="ml-auto shrink-0 text-muted-foreground"
+                aria-label={translate('auto.components.sidebar.MissionList.d241d824cb', 'Recreate')}
+                onClick={() => void recreateMissionSlotWorktree(mission.id, repoId, layer.slot)}
+              >
+                <RefreshCw className="size-3.5" />
+              </Button>
             </div>
           )}
         </div>
