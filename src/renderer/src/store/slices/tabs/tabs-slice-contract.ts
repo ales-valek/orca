@@ -192,7 +192,7 @@ export type TabsSlice = {
     worktreeId: string
     snapshot: TabDragActivationSnapshot
     sourceGroupId: string
-    movedTabId: string
+    movedTabIds: readonly string[]
   }) => void
   reconcileWorktreeTabModel: (worktreeId: string) => {
     renderableTabCount: number

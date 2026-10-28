@@ -5,7 +5,6 @@ import { X, Minimize2, Pin } from 'lucide-react'
 import { stripLeadingAgentTitleDecoration } from '../../../../shared/agent-title-decoration'
 import { getAgentLabel } from '@/lib/agent-catalog'
 import { basename } from '@/lib/path'
-import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { TabHoverCard } from './TabHoverCard'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
@@ -20,8 +19,7 @@ import {
   type DropIndicator
 } from './drop-indicator'
 import { preventMiddleButtonDefault } from './middle-button-default-guard'
-import { useSortableTabRename } from './use-sortable-tab-rename'
-import { useTabRenameReturnFocus } from './use-tab-rename-return-focus'
+import { useSortableTabRenameInput } from './use-sortable-tab-rename-input'
 import { SortableTabContextMenu } from './SortableTabContextMenu'
 import { useSortableTabContextMenu } from './use-sortable-tab-context-menu'
 import { translate } from '@/i18n/i18n'
@@ -40,7 +38,6 @@ import type { NativeChatTabSession } from './tab-session-history-switch'
 import type { StructuredChatTabNamingFailure } from '@/runtime/structured-conversation-name'
 import { useNativeChatNamingFailure } from './use-native-chat-naming-failure'
 import { NativeChatNamingErrorBlock, NativeChatNamingFailedDialog } from './NativeChatNamingFailure'
-
 import type { TabStripActivationModifiers, TabStripInteractionProps } from './tab-strip-selection'
 import { TabClusterMemberIndicator } from './TabClusterMemberIndicator'
 
@@ -156,26 +153,19 @@ export default function SortableTab({
     setRenameValue,
     handleRenameOpen,
     commitRename,
-    onRenameKeyDown,
-    onRenameKeyUp,
-    onRenameCompositionStart,
-    onRenameCompositionEnd,
-    setRenameInputElement
-  } = useSortableTabRename({
-    tabId: tab.id,
-    title: tab.title,
-    customTitle: tab.customTitle,
-    onSetCustomTitle
-  })
-  const { renameOwnerRef, onRenameKeyDown } = useTabRenameReturnFocus({
-    commitRename,
-    cancelRename,
-    tabId: tab.id,
-    unifiedTabId,
-    worktreeId: tab.worktreeId,
-    groupId,
-    isNativeChat: nativeChat !== undefined
-  })
+    setRenameInputElement,
+    renameOwnerRef,
+    inputKeyProps
+  } = useSortableTabRenameInput(
+    { tabId: tab.id, title: tab.title, customTitle: tab.customTitle, onSetCustomTitle },
+    {
+      tabId: tab.id,
+      unifiedTabId,
+      worktreeId: tab.worktreeId,
+      groupId,
+      isNativeChat: nativeChat !== undefined
+    }
+  )
   // Why: a live working/needs-input state is newer than a prior-turn unread, so it owns the icon until the turn ends.
   const showUnreadActivity =
     hasUnreadActivity && !isEditing && !isTerminalTabActivityLive(activityStatus)
@@ -198,12 +188,9 @@ export default function SortableTab({
 
   // Why: while editing, drop drag listeners so typing can't start a drag; attributes stay spread to keep dnd-kit a11y.
   const dragListeners = isEditing ? undefined : listeners
+  // A selection modifier (shift/cmd) is consumed by onSelect; a plain click activates.
   const handleActivate = useCallback(
-    (modifiers: TabStripActivationModifiers) => {
-      if (!onSelect?.(modifiers)) {
-        onActivate(tab.id)
-      }
-    },
+    (modifiers: TabStripActivationModifiers) => onSelect?.(modifiers) || onActivate(tab.id),
     [onActivate, onSelect, tab.id]
   )
   // Why: defer activation to pointer-up so a drag doesn't switch tabs or steal focus mid-gesture (tab-strip-pointer-activation).
@@ -227,12 +214,7 @@ export default function SortableTab({
       data-agent-activity-status={activityStatus}
       {...attributes}
       {...dragListeners}
-      className={cn(
-        'w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none',
-        getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder }),
-        getDropIndicatorClasses(dropIndicator ?? null),
-        getTabRootStateClasses(isActive)
-      )}
+      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {
           return
@@ -290,10 +272,7 @@ export default function SortableTab({
           )}
           onChange={(event) => setRenameValue(event.target.value)}
           onBlur={commitRename}
-          onKeyDown={onRenameKeyDown}
-          onKeyUp={onRenameKeyUp}
-          onCompositionStart={onRenameCompositionStart}
-          onCompositionEnd={onRenameCompositionEnd}
+          {...inputKeyProps}
           // Why: stop bubbling so clicking inside the input doesn't activate the tab or start a dnd-kit drag.
           onPointerDown={(event) => event.stopPropagation()}
           onMouseDown={(event) => {

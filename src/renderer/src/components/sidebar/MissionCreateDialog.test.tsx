@@ -33,7 +33,7 @@ vi.mock('@/store', () => ({
       activeModal: 'mission-create',
       closeModal: mocks.closeModal,
       repos: mocks.repos,
-      projects: mocks.projects,
+      projectHostSetupProjection: { projects: mocks.projects, setups: [] },
       projectGroups: mocks.projectGroups,
       createMission: mocks.createMission,
       setSidebarListMode: mocks.setSidebarListMode,

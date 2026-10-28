@@ -356,7 +356,7 @@ describe('scanWorkspacePorts attribution work', () => {
   it('labels the dev server behind each port and leaves plain processes unlabelled', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
     runPortScanCommandMock.mockImplementation(async (command: string, args: string[]) => {
-      if (command === 'lsof' && args.includes('-iTCP')) {
+      if (command === '/usr/sbin/lsof' && args.includes('-iTCP')) {
         return {
           stdout: ['p123', 'cnode', 'n127.0.0.1:5173', 'p124', 'cnode', 'n127.0.0.1:4000'].join(
             '\n'
@@ -364,13 +364,13 @@ describe('scanWorkspacePorts attribution work', () => {
           spawnMs: 5
         }
       }
-      if (command === 'lsof') {
+      if (command === '/usr/sbin/lsof') {
         return {
           stdout: ['p123', 'n/repo/worktrees/feature', 'p124', 'n/repo'].join('\n'),
           spawnMs: 5
         }
       }
-      if (command === 'ps') {
+      if (command === '/bin/ps') {
         return {
           stdout: [
             '123 node /repo/worktrees/feature/node_modules/.bin/vite --port 5173',

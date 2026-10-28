@@ -9,6 +9,7 @@ import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../shared/tab-t
 import { useAppStore } from '../../store'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
 import type { TabClusterDragItemData, TabDragItemData } from './useTabDragSplit'
+import { isWebRuntimeSessionActive } from '../../runtime/web-runtime-session-environment'
 import { shouldActivateTabDragFromDistanceSample } from './tab-drag-pointer-sensor'
 import {
   canDropTabForPaneColumnSplit,
@@ -300,6 +301,9 @@ describe('canDropTabIntoPaneBody', () => {
 
 describe('useTabDragSplit', () => {
   it.each(['strip', 'edge', 'mirrored-edge'])('handles a collapsed chip drag over %s', (target) => {
+    vi.mocked(isWebRuntimeSessionActive).mockImplementation(
+      (environmentId) => target === 'mirrored-edge' && Boolean(environmentId)
+    )
     const groups = useAppStore.getState().groupsByWorktree[WT]
     useAppStore.setState({
       activeWorkspaceExecutionHostId: target === 'mirrored-edge' ? 'runtime:remote' : null,

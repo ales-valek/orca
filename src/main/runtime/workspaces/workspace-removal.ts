@@ -28,12 +28,7 @@ import { listWorktreesOnRemovalRoute } from '../worktree-removal-route-listing'
 import { authorizeUnregisteredWindowsRemoval } from '../../git/worktrees/removal/windows-worktree-removal'
 import { findRegisteredDeletableWorktree } from '../../workspaces/removal/worktree-removal-safety'
 import { removeRuntimeUnregisteredWorktree } from '../runtime-unregistered-worktree-removal'
-import { isFolderRepo } from '../../../shared/repo-kind'
-import {
-  assertScopedMissionWorktreeOwnership,
-  guardGenericMissionWorktreeRemoval,
-  teardownOwningMissionSession
-} from '../runtime-mission-worktree-removal-guard'
+import { missionRemovalGuard } from '../runtime-mission-worktree-removal-guard'
 import { removeStaleLocalWorktreeRegistration } from '../../workspaces/removal/local-worktree-removal-recovery'
 import { cleanupUnusedWorktreePushTargetRemote } from '../../ipc/worktree-remote'
 import { removeRuntimeRegisteredLocalWorktree } from '../runtime-registered-local-worktree-removal'
@@ -99,7 +94,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
     if ('joined' in admission) {
       return admission.joined
     }
-    const { emitRemoved } = admission
+    const { emitRemoved, cleanupScopeKey, optionsKey } = admission
     const removal = (async (): Promise<RemoveWorktreeResult & { warning?: string }> => {
       return withWorktreeSpan({ stage: 'remove', path: removalTarget.path }, async () => {
         const repoOwner = resolveWorktreeRemovalRepoOwner(
@@ -151,18 +146,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           registeredWorktrees,
           removalHome
         )
-        if (expectedOwnership && repo) {
-          assertScopedMissionWorktreeOwnership({
-            repo,
-            registeredPath: registeredWorktree?.path,
-            removedMeta,
-            expectedOwnership,
-            removalTarget
-          })
-          await teardownOwningMissionSession(store, expectedOwnership.missionId, (workspaceId) =>
-            this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
-          )
-        }
+        await missionGuard.afterRegistrationLookup(repo, registeredWorktree?.path, removedMeta)
         await authorizeUnregisteredWindowsRemoval(
           !!registeredWorktree,
           repo!.path,

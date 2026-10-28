@@ -2,8 +2,8 @@ import { OrcaRuntimeWithWindowlessTerminalActivity } from './orca-runtime-window
 import { isFolderRepo } from '../../shared/repo-kind'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import type { Worktree } from '../../shared/worktree/types'
-import { areWorktreePathsEqual } from '../ipc/worktree-path-comparison'
-import { mergeWorktree } from '../ipc/worktree-logic'
+import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
+import { mergeWorktree } from '../ipc/worktree-metadata-merge'
 import { listWorktreesStrict } from '../git/worktree'
 import { resolveLocalProjectRuntimeForRepo } from '../local-project-runtime-resolution'
 import { getLocalProjectWorktreeGitOptionsForRuntime } from '../project-runtime-git-options'
@@ -15,6 +15,7 @@ import {
 } from '../missions/mission-worktree-ownership-marker'
 import { withTimeoutResult } from './runtime-async-boundaries'
 import { RESOLVED_WORKTREE_REPO_TIMEOUT_MS } from './repo-worktree-row-resolution'
+import { localMissionWorktreeTarget } from '../missions/local-mission-worktree-target'
 
 export type ManagedWorktreeOwnershipInspection =
   | { status: 'found'; worktree: Worktree }
@@ -143,7 +144,7 @@ export abstract class OrcaRuntimeWithMissionOwnership extends OrcaRuntimeWithWin
     for (const proof of candidates) {
       // Why: the Git-admin marker outlives debounced metadata and also records
       // whether Mission creation reused a pre-existing local branch.
-      this.store?.setWorktreeMeta(proof.worktreeId, {
+      this.store?.setWorktreeMeta(localMissionWorktreeTarget(proof.worktreeId), {
         missionId,
         instanceId: proof.worktreeInstanceId,
         preserveBranchOnDelete: proof.preserveBranchOnDelete

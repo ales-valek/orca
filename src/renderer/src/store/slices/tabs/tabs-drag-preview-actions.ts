@@ -179,18 +179,27 @@ export function createTabsDragPreviewActions(
       })
     },
 
-    restoreSourceGroupActiveTabAfterDrop: ({ worktreeId, snapshot, sourceGroupId, movedTabId }) => {
+    restoreSourceGroupActiveTabAfterDrop: ({
+      worktreeId,
+      snapshot,
+      sourceGroupId,
+      movedTabIds
+    }) => {
       const preDragActiveTabId = snapshot.activeTabIdByGroup[sourceGroupId] ?? null
       // Why: dropUnifiedTab already picks the next active tab when the moved tab
       // was the source group's selection; only preview contamination needs undo.
-      if (preDragActiveTabId === movedTabId) {
+      if (preDragActiveTabId && movedTabIds.includes(preDragActiveTabId)) {
         return
       }
 
       set((state): Partial<AppState> => {
         const groups = state.groupsByWorktree[worktreeId] ?? []
         const sourceGroup = groups.find((group) => group.id === sourceGroupId)
-        if (!sourceGroup || sourceGroup.activeTabId === preDragActiveTabId) {
+        if (
+          !sourceGroup ||
+          sourceGroup.activeTabId === preDragActiveTabId ||
+          (preDragActiveTabId !== null && !sourceGroup.tabOrder.includes(preDragActiveTabId))
+        ) {
           return state
         }
         return {

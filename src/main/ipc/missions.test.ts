@@ -391,9 +391,12 @@ describe('missions IPC', () => {
     expect(store.flushOrThrow.mock.invocationCallOrder[0]).toBeLessThan(
       ownershipMarkerMocks.removeMissionWorktreeOwnershipMarker.mock.invocationCallOrder[0]
     )
-    expect(store.setWorktreeMeta).toHaveBeenLastCalledWith(owned.worktreeId, {
-      missionId: undefined
-    })
+    expect(store.setWorktreeMeta).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: owned.worktreeId, hostId: 'local' }),
+      {
+        missionId: undefined
+      }
+    )
     expect(missionRootMocks.removeMissionRoot).toHaveBeenCalledWith({
       baseDir: missionsBaseDir,
       rootPath: referralRootPath,
@@ -680,9 +683,12 @@ describe('missions IPC', () => {
     )
 
     expect(runtime.removeManagedWorktree).not.toHaveBeenCalled()
-    expect(store.setWorktreeMeta).toHaveBeenLastCalledWith(owned.worktreeId, {
-      missionId: undefined
-    })
+    expect(store.setWorktreeMeta).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: owned.worktreeId, hostId: 'local' }),
+      {
+        missionId: undefined
+      }
+    )
     expect(store.removeMissionMember).toHaveBeenCalledWith('m1', 'r1')
     expect(runtime.teardownWorkspaceProcesses).toHaveBeenCalledWith('folder:fw-1')
   })
@@ -764,10 +770,13 @@ describe('missions IPC', () => {
       'r1',
       'mission/referral'
     )
-    expect(store.setWorktreeMeta).toHaveBeenCalledWith(proof.worktreeId, {
-      missionId: 'm1',
-      instanceId: proof.worktreeInstanceId
-    })
+    expect(store.setWorktreeMeta).toHaveBeenCalledWith(
+      expect.objectContaining({ id: proof.worktreeId, hostId: 'local' }),
+      {
+        missionId: 'm1',
+        instanceId: proof.worktreeInstanceId
+      }
+    )
     expect(store.setMissionMemberWorktree).toHaveBeenCalledWith(
       'm1',
       'r1',

@@ -1,7 +1,7 @@
 import type { Mission } from '../../shared/mission-types'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import { areWorktreePathsEqual } from '../ipc/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { readMissionWorktreeCreateIntent } from './mission-worktree-create-intent'
 import { readMissionWorktreeOwnershipMarker } from './mission-worktree-ownership-marker'
 

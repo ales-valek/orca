@@ -2,7 +2,8 @@ import type { Mission, MissionMember } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { areWorktreePathsEqual, worktreePathComparisonKey } from '../ipc/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
+import { worktreePathComparisonKey } from '../worktree-path-comparison-key'
 import {
   findMissionOwnedWorktreeCandidates,
   type MissionOwnedWorktree
@@ -11,6 +12,7 @@ import {
   assertMissionWorktreeOwnershipMarker,
   resolveMissionWorktreeBranch
 } from './mission-worktree-ownership-marker'
+import { localMissionWorktreeTarget } from './local-mission-worktree-target'
 
 function ownershipCandidateKey(candidate: MissionOwnedWorktree): string {
   const parsed = splitWorktreeId(candidate.worktreeId)
@@ -102,7 +104,9 @@ export class MissionMemberOwnershipRecovery {
         if (currentMarker.worktreeInstanceId !== candidate.worktreeInstanceId) {
           // Why: the current Git row's marker supersedes a debounced stale
           // instance at the same path after external delete/recreate recovery.
-          this.store.setWorktreeMeta(candidate.worktreeId, { missionId: undefined })
+          this.store.setWorktreeMeta(localMissionWorktreeTarget(candidate.worktreeId), {
+            missionId: undefined
+          })
         }
         continue
       }
@@ -111,7 +115,9 @@ export class MissionMemberOwnershipRecovery {
       } else {
         // Why: a missing checkout must not retain ownership that a later
         // same-path non-Mission creation could accidentally inherit.
-        this.store.setWorktreeMeta(candidate.worktreeId, { missionId: undefined })
+        this.store.setWorktreeMeta(localMissionWorktreeTarget(candidate.worktreeId), {
+          missionId: undefined
+        })
       }
     }
     const live = [...liveByProof.values()]
@@ -139,7 +145,7 @@ export class MissionMemberOwnershipRecovery {
       }
       // Why: the Git-admin marker is published before debounced metadata; after
       // a crash it is the durable proof needed to restore the ownership stamp.
-      this.store.setWorktreeMeta(recovered.worktreeId, {
+      this.store.setWorktreeMeta(localMissionWorktreeTarget(recovered.worktreeId), {
         missionId: mission.id,
         instanceId: recovered.worktreeInstanceId
       })

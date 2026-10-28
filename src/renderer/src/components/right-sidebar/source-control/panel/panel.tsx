@@ -25,7 +25,7 @@ export function SourceControlPanel() {
         connectionId={model.activeConnectionId}
         executionHostId={activeWorktree.hostId ?? 'local'}
         runtimeEnvironmentId={model.activeRepoRuntimeEnvironmentId}
-        runtimeSettings={model.activeRepoSettings}
+        runtimeTarget={model.activeRepoTarget ?? { kind: 'local' }}
       />
     )
   }
