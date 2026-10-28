@@ -60,9 +60,16 @@ export class MissionTaskOperations {
     private readonly store: Store,
     private readonly lifecycle: MissionMemberLifecycle,
     private readonly notifyChanged: () => void,
-    private readonly restacker: MissionTaskRestack
+    private readonly restacker: MissionTaskRestack,
+    private readonly notifyStacksChanged: (missionId: string) => void = () => {}
   ) {
     this.layers = new MissionTaskLayerWorktrees(store, lifecycle)
+  }
+
+  /** Layer states change without a record change (a restack that blocks writes nothing), so say so. */
+  notifyStackChanged(missionId: string): void {
+    this.notifyChanged()
+    this.notifyStacksChanged(missionId)
   }
 
   addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
@@ -120,7 +127,7 @@ export class MissionTaskOperations {
             (await this.followNewTop(mission.id, args.repoId)).warning
           ])
       syncMissionRootIfPresent(this.store, mission.id)
-      this.notifyChanged()
+      this.notifyStackChanged(mission.id)
       const updated = this.store.getMission(mission.id) ?? rooted
       const updatedTask = updated.tasks?.find((entry) => entry.id === task.id) ?? task
       return { mission: updated, task: updatedTask, ...outcome }
@@ -161,7 +168,7 @@ export class MissionTaskOperations {
               (await this.followNewTop(mission.id, args.repoId)).warning
             ])
       syncMissionRootIfPresent(this.store, mission.id)
-      this.notifyChanged()
+      this.notifyStackChanged(mission.id)
       return { mission: this.store.getMission(mission.id) ?? mission, task, ...outcome }
     })
   }
@@ -187,7 +194,7 @@ export class MissionTaskOperations {
         }
       } finally {
         // Why: repos restacked before a failure already moved and recorded new bases.
-        this.notifyChanged()
+        this.notifyStackChanged(mission.id)
       }
       return reports
     })
@@ -212,7 +219,7 @@ export class MissionTaskOperations {
           ? {}
           : await this.followNewTop(mission.id, args.repoId)
       syncMissionRootIfPresent(this.store, mission.id)
-      this.notifyChanged()
+      this.notifyStackChanged(mission.id)
       return { ...created, ...joinWarnings([created.warning, realigned.warning]) }
     })
   }

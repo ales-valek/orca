@@ -86,13 +86,14 @@ const mission: Mission = {
 
 let root: Root | null = null
 
-function renderStack(layers: MissionRestackLayer[] = []): HTMLDivElement {
+function renderStack(
+  layers: MissionRestackLayer[] = [],
+  worktrees = [memberWorktree, firstTaskWorktree, secondTaskWorktree, previewWorktree]
+): HTMLDivElement {
   act(() => {
     useAppStore.setState({
       repos: [repo],
-      worktreesByRepo: {
-        [repo.id]: [memberWorktree, firstTaskWorktree, secondTaskWorktree, previewWorktree]
-      },
+      worktreesByRepo: { [repo.id]: worktrees },
       missions: [mission],
       missionStackReports: { m1: [{ repoId: repo.id, layers }] },
       missionSlotErrors: {}
@@ -162,6 +163,24 @@ describe('MissionStackRows', () => {
     expect(removeButtons[0].closest('[data-mission-slot]')?.getAttribute('data-mission-slot')).toBe(
       'task:t2'
     )
+  })
+
+  it('offers Recreate on a layer whose workspace is missing', () => {
+    const recreate = vi.fn(async () => {})
+    useAppStore.setState({ recreateMissionSlotWorktree: recreate })
+    const container = renderStack([], [memberWorktree, firstTaskWorktree, secondTaskWorktree])
+    const buttons = [
+      ...container.querySelectorAll<HTMLButtonElement>('button[aria-label="Recreate"]')
+    ]
+    expect(
+      buttons.map((button) =>
+        button.closest('[data-mission-slot]')?.getAttribute('data-mission-slot')
+      )
+    ).toEqual(['preview'])
+
+    act(() => buttons[0].click())
+
+    expect(recreate).toHaveBeenCalledWith('m1', repo.id, 'preview')
   })
 
   it('offers Push rewritten layers only when a layer needs a push', () => {
