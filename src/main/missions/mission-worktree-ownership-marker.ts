@@ -227,7 +227,11 @@ export function readMissionWorktreeOwnershipMarker(args: {
       ...(marker.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {})
     }
   } catch (error) {
-    if (isMissingPathError(error)) {
+    // A path that is a file (a prunable row naming its .git file) cannot hold a checkout marker.
+    if (
+      isMissingPathError(error) ||
+      (error instanceof Error && 'code' in error && error.code === 'ENOTDIR')
+    ) {
       return null
     }
     if (
