@@ -188,4 +188,30 @@ describe('commitFixup and autosquashLayer', () => {
     expect(git(layer, ['log', '-1', '--format=%s'])).toBe('L3 patch')
     expect(git(layer, ['show', 'HEAD:x.txt'])).toContain('patched')
   })
+  it('refuses a dirty worktree without touching it', async () => {
+    const { layer, patch } = await createLayerWithTwoCommits()
+    await writeFile(path.join(layer, 'y.txt'), 'dirty\n', 'utf8')
+    const head = git(layer, ['rev-parse', 'HEAD'])
+
+    await expect(commitFixup(layer, patch, { message: 'nope' })).rejects.toThrow(
+      'mission_layer_not_clean'
+    )
+
+    expect(git(layer, ['rev-parse', 'HEAD'])).toBe(head)
+    expect(await readFile(path.join(layer, 'y.txt'), 'utf8')).toBe('dirty\n')
+    expect(git(layer, ['status', '--porcelain'])).toBe('M y.txt')
+  })
+
+  it('restores a clean worktree when the patch does not apply', async () => {
+    const { layer, patch } = await createLayerWithTwoCommits()
+    await writeFile(path.join(layer, 'x.txt'), 'diverged\n', 'utf8')
+    git(layer, ['commit', '-q', '-a', '-m', 'diverge'])
+    const head = git(layer, ['rev-parse', 'HEAD'])
+
+    await expect(commitFixup(layer, patch, { message: 'conflicting' })).rejects.toThrow()
+
+    expect(git(layer, ['rev-parse', 'HEAD'])).toBe(head)
+    expect(git(layer, ['status', '--porcelain', '--untracked-files=all'])).toBe('')
+    expect(await readFile(path.join(layer, 'x.txt'), 'utf8')).toBe('diverged\n')
+  })
 })
