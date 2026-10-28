@@ -6,7 +6,7 @@ import { translate } from '@/i18n/i18n'
 const DEFAULT_BASE_REF_ERROR = /could not resolve a default base ref/i
 
 // Why: stack operations report bare codes, sometimes prefixed with the layer they refer to.
-const STACK_ERROR_COPY: Record<string, () => string> = {
+const STACK_ERROR_COPY: Record<string, (detail: string) => string> = {
   mission_task_not_top: () =>
     translate(
       'auto.components.sidebar.MissionMemberErrorCopy.cfd47e3be8',
@@ -42,6 +42,12 @@ const STACK_ERROR_COPY: Record<string, () => string> = {
       'auto.components.sidebar.MissionMemberErrorCopy.9b92a95d43',
       'Stacked pull requests are supported only for GitHub repositories.'
     ),
+  mission_stack_not_current: (detail) =>
+    translate(
+      'auto.components.sidebar.MissionMemberErrorCopy.5d1c0e7a43',
+      'These task layers are not up to date: {{value0}}. Restack, then create the pull requests again.',
+      { value0: detail }
+    ),
   mission_orchestrator_repo_is_member: () =>
     translate(
       'auto.components.sidebar.MissionMemberErrorCopy.96dae2fc71',
@@ -57,5 +63,9 @@ export function formatMissionMemberError(error: string): string {
     )
   }
   const code = Object.keys(STACK_ERROR_COPY).find((candidate) => error.includes(candidate))
-  return code ? STACK_ERROR_COPY[code]() : error
+  if (!code) {
+    return error
+  }
+  const detail = error.slice(error.indexOf(code) + code.length).replace(/^:\s*/, '')
+  return STACK_ERROR_COPY[code](detail)
 }

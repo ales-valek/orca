@@ -1,3 +1,4 @@
+import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Mission } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
@@ -24,7 +25,11 @@ function toErrorMessage(error: unknown): string {
 export class MissionStackPublisher {
   constructor(
     private readonly store: Store,
-    private readonly lifecycle: Pick<MissionMemberLifecycle, 'run'>
+    private readonly lifecycle: Pick<MissionMemberLifecycle, 'run'>,
+    private readonly inspectStack: (
+      mission: Mission,
+      repoId: string
+    ) => Promise<MissionRestackReport>
   ) {}
 
   createStackPullRequests(args: {
@@ -38,7 +43,9 @@ export class MissionStackPublisher {
       async (mission, repo, memberPath) =>
         createMissionStackPullRequests(
           { mission, repoId: args.repoId, draft: args.draft },
-          await createLocalMissionStackPullRequestDeps(repo, memberPath)
+          await createLocalMissionStackPullRequestDeps(repo, memberPath, () =>
+            this.inspectStack(mission, args.repoId)
+          )
         )
     )
   }
