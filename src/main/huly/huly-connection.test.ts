@@ -192,4 +192,16 @@ describe('HulyConnection', () => {
       'closed wss://huly.example.test/_transactor/<redacted>'
     )
   })
+
+  it('redacts the last path segment of any WebSocket URL in a failed call', async () => {
+    const connection = createConnection()
+    await connection.connect({ ...INFO, token: TOKEN })
+    api.listProjects = async () => {
+      throw new Error(`closed ws://10.0.0.5:3333/socket/${TOKEN}?v=2 and wss://h.test/a/${TOKEN}`)
+    }
+
+    await expect(connection.withApi((client) => client.listProjects())).rejects.toThrow(
+      'closed ws://10.0.0.5:3333/socket/<redacted>?v=2 and wss://h.test/a/<redacted>'
+    )
+  })
 })
