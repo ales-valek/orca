@@ -6,6 +6,7 @@ import {
   MissionCreateFromHulyParams,
   MissionCreateParams,
   MissionPathParams,
+  MissionRefreshParams,
   MissionRemoveParams,
   MissionRemoveTaskParams,
   MissionRestackParams,
@@ -60,6 +61,13 @@ export const MISSION_METHODS = [
         ...(params.repoOverrides ? { repoOverrides: params.repoOverrides } : {}),
         ...(params.orderOverrides ? { orderOverrides: params.orderOverrides } : {})
       })
+  }),
+  defineMethod({
+    name: 'mission.refresh',
+    permission: 'workspace',
+    params: MissionRefreshParams,
+    handler: async (params, { runtime }) =>
+      runtime.refreshMissionFromHuly(params.mission, params.apply === true)
   }),
   defineMethod({
     name: 'mission.session',

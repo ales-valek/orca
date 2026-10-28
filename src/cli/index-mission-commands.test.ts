@@ -216,6 +216,43 @@ describe('orca mission commands', () => {
     )
   })
 
+  it('prints the refresh diff groups and keeps exit code 0 with non-appendable issues', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_1', {
+        mission: MISSION,
+        diff: {
+          appendable: [{ repoId: 'repo-api', issues: [{ identifier: 'OMP-3', title: 'Third' }] }],
+          nonAppendable: [
+            { repoId: 'repo-api', identifier: 'OMP-5', reason: 'inserted-in-middle' }
+          ],
+          reorderedInHuly: [],
+          removed: ['OMP-2'],
+          movedRepo: [{ identifier: 'OMP-4', fromRepoId: 'repo-api', toRepoId: 'repo-web' }]
+        },
+        applied: [],
+        warnings: []
+      })
+    )
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const priorExitCode = process.exitCode
+    process.exitCode = undefined
+
+    await main(['mission', 'refresh', 'Referral', '--apply'], '/tmp')
+
+    expect(callMock).toHaveBeenCalledWith('mission.refresh', {
+      mission: 'Referral',
+      apply: true
+    })
+    const output = logSpy.mock.calls.flat().join('\n')
+    expect(output).toContain('OMP-3  Third  (repo-api)')
+    expect(output).toContain('OMP-5  repo-api  inserted-in-middle')
+    expect(output).toContain('OMP-4  repo-api -> repo-web')
+    expect(output).toContain('Removed:')
+    expect(process.exitCode).toBeUndefined()
+    process.exitCode = priorExitCode
+  })
+
   it('refuses --from-huly together with --repo', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
