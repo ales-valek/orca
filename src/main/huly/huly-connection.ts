@@ -35,7 +35,7 @@ export class HulyConnection {
       this.store.save(info, args.token)
     } catch (error) {
       await api?.close().catch(() => {})
-      throw toHulyError(error)
+      throw redactHulyToken(toHulyError(error), [args.token, args.token.trim()])
     }
     await this.dropApi()
     this.status = { connected: true, info }
@@ -68,7 +68,7 @@ export class HulyConnection {
         // Keep the saved connection so the UI can offer to reconnect.
         await this.dropApi()
       }
-      throw toHulyError(error)
+      throw redactHulyToken(toHulyError(error), [])
     } finally {
       this.activeRuns -= 1
       this.scheduleIdleClose()
@@ -140,4 +140,23 @@ function assertSecureServerUrl(serverUrl: string): void {
 
 function toHulyError(error: unknown): unknown {
   return isHulyAuthError(error) ? new Error('huly_auth_required') : error
+}
+
+const TRANSACTOR_TOKEN_SEGMENT = /(_transactor\/)[^/\s'"?#]+/g
+const REDACTED = '<redacted>'
+
+// Third-party client errors can embed the WebSocket URL, and the token is its last path segment.
+function redactHulyToken(error: unknown, tokens: readonly string[]): unknown {
+  const message = error instanceof Error ? error.message : String(error)
+  let redacted = message.replace(TRANSACTOR_TOKEN_SEGMENT, `$1${REDACTED}`)
+  for (const token of tokens) {
+    if (token) {
+      redacted = redacted.split(token).join(REDACTED)
+    }
+  }
+  if (redacted === message && error instanceof Error) {
+    return error
+  }
+  // A fresh Error so neither the stack nor a cause carries the original text.
+  return new Error(redacted)
 }

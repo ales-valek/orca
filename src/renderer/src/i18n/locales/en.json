@@ -13960,7 +13960,8 @@
           "empty": "This project has no components. Issues without a component need a repository picked when creating a Mission.",
           "repoLabel": "Repository for {{component}}",
           "notMapped": "Not mapped",
-          "missingRepo": "Missing repository"
+          "missingRepo": "Missing repository",
+          "unavailableRepo": "{{name}} (not available for Missions)"
         },
         "HulyProjectSettingsSection": {
           "retry": "Retry",
@@ -19665,7 +19666,9 @@
         "projectRequired": "Choose a Huly project.",
         "milestoneNotFound": "Huly has no milestone with that name in this project.",
         "milestoneAmbiguous": "Several milestones share that name. Pick one from the list.",
-        "requestFailed": "The Huly request failed."
+        "requestFailed": "The Huly request failed.",
+        "connectAuthRejected": "Huly rejected this token.",
+        "connectFailed": "Could not connect to Huly: {{detail}}"
       },
       "AgentStateDot": {
         "working": "Working",
