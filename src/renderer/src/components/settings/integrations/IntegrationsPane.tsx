@@ -10,6 +10,8 @@ import {
 import { JiraIntegrationCard } from '../../integrations/task-trackers/jira-integration-card'
 import { LinearIntegrationCard } from '../../integrations/task-trackers/linear-integration-card'
 import { IntegrationCardPresentationProvider } from '../../integrations/presentation/integration-card-presentation'
+import { HulyIntegrationCard } from '../huly-integration-card'
+import { isWebClient } from '../../sidebar/workspace-card/controller/worktree-card-model'
 import { useIntegrationProviderStatusRefresh } from '../../../hooks/use-integration-provider-status-refresh'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { useTranslate } from '@/i18n/use-translate'
@@ -67,6 +69,12 @@ export function IntegrationsPane(): React.JSX.Element {
           <ProviderRow>
             <JiraIntegrationCard />
           </ProviderRow>
+          {/* Huly feeds desktop Missions, which a web client cannot own. */}
+          {isWebClient() ? null : (
+            <ProviderRow>
+              <HulyIntegrationCard />
+            </ProviderRow>
+          )}
         </SettingsGroup>
       </div>
     </IntegrationCardPresentationProvider>
