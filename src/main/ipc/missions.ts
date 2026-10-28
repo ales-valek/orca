@@ -114,7 +114,7 @@ export function registerMissionHandlers(
           }
         }
         const result = args.deleteWorktree
-          ? await memberLifecycle.removeWorktree(mission, member)
+          ? await operations.removeMemberWithLayers(mission, member)
           : await memberLifecycle.detachMember(mission, member)
         syncMissionRootIfPresent(store, mission.id)
         notifyReposChanged(mainWindow)

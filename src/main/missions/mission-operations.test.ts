@@ -325,7 +325,7 @@ describe('MissionOperations task layers', () => {
     expect(runtime.removeManagedWorktree).not.toHaveBeenCalled()
   })
 
-  it('removes the preview together with the last task, preview first', async () => {
+  it('removes the last task first, then its preview', async () => {
     const { store, runtime, operations } = seed()
     const { task } = await addOmp(operations)
 
@@ -340,19 +340,76 @@ describe('MissionOperations task layers', () => {
       expect.objectContaining({
         force: false,
         expectedOwnership: expect.objectContaining({
-          worktreeId: `r1::${previewDir}`,
-          missionSlot: 'preview'
+          worktreeId: `r1::${taskDir}`,
+          missionSlot: `task:${task!.id}`
         })
       }),
       expect.objectContaining({
         force: false,
         expectedOwnership: expect.objectContaining({
-          worktreeId: `r1::${taskDir}`,
-          missionSlot: `task:${task!.id}`
+          worktreeId: `r1::${previewDir}`,
+          missionSlot: 'preview'
         })
       })
     ])
     expect(store.getMission('m1')).toMatchObject({ tasks: [], previews: [] })
+  })
+
+  it('keeps the preview when the last task refuses removal', async () => {
+    const { store, runtime, operations } = seed()
+    await addOmp(operations)
+    runtime.removeManagedWorktree.mockImplementation(async (selector: string) => {
+      if (selector === `id:r1::${taskDir}`) {
+        throw new Error('worktree_dirty')
+      }
+      return {}
+    })
+
+    const result = await operations.removeTopTask({
+      missionId: 'm1',
+      repoId: 'r1',
+      deleteWorktree: true
+    })
+
+    expect(result.error).toBe('worktree_dirty')
+    expect(runtime.removeManagedWorktree).not.toHaveBeenCalledWith(
+      `id:r1::${previewDir}`,
+      expect.anything()
+    )
+    expect(store.getMission('m1')!.tasks).toHaveLength(1)
+    expect(store.getMission('m1')!.previews).toEqual([
+      expect.objectContaining({ worktreeId: `r1::${previewDir}` })
+    ])
+  })
+
+  it('refuses to keep a task checkout inside the Mission root', async () => {
+    const { store, runtime, operations } = seed()
+    const { task } = await addOmp(operations)
+
+    const result = await operations.removeTopTask({
+      missionId: 'm1',
+      repoId: 'r1',
+      deleteWorktree: false
+    })
+
+    expect(result.error).toBe('mission_member_workspace_delete_required')
+    expect(runtime.removeManagedWorktree).not.toHaveBeenCalled()
+    expect(store.getWorktreeMeta(`r1::${taskDir}`)?.missionId).toBe('m1')
+    expect(store.getMission('m1')!.tasks).toEqual([
+      expect.objectContaining({ id: task!.id, worktreeId: `r1::${taskDir}` })
+    ])
+  })
+
+  it('refuses to stack a task on a layer whose worktree is missing', async () => {
+    const { store, runtime, operations } = seed()
+    store.addMissionTask('m1', { repoId: 'r1', title: 'Broken', branchName: 'mission-task/x/b' })
+
+    const result = await addOmp(operations)
+
+    expect(result).toMatchObject({ task: null, error: 'mission_task_parent_missing' })
+    expect(store.getMission('m1')!.tasks).toHaveLength(1)
+    expect(store.flushPendingOrThrowAsync).not.toHaveBeenCalled()
+    expect(runtime.createManagedWorktree).not.toHaveBeenCalled()
   })
 
   it('deletes a Mission top-down: preview, tasks from the top, then the member', async () => {
@@ -405,6 +462,70 @@ describe('MissionOperations task layers', () => {
     for (const [worktreeId] of ownedBefore) {
       expect(store.getWorktreeMeta(worktreeId)?.missionId).toBeUndefined()
     }
+  })
+
+  it('removes a member with its whole stack, top-down, over IPC', async () => {
+    const { store, runtime } = seed()
+    const window = makeFakeWindow()
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: same partial Electron/store/runtime fakes the Mission IPC suite registers with.
+    registerMissionHandlers(window as never, store as never, runtime as never)
+    const [operations] = runtime.attachMissionOperations.mock.calls[0]
+    if (!(operations instanceof MissionOperations)) {
+      throw new Error('expected MissionOperations')
+    }
+    await addOmp(operations)
+
+    await handlers.get('missions:removeMember')!(
+      {},
+      { missionId: 'm1', repoId: 'r1', deleteWorktree: true }
+    )
+
+    expect(runtime.removeManagedWorktree.mock.calls.map((call) => call[0])).toEqual([
+      `id:r1::${previewDir}`,
+      `id:r1::${taskDir}`,
+      `id:r1::${path.join(path.sep, 'wt', 'r1')}`
+    ])
+    expect(store.getMission('m1')).toMatchObject({ members: [], tasks: [], previews: [] })
+  })
+
+  it('keeps the member when a layer of its stack refuses removal over IPC', async () => {
+    const { store, runtime } = seed()
+    const window = makeFakeWindow()
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: same partial Electron/store/runtime fakes the Mission IPC suite registers with.
+    registerMissionHandlers(window as never, store as never, runtime as never)
+    const [operations] = runtime.attachMissionOperations.mock.calls[0]
+    if (!(operations instanceof MissionOperations)) {
+      throw new Error('expected MissionOperations')
+    }
+    await addOmp(operations)
+    runtime.removeManagedWorktree.mockImplementation(async (selector: string) => {
+      if (selector === `id:r1::${taskDir}`) {
+        throw new Error('worktree_dirty')
+      }
+      return {}
+    })
+
+    const result = await handlers.get('missions:removeMember')!(
+      {},
+      { missionId: 'm1', repoId: 'r1', deleteWorktree: true }
+    )
+
+    expect(result).toMatchObject({ memberResults: [{ repoId: 'r1', error: 'worktree_dirty' }] })
+    expect(store.getMission('m1')!.members).toHaveLength(1)
+    expect(store.getMission('m1')!.tasks).toHaveLength(1)
+  })
+
+  it('prunes layer records without a live checkout when a member is detached', async () => {
+    const { store, operations } = seed()
+    store.addMissionTask('m1', { repoId: 'r1', title: 'One', branchName: 'mission-task/x/one' })
+    store.addMissionTask('m1', { repoId: 'r1', title: 'Two', branchName: 'mission-task/x/two' })
+    store.setMissionSlotError('m1', 'r1', 'preview', 'create failed')
+    const mission = store.getMission('m1')!
+
+    const result = await operations.memberLifecycle.detachMember(mission, mission.members[0])
+
+    expect(result.error).toBeUndefined()
+    expect(store.getMission('m1')).toMatchObject({ members: [], tasks: [], previews: [] })
   })
 
   it('refuses to detach a member while its task checkout stays in the Mission root', async () => {
