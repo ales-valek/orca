@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -93,6 +93,24 @@ describe('rebaseLayerOnto', () => {
     await expect(rebaseLayerOnto(wtB, newA, oldA)).resolves.toEqual({ status: 'conflict' })
 
     expect(await detectConflictOperation(wtB)).toBe('rebase')
+  })
+
+  it('refuses a dirty layer even when the user enables rebase.autoStash', async () => {
+    const { root, addWorktree } = await createRepo()
+    git(root, ['config', 'rebase.autoStash', 'true'])
+    const wtA = addWorktree('A', 'main')
+    await commitFile(wtA, 'a.txt', 'a\n', 'A1')
+    const oldA = git(wtA, ['rev-parse', 'HEAD'])
+    const wtB = addWorktree('B', 'A')
+    await commitFile(wtB, 'b.txt', 'b\n', 'B1')
+    git(wtA, ['commit', '-q', '--amend', '-m', 'A1 amended'])
+    const newA = git(wtA, ['rev-parse', 'HEAD'])
+    await writeFile(path.join(wtB, 'b.txt'), 'agent edit\n', 'utf8')
+
+    await expect(rebaseLayerOnto(wtB, newA, oldA)).rejects.toThrow()
+
+    expect(git(root, ['stash', 'list'])).toBe('')
+    expect(await readFile(path.join(wtB, 'b.txt'), 'utf8')).toBe('agent edit\n')
   })
 
   it('rethrows failures that are not conflicts', async () => {
@@ -213,5 +231,45 @@ describe('commitFixup and autosquashLayer', () => {
     expect(git(layer, ['rev-parse', 'HEAD'])).toBe(head)
     expect(git(layer, ['status', '--porcelain', '--untracked-files=all'])).toBe('')
     expect(await readFile(path.join(layer, 'x.txt'), 'utf8')).toBe('diverged\n')
+  })
+
+  it('restores only the patch paths when a commit hook fails, keeping an edit made meanwhile', async () => {
+    const { layer, patch } = await createLayerWithTwoCommits()
+    const hooks = path.join(path.dirname(layer), 'hooks')
+    await mkdir(hooks)
+    // Why: stands in for an agent writing another file while the hook runs.
+    await writeFile(
+      path.join(hooks, 'pre-commit'),
+      '#!/bin/sh\necho agent edit > y.txt\necho new > fresh.txt\nexit 1\n',
+      { mode: 0o755 }
+    )
+    git(layer, ['config', 'core.hooksPath', hooks])
+    const head = git(layer, ['rev-parse', 'HEAD'])
+
+    await expect(commitFixup(layer, patch, { message: 'hooked' })).rejects.toThrow()
+
+    expect(git(layer, ['rev-parse', 'HEAD'])).toBe(head)
+    expect(await readFile(path.join(layer, 'x.txt'), 'utf8')).toBe('one\n')
+    expect(await readFile(path.join(layer, 'y.txt'), 'utf8')).toBe('agent edit\n')
+    expect(git(layer, ['status', '--porcelain', '--untracked-files=all'])).toBe(
+      'M y.txt\n?? fresh.txt'
+    )
+  })
+
+  it('deletes a file the patch added when the commit fails', async () => {
+    const { layer } = await createLayerWithTwoCommits()
+    await writeFile(path.join(layer, 'added.txt'), 'new\n', 'utf8')
+    git(layer, ['add', '-N', 'added.txt'])
+    const patch = `${git(layer, ['diff'])}\n`
+    git(layer, ['rm', '-q', '--cached', 'added.txt'])
+    await rm(path.join(layer, 'added.txt'))
+    const hooks = path.join(path.dirname(layer), 'hooks')
+    await mkdir(hooks)
+    await writeFile(path.join(hooks, 'pre-commit'), '#!/bin/sh\nexit 1\n', { mode: 0o755 })
+    git(layer, ['config', 'core.hooksPath', hooks])
+
+    await expect(commitFixup(layer, patch, { message: 'hooked' })).rejects.toThrow()
+
+    expect(git(layer, ['status', '--porcelain', '--untracked-files=all'])).toBe('')
   })
 })

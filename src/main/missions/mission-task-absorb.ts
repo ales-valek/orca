@@ -7,7 +7,12 @@ import {
 import type { Mission, MissionAbsorbResult, MissionTask } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import { getFileBlame } from '../git/blame'
-import { getBranchTip, listLayerCommits, readLayerWorktree } from '../git/stack-layer-git'
+import {
+  getBranchTip,
+  getCommitAncestry,
+  listLayerCommits,
+  readLayerWorktree
+} from '../git/stack-layer-git'
 import {
   buildLayerWrites,
   getPlaceableTaskIds,
@@ -123,7 +128,13 @@ export class MissionTaskAbsorb {
     for (const task of stack) {
       const parentTip = await getBranchTip(repoPath, getMissionTaskParentBranch(mission, task))
       const tip = await getBranchTip(repoPath, task.branchName)
-      if (!parentTip || !tip || task.parentBaseSha !== parentTip) {
+      // Why: `rebase -i --autosquash parentTip` would move a layer that left its parent's history.
+      if (
+        !parentTip ||
+        !tip ||
+        task.parentBaseSha !== parentTip ||
+        (await getCommitAncestry(repoPath, parentTip, tip)) !== true
+      ) {
         throw new Error(STACK_STALE)
       }
       const worktreeId = task.worktreeId ?? null
