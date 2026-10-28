@@ -1,6 +1,8 @@
 import {
   deriveMissionLayerState,
+  getMissionLayerBlockedReason,
   type MissionLayerState,
+  type MissionLayerStateInput,
   type MissionRestackLayer,
   type MissionRestackReport
 } from '../../shared/mission-layer-state'
@@ -15,6 +17,8 @@ import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import {
   getBranchTip,
+  getForkPoint,
+  isAncestorCommit,
   readLayerWorktree,
   rebaseLayerOnto,
   resetPreviewKeep,
@@ -23,7 +27,7 @@ import {
 import { getMissionSlotRecord } from './mission-worktree-ownership'
 
 export type MissionTaskRestackDeps = {
-  store: Pick<Store, 'getRepo' | 'setMissionTaskParentBaseSha'>
+  store: Pick<Store, 'getRepo' | 'setMissionTaskParentBaseSha' | 'flushPendingOrThrowAsync'>
   isWorktreeAgentWorking: (worktreeId: string) => boolean
   /** Defaults to `getBranchTip`; tests use it to move a branch between the read and the write. */
   readBranchTip?: typeof getBranchTip
@@ -94,6 +98,9 @@ export class MissionTaskRestack {
       getParentBaseSha: () => null
     })
     layers.push(toReportLayer(memberReading))
+    const top = getTopMissionTask(mission, repoId)
+    // Why: the preview may follow either the top tip this run produces or the one it started from.
+    const initialTopTip = top ? await this.readBranchTip(repo.path, top.branchName) : null
     // Why: once a layer cannot move, rebasing the ones above would stack them on a stale parent.
     let writable = write
     for (const task of getRepoTaskStack(mission, repoId)) {
@@ -106,11 +113,12 @@ export class MissionTaskRestack {
         writable = false
       }
     }
-    const top = getTopMissionTask(mission, repoId)
     if (top) {
-      layers.push(
-        toReportLayer(await this.followTopTask(mission, repoId, repo.path, top, writable))
-      )
+      const preview = await this.followTopTask(mission, repoId, repo.path, top, {
+        writable,
+        initialTopTip
+      })
+      layers.push(toReportLayer(preview))
     }
     return { repoId, layers }
   }
@@ -140,17 +148,47 @@ export class MissionTaskRestack {
     if (!worktreePath || !parentTip || !parentBaseSha) {
       return reading
     }
-    try {
-      const result = await rebaseLayerOnto(worktreePath, parentTip, parentBaseSha)
-      if (result.status === 'conflict') {
-        return { ...reading, state: 'conflict' }
+    // Why: a layer already on the parent tip (rebased by hand or after a resolved conflict) only needs its base recorded.
+    if (!(await isAncestorCommit(worktreePath, parentTip, 'HEAD'))) {
+      const parentBranch = getMissionTaskParentBranch(mission, task)
+      const base = await this.findReplayBase(worktreePath, parentBranch, parentBaseSha)
+      if (!base) {
+        return {
+          ...reading,
+          state: 'blocked',
+          reason: 'Recorded base is not an ancestor of the layer'
+        }
       }
-    } catch (error) {
-      return { ...reading, state: 'blocked', reason: toErrorMessage(error) }
+      try {
+        const result = await rebaseLayerOnto(worktreePath, parentTip, base)
+        if (result.status === 'conflict') {
+          return { ...reading, state: 'conflict' }
+        }
+      } catch (error) {
+        return { ...reading, state: 'blocked', reason: toErrorMessage(error) }
+      }
     }
     this.deps.store.setMissionTaskParentBaseSha(mission.id, task.id, parentTip)
+    // Why: a lost base after a crash would make the next restack replay parent commits.
+    await this.deps.store.flushPendingOrThrowAsync()
     // Why: a parent that moved during the rebase must read stale again, never current.
     return this.readTask(mission, repoPath, task, parentTip)
+  }
+
+  /** Newest commit below the layer's own commits that belonged to the parent; null when the record is unusable. */
+  private async findReplayBase(
+    worktreePath: string,
+    parentBranch: string,
+    recorded: string
+  ): Promise<string | null> {
+    if (!(await isAncestorCommit(worktreePath, recorded, 'HEAD'))) {
+      return null
+    }
+    // Why: a conflict resolved outside restack leaves the layer on an unrecorded parent tip; the parent's reflog still knows it.
+    const forkPoint = await getForkPoint(worktreePath, parentBranch)
+    return forkPoint && (await isAncestorCommit(worktreePath, recorded, forkPoint))
+      ? forkPoint
+      : recorded
   }
 
   private async followTopTask(
@@ -158,7 +196,7 @@ export class MissionTaskRestack {
     repoId: string,
     repoPath: string,
     top: MissionTask,
-    writable: boolean
+    run: { writable: boolean; initialTopTip: string | null }
   ): Promise<LayerReading> {
     const readPreview = async (): Promise<LayerReading> =>
       this.readLayer({
@@ -171,11 +209,22 @@ export class MissionTaskRestack {
         ignoresLocalEdits: true
       })
     const reading = await readPreview()
-    if (!writable || reading.state !== 'stale' || !reading.worktreePath || !reading.parentTip) {
+    const { worktreePath, parentTip, parentBaseSha: head } = reading
+    if (reading.state !== 'stale' || !worktreePath || !parentTip || !head) {
+      return reading
+    }
+    const followsTop =
+      (await isAncestorCommit(worktreePath, head, parentTip)) ||
+      (run.initialTopTip !== null &&
+        (await isAncestorCommit(worktreePath, head, run.initialTopTip)))
+    if (!followsTop) {
+      return { ...reading, state: 'blocked', reason: 'Preview has its own commits' }
+    }
+    if (!run.writable) {
       return reading
     }
     try {
-      const reset = await resetPreviewKeep(reading.worktreePath, reading.parentTip)
+      const reset = await resetPreviewKeep(worktreePath, parentTip)
       if (reset.status === 'blocked') {
         return { ...reading, state: 'blocked', reason: reset.reason }
       }
@@ -189,7 +238,7 @@ export class MissionTaskRestack {
     const { slot, worktreeId } = spec
     const worktreePath = worktreeId ? splitWorktreeId(worktreeId)?.worktreePath : undefined
     if (!worktreeId || !worktreePath) {
-      return { slot, state: 'blocked', reason: 'The layer has no worktree.' }
+      return { slot, state: 'blocked', reason: 'The layer has no worktree' }
     }
     let snapshot: LayerWorktreeSnapshot
     try {
@@ -200,10 +249,10 @@ export class MissionTaskRestack {
     const conflict = snapshot.operation !== 'unknown'
     if (!conflict && snapshot.branch !== spec.branch) {
       const actual = snapshot.branch ?? 'a detached HEAD'
-      return { slot, state: 'blocked', reason: `Checkout is on ${actual}, not ${spec.branch}.` }
+      return { slot, state: 'blocked', reason: `Checkout is on ${actual}, not ${spec.branch}` }
     }
     const parentBaseSha = spec.getParentBaseSha(snapshot)
-    const state = deriveMissionLayerState({
+    const input: MissionLayerStateInput = {
       parentTip: spec.parentTip,
       parentBaseSha,
       isClean: spec.ignoresLocalEdits === true || snapshot.isClean,
@@ -214,7 +263,9 @@ export class MissionTaskRestack {
       localTip: snapshot.headSha,
       pushedTip: null,
       hasOpenPr: false
-    })
-    return { slot, state, worktreePath, parentTip: spec.parentTip, parentBaseSha }
+    }
+    const state = deriveMissionLayerState(input)
+    const reason = getMissionLayerBlockedReason(input) ?? undefined
+    return { slot, state, reason, worktreePath, parentTip: spec.parentTip, parentBaseSha }
   }
 }

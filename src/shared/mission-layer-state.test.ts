@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { deriveMissionLayerState, type MissionLayerStateInput } from './mission-layer-state'
+import {
+  deriveMissionLayerState,
+  getMissionLayerBlockedReason,
+  type MissionLayerStateInput
+} from './mission-layer-state'
 
 const current: MissionLayerStateInput = {
   parentTip: 'p1',
@@ -40,5 +44,17 @@ describe('deriveMissionLayerState', () => {
 
   it('prefers stale over needs-push so the layer is restacked before it is pushed', () => {
     expect(deriveMissionLayerState({ ...stale, localTip: 'l2', hasOpenPr: true })).toBe('stale')
+  })
+})
+
+describe('getMissionLayerBlockedReason', () => {
+  it.each<[string, Partial<MissionLayerStateInput>, string | null]>([
+    ['parent branch missing', { parentTip: null }, 'Parent branch missing'],
+    ['no recorded base', { parentTip: 'p2', parentBaseSha: null }, 'No recorded base'],
+    ['dirty', { parentTip: 'p2', isClean: false }, 'Uncommitted changes'],
+    ['agent busy', { parentTip: 'p2', isAgentWorking: true }, 'Agent is working'],
+    ['not blocked', { parentTip: 'p2' }, null]
+  ])('%s', (_name, overrides, expected) => {
+    expect(getMissionLayerBlockedReason({ ...current, ...overrides })).toBe(expected)
   })
 })

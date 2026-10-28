@@ -46,13 +46,9 @@ export function registerMissionHandlers(
     ipcMain.removeHandler(channel)
   }
 
-  const operations = new MissionOperations(
-    store,
-    runtime,
-    () => notifyReposChanged(mainWindow),
-    undefined,
-    (worktreeId) => runtime.isWorktreeAgentWorking(worktreeId)
-  )
+  const operations = new MissionOperations(store, runtime, () => notifyReposChanged(mainWindow), {
+    isWorktreeAgentWorking: (worktreeId) => runtime.isWorktreeAgentWorking(worktreeId)
+  })
   const { memberLifecycle } = operations
   // Why: `orca mission` RPC must share this instance so per-Mission locks and UI refreshes match IPC.
   runtime.attachMissionOperations(operations)
