@@ -17,10 +17,11 @@ import type { useFileExplorerSelection } from './useFileExplorerSelection'
 import type { useFileExplorerTree } from './useFileExplorerTree'
 import type { useFileExplorerTreePaneState } from './use-file-explorer-tree-pane-state'
 import type { WslHostUnavailableReason } from '../terminal-pane/use-wsl-host-unavailable-reason'
-import { useAppStore } from '@/store'
-import { usePluginIconThemes } from '@/store/plugin-icon-themes'
+import type { PluginIconThemeRegistration } from '../../../../shared/plugins/plugin-icon-theme-artifact'
 
 type FileExplorerFilesTreePaneProps = {
+  /** Chosen by the mounting component: this pane is called without a hook context in tests. */
+  iconTheme?: PluginIconThemeRegistration | null
   activeRepo: Repo | null
   worktreePath: string | null
   displayRootPath: string | null
@@ -61,11 +62,9 @@ export function FileExplorerFilesTreePane({
   visibleRowCount,
   handleExplorerBackgroundContextMenuCapture,
   handleExplorerBackgroundDoubleClick,
-  wslHostUnavailable = null
+  wslHostUnavailable = null,
+  iconTheme = null
 }: FileExplorerFilesTreePaneProps): React.JSX.Element {
-  const selectedIconThemeId = useAppStore((state) => state.settings?.fileIconTheme ?? 'builtin')
-  const iconThemes = usePluginIconThemes()
-  const iconTheme = iconThemes.find((theme) => theme.id === selectedIconThemeId) ?? null
   const { loadingDirPaths, rootError } = tree
   const rootCache = displayRootPath ? tree.dirCache[displayRootPath] : undefined
   const { selectedPaths, preserveSelectionForContextMenu, copyPathsForNode } = selection

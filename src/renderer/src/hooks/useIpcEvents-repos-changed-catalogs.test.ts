@@ -37,6 +37,7 @@ describe('runtime host catalog refresh on reposChanged', () => {
         fetchProjectGroups,
         fetchHostWorkspaceStatuses: vi.fn(),
         fetchFolderWorkspaces,
+        fetchMissions: vi.fn(() => Promise.resolve()),
         fetchWorktrees: vi.fn(() => Promise.resolve()),
         fetchWorktreeLineage: vi.fn(() => Promise.resolve())
       }
@@ -131,6 +132,7 @@ describe('runtime host catalog refresh on reposChanged', () => {
         fetchProjectGroups,
         fetchHostWorkspaceStatuses: vi.fn(),
         fetchFolderWorkspaces,
+        fetchMissions: vi.fn(() => Promise.resolve()),
         fetchWorktrees,
         fetchWorktreeLineage
       }
@@ -196,7 +198,8 @@ describe('repo catalog refresh on repos:changed', () => {
       fetchRepos,
       fetchProjectGroups,
       fetchHostWorkspaceStatuses: vi.fn(),
-      fetchFolderWorkspaces
+      fetchFolderWorkspaces,
+      fetchMissions: vi.fn(() => Promise.resolve())
     }
 
     vi.doMock('react', async () => {

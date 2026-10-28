@@ -41,6 +41,7 @@ import { useFileExplorerNameFilter } from './use-file-explorer-name-filter'
 import { useFileExplorerTreePaneState } from './use-file-explorer-tree-pane-state'
 import { useWslHostUnavailableReason } from '../terminal-pane/use-wsl-host-unavailable-reason'
 import { translate } from '@/i18n/i18n'
+import { useSelectedFileIconTheme } from '@/store/plugin-icon-themes'
 
 /** Coordinates scoped navigation while retaining the actual worktree root for file operations and runtime routing. */
 function FileExplorerFiles(): React.JSX.Element {
@@ -48,6 +49,7 @@ function FileExplorerFiles(): React.JSX.Element {
   const setRightSidebarExplorerView = useAppStore((s) => s.setRightSidebarExplorerView)
   const searchPanel = useFileSearchPanel(explorerView)
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
+  const iconTheme = useSelectedFileIconTheme()
   const runtimeEnvironmentId = useAppStore((s) =>
     runtimeEnvironmentIdOrLocalUnlessTwin(s, activeWorktreeId)
   )
@@ -307,6 +309,7 @@ function FileExplorerFiles(): React.JSX.Element {
         {/* Layer Files/Contents in one body slot to retain heavy virtualized panes at full height. */}
         <div className="relative min-h-0 flex-1 overflow-hidden">
           <FileExplorerFilesTreePane
+            iconTheme={iconTheme}
             displayRootPath={displayRootPath}
             activeRepo={activeRepo}
             worktreePath={worktreePath}

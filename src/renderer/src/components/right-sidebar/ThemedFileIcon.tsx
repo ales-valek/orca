@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import { useAppStore } from '@/store'
 import { resolveFileIconThemeAsset } from '@/lib/file-icon-theme'
-import { usePluginIconThemes } from '@/store/plugin-icon-themes'
+import { useSelectedFileIconTheme } from '@/store/plugin-icon-themes'
 import { PluginFileIcon } from './PluginFileIcon'
 
 type ThemedFileIconProps = {
@@ -19,8 +18,7 @@ export function ThemedFileIcon({
   className,
   fallback
 }: ThemedFileIconProps): React.JSX.Element {
-  const selectedIconThemeId = useAppStore((state) => state.settings?.fileIconTheme ?? 'builtin')
-  const iconTheme = usePluginIconThemes().find((theme) => theme.id === selectedIconThemeId) ?? null
+  const iconTheme = useSelectedFileIconTheme()
   const asset = iconTheme
     ? resolveFileIconThemeAsset(iconTheme, { name, isDirectory, isExpanded })
     : null

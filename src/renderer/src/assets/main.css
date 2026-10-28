@@ -487,7 +487,9 @@
   --diff-added-ground: color-mix(in srgb, var(--git-decoration-added) 16%, transparent);
   --diff-added-gutter: color-mix(in srgb, var(--git-decoration-added) 30%, transparent);
   --diff-removed-ground: color-mix(in srgb, var(--git-decoration-deleted) 18%, transparent);
+  --diff-removed-gutter: color-mix(in srgb, var(--git-decoration-deleted) 32%, transparent);
 }
+
 /* ── Custom Theme Presets ────────────────────────────── */
 
 :root[data-theme='dracula'] {

@@ -15,8 +15,7 @@ import type {
 import { CombinedDiffFileTreeRows } from './combined-diff-file-tree-rows'
 import { useCombinedDiffFileTreeResize } from './use-combined-diff-file-tree-resize'
 import { translate } from '@/i18n/i18n'
-import { useAppStore } from '@/store'
-import { usePluginIconThemes } from '@/store/plugin-icon-themes'
+import { useSelectedFileIconTheme } from '@/store/plugin-icon-themes'
 import {
   buildCombinedDiffBranchTreeRoots,
   buildCombinedDiffUncommittedTreeGroups,
@@ -192,8 +191,7 @@ export function CombinedDiffFileTree({
         (count, visibility) => count + visibility.visibleFileCount,
         0
       )
-  const selectedIconThemeId = useAppStore((state) => state.settings?.fileIconTheme ?? 'builtin')
-  const iconTheme = usePluginIconThemes().find((theme) => theme.id === selectedIconThemeId) ?? null
+  const iconTheme = useSelectedFileIconTheme()
 
   if (collapsed) {
     return null
