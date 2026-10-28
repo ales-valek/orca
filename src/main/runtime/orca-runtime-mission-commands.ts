@@ -39,7 +39,7 @@ export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMiss
     this.missionOperations = operations
   }
 
-  private requireMissionOperations(): MissionOperations {
+  protected requireMissionOperations(): MissionOperations {
     if (!this.missionOperations) {
       // Why: headless `orca serve` has no Mission UI host to refresh or serialize against.
       throw new Error('Missions are only available while the Orca desktop window is running.')

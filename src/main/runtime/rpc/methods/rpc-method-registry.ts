@@ -75,6 +75,7 @@ import { AGENT_HOOK_METHODS } from './agent-hooks/agent-hooks'
 import { AGENT_LAUNCH_METHODS } from './agent-launch/agent-launch'
 import { CONNECTOR_METHODS } from './connectors/connector'
 import { MISSION_METHODS } from './missions'
+import { HULY_METHODS } from './huly'
 import {
   LAYOUT_APPLY_METHODS,
   LAYOUT_VIEW_REPORT_METHODS,
@@ -139,6 +140,7 @@ export const ALL_RPC_METHODS = [
   ...LINEAR_METHODS,
   ...LINEAR_AGENT_ACCESS_METHODS,
   ...JIRA_METHODS,
+  ...HULY_METHODS,
   ...SSH_METHODS,
   ...MANAGED_SERVER_METHODS,
   ...RECIPE_VM_WAKE_METHODS,

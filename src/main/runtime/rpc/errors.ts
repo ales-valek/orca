@@ -119,6 +119,8 @@ const STRUCTURED_RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   WORKTREE_CREATE_COLLISION_CODE,
   WORKTREE_CREATE_EXACT_NAME_TAKEN_CODE,
   AGENT_LAUNCH_SURFACE_UNAVAILABLE_CODE,
+  // Carries the unmapped issues and blockedBy cycles so clients can list them.
+  'huly_plan_unresolved',
   'worktree_id_requires_full_path',
   // A workspace selector's choices ride in data; a plain Error('selector_ambiguous') keeps the bare code.
   'selector_ambiguous',

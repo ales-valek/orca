@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { FolderWorkspace, WorkspaceKey } from '../../../shared/folder-workspace-types'
-import type { Mission } from '../../../shared/mission-types'
+import type { Mission, MissionSource } from '../../../shared/mission-types'
 import { folderWorkspaceKey } from '../../../shared/workspace-scope'
 import {
   createMission,
@@ -141,6 +141,17 @@ export class MissionPersistence {
     if (rootBasePath !== undefined) {
       mission.rootBasePath = rootBasePath
     }
+    mission.updatedAt = Date.now()
+    scheduleSave(this[missionPersistenceContext].scheduling)
+    return mission
+  }
+
+  setMissionSource(missionId: string, source: MissionSource | null): Mission | null {
+    const mission = this.getMission(missionId)
+    if (!mission) {
+      return null
+    }
+    mission.source = source
     mission.updatedAt = Date.now()
     scheduleSave(this[missionPersistenceContext].scheduling)
     return mission
