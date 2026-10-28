@@ -11,7 +11,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
-import { areWorktreePathsEqual } from '../ipc/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { assertOwnedMissionRoot } from './mission-root'
 import {
   readMissionWorktreeOwnershipMarker,

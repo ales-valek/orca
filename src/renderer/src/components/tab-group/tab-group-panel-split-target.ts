@@ -152,7 +152,12 @@ export function resolvePanelEdgePaneColumnSplit({
   bodyRect?: DOMRect | null
 }): PaneColumnSplitTarget | null {
   // A tab this desktop created has no place of its own in the server's groups: no split.
-  if (isDesktopCreatedTabInFrameDrawnServerWorkspace(worktreeId, activeDrag.unifiedTabId)) {
+  const draggedTabIds = isTabClusterDragData(activeDrag)
+    ? ((groupsByWorktree[worktreeId] ?? [])
+        .find((group) => group.id === activeDrag.groupId)
+        ?.tabClusters?.find((cluster) => cluster.id === activeDrag.clusterId)?.tabIds ?? [])
+    : [activeDrag.unifiedTabId]
+  if (draggedTabIds.some((id) => isDesktopCreatedTabInFrameDrawnServerWorkspace(worktreeId, id))) {
     return null
   }
   const panelRect = providedPanelRect ?? getTabGroupPanelRect(targetGroupId, worktreeId)

@@ -9,6 +9,7 @@ import {
 } from '../../orca-profiles/profile-project-session-state'
 import {
   getRepoExecutionHostId,
+  LOCAL_EXECUTION_HOST_ID,
   parseExecutionHostId,
   type ExecutionHostId
 } from '../../../shared/execution-host'

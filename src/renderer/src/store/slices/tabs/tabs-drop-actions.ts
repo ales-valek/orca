@@ -16,7 +16,10 @@ import {
   mergeTabClusterRecords,
   normalizeTabGroupClusters
 } from './tab-cluster-model'
-import { applyTabOrderSortValues } from '../../../../../shared/workspace-layout/tab-order'
+import {
+  applyTabOrderSortValues,
+  dedupeTabOrder
+} from '../../../../../shared/workspace-layout/tab-order'
 import { pickTabCloseSuccessor } from '../../../../../shared/tab-close-successor'
 import {
   findGroupAndWorktree,
@@ -24,7 +27,6 @@ import {
   findTabAndWorktree,
   sanitizeRecentTabIds
 } from '../tab-group-state'
-import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-order'
 
 export function moveTabsToPane(
   set: TabsSliceSet,

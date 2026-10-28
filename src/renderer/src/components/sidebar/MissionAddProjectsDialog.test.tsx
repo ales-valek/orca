@@ -29,7 +29,7 @@ vi.mock('@/store', () => ({
   useAppStore: (selector: (state: unknown) => unknown) =>
     selector({
       repos: mocks.repos,
-      projects: mocks.projects,
+      projectHostSetupProjection: { projects: mocks.projects, setups: [] },
       projectGroups: mocks.projectGroups,
       settings: mocks.settings,
       addMissionMembers: mocks.addMissionMembers

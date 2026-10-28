@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import RepoMultiCombobox from '@/components/ui/repo-multi-combobox'
 import { useAppStore } from '@/store'
+import { selectCanonicalProjects } from '@/store/project-host-setup-selector'
 import { translate } from '@/i18n/i18n'
 import { getMissionEligibleGroupRepoIds } from './mission-group-selection'
 import { isRendererMissionEligibleRepo } from './mission-repo-eligibility'
@@ -23,7 +24,7 @@ export function MissionAddProjectsDialog({
   onOpenChange: (open: boolean) => void
 }): React.JSX.Element {
   const repos = useAppStore((s) => s.repos)
-  const projects = useAppStore((s) => s.projects)
+  const projects = useAppStore((s) => selectCanonicalProjects(s))
   const projectGroups = useAppStore((s) => s.projectGroups)
   const settings = useAppStore((s) => s.settings)
   const addMissionMembers = useAppStore((s) => s.addMissionMembers)

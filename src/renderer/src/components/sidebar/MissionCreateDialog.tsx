@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import RepoMultiCombobox from '@/components/ui/repo-multi-combobox'
 import { useAppStore } from '@/store'
+import { selectCanonicalProjects } from '@/store/project-host-setup-selector'
 import { translate } from '@/i18n/i18n'
 import { slugifyMissionBranch } from '../../../../shared/missions'
 import type { MissionMemberResult } from '../../../../shared/mission-types'
@@ -38,7 +39,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
   const open = useAppStore((s) => s.activeModal === 'mission-create')
   const closeModal = useAppStore((s) => s.closeModal)
   const repos = useAppStore((s) => s.repos)
-  const projects = useAppStore((s) => s.projects)
+  const projects = useAppStore((s) => selectCanonicalProjects(s))
   const projectGroups = useAppStore((s) => s.projectGroups)
   const settings = useAppStore((s) => s.settings)
   const createMission = useAppStore((s) => s.createMission)

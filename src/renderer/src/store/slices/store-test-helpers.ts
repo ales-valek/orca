@@ -70,6 +70,8 @@ import { installTabClusterInvariant } from './tabs/tab-cluster-invariant'
 const withTestStorePolicies = (creator: StateCreator<AppState, [], []>, check: boolean) =>
   withEditorBufferRecords(withAgentConversationRetention(creator), check)
 
+export type TestStore = ReturnType<typeof createTestStore>
+
 export function createTestStore(
   isClaudeAgent: Parameters<typeof createTerminalSlice>[3] = undefined
 ) {

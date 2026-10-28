@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { isAbsolute, resolve } from 'node:path'
-import { dirname } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import { isFolderRepo } from '../../shared/repo-kind'
 import type { Repo } from '../../shared/repo-types'
