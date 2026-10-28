@@ -102,7 +102,8 @@ async function createStack(): Promise<StackFixture> {
           task.parentBaseSha = sha
         }
         return mission
-      }
+      },
+      flushPendingOrThrowAsync: async () => {}
     },
     isWorktreeAgentWorking: () => false
   }
@@ -121,6 +122,27 @@ async function amendTask1(paths: StackFixture['paths']): Promise<string> {
 
 function statesOf(report: { layers: { slot: string; state: string }[] }) {
   return Object.fromEntries(report.layers.map((layer) => [layer.slot, layer.state]))
+}
+
+function layerOf(
+  report: { layers: { slot: string; state: string; reason?: string }[] },
+  slot: string
+) {
+  return report.layers.find((layer) => layer.slot === slot)
+}
+
+// t2 and t1 both add shared.txt, so restacking t2 onto t1 stops in a rebase conflict.
+async function createConflictingStack(): Promise<StackFixture> {
+  const fixture = await createStack()
+  const { mission, paths } = fixture
+  await commitFile(paths.t2, 'shared.txt', 'from t2\n', 't2 shared')
+  mission.tasks![2].parentBaseSha = tipOf(paths.t2)
+  git(paths.t3, ['rebase', '-q', tipOf(paths.t2)])
+  await writeFile(path.join(paths.t1, 'old-only.txt'), 'old\n', 'utf8')
+  git(paths.t1, ['add', 'old-only.txt'])
+  await commitFile(paths.t1, 'shared.txt', 'from t1\n', 't1 shared')
+  git(paths.preview, ['reset', '-q', '--hard', tipOf(paths.t3)])
+  return fixture
 }
 
 afterEach(async () => {
@@ -175,6 +197,7 @@ describe('MissionTaskRestack', () => {
 
     const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
 
+    expect(layerOf(report, 'task:t2')?.reason).toBe('Uncommitted changes')
     expect(statesOf(report)['task:t2']).toBe('blocked')
     expect({ t2: tipOf(paths.t2), t3: tipOf(paths.t3), preview: tipOf(paths.preview) }).toEqual(
       before
@@ -193,7 +216,10 @@ describe('MissionTaskRestack', () => {
 
     const report = await restack.restackRepo(mission, 'r1')
 
-    expect(statesOf(report)['task:t2']).toBe('blocked')
+    expect(layerOf(report, 'task:t2')).toMatchObject({
+      state: 'blocked',
+      reason: 'Agent is working'
+    })
     expect(tipOf(paths.t2)).toBe(before)
   })
 
@@ -205,17 +231,15 @@ describe('MissionTaskRestack', () => {
 
     const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
 
-    expect(statesOf(report)['task:t2']).toBe('blocked')
+    expect(layerOf(report, 'task:t2')).toMatchObject({
+      state: 'blocked',
+      reason: 'The layer has no worktree'
+    })
     expect({ t3: tipOf(paths.t3), preview: tipOf(paths.preview) }).toEqual(before)
   })
 
   it('stops at a rebase conflict and keeps reporting the layer as a conflict while it is in progress', async () => {
-    const { mission, paths, deps } = await createStack()
-    await commitFile(paths.t2, 'shared.txt', 'from t2\n', 't2 shared')
-    mission.tasks![2].parentBaseSha = tipOf(paths.t2)
-    git(paths.t3, ['rebase', '-q', mission.tasks![2].parentBaseSha])
-    await commitFile(paths.t1, 'shared.txt', 'from t1\n', 't1 shared')
-    git(paths.preview, ['reset', '-q', '--hard', tipOf(paths.t3)])
+    const { mission, paths, deps } = await createConflictingStack()
     const before = { t3: tipOf(paths.t3), preview: tipOf(paths.preview) }
     const restack = new MissionTaskRestack(deps)
 
@@ -225,6 +249,77 @@ describe('MissionTaskRestack', () => {
     expect({ t3: tipOf(paths.t3), preview: tipOf(paths.preview) }).toEqual(before)
     expect(statesOf(await restack.inspectRepo(mission, 'r1'))['task:t2']).toBe('conflict')
     expect(statesOf(await restack.restackRepo(mission, 'r1'))['task:t2']).toBe('conflict')
+  })
+
+  it('replays only the layer commits after a resolved conflict when the parent is amended again', async () => {
+    const { mission, paths, deps } = await createConflictingStack()
+    const restack = new MissionTaskRestack(deps)
+    expect(statesOf(await restack.restackRepo(mission, 'r1'))['task:t2']).toBe('conflict')
+    await writeFile(path.join(paths.t2, 'shared.txt'), 'from t1\nfrom t2\n', 'utf8')
+    git(paths.t2, ['add', 'shared.txt'])
+    git(paths.t2, ['-c', 'core.editor=true', 'rebase', '--continue'])
+    // Why: replaying the pre-amend t1 commit would bring old-only.txt back.
+    git(paths.t1, ['rm', '-q', 'old-only.txt'])
+    git(paths.t1, ['commit', '-q', '--amend', '-m', 't1 shared amended'])
+    const amendedT1 = tipOf(paths.t1)
+
+    const report = await restack.restackRepo(mission, 'r1')
+
+    expect(statesOf(report)['task:t2']).toBe('current')
+    expect(git(paths.t2, ['log', '--format=%s', `${amendedT1}..HEAD`]).split('\n')).toEqual([
+      't2 shared',
+      't2'
+    ])
+    expect(git(paths.t2, ['ls-files', 'old-only.txt'])).toBe('')
+    expect(mission.tasks![1].parentBaseSha).toBe(amendedT1)
+  })
+
+  it('records the base without a rebase when the layer already sits on the parent tip', async () => {
+    const { mission, paths, bases, deps } = await createStack()
+    const newT1 = await amendTask1(paths)
+    git(paths.t2, ['rebase', '-q', '--onto', newT1, mission.tasks![1].parentBaseSha!])
+    // Why: an unrelated recorded base proves the parent-tip check runs before the base check.
+    mission.tasks![1].parentBaseSha = git(paths.t2, ['commit-tree', 'HEAD^{tree}', '-m', 'orphan'])
+    const rebasedT2 = tipOf(paths.t2)
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(statesOf(report)['task:t2']).toBe('current')
+    expect(tipOf(paths.t2)).toBe(rebasedT2)
+    expect(bases.get('t2')).toBe(newT1)
+  })
+
+  it('blocks a layer whose recorded base is not in its history', async () => {
+    const { mission, paths, bases, deps } = await createStack()
+    await amendTask1(paths)
+    mission.tasks![1].parentBaseSha = git(paths.t2, ['commit-tree', 'HEAD^{tree}', '-m', 'orphan'])
+    const before = tipOf(paths.t2)
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(layerOf(report, 'task:t2')).toEqual({
+      slot: 'task:t2',
+      state: 'blocked',
+      reason: 'Recorded base is not an ancestor of the layer'
+    })
+    expect(tipOf(paths.t2)).toBe(before)
+    expect(bases.size).toBe(0)
+  })
+
+  it('never resets a preview that has commits of its own', async () => {
+    const { mission, paths, deps } = await createStack()
+    await amendTask1(paths)
+    const previewCommit = await commitFile(paths.preview, 'preview.txt', 'p\n', 'preview only')
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(statesOf(report)['task:t3']).toBe('current')
+    expect(layerOf(report, 'preview')).toEqual({
+      slot: 'preview',
+      state: 'blocked',
+      reason: 'Preview has its own commits'
+    })
+    expect(tipOf(paths.preview)).toBe(previewCommit)
   })
 
   it('never loses a commit made on a lower layer while the restack runs', async () => {

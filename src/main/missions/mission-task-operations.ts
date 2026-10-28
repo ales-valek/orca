@@ -158,11 +158,15 @@ export class MissionTaskOperations {
       const repoIds = args.repoId ? [args.repoId] : memberRepoIds
       requireNativeLocalMissionRepos(this.store, repoIds)
       const reports: MissionRestackReport[] = []
-      for (const repoId of repoIds) {
-        const current = this.store.getMission(mission.id) ?? mission
-        reports.push(await this.restacker.restackRepo(current, repoId))
+      try {
+        for (const repoId of repoIds) {
+          const current = this.store.getMission(mission.id) ?? mission
+          reports.push(await this.restacker.restackRepo(current, repoId))
+        }
+      } finally {
+        // Why: repos restacked before a failure already moved and recorded new bases.
+        this.notifyChanged()
       }
-      this.notifyChanged()
       return reports
     })
   }
@@ -202,8 +206,8 @@ export class MissionTaskOperations {
       if (!preview || preview.state === 'current') {
         return {}
       }
-      const reason = preview.reason ? `: ${preview.reason}` : '.'
-      return { warning: `Preview did not follow the new top task (${preview.state})${reason}` }
+      const detail = preview.reason ? `${preview.state}: ${preview.reason}` : preview.state
+      return { warning: `Preview did not follow the new top task (${detail}).` }
     } catch (error) {
       return { warning: `Restack after adding the task failed: ${toErrorMessage(error)}` }
     }
