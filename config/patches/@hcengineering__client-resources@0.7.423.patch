@@ -1,8 +1,14 @@
 diff --git a/lib/connection.js b/lib/connection.js
-index 7619f2476509c5bb1aa4114893c4104e5e39cf04..bffe3556346b4c83b420e291676ee7e6f6d589ce 100644
+index 7619f2476509c5bb1aa4114893c4104e5e39cf04..eeb6a96699ee39a79607cb101d3fe4e580a9ee13 100644
 --- a/lib/connection.js
 +++ b/lib/connection.js
-@@ -79,7 +79,6 @@ class Connection {
+@@ -74,12 +74,11 @@ class Connection {
+     this.workspace = workspace;
+     this.user = user;
+     this.opt = opt;
+-    if (typeof sessionStorage !== "undefined") {
++    if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+       const sKey = "session.id." + this.url;
        let sessionId = sessionStorage.getItem(sKey) ?? void 0;
        if (sessionId === void 0) {
          sessionId = (0, import_core.generateId)();
