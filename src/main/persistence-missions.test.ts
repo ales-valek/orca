@@ -335,6 +335,39 @@ describe('mission session workspaces', () => {
     expect(store.getFolderWorkspaces()).toHaveLength(0)
   })
 
+  it('runs the session in the orchestrator worktree while one is recorded', () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: ['r1', 'o1'].map((id) => ({
+        id,
+        path: join(sep, 'tmp', id),
+        displayName: id,
+        badgeColor: '#000',
+        addedAt: 1
+      })),
+      worktreeMeta: {},
+      settings: {},
+      ui: {},
+      githubCache: { pr: {}, issue: {} }
+    })
+    const store = createStore()
+    const rootPath = join(sep, 'tmp', 'orca', 'missions', 'referral')
+    const orchestratorPath = join(rootPath, 'o1-o1--orchestrator')
+    const mission = store.createMission({
+      name: 'Referral',
+      repoIds: ['r1'],
+      orchestratorRepoId: 'o1'
+    })
+    store.setMissionRootPath(mission.id, rootPath)
+    expect(store.ensureMissionSessionWorkspace(mission.id).folderPath).toBe(rootPath)
+
+    store.setMissionSlotWorktree(mission.id, 'o1', 'orchestrator', `o1::${orchestratorPath}`, 'i1')
+    expect(store.ensureMissionSessionWorkspace(mission.id).folderPath).toBe(orchestratorPath)
+
+    store.setMissionSlotWorktree(mission.id, 'o1', 'orchestrator', null, null)
+    expect(store.ensureMissionSessionWorkspace(mission.id).folderPath).toBe(rootPath)
+  })
+
   it('drops mission session workspaces whose mission disappeared on load', () => {
     writeDataFile({
       schemaVersion: 1,

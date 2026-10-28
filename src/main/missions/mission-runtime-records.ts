@@ -94,7 +94,8 @@ export function toRuntimeMissionRecord(
           orchestrator: {
             repoId: mission.orchestratorRepoId,
             worktreePath: toWorktreePath(mission.orchestrator?.worktreeId),
-            branch: mission.branchName
+            branch: mission.branchName,
+            ...(mission.orchestrator?.lastError ? { error: mission.orchestrator.lastError } : {})
           }
         }
       : {}),

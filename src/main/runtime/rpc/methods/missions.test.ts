@@ -262,18 +262,20 @@ describe('mission RPC methods', () => {
     const response = await dispatcher.dispatch(
       makeRequest('mission.create', {
         name: 'Referral',
-        repos: ['name:api', 'id:repo-web', 'path:/src/api'],
+        repos: ['name:api', 'path:/src/api'],
         branch: 'mission/referral',
-        agent: 'claude'
+        agent: 'claude',
+        orchestratorRepo: 'id:repo-web'
       })
     )
 
     expect(response).toMatchObject({ ok: true, result: { mission: { id: 'mission-1' } } })
     expect(operations.create).toHaveBeenCalledWith({
       name: 'Referral',
-      repoIds: ['repo-api', 'repo-web'],
+      repoIds: ['repo-api'],
       branchName: 'mission/referral',
-      sessionAgent: 'claude'
+      sessionAgent: 'claude',
+      orchestratorRepoId: 'repo-web'
     })
   })
 

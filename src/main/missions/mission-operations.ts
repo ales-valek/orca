@@ -22,6 +22,7 @@ import {
   removeMissionRootIfPresent,
   syncMissionRootIfPresent
 } from './mission-root-sync'
+import { MissionDeletion } from './mission-deletion'
 import { runMissionSetupHook, type MissionSetupHookEvent } from './mission-setup-hook'
 import {
   MissionTaskOperations,
@@ -60,6 +61,7 @@ export class MissionOperations {
   /** Read-only layer states of a repo's stack; takes no lock and writes nothing. */
   readonly inspectRepo: MissionTaskRestack['inspectRepo']
   private readonly restackTrigger: MissionRestackTrigger
+  private readonly deletion: MissionDeletion
   private readonly runSetupHook: MissionSetupHookRunner
 
   constructor(
@@ -82,6 +84,12 @@ export class MissionOperations {
     this.restackTrigger = new MissionRestackTrigger({
       store,
       restack: (input) => this.restack(input)
+    })
+    this.deletion = new MissionDeletion({
+      store,
+      memberLifecycle: this.memberLifecycle,
+      notifyChanged,
+      removeMemberWithLayers: (mission, member) => this.removeMemberWithLayers(mission, member)
     })
   }
 
@@ -110,12 +118,17 @@ export class MissionOperations {
 
   async create(args: MissionCreateInput): Promise<MissionCreateResult> {
     const repoIds = [...new Set(args.repoIds)]
-    requireNativeLocalMissionRepos(this.store, repoIds)
+    const orchestratorRepoId = args.orchestratorRepoId ?? null
+    requireNativeLocalMissionRepos(this.store, [
+      ...repoIds,
+      ...(orchestratorRepoId ? [orchestratorRepoId] : [])
+    ])
     const mission = this.store.createMission({
       name: args.name,
       branchName: args.branchName ?? null,
       repoIds,
-      sessionAgent: args.sessionAgent
+      sessionAgent: args.sessionAgent,
+      orchestratorRepoId
     })
     return this.memberLifecycle.run(mission.id, async () => {
       let rootedMission: Mission | null = null
@@ -140,11 +153,19 @@ export class MissionOperations {
       }
       this.notifyChanged()
       const memberResults = await this.memberLifecycle.createWorktrees(rootedMission, repoIds)
+      // Why: a failed orchestrator keeps the Mission; the session then falls back to the root.
+      const orchestratorResult = orchestratorRepoId
+        ? await this.memberLifecycle.createOrchestratorWorktree(rootedMission, orchestratorRepoId)
+        : undefined
       this.store.ensureMissionSessionWorkspace(rootedMission.id)
       this.notifyChanged()
       const created = this.store.getMission(mission.id) ?? rootedMission
       this.startSetupHook(created, 'create')
-      return { mission: created, memberResults }
+      return {
+        mission: created,
+        memberResults,
+        ...(orchestratorResult ? { orchestratorResult } : {})
+      }
     })
   }
 
@@ -156,6 +177,9 @@ export class MissionOperations {
       }
       const existing = new Set(mission.members.map((member) => member.repoId))
       const repoIds = [...new Set(args.repoIds)].filter((repoId) => !existing.has(repoId))
+      if (mission.orchestratorRepoId && repoIds.includes(mission.orchestratorRepoId)) {
+        throw new Error('mission_orchestrator_repo_is_member')
+      }
       if (repoIds.length > 0) {
         requireNativeLocalMissionRepos(this.store, repoIds)
       }
@@ -244,93 +268,14 @@ export class MissionOperations {
     return { ...removed, ...(warning ? { warning } : {}) }
   }
 
-  async delete(args: MissionDeleteInput): Promise<MissionDeleteResult> {
+  delete(args: MissionDeleteInput): Promise<MissionDeleteResult> {
     return this.memberLifecycle.run(args.missionId, async () => {
       const mission = this.store.getMission(args.missionId)
       if (!mission) {
         return { deleted: false, memberResults: [] }
       }
-      try {
-        // Why: the Mission PTY may have a cwd inside a link; stop it before unlinking.
-        await this.memberLifecycle.teardownSession(mission)
-      } catch (error) {
-        return {
-          deleted: false,
-          memberResults: [],
-          error: toErrorMessage(error)
-        }
-      }
-      return args.deleteWorktrees
-        ? this.deleteWithWorktrees(mission)
-        : this.deleteDetachingWorktrees(mission)
+      return this.deletion.delete(mission, args.deleteWorktrees)
     })
-  }
-
-  private async deleteDetachingWorktrees(mission: Mission): Promise<MissionDeleteResult> {
-    let rootWarning: string | undefined, recoveredMission: Mission, deleted: boolean
-    try {
-      // Why: a create intent may be the only proof after Git add. Promote
-      // it through a strict scan before root cleanup can remove that proof.
-      recoveredMission = await this.memberLifecycle.recoverMembersBeforeMissionDetach(mission)
-      const rootResult = removeMissionRootIfPresent(this.store, recoveredMission)
-      if (rootResult && !rootResult.removed && mission.rootPath) {
-        rootWarning = `Preserved files in the former Mission root: ${mission.rootPath}`
-      }
-      // Why: marker removal is safe only after Mission/session deletion is durable.
-      deleted = await this.store.deleteMissionAndFlush(mission.id)
-    } catch (error) {
-      return {
-        deleted: false,
-        memberResults: [],
-        error: toErrorMessage(error)
-      }
-    }
-    if (deleted) {
-      this.memberLifecycle.detachDeletedMissionOwnership(recoveredMission)
-    }
-    this.notifyChanged()
-    return {
-      deleted,
-      memberResults: [],
-      ...(rootWarning ? { warning: rootWarning } : {})
-    }
-  }
-
-  private async deleteWithWorktrees(mission: Mission): Promise<MissionDeleteResult> {
-    const memberResults: MissionMemberResult[] = []
-    // Why: removeWorktree reassigns members; iterate a snapshot so removals don't skip entries.
-    const members = [...mission.members]
-    for (const member of members) {
-      memberResults.push(await this.removeMemberWithLayers(mission, member))
-    }
-    const remaining = this.store.getMission(mission.id)
-    // Why: keep a Mission with an undeletable worktree visible for a safe retry.
-    let deleted = false
-    let rootWarning: string | undefined
-    if (remaining !== null && remaining.members.length === 0) {
-      try {
-        const rootResult = removeMissionRootIfPresent(this.store, mission)
-        if (rootResult && !rootResult.removed && mission.rootPath) {
-          rootWarning = `Preserved files in the former Mission root: ${mission.rootPath}`
-        }
-        deleted = this.store.deleteMission(mission.id)
-      } catch (error) {
-        return { deleted: false, memberResults, error: toErrorMessage(error) }
-      }
-    }
-    if (!deleted) {
-      syncMissionRootIfPresent(this.store, mission.id)
-    }
-    this.notifyChanged()
-    const warnings = memberResults.flatMap((result) => result.warning ?? [])
-    if (rootWarning) {
-      warnings.push(rootWarning)
-    }
-    return {
-      deleted,
-      memberResults,
-      ...(warnings.length > 0 ? { warning: warnings.join(' ') } : {})
-    }
   }
 
   // Why: the hook is user-owned code; it must never delay or fail the Mission mutation.
