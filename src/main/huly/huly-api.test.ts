@@ -5,6 +5,7 @@ type Doc = Record<string, unknown> & { _id: string; _class: string }
 
 const docs: Doc[] = []
 const updates: unknown[][] = []
+const markupFetches: unknown[][] = []
 
 function isMatch(doc: Doc, query: Record<string, unknown>): boolean {
   return Object.entries(query).every(([key, expected]) => {
@@ -24,7 +25,10 @@ vi.mock('@hcengineering/api-client', () => ({
     updateDoc: async (...args: unknown[]) => {
       updates.push(args)
     },
-    fetchMarkup: async () => '',
+    fetchMarkup: async (...args: unknown[]) => {
+      markupFetches.push(args)
+      return '## From collaborator'
+    },
     close: async () => {}
   })
 }))
@@ -47,6 +51,7 @@ function issue(id: string, number: number, extra: Record<string, unknown> = {}):
 
 beforeEach(() => {
   updates.length = 0
+  markupFetches.length = 0
   docs.length = 0
   docs.push(
     {
@@ -134,6 +139,25 @@ describe('createHulyApi', () => {
 
     expect(milestone).toMatchObject({ label: 'Kiosek', status: 'InProgress' })
     expect(milestone.descriptionMarkdown).toBe('## Order\n\n**API first**')
+  })
+
+  it('fetches a blob-ref milestone description through the collaborator', async () => {
+    docs.push({
+      _id: 'milestone-1',
+      _class: 'tracker:class:Milestone',
+      space: 'project-1',
+      label: 'Kiosek',
+      status: 0,
+      description: 'blob-ref-1'
+    })
+    const api = await createHulyApi({ serverUrl: 'https://huly.test', workspace: 'acme' }, 'token')
+
+    const milestone = await api.getMilestone('OMP', 'milestone-1')
+
+    expect(milestone.descriptionMarkdown).toBe('## From collaborator')
+    expect(markupFetches).toEqual([
+      ['tracker:class:Milestone', 'milestone-1', 'description', 'blob-ref-1', 'markdown']
+    ])
   })
 
   it('sets an issue status by its case-insensitive name', async () => {

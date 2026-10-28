@@ -27,16 +27,17 @@ export class HulyConnection {
       serverUrl: args.serverUrl.trim().replace(/\/+$/, ''),
       workspace: args.workspace.trim()
     }
+    assertSecureServerUrl(info.serverUrl)
     let api: HulyApi | null = null
     try {
       api = await this.createApi(info, args.token)
       await api.listProjects()
+      this.store.save(info, args.token)
     } catch (error) {
       await api?.close().catch(() => {})
       throw toHulyError(error)
     }
     await this.dropApi()
-    this.store.save(info, args.token)
     this.status = { connected: true, info }
     this.api = Promise.resolve(api)
     this.scheduleIdleClose()
@@ -118,6 +119,22 @@ export class HulyConnection {
       clearTimeout(this.idleTimer)
       this.idleTimer = null
     }
+  }
+}
+
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1'])
+
+// The token travels in the WebSocket URL, so plain http is only acceptable on loopback.
+function assertSecureServerUrl(serverUrl: string): void {
+  let url: URL
+  try {
+    url = new URL(serverUrl)
+  } catch {
+    throw new Error('huly_server_url_must_be_https')
+  }
+  const isLoopbackHttp = url.protocol === 'http:' && LOOPBACK_HOSTS.has(url.hostname)
+  if (url.protocol !== 'https:' && !isLoopbackHttp) {
+    throw new Error('huly_server_url_must_be_https')
   }
 }
 

@@ -1,0 +1,37 @@
+diff --git a/lib/connection.js b/lib/connection.js
+index 7619f2476509c5bb1aa4114893c4104e5e39cf04..bffe3556346b4c83b420e291676ee7e6f6d589ce 100644
+--- a/lib/connection.js
++++ b/lib/connection.js
+@@ -79,7 +79,6 @@ class Connection {
+       let sessionId = sessionStorage.getItem(sKey) ?? void 0;
+       if (sessionId === void 0) {
+         sessionId = (0, import_core.generateId)();
+-        console.log("Generate new SessionId", sessionId);
+         this.sessionId = sessionId;
+       } else {
+         this.sessionId = sessionId;
+@@ -282,9 +281,6 @@ class Connection {
+         this.dialTimer = void 0;
+         this.lastHash = resp.lastHash;
+         const serverVersion = helloResp.serverVersion;
+-        if (typeof window !== "undefined") {
+-          console.log("Connected to server:", serverVersion);
+-        }
+         if (this.opt?.onHello !== void 0 && !this.opt.onHello(serverVersion)) {
+           this.closed = true;
+           this.websocket?.close();
+@@ -551,7 +547,13 @@ class Connection {
+       if (this.delay < 3) {
+         this.delay += 1;
+       }
+-      console.error("client websocket error:", socketId, this.url, this.workspace, this.user);
++      console.error(
++        "client websocket error:",
++        socketId,
++        String(this.url).replace(/\/[^/?#]*$/, "/<redacted>"),
++        this.workspace,
++        this.user
++      );
+     };
+   }
+   sendRequest(data) {

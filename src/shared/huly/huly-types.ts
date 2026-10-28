@@ -9,6 +9,7 @@ export type HulyMilestoneSummary = { id: string; label: string; status: string }
 export type HulyMilestone = HulyMilestoneSummary & { descriptionMarkdown: string; url: string }
 
 export type HulyIssue = {
+  /** Huly document `_id`; `parentIssueId` uses the same id space. */
   id: string
   identifier: string
   number: number
@@ -16,8 +17,9 @@ export type HulyIssue = {
   url: string
   status: HulyStatus
   componentId: string | null
-  /** Identifiers (e.g. `OMP-12`) of the issues blocking this one. */
+  /** Identifiers (e.g. `OMP-12`) of the issues blocking this one, not `_id`s. */
   blockedBy: string[]
+  /** Huly `_id` of the parent issue (not an identifier), or null for a top-level issue. */
   parentIssueId: string | null
 }
 
