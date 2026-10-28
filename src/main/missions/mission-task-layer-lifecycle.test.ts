@@ -54,8 +54,11 @@ function seed() {
   store.setMissionRootPath('m1', referralRootPath, missionsBaseDir)
   assignOwnedWorktree(store, 'r1')
   const runtime = makeFakeRuntime(store)
+  const notifyStacksChanged = vi.fn()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the shared Mission IPC fakes implement every store/runtime method these operations call.
-  const operations = new MissionOperations(store as never, runtime as never, vi.fn())
+  const operations = new MissionOperations(store as never, runtime as never, vi.fn(), {
+    notifyStacksChanged
+  })
   // Why: each layer checkout reports its own branch; the preview reports the tip it last moved to.
   const branchByDir: Record<string, string> = {
     [taskDir('omp-1')]: BRANCH.omp1,
@@ -71,7 +74,7 @@ function seed() {
       operation: 'unknown' as const
     }
   })
-  return { store, runtime, operations }
+  return { store, runtime, operations, notifyStacksChanged }
 }
 
 function addTask(operations: MissionOperations, externalRef: string) {
@@ -207,6 +210,25 @@ describe('Mission task layer lifecycle', () => {
       expect.objectContaining({ branchNameOverride: BRANCH.preview, baseBranch: BRANCH.omp1 })
     ])
     expect(store.getMission('m1')!.tasks![0].parentBaseSha).toBe('mission/referral-tip')
+  })
+
+  it('reports a stack change after every stack mutation and restack, also when nothing moved', async () => {
+    const { operations, notifyStacksChanged } = seed()
+    await addTask(operations, 'OMP-1')
+    expect(notifyStacksChanged).toHaveBeenLastCalledWith('m1')
+    notifyStacksChanged.mockClear()
+    // Why: a blocked restack writes no record, so the event is the renderer's only cue.
+    stackLayerGit.readLayerWorktree.mockResolvedValue({
+      branch: null,
+      headSha: null,
+      isClean: false,
+      operation: 'unknown' as const
+    })
+
+    await operations.restack({ missionId: 'm1' })
+    await operations.removeTopTask({ missionId: 'm1', repoId: 'r1', deleteWorktree: true })
+
+    expect(notifyStacksChanged.mock.calls).toEqual([['m1'], ['m1']])
   })
 
   it('refuses to recreate a slot the Mission does not have', async () => {

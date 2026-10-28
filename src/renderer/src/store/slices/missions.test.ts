@@ -20,7 +20,8 @@ const missionsApi = {
   restack: vi.fn(),
   absorb: vi.fn(),
   createStackPullRequests: vi.fn(),
-  pushStack: vi.fn()
+  pushStack: vi.fn(),
+  recreateSlotWorktree: vi.fn()
 }
 
 vi.stubGlobal('window', {
@@ -84,6 +85,17 @@ const missionWorkspace = {
   id: 'fw-1',
   missionId: 'm1'
 } as FolderWorkspace
+
+const stackTask = {
+  id: 't1',
+  repoId: 'r1',
+  order: 1,
+  title: 'Form',
+  branchName: 'mission-task/referral/form',
+  worktreeId: 'r1::/wt-t1',
+  parentBaseSha: null,
+  addedAt: 1
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -295,6 +307,55 @@ describe('missions slice', () => {
     await store.getState().inspectMissionStacks('m1', { unlessInspectedSince: mission.updatedAt })
 
     expect(missionsApi.inspectStacks).toHaveBeenCalledOnce()
+  })
+
+  it('re-reads layer states when main reports a stack change without a record change', async () => {
+    const stacked = { ...mission, tasks: [{ ...stackTask }] }
+    missionsApi.list.mockResolvedValue([stacked])
+    const before = [{ repoId: 'r1', layers: [{ slot: 'task:t1', state: 'current' }] }]
+    const after = [{ repoId: 'r1', layers: [{ slot: 'task:t1', state: 'blocked' }] }]
+    missionsApi.inspectStacks.mockResolvedValueOnce(before).mockResolvedValueOnce(after)
+    const store = makeStore()
+    await store.getState().fetchMissions()
+    await store.getState().inspectMissionStacks('m1', { unlessInspectedSince: stacked.updatedAt })
+
+    await store.getState().refreshMissionStackStates('m1')
+
+    expect(missionsApi.inspectStacks).toHaveBeenCalledTimes(2)
+    expect(store.getState().missionStackReports.m1).toEqual(after)
+  })
+
+  it('ignores a stack change of a Mission without tasks or reports', async () => {
+    missionsApi.list.mockResolvedValue([mission])
+    const store = makeStore()
+    await store.getState().fetchMissions()
+
+    await store.getState().refreshMissionStackStates('m1')
+    await store.getState().refreshMissionStackStates('unknown')
+
+    expect(missionsApi.inspectStacks).not.toHaveBeenCalled()
+  })
+
+  it('recreates a layer checkout and keeps its refusal on that layer slot', async () => {
+    missionsApi.recreateSlotWorktree.mockResolvedValue({
+      repoId: 'r1',
+      worktreeId: null,
+      error: 'mission_task_not_found'
+    })
+    missionsApi.list.mockResolvedValue([mission])
+    missionsApi.inspectStacks.mockResolvedValue([])
+    const store = makeStore()
+
+    await store.getState().recreateMissionSlotWorktree('m1', 'r1', 'preview')
+
+    expect(missionsApi.recreateSlotWorktree).toHaveBeenCalledWith({
+      missionId: 'm1',
+      repoId: 'r1',
+      slot: 'preview'
+    })
+    expect(store.getState().missionSlotErrors[missionSlotErrorKey('m1', 'r1', 'preview')]).toBe(
+      'mission_task_not_found'
+    )
   })
 
   it('surfaces a thrown add-task error as its bare code', async () => {

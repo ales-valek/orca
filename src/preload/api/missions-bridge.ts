@@ -17,5 +17,11 @@ export const missionsApi = {
   restack: (args) => ipcRenderer.invoke('missions:restack', args),
   absorb: (args) => ipcRenderer.invoke('missions:absorb', args),
   createStackPullRequests: (args) => ipcRenderer.invoke('missions:createStackPullRequests', args),
-  pushStack: (args) => ipcRenderer.invoke('missions:pushStack', args)
+  pushStack: (args) => ipcRenderer.invoke('missions:pushStack', args),
+  onStacksChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, event: { missionId: string }) =>
+      callback(event)
+    ipcRenderer.on('missions:stacksChanged', listener)
+    return () => ipcRenderer.removeListener('missions:stacksChanged', listener)
+  }
 } satisfies PreloadApi['missions']
