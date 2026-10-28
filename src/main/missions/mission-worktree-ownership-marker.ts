@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { linkSync, lstatSync, readFileSync, realpathSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
+import { isNonMemberMissionSlot } from '../../shared/mission-task-stack'
+import type { MissionSlot } from '../../shared/mission-types'
 
 const MARKER_NAME = 'orca-mission-owner.json'
 const MARKER_VERSION = 1
@@ -13,6 +15,8 @@ export type MissionWorktreeOwnershipProof = {
   worktreeInstanceId: string
   /** Durable deletion policy for a branch that predated Mission creation. */
   preserveBranchOnDelete?: true
+  /** Absent means `'member'`; older readers ignore the field. */
+  missionSlot?: Exclude<MissionSlot, 'member'>
 }
 
 type MissionWorktreeOwnershipMarker = {
@@ -22,6 +26,7 @@ type MissionWorktreeOwnershipMarker = {
   worktreeId: string
   instanceId: string
   preserveBranchOnDelete?: true
+  missionSlot?: Exclude<MissionSlot, 'member'>
 }
 
 function resolveGitDir(worktreePath: string): string {
@@ -146,7 +151,8 @@ function readMarker(markerPath: string): MissionWorktreeOwnershipMarker {
     parsed.worktreeId.length === 0 ||
     typeof parsed.instanceId !== 'string' ||
     parsed.instanceId.length === 0 ||
-    (parsed.preserveBranchOnDelete !== undefined && parsed.preserveBranchOnDelete !== true)
+    (parsed.preserveBranchOnDelete !== undefined && parsed.preserveBranchOnDelete !== true) ||
+    (parsed.missionSlot !== undefined && !isNonMemberMissionSlot(parsed.missionSlot))
   ) {
     throw new Error('mission_member_worktree_ownership_unverified')
   }
@@ -224,7 +230,8 @@ export function readMissionWorktreeOwnershipMarker(args: {
       repoId: marker.repoId,
       worktreeId: marker.worktreeId,
       worktreeInstanceId: marker.instanceId,
-      ...(marker.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {})
+      ...(marker.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {}),
+      ...(marker.missionSlot ? { missionSlot: marker.missionSlot } : {})
     }
   } catch (error) {
     // A path that is a file (a prunable row naming its .git file) cannot hold a checkout marker.
@@ -257,7 +264,8 @@ export function writeMissionWorktreeOwnershipMarker(args: {
     repoId: args.proof.repoId,
     worktreeId: args.proof.worktreeId,
     instanceId: args.proof.worktreeInstanceId,
-    ...(args.proof.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {})
+    ...(args.proof.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {}),
+    ...(args.proof.missionSlot ? { missionSlot: args.proof.missionSlot } : {})
   }
   try {
     writeFileSync(temporaryPath, JSON.stringify(marker), { encoding: 'utf8', flag: 'wx' })

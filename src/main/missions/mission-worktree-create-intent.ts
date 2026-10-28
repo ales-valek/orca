@@ -10,6 +10,8 @@ import {
   writeFileSync
 } from 'node:fs'
 import path from 'node:path'
+import { isNonMemberMissionSlot } from '../../shared/mission-task-stack'
+import type { MissionSlot } from '../../shared/mission-types'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
 import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { assertOwnedMissionRoot } from './mission-root'
@@ -36,6 +38,8 @@ export type MissionWorktreeCreateIntent = {
   worktreePath: string
   worktreeInstanceId: string
   preserveBranchOnDelete: boolean
+  /** Absent means `'member'`, which keeps pre-slot intents readable. */
+  slot?: Exclude<MissionSlot, 'member'>
 }
 
 function isMissingPathError(error: unknown): boolean {
@@ -44,9 +48,15 @@ function isMissingPathError(error: unknown): boolean {
   )
 }
 
-function intentPath(rootPath: string, repoId: string): string {
-  const repoKey = createHash('sha256').update(repoId).digest('hex')
-  return path.join(rootPath, `${INTENT_FILE_PREFIX}${repoKey}.json`)
+function intentPath(rootPath: string, repoId: string, slot: MissionSlot): string {
+  // Why: the member key predates slots; changing it would orphan in-flight intents.
+  const slotKey = slot === 'member' ? repoId : `${repoId}\0${slot}`
+  const key = createHash('sha256').update(slotKey).digest('hex')
+  return path.join(rootPath, `${INTENT_FILE_PREFIX}${key}.json`)
+}
+
+function getIntentSlot(intent: Pick<MissionWorktreeCreateIntent, 'slot'>): MissionSlot {
+  return intent.slot ?? 'member'
 }
 
 function pathsMatch(left: string, right: string): boolean {
@@ -83,6 +93,7 @@ function assertIntentIdentity(
     typeof intent.worktreeInstanceId !== 'string' ||
     intent.worktreeInstanceId.length === 0 ||
     typeof intent.preserveBranchOnDelete !== 'boolean' ||
+    (intent.slot !== undefined && !isNonMemberMissionSlot(intent.slot)) ||
     typeof intent.worktreePath !== 'string' ||
     !path.isAbsolute(intent.worktreePath) ||
     path.resolve(intent.worktreePath) !== intent.worktreePath ||
@@ -95,6 +106,7 @@ function assertIntentIdentity(
 function parseIntent(
   root: MissionRootOwnership,
   repoId: string,
+  slot: MissionSlot,
   serialized: string
 ): MissionWorktreeCreateIntent {
   let parsed: unknown
@@ -108,7 +120,7 @@ function parseIntent(
   }
   const intent = parsed as MissionWorktreeCreateIntent
   assertIntentIdentity(root, intent)
-  if (intent.repoId !== repoId) {
+  if (intent.repoId !== repoId || getIntentSlot(intent) !== slot) {
     throw new Error('mission_member_worktree_create_intent_unverified')
   }
   return intent
@@ -125,16 +137,18 @@ function intentMatches(
     current.branchName === expected.branchName &&
     pathsMatch(current.worktreePath, expected.worktreePath) &&
     current.worktreeInstanceId === expected.worktreeInstanceId &&
-    current.preserveBranchOnDelete === expected.preserveBranchOnDelete
+    current.preserveBranchOnDelete === expected.preserveBranchOnDelete &&
+    getIntentSlot(current) === getIntentSlot(expected)
   )
 }
 
 export function readMissionWorktreeCreateIntent(
   root: MissionRootOwnership,
-  repoId: string
+  repoId: string,
+  slot: MissionSlot = 'member'
 ): MissionWorktreeCreateIntent | null {
   assertOwnedMissionRoot(root)
-  const filePath = intentPath(root.rootPath, repoId)
+  const filePath = intentPath(root.rootPath, repoId, slot)
   let stat: ReturnType<typeof lstatSync>
   try {
     stat = lstatSync(filePath)
@@ -147,7 +161,7 @@ export function readMissionWorktreeCreateIntent(
   if (!stat.isFile() || stat.isSymbolicLink()) {
     throw new Error('mission_member_worktree_create_intent_unverified')
   }
-  return parseIntent(root, repoId, readFileSync(filePath, 'utf8'))
+  return parseIntent(root, repoId, slot, readFileSync(filePath, 'utf8'))
 }
 
 export function writeMissionWorktreeCreateIntent(args: {
@@ -157,8 +171,10 @@ export function writeMissionWorktreeCreateIntent(args: {
   worktreePath: string
   worktreeInstanceId: string
   preserveBranchOnDelete: boolean
+  slot?: MissionSlot
 }): MissionWorktreeCreateIntent {
   assertOwnedMissionRoot(args.root)
+  const slot = args.slot ?? 'member'
   const intent: MissionWorktreeCreateIntent = {
     version: INTENT_VERSION,
     missionId: args.root.missionId,
@@ -166,10 +182,11 @@ export function writeMissionWorktreeCreateIntent(args: {
     branchName: args.branchName,
     worktreePath: args.worktreePath,
     worktreeInstanceId: args.worktreeInstanceId,
-    preserveBranchOnDelete: args.preserveBranchOnDelete
+    preserveBranchOnDelete: args.preserveBranchOnDelete,
+    ...(slot === 'member' ? {} : { slot })
   }
   assertIntentIdentity(args.root, intent)
-  const filePath = intentPath(args.root.rootPath, args.repoId)
+  const filePath = intentPath(args.root.rootPath, args.repoId, slot)
   const temporaryPath = `${filePath}.tmp-${process.pid}-${randomUUID()}`
   try {
     writeFileSync(temporaryPath, JSON.stringify(intent), { encoding: 'utf8', flag: 'wx' })
@@ -199,14 +216,15 @@ export function clearMissionWorktreeCreateIntent(args: {
   root: MissionRootOwnership
   intent: MissionWorktreeCreateIntent
 }): void {
-  const current = readMissionWorktreeCreateIntent(args.root, args.intent.repoId)
+  const slot = getIntentSlot(args.intent)
+  const current = readMissionWorktreeCreateIntent(args.root, args.intent.repoId, slot)
   if (!current) {
     return
   }
   if (!intentMatches(current, args.intent)) {
     throw new Error('mission_member_worktree_create_intent_unverified')
   }
-  unlinkSync(intentPath(args.root.rootPath, args.intent.repoId))
+  unlinkSync(intentPath(args.root.rootPath, args.intent.repoId, slot))
 }
 
 function assertRecoverableWorktree(
@@ -236,11 +254,12 @@ function assertRecoverableWorktree(
 export function recoverMissionWorktreeCreateIntent(args: {
   root: MissionRootOwnership
   repoId: string
+  slot?: MissionSlot
   repoPath: string
   branchName: string
   worktrees: GitWorktreeInfo[]
 }): MissionWorktreeOwnershipProof | null {
-  const intent = readMissionWorktreeCreateIntent(args.root, args.repoId)
+  const intent = readMissionWorktreeCreateIntent(args.root, args.repoId, args.slot)
   if (!intent) {
     return null
   }
@@ -274,7 +293,8 @@ export function recoverMissionWorktreeCreateIntent(args: {
     repoId: intent.repoId,
     worktreeId: `${intent.repoId}::${worktree.path}`,
     worktreeInstanceId: intent.worktreeInstanceId,
-    ...(intent.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {})
+    ...(intent.preserveBranchOnDelete ? { preserveBranchOnDelete: true } : {}),
+    ...(intent.slot ? { missionSlot: intent.slot } : {})
   }
   const existingMarker = readMissionWorktreeOwnershipMarker({
     repoPath: args.repoPath,
@@ -286,7 +306,8 @@ export function recoverMissionWorktreeCreateIntent(args: {
       existingMarker.repoId !== proof.repoId ||
       existingMarker.worktreeId !== proof.worktreeId ||
       existingMarker.worktreeInstanceId !== proof.worktreeInstanceId ||
-      existingMarker.preserveBranchOnDelete !== proof.preserveBranchOnDelete
+      existingMarker.preserveBranchOnDelete !== proof.preserveBranchOnDelete ||
+      existingMarker.missionSlot !== proof.missionSlot
     ) {
       throw new Error('mission_member_worktree_create_recovery_unverified')
     }

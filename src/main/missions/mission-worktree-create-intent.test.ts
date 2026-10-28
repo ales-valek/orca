@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import {
   existsSync,
   fsyncSync,
+  readdirSync,
   linkSync,
   mkdirSync,
   mkdtempSync,
@@ -283,6 +284,72 @@ describe('Mission worktree create intent', () => {
       'mission_member_worktree_create_intent_write_failed'
     )
     expect(readMissionWorktreeCreateIntent(root, 'repo-1')).toEqual(first)
+  })
+
+  it('keeps per-slot intents in separate files and the member file at its legacy name', () => {
+    const member = writeIntent({
+      branchName: 'mission/referral',
+      worktreePath: path.join(root.rootPath, 'repo-member')
+    })
+    const preview = writeMissionWorktreeCreateIntent({
+      root,
+      repoId: 'repo-1',
+      slot: 'preview',
+      branchName: 'mission-preview/referral',
+      worktreePath: path.join(root.rootPath, 'repo-preview'),
+      worktreeInstanceId: 'instance-2',
+      preserveBranchOnDelete: false
+    })
+
+    const intentFiles = readdirSync(root.rootPath)
+      .filter((name) => name.startsWith('.orca-mission-worktree-create-'))
+      .sort()
+    expect(intentFiles).toHaveLength(2)
+    expect(intentFiles).toContain(
+      '.orca-mission-worktree-create-da25bcc6cd52c1f22f8dab989b98d96ab84a45877c51030febcaebc21e3ad7e4.json'
+    )
+    expect(readMissionWorktreeCreateIntent(root, 'repo-1')).toEqual(member)
+    expect(readMissionWorktreeCreateIntent(root, 'repo-1', 'member')).toEqual(member)
+    expect(readMissionWorktreeCreateIntent(root, 'repo-1', 'preview')).toEqual(preview)
+    expect(preview.slot).toBe('preview')
+    expect(readMissionWorktreeCreateIntent(root, 'repo-1', 'task:t1')).toBeNull()
+  })
+
+  it('stamps the intent slot into the recovered ownership marker', () => {
+    const worktreePath = path.join(root.rootPath, 'repo-task')
+    writeMissionWorktreeCreateIntent({
+      root,
+      repoId: 'repo-1',
+      slot: 'task:t1',
+      branchName: 'mission-task/referral/t1',
+      worktreePath,
+      worktreeInstanceId: 'instance-3',
+      preserveBranchOnDelete: false
+    })
+    git(['worktree', 'add', '-b', 'mission-task/referral/t1', worktreePath, 'HEAD'])
+    const worktrees = [makeWorktree(worktreePath, 'mission-task/referral/t1')]
+
+    expect(
+      recoverMissionWorktreeCreateIntent({
+        root,
+        repoId: 'repo-1',
+        repoPath,
+        branchName: 'mission-task/referral/t1',
+        worktrees
+      })
+    ).toBeNull()
+    const proof = recoverMissionWorktreeCreateIntent({
+      root,
+      repoId: 'repo-1',
+      slot: 'task:t1',
+      repoPath,
+      branchName: 'mission-task/referral/t1',
+      worktrees
+    })
+
+    expect(proof).toMatchObject({ missionSlot: 'task:t1', worktreeInstanceId: 'instance-3' })
+    expect(readMissionWorktreeOwnershipMarker({ repoPath, worktreePath })).toEqual(proof)
+    expect(readMissionWorktreeCreateIntent(root, 'repo-1', 'task:t1')).toBeNull()
   })
 
   it('lets Mission root teardown remove an otherwise ghost intent-only root', () => {

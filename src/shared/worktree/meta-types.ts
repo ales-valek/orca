@@ -1,5 +1,6 @@
 import type { ExecutionHostId } from '../execution-host'
 import type { TaskSourceContext } from '../work-items/task-source-context'
+import type { MissionSlot } from '../mission-types'
 import type { EphemeralVmCheckoutMode } from '../orca-yaml-hook-types'
 import type {
   AutomationWorkspaceProvenance,
@@ -21,6 +22,8 @@ export type WorktreeMeta = {
   instanceId?: string
   /** Mission that created this workspace. Used only for fail-closed ownership checks. */
   missionId?: string
+  /** Mission worktree slot this checkout fills; absent means `'member'`. */
+  missionSlot?: MissionSlot
   /** See Worktree.projectId. Persisted for project-first workspace ownership. */
   projectId?: string
   /** See Worktree.hostId. Persisted for project-first workspace ownership. */

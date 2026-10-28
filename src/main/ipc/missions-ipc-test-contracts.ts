@@ -23,6 +23,7 @@ export type FakeMissionTaskInput = Pick<
 export type FakeWorktreeMeta = {
   instanceId?: string
   missionId?: string
+  missionSlot?: MissionSlot
 }
 
 type FakeRepo = {

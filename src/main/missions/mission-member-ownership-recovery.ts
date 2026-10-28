@@ -1,4 +1,5 @@
-import type { Mission, MissionMember } from '../../shared/mission-types'
+import { getMissionSlotBranch } from '../../shared/mission-task-stack'
+import type { Mission, MissionMember, MissionSlot } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -6,6 +7,7 @@ import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { worktreePathComparisonKey } from '../worktree-path-comparison-key'
 import {
   findMissionOwnedWorktreeCandidates,
+  getMissionSlotRecord,
   type MissionOwnedWorktree
 } from './mission-worktree-ownership'
 import {
@@ -30,8 +32,9 @@ export class MissionMemberOwnershipRecovery {
 
   private async inspectOwnedWorktree(
     candidate: MissionOwnedWorktree,
-    mission: Pick<Mission, 'id' | 'branchName'>,
-    repoId: string
+    missionId: string,
+    repoId: string,
+    expectedBranch: string
   ): Promise<MissionOwnedWorktree | null> {
     const inspection = await this.runtime.inspectManagedWorktreeForOwnership(candidate.worktreeId)
     if (inspection.status === 'unavailable') {
@@ -48,7 +51,7 @@ export class MissionMemberOwnershipRecovery {
       !areWorktreePathsEqual(parsedCandidate.worktreePath, worktree.path) ||
       worktree.repoId !== repoId ||
       worktree.instanceId !== candidate.worktreeInstanceId ||
-      branch !== mission.branchName
+      branch !== expectedBranch
     ) {
       throw new Error('mission_member_worktree_ownership_unverified')
     }
@@ -60,7 +63,7 @@ export class MissionMemberOwnershipRecovery {
       repoPath: repo.path,
       worktreePath: worktree.path,
       proof: {
-        missionId: mission.id,
+        missionId,
         repoId,
         worktreeId: candidate.worktreeId,
         worktreeInstanceId: candidate.worktreeInstanceId
@@ -71,12 +74,18 @@ export class MissionMemberOwnershipRecovery {
 
   async recoverLiveOwnedWorktree(
     mission: Mission,
-    repoId: string
+    repoId: string,
+    slot: MissionSlot = 'member'
   ): Promise<MissionOwnedWorktree | null> {
+    const expectedBranch = getMissionSlotBranch(mission, repoId, slot)
+    if (!expectedBranch) {
+      throw new Error('mission_member_worktree_ownership_unverified')
+    }
     const markerScan = await this.runtime.findManagedWorktreesForMissionOwnership(
       mission.id,
       repoId,
-      mission.branchName
+      expectedBranch,
+      ...(slot === 'member' ? [] : [slot])
     )
     if (markerScan.status === 'unavailable') {
       throw new Error('mission_member_worktree_liveness_unavailable')
@@ -90,7 +99,12 @@ export class MissionMemberOwnershipRecovery {
       liveByProof.set(ownershipCandidateKey(markerCandidate), markerCandidate)
     }
 
-    for (const candidate of findMissionOwnedWorktreeCandidates(this.store, mission.id, repoId)) {
+    for (const candidate of findMissionOwnedWorktreeCandidates(
+      this.store,
+      mission.id,
+      repoId,
+      slot
+    )) {
       const parsedCandidate = splitWorktreeId(candidate.worktreeId)
       const currentMarker = markerCandidates.find((markerCandidate) => {
         const parsedMarker = splitWorktreeId(markerCandidate.worktreeId)
@@ -110,7 +124,7 @@ export class MissionMemberOwnershipRecovery {
         }
         continue
       }
-      if (await this.inspectOwnedWorktree(candidate, mission, repoId)) {
+      if (await this.inspectOwnedWorktree(candidate, mission.id, repoId, expectedBranch)) {
         liveByProof.set(ownershipCandidateKey(candidate), candidate)
       } else {
         // Why: a missing checkout must not retain ownership that a later
@@ -126,17 +140,17 @@ export class MissionMemberOwnershipRecovery {
     }
     const recovered = live[0] ?? null
     if (recovered) {
-      const member = mission.members.find((entry) => entry.repoId === repoId)
-      const parsedMember = member?.worktreeId ? splitWorktreeId(member.worktreeId) : null
+      const record = getMissionSlotRecord(mission, repoId, slot)
+      const parsedRecord = record?.worktreeId ? splitWorktreeId(record.worktreeId) : null
       const parsedRecovered = splitWorktreeId(recovered.worktreeId)
-      const memberMatchesRecovered =
-        parsedMember?.repoId === repoId &&
+      const recordMatchesRecovered =
+        parsedRecord?.repoId === repoId &&
         parsedRecovered?.repoId === repoId &&
-        areWorktreePathsEqual(parsedMember.worktreePath, parsedRecovered.worktreePath) &&
-        member?.worktreeInstanceId === recovered.worktreeInstanceId
+        areWorktreePathsEqual(parsedRecord.worktreePath, parsedRecovered.worktreePath) &&
+        record?.worktreeInstanceId === recovered.worktreeInstanceId
       if (
-        (member?.worktreeId || member?.worktreeInstanceId) &&
-        !memberMatchesRecovered &&
+        (record?.worktreeId || record?.worktreeInstanceId) &&
+        !recordMatchesRecovered &&
         !markerCandidates.some(
           (candidate) => ownershipCandidateKey(candidate) === ownershipCandidateKey(recovered)
         )
@@ -147,7 +161,8 @@ export class MissionMemberOwnershipRecovery {
       // a crash it is the durable proof needed to restore the ownership stamp.
       this.store.setWorktreeMeta(localMissionWorktreeTarget(recovered.worktreeId), {
         missionId: mission.id,
-        instanceId: recovered.worktreeInstanceId
+        instanceId: recovered.worktreeInstanceId,
+        missionSlot: slot === 'member' ? undefined : slot
       })
     }
     return recovered
