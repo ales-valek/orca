@@ -26,7 +26,6 @@ let settings: Partial<GlobalSettings> | null = null
 vi.mock('@/store', () => {
   const getState = () => ({
     deleteStateByWorktreeId: {},
-    missions: [],
     fetchHostedReviewForBranch,
     fetchIssue,
     fetchLinearIssue,

@@ -76,6 +76,9 @@ describe('conflict-review overview loads', () => {
         isVisible: true,
         isChangesMode: false,
         gitStatusEntries,
+        gitBranchEntries: undefined,
+        gitBranchCompareSummary: undefined,
+        changedLineHighlightsEnabled: false,
         ...refs,
         loadFileContent
       })

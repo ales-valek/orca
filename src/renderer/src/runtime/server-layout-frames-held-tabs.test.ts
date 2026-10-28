@@ -363,7 +363,8 @@ describe('a held tab in a server’s frame-drawn workspace', () => {
       worktreeId: WT,
       dragGeometryRef: { current: null },
       dropUnifiedTab: store.getState().dropUnifiedTab,
-      reorderUnifiedTabs: store.getState().reorderUnifiedTabs,
+      moveTabsInStrip: store.getState().moveTabsInStrip,
+      moveTabCluster: store.getState().moveTabCluster,
       finishDrag
     })
     await settle()

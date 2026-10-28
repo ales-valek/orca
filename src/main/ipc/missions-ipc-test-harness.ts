@@ -145,7 +145,8 @@ export function makeFakeStore(): FakeStore {
     flushPendingOrThrowAsync,
     getAllWorktreeMeta: () => worktreeMeta,
     getWorktreeMeta: (worktreeId: string) => worktreeMeta[worktreeId],
-    setWorktreeMeta: vi.fn((worktreeId: string, updates: FakeWorktreeMeta) => {
+    setWorktreeMeta: vi.fn((target: string | { id: string }, updates: FakeWorktreeMeta) => {
+      const worktreeId = typeof target === 'string' ? target : target.id
       worktreeMeta[worktreeId] = { ...worktreeMeta[worktreeId], ...updates }
       return worktreeMeta[worktreeId]
     }),

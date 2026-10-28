@@ -563,7 +563,58 @@ describe('useEditorPanelContentState', () => {
 
     await act(async () => {
       conflictRead.resolve({
-        content: '  it('routes reloadContent for an edit tab to a forced file read, not a diff refetch', async () => {
+        content: '<<<<<<< HEAD\ncurrent\n=======\nincoming\n>>>>>>> branch',
+        isBinary: false
+      })
+      await conflictRead.promise
+    })
+
+    expect(latestFileContents['/repo/src/conflict.ts']?.content).toContain('incoming')
+  })
+
+  it('ignores an older file read after closing and reopening the same tab id', async () => {
+    const activeFile = createOpenFile()
+    const staleRead = createDeferred<FileContent>()
+    const freshRead = createDeferred<FileContent>()
+    mocks.readRuntimeFileContent
+      .mockReturnValueOnce(staleRead.promise)
+      .mockReturnValueOnce(freshRead.promise)
+
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+
+    await act(async () => {
+      root?.render(<HookProbe activeFile={activeFile} openFiles={[activeFile]} />)
+    })
+    await vi.waitFor(() => expect(mocks.readRuntimeFileContent).toHaveBeenCalledTimes(1))
+
+    await act(async () => {
+      root?.render(<HookProbe activeFile={null} openFiles={[]} />)
+    })
+    expect(latestFileContents[activeFile.id]).toBeUndefined()
+
+    await act(async () => {
+      root?.render(<HookProbe activeFile={activeFile} openFiles={[activeFile]} />)
+    })
+    await vi.waitFor(() => expect(mocks.readRuntimeFileContent).toHaveBeenCalledTimes(2))
+
+    await act(async () => {
+      freshRead.resolve({ content: 'fresh reopen content', isBinary: false })
+      await freshRead.promise
+    })
+    await vi.waitFor(() =>
+      expect(latestFileContents[activeFile.id]?.content).toBe('fresh reopen content')
+    )
+
+    await act(async () => {
+      staleRead.resolve({ content: 'stale pre-close content', isBinary: false })
+      await staleRead.promise
+    })
+    expect(latestFileContents[activeFile.id]?.content).toBe('fresh reopen content')
+  })
+
+  it('routes reloadContent for an edit tab to a forced file read, not a diff refetch', async () => {
     const activeFile = createOpenFile()
     mocks.readRuntimeFileContent
       .mockResolvedValueOnce({ content: 'old content', isBinary: false })

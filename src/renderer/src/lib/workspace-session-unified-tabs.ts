@@ -49,9 +49,7 @@ function buildPersistedGroupsForWorktree(
       const slots = structuredLaunchSlotIds(worktreeId, group.id)
       const ownedTabIds = new Set(tabIdsByGroup.get(group.id) ?? [])
       const orderedTabIds = new Set([
-        ...group.tabOrder.filter(
-          (tabId) => ownedTabIds.has(tabId) || slots.has(tabId) || validTabIds.has(tabId)
-        ),
+        ...group.tabOrder.filter((tabId) => ownedTabIds.has(tabId) || slots.has(tabId)),
         ...(tabIdsByGroup.get(group.id) ?? [])
       ])
       const tabOrder = Array.from(orderedTabIds)

@@ -66,13 +66,15 @@ vi.mock('@/lib/file-owner-runtime-target', () => {
 })
 
 vi.mock('@/store', () => ({
-  useAppStore: {
-    getState: mocks.getState
-  }
+  useAppStore: Object.assign(
+    (select: (state: ReturnType<typeof mocks.getState>) => unknown) => select(mocks.getState()),
+    { getState: mocks.getState }
+  )
 }))
 
 import { useEditorPanelContentState } from './useEditorPanelContentState'
 import { ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT } from './editor-autosave'
+import { createTestStore } from '@/store/slices/store-test-helpers'
 
 type Deferred<T> = {
   promise: Promise<T>
@@ -117,7 +119,7 @@ const onLocalLogTailChanged = vi.fn(() => () => {})
 const fsApi = { onLocalLogTailChanged }
 let latestFileContents: Record<string, FileContent> = {}
 let latestDiffContents: Record<string, DiffContent> = {}
-let latestReloadContent: (file: OpenFile) => void = () => {}
+let latestReloadContent: (file: OpenFile, options?: { wakeWslDistro?: boolean }) => void = () => {}
 const EMPTY_GIT_STATUS_BY_WORKTREE: Record<string, GitStatusEntry[]> = {}
 const EMPTY_GIT_BRANCH_CHANGES_BY_WORKTREE: Record<string, GitBranchChangeEntry[]> = {}
 const EMPTY_GIT_BRANCH_COMPARE_SUMMARY_BY_WORKTREE: Record<string, GitBranchCompareSummary | null> =
@@ -181,6 +183,7 @@ describe('useEditorPanelContentState diff loading', () => {
     mocks.isWorktreeConnectionResolved.mockReturnValue(true)
     mocks.getState.mockReset()
     mocks.getState.mockReturnValue({
+      ...createTestStore().getState(),
       settings: null,
       openFiles: [],
       setLastKnownDiskSignature: vi.fn()

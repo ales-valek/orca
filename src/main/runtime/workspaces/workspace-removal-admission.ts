@@ -25,14 +25,17 @@ export async function admitManagedWorktreeRemoval(args: {
   joinPending: (
     worktreeId: string,
     options: RemoveManagedWorktreeOptions
-  ) => Promise<RemovalResult> | null
+  ) => Promise<RemovalResult> | null | undefined
   getInFlight: (
     scopeKey: string,
     worktreeId: string,
     optionsKey: string
-  ) => Promise<RemovalResult> | undefined
+  ) => Promise<RemovalResult> | null | undefined
   emitLifecycle: (event: { kind: 'removed'; worktreeId: string; path: string }) => void
-}): Promise<{ joined: RemovalResult } | { emitRemoved: () => void }> {
+}): Promise<
+  | { joined: RemovalResult }
+  | { emitRemoved: () => void; cleanupScopeKey: string; optionsKey: string }
+> {
   const fenceOwner = resolveWorktreeRemovalRepoOwner(
     args.store,
     args.removalTarget.repoId,
@@ -55,14 +58,12 @@ export async function admitManagedWorktreeRemoval(args: {
       worktreeId: args.removalTarget.id,
       path: args.removalTarget.path
     })
-  const inFlightRemoval = args.getInFlight(
-    preservedBranchCleanupScopeKey({
-      worktreeId: args.removalTarget.id,
-      hostId: args.cleanupHostId
-    }),
-    args.removalTarget.id,
-    getRuntimeWorktreeRemovalOptionsKey(args.options)
-  )
+  const cleanupScopeKey = preservedBranchCleanupScopeKey({
+    worktreeId: args.removalTarget.id,
+    hostId: args.cleanupHostId
+  })
+  const optionsKey = getRuntimeWorktreeRemovalOptionsKey(args.options)
+  const inFlightRemoval = args.getInFlight(cleanupScopeKey, args.removalTarget.id, optionsKey)
   if (inFlightRemoval) {
     return {
       joined: args.options.waitForBackgroundRemoval
@@ -71,8 +72,8 @@ export async function admitManagedWorktreeRemoval(args: {
             args.removalTarget.id,
             args.cleanupHostId
           )
-        : inFlightRemoval
+        : await inFlightRemoval
     }
   }
-  return { emitRemoved }
+  return { emitRemoved, cleanupScopeKey, optionsKey }
 }

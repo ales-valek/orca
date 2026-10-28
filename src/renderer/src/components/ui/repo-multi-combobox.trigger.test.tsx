@@ -2,13 +2,12 @@
 
 import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
 import RepoMultiCombobox from './repo-multi-combobox'
 
 // Shallow popover/command mocks (same pattern as the groups render test) so the
 // trigger button — and its summary label — render synchronously in jsdom.
-import { vi } from 'vitest'
 
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

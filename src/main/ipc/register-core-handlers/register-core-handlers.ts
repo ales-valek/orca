@@ -9,10 +9,8 @@ import { registerPreflightHandlers } from '../preflight'
 import type { Store } from '../../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import type { StatsCollector } from '../../stats/collector'
-import { registerFilesystemHandlers } from '../filesystem/filesystem'
 import type { CommitMessageAgentEnvironmentResolvers } from '../../text-generation/commit-message-agent-environment'
-import { registerFilesystemWatcherHandlers } from '../filesystem/watchers/filesystem-watcher-handlers'
-import { registerLspHandlers } from '../lsp'
+import { registerWorkspaceFileHandlers } from './register-workspace-file-handlers'
 import { registerUsageProviderHandlers } from '../usage-provider-handlers'
 import { registerGitHubHandlers } from '../github'
 import { registerGitLabHandlers } from '../gitlab'
@@ -259,9 +257,7 @@ export function registerCoreHandlers(
   registerWorkspacePortHandlers(store)
   registerLinkPreviewHandlers()
   registerLocalhostWorktreeLabelHandlers(store)
-  registerFilesystemHandlers(store, commitMessageAgentEnv)
-  registerFilesystemWatcherHandlers()
-  registerLspHandlers(store)
+  registerWorkspaceFileHandlers(store, commitMessageAgentEnv)
   registerRuntimeHandlers(runtime)
   registerRuntimeEnvironmentHandlers(store)
   registerWslHostHandlers({

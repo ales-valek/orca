@@ -61,7 +61,7 @@ async function settleProbe(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks()
   setState()
-  inspectRuntimeTerminalProcessMock.mockImplementation(async (_settings, ptyId: string) => ({
+  inspectRuntimeTerminalProcessMock.mockImplementation(async (ptyId: string) => ({
     foregroundProcess: ptyId === 'pty-c' ? 'zsh' : 'sleep',
     hasChildProcesses: ptyId !== 'pty-c'
   }))
@@ -135,7 +135,7 @@ describe('guardRunningTerminalGroupClose', () => {
   })
 
   it('uses command copy when only a non-agent terminal is busy', async () => {
-    inspectRuntimeTerminalProcessMock.mockImplementation(async (_settings, ptyId: string) => ({
+    inspectRuntimeTerminalProcessMock.mockImplementation(async (ptyId: string) => ({
       foregroundProcess: ptyId === 'pty-a' ? 'sleep' : 'zsh',
       hasChildProcesses: ptyId === 'pty-a'
     }))
@@ -186,7 +186,7 @@ describe('guardRunningTerminalGroupClose', () => {
 
   it('lists a timed-out terminal without treating answered idle terminals as busy', async () => {
     vi.useFakeTimers()
-    inspectRuntimeTerminalProcessMock.mockImplementation((_settings, ptyId: string) =>
+    inspectRuntimeTerminalProcessMock.mockImplementation((ptyId: string) =>
       ptyId === 'pty-b'
         ? Promise.withResolvers().promise
         : Promise.resolve({ foregroundProcess: 'zsh', hasChildProcesses: false })
@@ -210,7 +210,7 @@ describe('guardRunningTerminalGroupClose', () => {
       agentStatusByPaneKey: { [`tab-1:${LEAF_B}`]: { agentType: 'claude' } }
     })
     vi.useFakeTimers()
-    inspectRuntimeTerminalProcessMock.mockImplementation((_settings, ptyId: string) =>
+    inspectRuntimeTerminalProcessMock.mockImplementation((ptyId: string) =>
       ptyId === 'pty-a'
         ? Promise.withResolvers().promise
         : Promise.resolve({ foregroundProcess: 'zsh', hasChildProcesses: false })
@@ -253,7 +253,7 @@ describe('guardRunningTerminalGroupClose', () => {
 
   it('ignores a late busy answer after the timed-out group request was cancelled', async () => {
     const inspection = Promise.withResolvers<{ hasChildProcesses: boolean }>()
-    inspectRuntimeTerminalProcessMock.mockImplementation((_settings, ptyId: string) =>
+    inspectRuntimeTerminalProcessMock.mockImplementation((ptyId: string) =>
       ptyId === 'pty-a'
         ? inspection.promise
         : Promise.resolve({ foregroundProcess: 'zsh', hasChildProcesses: false })

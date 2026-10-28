@@ -46,6 +46,7 @@ import {
   shouldUseNativeContextMenu
 } from './worktree-context-menu-policy'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
+import { useSingleContextDeleteRestriction } from './use-single-context-delete-restriction'
 
 export default function WorktreeContextMenuView({ model }: { model: WorktreeContextMenuModel }) {
   const {
@@ -94,7 +95,6 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
     setDeveloperMenuRevealed,
     setMenuOpenState,
     setMenuPoint,
-    singleContextDeleteRestriction,
     sleepLabel,
     sleepableWorktrees,
     subtreeSleepableWorktrees,
@@ -103,6 +103,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
     worktree,
     workspaceStatuses
   } = model
+  const singleContextDeleteRestriction = useSingleContextDeleteRestriction(model)
   const deleteShortcut = useOptionalShortcutLabel('workspace.delete')
   return (
     <div
