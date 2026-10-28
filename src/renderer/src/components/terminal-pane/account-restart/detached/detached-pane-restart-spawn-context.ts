@@ -31,7 +31,12 @@ export function buildPaneIdentityEnv(
     ORCA_WORKSPACE_ID: worktreeId,
     ...(folderWorkspace
       ? {
-          ...getFolderWorkspaceOwnerEnv(folderWorkspace),
+          ...getFolderWorkspaceOwnerEnv({
+            ...folderWorkspace,
+            missionRootPath: state.missions.find(
+              (mission) => mission.id === folderWorkspace.missionId
+            )?.rootPath
+          }),
           ORCA_WORKSPACE_ROOT: folderWorkspace.folderPath
         }
       : {}),

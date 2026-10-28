@@ -99,9 +99,14 @@ export function isListedMissionSessionWorkspace(
 export function getFolderWorkspaceOwnerEnv(workspace: {
   projectGroupId: string
   missionId?: string | null
+  /** The session may run in the orchestrator worktree, so its folder is not always the root. */
+  missionRootPath?: string | null
 }): Record<string, string> {
   if (isMissionOwnedFolderWorkspace(workspace) && workspace.missionId) {
-    return { ORCA_MISSION_ID: workspace.missionId }
+    return {
+      ORCA_MISSION_ID: workspace.missionId,
+      ...(workspace.missionRootPath ? { ORCA_MISSION_ROOT: workspace.missionRootPath } : {})
+    }
   }
   return { ORCA_PROJECT_GROUP_ID: workspace.projectGroupId }
 }

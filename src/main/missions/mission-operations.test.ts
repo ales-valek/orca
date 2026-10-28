@@ -161,6 +161,126 @@ describe('MissionOperations', () => {
   })
 })
 
+describe('MissionOperations orchestrator repo', () => {
+  const orchestratorPath = path.join(referralRootPath, 'orchestration-o1--orchestrator')
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  async function createWithOrchestrator() {
+    const store = makeFakeStore()
+    const runtime = makeFakeRuntime(store)
+    const operations = createOperations(store, runtime)
+    const result = await operations.create({
+      name: 'Referral',
+      repoIds: ['r1'],
+      orchestratorRepoId: 'o1'
+    })
+    return { store, runtime, operations, result }
+  }
+
+  it('creates the orchestrator worktree on the mission branch and runs the session there', async () => {
+    const { store, runtime, result } = await createWithOrchestrator()
+
+    expect(runtime.createManagedWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoSelector: 'id:o1',
+        missionSlot: 'orchestrator',
+        branchNameOverride: 'mission/referral',
+        worktreePathOverride: orchestratorPath
+      })
+    )
+    expect(result.mission.orchestrator?.worktreeId).toBe(`o1::${orchestratorPath}`)
+    expect(store.getMissionSessionWorkspace('m1')?.folderPath).toBe(orchestratorPath)
+  })
+
+  it('keeps the Mission and runs the session at the root when the orchestrator create fails', async () => {
+    const store = makeFakeStore()
+    const runtime = makeFakeRuntime(store)
+    const createStamped = runtime.createManagedWorktree.getMockImplementation()!
+    runtime.createManagedWorktree.mockImplementation(async (args) => {
+      if (args.repoSelector === 'id:o1') {
+        throw new Error('branch_checked_out_elsewhere')
+      }
+      return createStamped(args)
+    })
+    const operations = createOperations(store, runtime)
+
+    const result = await operations.create({
+      name: 'Referral',
+      repoIds: ['r1'],
+      orchestratorRepoId: 'o1'
+    })
+
+    expect(result.mission.id).toBe('m1')
+    expect(result.orchestratorResult?.error).toBe('branch_checked_out_elsewhere')
+    expect(store.getMission('m1')?.orchestrator?.lastError).toBe('branch_checked_out_elsewhere')
+    expect(store.getMissionSessionWorkspace('m1')?.folderPath).toBe(referralRootPath)
+  })
+
+  it('rejects an orchestrator repo that is also a member and persists nothing', async () => {
+    const store = makeFakeStore()
+    const runtime = makeFakeRuntime(store)
+    const operations = createOperations(store, runtime)
+
+    await expect(
+      operations.create({ name: 'Referral', repoIds: ['r1'], orchestratorRepoId: 'r1' })
+    ).rejects.toThrow('mission_orchestrator_repo_is_member')
+    expect(store.getMissions()).toEqual([])
+    expect(runtime.createManagedWorktree).not.toHaveBeenCalled()
+  })
+
+  it('removes the orchestrator worktree when the Mission is deleted with its worktrees', async () => {
+    const { store, runtime, operations } = await createWithOrchestrator()
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: true })
+
+    expect(result.deleted).toBe(true)
+    expect(runtime.removeManagedWorktree).toHaveBeenCalledWith(
+      `id:o1::${orchestratorPath}`,
+      expect.objectContaining({
+        expectedOwnership: expect.objectContaining({ repoId: 'o1', missionSlot: 'orchestrator' })
+      })
+    )
+    expect(store.getMission('m1')).toBeNull()
+  })
+
+  it('keeps the Mission when the orchestrator worktree refuses removal', async () => {
+    const { store, runtime, operations } = await createWithOrchestrator()
+    runtime.removeManagedWorktree.mockImplementation(async (selector: string) => {
+      if (selector === `id:o1::${orchestratorPath}`) {
+        throw new Error('worktree_dirty')
+      }
+      return {}
+    })
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: true })
+
+    expect(result.deleted).toBe(false)
+    expect(result.orchestratorResult?.error).toBe('worktree_dirty')
+    expect(store.getMission('m1')?.orchestrator?.worktreeId).toBe(`o1::${orchestratorPath}`)
+  })
+
+  it('refuses to add the orchestrator repo as a member', async () => {
+    const { store, operations } = await createWithOrchestrator()
+
+    await expect(operations.addMembers({ missionId: 'm1', repoIds: ['o1'] })).rejects.toThrow(
+      'mission_orchestrator_repo_is_member'
+    )
+    expect(store.getMission('m1')?.members.map((member) => member.repoId)).toEqual(['r1'])
+  })
+
+  it('detaches the orchestrator worktree when the Mission is deleted keeping worktrees', async () => {
+    const { store, operations } = await createWithOrchestrator()
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: false })
+
+    expect(result.deleted).toBe(true)
+    expect(store.getWorktreeMeta(`o1::${orchestratorPath}`)?.missionId).toBeUndefined()
+  })
+})
+
 describe('MissionMemberOwnershipRecovery slots', () => {
   const taskBranch = 'mission-task/referral/t1'
 

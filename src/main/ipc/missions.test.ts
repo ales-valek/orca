@@ -333,7 +333,7 @@ describe('missions IPC', () => {
       missionId: string
     }
 
-    expect(workspace).toEqual({ id: 'fw-1', missionId: 'm1' })
+    expect(workspace).toEqual({ id: 'fw-1', missionId: 'm1', folderPath: referralRootPath })
     expect(missionRootMocks.resolveMissionRootPath).toHaveBeenCalledWith(
       missionsBaseDir,
       'Referral',
@@ -476,7 +476,11 @@ describe('missions IPC', () => {
 
     expect(result).toEqual({ deleted: false, memberResults: [], error: 'disk full' })
     expect(store.getMission('m1')?.members[0]).toMatchObject(owned)
-    expect(store.getMissionSessionWorkspace('m1')).toEqual({ id: 'fw-1', missionId: 'm1' })
+    expect(store.getMissionSessionWorkspace('m1')).toEqual({
+      id: 'fw-1',
+      missionId: 'm1',
+      folderPath: referralRootPath
+    })
     expect(store.getWorktreeMeta(owned.worktreeId)).toMatchObject({
       missionId: 'm1',
       instanceId: owned.worktreeInstanceId

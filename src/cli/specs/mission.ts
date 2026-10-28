@@ -34,13 +34,14 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
     path: ['mission', 'create'],
     summary: 'Create a Mission root with one worktree per repo on a shared branch',
     usage:
-      'orca mission create --name <name> --repo <selector> [--repo <selector>...] [--branch <branch>] [--agent <agent>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'name', 'repo', 'branch', 'agent'],
+      'orca mission create --name <name> --repo <selector> [--repo <selector>...] [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'name', 'repo', 'branch', 'agent', 'orchestrator-repo'],
     repeatableFlags: ['repo'],
     notes: [
       REPO_SELECTOR_NOTE,
       '--branch defaults to a branch derived from the Mission name.',
       '--agent picks the agent auto-launched when the Mission session first opens.',
+      '--orchestrator-repo checks out the Mission branch of a non-member repo in the root; the Mission session runs there.',
       SETUP_HOOK_NOTE
     ],
     examples: [

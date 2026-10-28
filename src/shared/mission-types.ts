@@ -97,11 +97,13 @@ export type MissionTaskResult = {
 export type MissionCreateResult = {
   mission: Mission
   memberResults: MissionMemberResult[]
+  orchestratorResult?: MissionMemberResult
 }
 
 export type MissionDeleteResult = {
   deleted: boolean
   memberResults: MissionMemberResult[]
+  orchestratorResult?: MissionMemberResult
   error?: string
   warning?: string
 }
@@ -137,6 +139,7 @@ export type RuntimeMissionOrchestratorRecord = {
   repoId: string
   worktreePath: string | null
   branch: string
+  error?: string
 }
 
 /** CLI/runtime projection of a Mission with member worktree locations resolved. */
@@ -158,6 +161,7 @@ export type RuntimeMissionShow = { mission: RuntimeMissionRecord }
 export type RuntimeMissionMutationResult = {
   mission: RuntimeMissionRecord
   memberResults: MissionMemberResult[]
+  orchestratorResult?: MissionMemberResult
 }
 
 export type RuntimeMissionRemoveResult = MissionDeleteResult & {
