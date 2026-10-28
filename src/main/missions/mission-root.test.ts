@@ -306,6 +306,16 @@ describe('removeMissionRoot', () => {
     expect(existsSync(path.join(fixture.rootPath, MISSION_SETUP_LOG_NAME))).toBe(true)
   })
 
+  it('removes the Huly MISSION.md brief with an otherwise empty root', () => {
+    const fixture = rootFixture()
+    ensureFixture(fixture)
+    writeFileSync(path.join(fixture.rootPath, MISSION_SETUP_LOG_NAME), 'log')
+    writeFileSync(path.join(fixture.rootPath, 'MISSION.md'), '# Kiosek')
+
+    expect(removeMissionRoot(fixture)).toEqual({ removed: true, preservedEntries: [] })
+    expect(existsSync(fixture.rootPath)).toBe(false)
+  })
+
   it('preserves a managed link whose target was replaced externally', () => {
     const fixture = rootFixture()
     const managedTarget = path.join(tmp, 'managed-target')
