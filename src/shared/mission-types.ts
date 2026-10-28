@@ -94,6 +94,23 @@ export type MissionTaskResult = {
   warning?: string
 }
 
+/** Ambiguous hunks are keyed `file:line`; nothing was applied while any remain. */
+export type MissionAbsorbResult = {
+  applied: number
+  ambiguous: { file: string; line: number; candidateTaskIds: string[] }[]
+  /** Set when the edits are in their layers but the restack afterwards did not bring them back. */
+  warning?: string
+}
+
+export type MissionStackPullRequestsResult = {
+  created: { branch: string; url: string }[]
+  /** Layers that already had an open PR (only distinguishable on the plain-create path). */
+  skipped: { branch: string; url?: string }[]
+  error?: string
+}
+
+export type MissionStackPushResult = { pushed: string[]; error?: string }
+
 export type MissionCreateResult = {
   mission: Mission
   memberResults: MissionMemberResult[]

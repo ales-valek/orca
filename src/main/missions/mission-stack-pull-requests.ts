@@ -6,7 +6,11 @@ import type {
 } from '../../shared/hosted-review'
 import { deriveMissionLayerState } from '../../shared/mission-layer-state'
 import { getMissionTaskParentBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
-import type { Mission, MissionTask } from '../../shared/mission-types'
+import type {
+  Mission,
+  MissionStackPullRequestsResult,
+  MissionTask
+} from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { getBranchTip } from '../git/stack-layer-git'
 import type { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
@@ -33,12 +37,7 @@ export type MissionStackPushDeps = {
   pushBranch: (branch: string, leaseSha: string) => Promise<void>
 }
 
-export type MissionStackPullRequestsResult = {
-  created: { branch: string; url: string }[]
-  /** Layers that already had an open PR (only distinguishable on the plain-create path). */
-  skipped: { branch: string; url?: string }[]
-  error?: string
-}
+export type { MissionStackPullRequestsResult } from '../../shared/mission-types'
 
 type LayerCheckout = { branch: string; path: string }
 
