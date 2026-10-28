@@ -11086,7 +11086,12 @@
             "7166b9090c": "GitHub authentication via the gh CLI.",
             "f16e41cc72": "GitHub Integration",
             "760e2446e0": "Bitbucket Cloud authentication with a saved API token or environment variables.",
-            "af5ae87847": "access token"
+            "af5ae87847": "access token",
+            "hulyTitle": "Huly Integration",
+            "hulyDescription": "Connect Huly and map its components and statuses for Missions.",
+            "hulyKeyword": "huly",
+            "milestoneKeyword": "milestone",
+            "missionKeyword": "mission"
           }
         },
         "jira": {
@@ -13863,6 +13868,55 @@
               "windowsFailureDescription": "Enable notifications for Orca in Windows Settings."
             }
           }
+        },
+        "HulyComponentRepoMapEditor": {
+          "empty": "This project has no components. Issues without a component need a repository picked when creating a Mission.",
+          "repoLabel": "Repository for {{component}}",
+          "notMapped": "Not mapped",
+          "missingRepo": "Missing repository"
+        },
+        "HulyProjectSettingsSection": {
+          "retry": "Retry",
+          "noProjects": "This workspace has no projects.",
+          "project": "Project",
+          "projectLabel": "Huly project",
+          "componentsTitle": "Component repositories",
+          "componentsDescription": "Each issue's component picks the repository its task is stacked in.",
+          "skipTitle": "Skipped statuses",
+          "skipDescription": "Issues in these statuses, or in a done or canceled category, are left out of new Missions.",
+          "noSkippedStatuses": "No statuses",
+          "writeBackTitle": "Write task status back to Huly",
+          "writeBackDescription": "Move linked issues when Orca creates a task layer, opens stacked pull requests, or merges the stack. Issues outside the listed statuses stay where they are."
+        },
+        "HulyStatusRuleEditor": {
+          "layerCreated": "Task layer created",
+          "stackPrCreated": "Stacked pull request created",
+          "stackMerged": "Stack merged into the default branch",
+          "categoryBacklog": "Backlog",
+          "categoryToDo": "To do",
+          "categoryActive": "In progress",
+          "categoryWon": "Done",
+          "categoryLost": "Canceled",
+          "moveTo": "Move to",
+          "targetLabel": "Status after: {{event}}",
+          "noChange": "Don't change",
+          "onlyFrom": "Only from",
+          "noStatuses": "No statuses",
+          "fromStatusesLabel": "Statuses to move from: {{event}}",
+          "noCategories": "No categories",
+          "fromCategoriesLabel": "Categories to move from: {{event}}"
+        },
+        "HulyIntegrationCard": {
+          "connectedTo": "Connected to {{workspace}}",
+          "checking": "Checking Huly access before showing setup actions.",
+          "description": "Create Missions from Huly milestones and write task status back to Huly.",
+          "statusReconnect": "Reconnect needed",
+          "statusConnected": "Connected",
+          "statusNotConnected": "Not connected",
+          "disconnect": "Disconnect",
+          "connect": "Connect Huly",
+          "reconnect": "Reconnect",
+          "credentialCopy": "Connect with your Huly server URL, workspace, and an API token. The token is stored locally and encrypted when local runtime storage supports it."
         }
       },
       "right": {
@@ -19381,6 +19435,31 @@
         "viewing": "Currently viewing",
         "viewingChild": "Viewing subagent {{name}}",
         "returnHint": "Click the parent row to return. Esc stops this subagent. Enter sends your draft to this subagent."
+      },
+      "HulyConnectDialog": {
+        "title": "Connect Huly",
+        "description": "Use your Huly server URL, workspace, and an API token to create Missions from milestones.",
+        "serverUrl": "Server URL",
+        "workspace": "Workspace",
+        "workspacePlaceholder": "my-workspace",
+        "token": "Token",
+        "tokenPlaceholder": "Huly API token",
+        "storage": "Your token is stored locally and encrypted when local runtime storage supports it.",
+        "cancel": "Cancel",
+        "verifying": "Verifying…",
+        "connect": "Connect",
+        "serverUrlPlaceholder": "https://huly.app"
+      },
+      "HulyErrorCopy": {
+        "authRequired": "Huly rejected the saved token. Reconnect with a new token.",
+        "notConnected": "Huly is not connected.",
+        "planEmpty": "This milestone has no open issues to turn into tasks.",
+        "planUnresolved": "Some issues have no repository or block each other in a cycle. Resolve them before creating the Mission.",
+        "serverUrlMustBeHttps": "Use an https:// server URL. Plain http is allowed only for localhost.",
+        "projectRequired": "Choose a Huly project.",
+        "milestoneNotFound": "Huly has no milestone with that name in this project.",
+        "milestoneAmbiguous": "Several milestones share that name. Pick one from the list.",
+        "requestFailed": "The Huly request failed."
       }
     },
     "i18n": {
