@@ -38,6 +38,10 @@ import { ARCHIVE_HOOK_FAILED_REMOVAL_CODE } from '../../../shared/worktree/archi
 import { NESTED_WORKER_DEPTH_EXCEEDED_CODE } from '../../../shared/nested-worker-depth'
 import { PROJECT_RUNTIME_REPAIR_REQUIRED_CODE } from '../../../shared/project-runtime-repair-message'
 import { WORKTREE_CREATE_COLLISION_CODE } from '../../../shared/new-workspace/worktree-create-collision'
+import {
+  HULY_MESSAGE_ERROR_CODES,
+  HULY_STRUCTURED_ERROR_CODES
+} from '../../../shared/huly/huly-error-codes'
 import { AGENT_LAUNCH_PANE_ALREADY_LIVE_CODE } from '../../../shared/agent-launch-pane-already-live'
 import { AGENT_LAUNCH_SESSION_ALREADY_EXISTS_CODE } from '../../../shared/agent-launch-session-already-exists'
 import { AGENT_LAUNCH_TAB_CLOSED_CODE } from '../../../shared/agent-launch-tab-closed'
@@ -105,7 +109,8 @@ const RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   'connectors_disabled',
   'external_conversation_not_found',
   ...CONNECTOR_REPLY_ERROR_CODES,
-  ...AGENT_SESSION_RPC_ERROR_CODES
+  ...AGENT_SESSION_RPC_ERROR_CODES,
+  ...HULY_MESSAGE_ERROR_CODES
 ])
 
 const COMPUTER_PASSTHROUGH_CODES: ReadonlySet<string> = new Set(Object.values(COMPUTER_ERROR_CODES))
@@ -113,8 +118,8 @@ const LINEAR_PASSTHROUGH_CODES: ReadonlySet<string> = new Set(LINEAR_ERROR_CODES
 const STRUCTURED_RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   WORKTREE_CREATE_COLLISION_CODE,
   AGENT_LAUNCH_SURFACE_UNAVAILABLE_CODE,
-  // Carries the unmapped issues and blockedBy cycles so clients can list them.
-  'huly_plan_unresolved',
+  // huly_plan_unresolved carries the unmapped issues and blockedBy cycles so clients can list them.
+  ...HULY_STRUCTURED_ERROR_CODES,
   'worktree_id_requires_full_path',
   'run_not_found',
   'run_home_unreachable',
