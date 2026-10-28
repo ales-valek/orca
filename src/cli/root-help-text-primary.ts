@@ -111,6 +111,7 @@ export const ROOT_HELP_TEXT_PRIMARY = [
   '  mission show              Show one Mission with its member worktrees',
   '  mission current           Show the Mission containing the current directory',
   '  mission create            Create a Mission root with one worktree per repo',
+  '  mission refresh           Append new Huly milestone issues to a Huly-sourced Mission',
   '  mission session           Open the Mission root session (folder selector for terminals)',
   '  mission add-repo          Add repos to a Mission on the Mission branch',
   '  mission task add          Append a task layer above a Mission repo stack',
