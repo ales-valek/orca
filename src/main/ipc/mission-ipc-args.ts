@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { isValidGitBranchName } from '../../shared/git-branch-name'
+import { isNonMemberMissionSlot } from '../../shared/mission-task-stack'
+import type { MissionSlot } from '../../shared/mission-types'
 import { isTuiAgent } from '../../shared/tui-agent-config'
 
 export const MissionCreateArgs = z.object({
@@ -70,6 +72,12 @@ export const MissionAbsorbArgs = z.object({
   missionId: z.string().min(1),
   repoId: z.string().min(1),
   overrides: z.record(z.string(), z.string().min(1)).optional()
+})
+
+export const MissionRecreateSlotArgs = z.object({
+  missionId: z.string().min(1),
+  repoId: z.string().min(1),
+  slot: z.custom<Exclude<MissionSlot, 'member'>>(isNonMemberMissionSlot)
 })
 
 export const MissionStackPullRequestsArgs = z.object({

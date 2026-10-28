@@ -19,14 +19,34 @@ export function getMissionPreviewBranch(mission: Pick<Mission, 'branchName'>): s
   return `${PREVIEW_BRANCH_PREFIX}${getMissionBranchSlug(mission.branchName)}`
 }
 
+const MAX_TASK_SLUG_LENGTH = 40
+
+/** Branch-safe task slug: diacritics folded to ASCII (`Košík` -> `kosik`), capped at a word boundary. */
+export function slugifyMissionTaskText(text: string): string {
+  const slug = slugifyMissionText(text.normalize('NFD').replace(/\p{M}+/gu, ''))
+  if (slug.length <= MAX_TASK_SLUG_LENGTH) {
+    return slug
+  }
+  const capped = slug.slice(0, MAX_TASK_SLUG_LENGTH)
+  const boundary = /[-._]/.test(slug[MAX_TASK_SLUG_LENGTH])
+    ? capped.length
+    : capped.search(/[-._][^-._]*$/)
+  return slugifyMissionText(boundary > 0 ? capped.slice(0, boundary) : capped)
+}
+
+/** `existingBranches` holds local branch names already in the repo, e.g. a removed task's kept branch. */
 export function createMissionTaskBranchName(
   mission: Pick<Mission, 'branchName' | 'tasks'>,
-  seed: { title: string; externalRef?: string | null }
+  seed: { title: string; externalRef?: string | null },
+  existingBranches: ReadonlySet<string> = new Set()
 ): string {
   const taskSlug =
-    slugifyMissionText(seed.externalRef ?? '') || slugifyMissionText(seed.title) || 'task'
-  const prefix = `${TASK_BRANCH_PREFIX}${getMissionBranchSlug(mission.branchName)}/`
-  const taken = new Set((mission.tasks ?? []).map((task) => task.branchName))
+    slugifyMissionTaskText(seed.externalRef ?? '') || slugifyMissionTaskText(seed.title) || 'task'
+  const prefix = getMissionTaskBranchPrefix(mission)
+  const taken = new Set([
+    ...(mission.tasks ?? []).map((task) => task.branchName),
+    ...existingBranches
+  ])
   let candidate = taskSlug
   for (
     let suffix = 2;
@@ -36,6 +56,11 @@ export function createMissionTaskBranchName(
     candidate = `${taskSlug}-${suffix}`
   }
   return `${prefix}${candidate}`
+}
+
+/** Namespace every task branch of a mission lives under, e.g. `mission-task/referral/`. */
+export function getMissionTaskBranchPrefix(mission: Pick<Mission, 'branchName'>): string {
+  return `${TASK_BRANCH_PREFIX}${getMissionBranchSlug(mission.branchName)}/`
 }
 
 export function getRepoTaskStack(mission: Pick<Mission, 'tasks'>, repoId: string): MissionTask[] {

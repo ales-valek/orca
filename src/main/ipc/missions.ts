@@ -22,6 +22,7 @@ import {
   MissionCreateArgs,
   MissionDeleteArgs,
   MissionMemberSelectorArgs,
+  MissionRecreateSlotArgs,
   MissionRemoveMemberArgs,
   MissionRemoveTaskArgs,
   MissionRestackArgs,
@@ -45,6 +46,7 @@ const MISSION_CHANNELS = [
   'missions:addMembers',
   'missions:removeMember',
   'missions:recreateMemberWorktree',
+  'missions:recreateSlotWorktree',
   'missions:ensureSession',
   'missions:inspectStacks',
   'missions:addTask',
@@ -163,6 +165,13 @@ export function registerMissionHandlers(
         return result
       })
     }
+  )
+  ipcMain.handle(
+    'missions:recreateSlotWorktree',
+    async (_event, rawArgs: unknown): Promise<MissionMemberResult> =>
+      operations.recreateSlotWorktree(
+        parseMissionIpcArgs(MissionRecreateSlotArgs, rawArgs, 'invalid_mission_recreate_slot_args')
+      )
   )
   ipcMain.handle(
     'missions:ensureSession',

@@ -27,6 +27,7 @@ import { runMissionSetupHook, type MissionSetupHookEvent } from './mission-setup
 import {
   MissionTaskOperations,
   type MissionAddTaskInput,
+  type MissionRecreateSlotInput,
   type MissionRemoveTopTaskInput,
   type MissionRestackInput
 } from './mission-task-operations'
@@ -248,6 +249,10 @@ export class MissionOperations {
 
   restack(args: MissionRestackInput): Promise<MissionRestackReport[]> {
     return this.tasks.restack(args)
+  }
+
+  recreateSlotWorktree(args: MissionRecreateSlotInput): Promise<MissionMemberResult> {
+    return this.tasks.recreateSlotWorktree(args)
   }
 
   /** An agent in a Mission worktree finished a turn; restacks its repo after a short quiet period. */
