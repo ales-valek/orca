@@ -32,8 +32,6 @@ import {
 } from './mission-ipc-args'
 import { notifyReposChanged } from './repos/repos-changed-notification'
 import { MissionOperations } from '../missions/mission-operations'
-import { inspectMissionStacks } from '../missions/mission-stack-inspection'
-import { readLocalMissionPushTips } from '../missions/mission-stack-pull-request-git'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -189,16 +187,7 @@ export function registerMissionHandlers(
       if (!mission) {
         return []
       }
-      return inspectMissionStacks(mission, {
-        inspectRepo: operations.inspectRepo,
-        readPushTips: async (repoId, branches) => {
-          const repo = store.getRepo(repoId)
-          if (!repo) {
-            throw new Error('mission_member_not_found')
-          }
-          return readLocalMissionPushTips(repo, branches)
-        }
-      })
+      return operations.inspectStacks(mission)
     }
   )
   ipcMain.handle('missions:addTask', async (_event, rawArgs: unknown): Promise<MissionTaskResult> =>
