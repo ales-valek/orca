@@ -7,13 +7,13 @@ import {
   getRemoteTrackingTip,
   pushStackBranch
 } from '../git/stack-branch-push'
-import { getBranchTip } from '../git/stack-layer-git'
+import { getBranchTip, getCommitAncestry } from '../git/stack-layer-git'
 import { hasWorktreeBaseCommitRef } from '../git/worktree-base-ref-probe'
 import { createHostedReview } from '../source-control/hosted-review-creation'
 import { detectHostedReviewProvider } from '../source-control/forge-provider'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
 import { resolveWorktreeCreateBase } from '../worktree-create-base'
-import type { MissionLayerPushTips } from '../../shared/mission-layer-state'
+import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   MissionStackPullRequestDeps,
   MissionStackPushDeps
@@ -36,7 +36,8 @@ async function getDefaultBaseBranch(repo: Repo, remote: string): Promise<string>
 /** Real git and GitHub wiring; `memberPath` is the mission branch checkout, shared refs serve every layer. */
 export async function createLocalMissionStackPullRequestDeps(
   repo: Repo,
-  memberPath: string
+  memberPath: string,
+  inspectStack: () => Promise<MissionRestackReport>
 ): Promise<MissionStackPullRequestDeps> {
   const remote = await getDefaultRemote(repo.path)
   return {
@@ -50,7 +51,8 @@ export async function createLocalMissionStackPullRequestDeps(
         executionHostId: LOCAL_EXECUTION_HOST_ID
       }),
     getCommitsAheadCount: (base, branch) => getCommitsAheadCount(repo.path, remote, base, branch),
-    pushBranch: (branch) => pushStackBranch(repo.path, remote, branch)
+    pushBranch: (branch) => pushStackBranch(repo.path, remote, branch),
+    inspectStack
   }
 }
 
@@ -59,7 +61,8 @@ export async function createLocalMissionStackPushDeps(repo: Repo): Promise<Missi
   return {
     getBranchTip,
     getRemoteTrackingTip: (branch) => getRemoteTrackingTip(repo.path, remote, branch),
-    pushBranch: (branch, leaseSha) => pushStackBranch(repo.path, remote, branch, leaseSha)
+    pushBranch: (branch, leaseSha) => pushStackBranch(repo.path, remote, branch, leaseSha),
+    getCommitAncestry: (ancestor, descendant) => getCommitAncestry(repo.path, ancestor, descendant)
   }
 }
 
@@ -75,7 +78,12 @@ export async function readLocalMissionPushTips(
         getBranchTip(repo.path, branch),
         getRemoteTrackingTip(repo.path, remote, branch)
       ])
-      return [branch, { localTip, pushedTip }]
+      // Why: an unknown answer must not advertise a push that could drop remote commits.
+      const isLocalBehindPushed =
+        localTip && pushedTip && localTip !== pushedTip
+          ? (await getCommitAncestry(repo.path, localTip, pushedTip)) !== false
+          : false
+      return [branch, { localTip, pushedTip, isLocalBehindPushed }]
     })
   )
   return new Map(entries)

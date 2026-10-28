@@ -54,6 +54,15 @@ async function applyNeedsPush(
   }
 }
 
+/** Read-only layer states of one repo's stack, with the needs-push rule applied. */
+export async function inspectMissionRepoStack(
+  mission: Mission,
+  repoId: string,
+  deps: MissionStackInspectionDeps
+): Promise<MissionRestackReport> {
+  return applyNeedsPush(mission, await deps.inspectRepo(mission, repoId), deps.readPushTips)
+}
+
 /** Read-only layer states of every repo with tasks; a current layer that moved since its last push needs a push. */
 export async function inspectMissionStacks(
   mission: Mission,
@@ -65,8 +74,7 @@ export async function inspectMissionStacks(
   const reports = await Promise.all(
     repoIds.map(async (repoId) => {
       try {
-        const report = await deps.inspectRepo(mission, repoId)
-        return await applyNeedsPush(mission, report, deps.readPushTips)
+        return await inspectMissionRepoStack(mission, repoId, deps)
       } catch (error) {
         console.error('[missions] layer inspection failed:', error)
         return null

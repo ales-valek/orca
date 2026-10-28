@@ -23,4 +23,10 @@ describe('formatMissionMemberError', () => {
       formatMissionMemberError('Layer mission-task/x/a: mission_layer_not_clean')
     ).not.toContain('mission_layer_not_clean')
   })
+
+  it('keeps the layer list of a stack that is not current', () => {
+    expect(formatMissionMemberError('mission_stack_not_current: mission-task/x/a (stale)')).toBe(
+      'These task layers are not up to date: mission-task/x/a (stale). Restack, then create the pull requests again.'
+    )
+  })
 })

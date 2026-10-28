@@ -7400,7 +7400,8 @@
           "72c7c43c95": "A task layer has uncommitted changes. Commit or discard them, then retry.",
           "8f57524962": "A workspace inside the mission folder cannot be kept. Remove it together with its workspace.",
           "9b92a95d43": "Stacked pull requests are supported only for GitHub repositories.",
-          "96dae2fc71": "The orchestrator project cannot also be a mission project."
+          "96dae2fc71": "The orchestrator project cannot also be a mission project.",
+          "5d1c0e7a43": "These task layers are not up to date: {{value0}}. Restack, then create the pull requests again."
         },
         "MissionMemberRows": {
           "2f310bd75a": "Remove project and delete workspace?",

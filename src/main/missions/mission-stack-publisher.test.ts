@@ -17,8 +17,9 @@ function createPublisher(mission: Mission | null) {
     getRepo: (id: string) => (id === 'r1' ? { id, path: '/repo' } : undefined)
   }
   const lifecycle = { run: <T>(_id: string, fn: () => Promise<T>) => fn() }
+  const inspectStack = async () => ({ repoId: 'r1', layers: [] })
   // SAFETY: the publisher only calls getMission/getRepo on the store and run on the lifecycle.
-  return new MissionStackPublisher(store as unknown as Store, lifecycle)
+  return new MissionStackPublisher(store as unknown as Store, lifecycle, inspectStack)
 }
 
 const mission: Mission = {
