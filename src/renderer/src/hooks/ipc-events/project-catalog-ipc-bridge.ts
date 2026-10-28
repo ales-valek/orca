@@ -36,6 +36,13 @@ export function registerProjectCatalogIpcBridge(
     })
   )
 
+  // Why: a restack that blocks writes no record, so only this event re-reads the layer states.
+  unsubs.push(
+    window.api.missions.onStacksChanged?.(({ missionId }) => {
+      void useAppStore.getState().refreshMissionStackStates(missionId)
+    }) ?? (() => {})
+  )
+
   unsubs.push(
     window.api.worktrees.onChanged(
       async (data: {

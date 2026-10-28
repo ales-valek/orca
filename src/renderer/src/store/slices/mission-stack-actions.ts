@@ -41,6 +41,13 @@ export type MissionStackSlice = {
     repoId: string
   ) => Promise<MissionStackPullRequestsResult | null>
   pushMissionStack: (missionId: string, repoId: string) => Promise<MissionStackPushResult | null>
+  recreateMissionSlotWorktree: (
+    missionId: string,
+    repoId: string,
+    slot: Exclude<MissionSlot, 'member'>
+  ) => Promise<void>
+  /** Main ran a stack mutation or restack; states may change without a record change. */
+  refreshMissionStackStates: (missionId: string) => Promise<void>
 }
 
 export const missionSlotErrorKey = (missionId: string, repoId: string, slot: MissionSlot): string =>
@@ -208,6 +215,26 @@ export function createMissionStackSlice(set: SliceSet, get: SliceGet): MissionSt
         'member',
         () => window.api.missions.pushStack({ missionId, repoId }),
         (result) => result.error
+      ),
+
+    recreateMissionSlotWorktree: async (missionId, repoId, slot) => {
+      await runStackAction(
+        missionId,
+        repoId,
+        slot,
+        () => window.api.missions.recreateSlotWorktree({ missionId, repoId, slot }),
+        (result) => result.error
       )
+    },
+
+    refreshMissionStackStates: async (missionId) => {
+      const state = get()
+      const mission = state.missions.find((entry) => entry.id === missionId)
+      // Why: a Mission without tasks needs a read only to clear the reports of its last stack.
+      if (!mission || (!mission.tasks?.length && !state.missionStackReports[missionId]?.length)) {
+        return
+      }
+      await state.inspectMissionStacks(missionId)
+    }
   }
 }
