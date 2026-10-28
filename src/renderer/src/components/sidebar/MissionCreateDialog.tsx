@@ -1,15 +1,5 @@
 import React, { useId, useMemo, useRef, useState } from 'react'
 import AgentCombobox from '@/components/agent/AgentCombobox'
-import { getAgentCatalog } from '@/lib/agent-catalog'
-import {
-  pickQuickWorkspaceAgent,
-  resolveQuickWorkspaceAgentSelection
-} from '@/lib/quick-workspace-agent-selection'
-import {
-  filterEnabledTuiAgents,
-  DEFAULT_DISABLED_TUI_AGENTS
-} from '../../../../shared/tui-agent-selection'
-import type { TuiAgent } from '../../../../shared/tui-agent'
 import {
   Dialog,
   DialogContent,
@@ -38,6 +28,7 @@ import {
   MissionCreateMemberStatusList,
   type MissionCreateMemberStatus
 } from './MissionCreateMemberStatusList'
+import { useMissionSessionAgent } from './use-mission-session-agent'
 
 export default function MissionCreateDialog(): React.JSX.Element {
   const open = useAppStore((s) => s.activeModal === 'mission-create')
@@ -49,11 +40,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
   const createMission = useAppStore((s) => s.createMission)
   const setSidebarListMode = useAppStore((s) => s.setSidebarListMode)
 
-  const defaultTuiAgent = useAppStore((s) => s.settings?.defaultTuiAgent ?? null)
-  const disabledTuiAgents = useAppStore(
-    (s) => s.settings?.disabledTuiAgents ?? DEFAULT_DISABLED_TUI_AGENTS
-  )
-  const detectedAgentIds = useAppStore((s) => s.detectedAgentIds)
+  const { sessionAgent, setSessionAgent, visibleAgents } = useMissionSessionAgent()
 
   const nameId = useId()
   const branchId = useId()
@@ -63,42 +50,9 @@ export default function MissionCreateDialog(): React.JSX.Element {
   const branchDirtyRef = useRef(false)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [orchestratorRepoId, setOrchestratorRepoId] = useState<string | null>(null)
-  // Why: mirror the composer's selection rules — a disabled or undetected
-  // default must not be submitted invisibly, and a user pick survives
-  // detection updates via the override (repaired during render, not effects).
-  const [sessionAgentOverride, setSessionAgentOverride] = useState<TuiAgent | null | undefined>(
-    undefined
-  )
-  const preferredSessionAgent = useMemo(
-    () => pickQuickWorkspaceAgent(defaultTuiAgent, detectedAgentIds, disabledTuiAgents),
-    [defaultTuiAgent, detectedAgentIds, disabledTuiAgents]
-  )
-  const resolvedSessionAgentSelection = resolveQuickWorkspaceAgentSelection({
-    quickAgentOverride: sessionAgentOverride,
-    preferredQuickAgent: preferredSessionAgent,
-    detectedAgentIds,
-    disabledTuiAgents
-  })
-  if (resolvedSessionAgentSelection.quickAgentOverride !== sessionAgentOverride) {
-    setSessionAgentOverride(resolvedSessionAgentSelection.quickAgentOverride)
-  }
-  const sessionAgent = resolvedSessionAgentSelection.quickAgent
   const [submitting, setSubmitting] = useState(false)
   const [createFailed, setCreateFailed] = useState(false)
   const [memberResults, setMemberResults] = useState<MissionMemberResult[] | null>(null)
-
-  const visibleAgents = useMemo(() => {
-    const enabledIds = new Set(
-      filterEnabledTuiAgents(
-        getAgentCatalog().map((agent) => agent.id),
-        disabledTuiAgents
-      )
-    )
-    const detected = detectedAgentIds === null ? null : new Set(detectedAgentIds)
-    return getAgentCatalog().filter(
-      (agent) => enabledIds.has(agent.id) && (detected === null || detected.has(agent.id))
-    )
-  }, [detectedAgentIds, disabledTuiAgents])
 
   const { eligibleRepos, groupOptions } = useMemo(() => {
     const context = { projects, settings }
@@ -287,7 +241,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
                 <AgentCombobox
                   agents={visibleAgents}
                   value={sessionAgent}
-                  onValueChange={setSessionAgentOverride}
+                  onValueChange={setSessionAgent}
                   triggerClassName="h-8 w-full border-input text-xs"
                 />
               </div>

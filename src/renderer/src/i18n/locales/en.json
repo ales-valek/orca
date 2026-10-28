@@ -7582,7 +7582,9 @@
           "8d3abfb48a": "Mission Name",
           "7f94e6c670": "Save",
           "955a21f262": "Mission options",
-          "83e2a3cc38": "1 project"
+          "83e2a3cc38": "1 project",
+          "refreshFromHuly": "Refresh from Huly",
+          "newFromHuly": "New Mission from Huly milestone"
         },
         "MissionMemberErrorCopy": {
           "c8affe1f4b": "This repository has no commits or default branch yet. Make an initial commit (or set a default branch in Project Settings), then retry.",
@@ -7734,6 +7736,70 @@
           "6739390591": "Workspace missing",
           "a463ece8dd": "Remove task",
           "4721fec37a": "Layer states may be outdated."
+        },
+        "MissionFromHulyDialog": {
+          "warnings": "The Mission was created, but some steps failed.",
+          "title": "New Mission from Huly milestone",
+          "description": "Each repository gets a stack of task branches, one per open issue, ordered by the issues' blocked-by relations.",
+          "name": "Mission Name",
+          "branch": "Branch",
+          "orchestrator": "Orchestrator project (optional)",
+          "agent": "Agent",
+          "cancel": "Cancel",
+          "create": "Create Mission"
+        },
+        "MissionHulyMilestonePicker": {
+          "project": "Project",
+          "projectLabel": "Huly project",
+          "milestone": "Milestone",
+          "milestoneLabel": "Huly milestone",
+          "loading": "Loading...",
+          "choose": "Choose a milestone"
+        },
+        "MissionHulyPlanBody": {
+          "retry": "Retry",
+          "loading": "Loading the plan...",
+          "empty": "This milestone has no open issues to turn into tasks."
+        },
+        "MissionHulyPlanStacks": {
+          "title": "Task stacks",
+          "description": "The first task sits on the mission branch; each next one stacks on the task above it.",
+          "moveUp": "Move {{identifier}} up",
+          "moveDown": "Move {{identifier}} down"
+        },
+        "MissionHulyPlanView": {
+          "repoFor": "Repository for {{identifier}}",
+          "chooseRepo": "Choose a repository",
+          "remember": "Remember for this component",
+          "cycle": "These issues in {{repo}} block each other in a cycle: {{identifiers}}. Break the cycle in Huly, then reload the plan.",
+          "unmappedTitle": "Issues without a repository",
+          "skipped": "Skipped issues ({{count}})",
+          "reload": "Reload plan"
+        },
+        "MissionHulyRefreshDialog": {
+          "appendedOne": "Appended 1 new task",
+          "appendedMany": "Appended {{count}} new tasks",
+          "title": "Refresh from Huly",
+          "loading": "Comparing with Huly...",
+          "close": "Close",
+          "appendOne": "Append 1 new task",
+          "appendMany": "Append {{count}} new tasks",
+          "insertedInMiddle": "Huly orders it below existing tasks, and stacks only grow on top.",
+          "repoNotInMission": "Its repository is not part of this Mission.",
+          "blockedCycle": "It is part of a blocked-by cycle.",
+          "unmapped": "Its component has no repository.",
+          "blockedByPending": "It is blocked by an issue that cannot be appended.",
+          "noChanges": "Nothing new in Huly for this Mission.",
+          "appendable": "New tasks for {{repo}}",
+          "nonAppendable": "New issues that cannot be appended",
+          "reordered": "Order changed in Huly",
+          "reorderedNote": "The stacks keep their order. Reorder the task layers by hand if needed.",
+          "reorderedDetail": "Was {{before}}, now {{after}}",
+          "removed": "No longer in the milestone",
+          "removedNote": "Their task layers stay in the Mission.",
+          "movedRepo": "Moved to another repository",
+          "movedRepoNote": "Their task layers stay in their current repository.",
+          "movedRepoDetail": "{{from}} to {{to}}"
         },
         "DeleteNestedWorktreesDialog": {
           "unsupportedHost": "This host does not support nested worktree deletion."

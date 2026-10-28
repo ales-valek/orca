@@ -57,6 +57,7 @@ export type UISliceContextual = {
     | 'chat-account-usage'
     | 'node-dist-mirror'
     | 'mission-create'
+    | 'mission-create-huly'
   modalData: Record<string, unknown>
   openModal: (modal: UISliceContextual['activeModal'], data?: Record<string, unknown>) => void
   closeModal: () => void

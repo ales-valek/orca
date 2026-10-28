@@ -6,7 +6,7 @@ import type {
   HulyStatus
 } from '../../../../shared/huly/huly-types'
 
-type Loadable<T> =
+export type Loadable<T> =
   | { state: 'loading' }
   | { state: 'ready'; value: T }
   | { state: 'error'; message: string }
@@ -14,7 +14,7 @@ type Loadable<T> =
 export type HulyProjectCatalog = { statuses: HulyStatus[]; components: HulyComponent[] }
 
 /** Loads one Huly read, reporting an expired token to the caller instead of as an error. */
-function useHulyRead<T>(
+export function useHulyRead<T>(
   read: (() => Promise<T>) | null,
   onAuthRequired: () => void
 ): { result: Loadable<T>; retry: () => void } {
@@ -53,6 +53,15 @@ function useHulyRead<T>(
 
   const retry = useCallback(() => setAttempt((value) => value + 1), [])
   return { result, retry }
+}
+
+/** The first project that has saved Mission settings, otherwise the first project. */
+export function getDefaultHulyProject(
+  projects: readonly HulyProjectSummary[],
+  configured: Record<string, unknown>
+): string | null {
+  const configuredProject = projects.find((project) => project.identifier in configured)
+  return (configuredProject ?? projects[0])?.identifier ?? null
 }
 
 export function useHulyProjects(onAuthRequired: () => void) {
