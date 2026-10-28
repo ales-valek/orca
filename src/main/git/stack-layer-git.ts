@@ -67,19 +67,16 @@ type RebaseResult = { status: 'conflict' } | { status: 'done' }
 async function runRebase(
   worktreePath: string,
   args: string[],
-  options: GitRuntimeOptions,
-  env?: NodeJS.ProcessEnv
+  options: GitRuntimeOptions
 ): Promise<RebaseResult> {
   return runWithGitWorktreeOperationLock(worktreePath, options.signal, () =>
     runWithGitReadCacheInvalidation(async () => {
       try {
-        await gitExecFileAsync(args, {
-          ...gitOptionsForWorktree(worktreePath, options),
-          ...(env ? { env } : {})
-        })
+        await gitExecFileAsync(args, gitOptionsForWorktree(worktreePath, options))
         return { status: 'done' }
       } catch (error) {
-        if ((await detectConflictOperation(worktreePath, options)) === 'rebase') {
+        const operation = await detectConflictOperation(worktreePath, options).catch(() => null)
+        if (operation === 'rebase') {
           return { status: 'conflict' }
         }
         throw error
@@ -118,6 +115,9 @@ export async function resetPreviewKeep(
         await gitExecFileAsync(['reset', '--keep', targetSha], operationOptions)
         return { status: 'moved' }
       } catch (error) {
+        if (options.signal?.aborted) {
+          throw error
+        }
         return { status: 'blocked', reason: getGitErrorReason(error) }
       }
     })
@@ -133,11 +133,24 @@ export async function commitFixup(
 ): Promise<void> {
   await runWithGitWorktreeOperationLock(worktreePath, options.signal, () =>
     runWithGitReadCacheInvalidation(async () => {
+      if (!(await isWorktreeClean(worktreePath, options))) {
+        throw new Error('mission_layer_not_clean')
+      }
       const operationOptions = gitOptionsForWorktree(worktreePath, options)
-      await gitExecFileAsync(['apply', '--3way', '--index'], { ...operationOptions, stdin: patch })
       const commitArgs =
         'fixupOf' in target ? [`--fixup=${target.fixupOf}`] : ['-m', target.message]
-      await gitExecFileAsync(['commit', '-q', ...commitArgs], operationOptions)
+      try {
+        await gitExecFileAsync(['apply', '--3way', '--index'], {
+          ...operationOptions,
+          stdin: patch
+        })
+        await gitExecFileAsync(['commit', '-q', ...commitArgs], operationOptions)
+      } catch (error) {
+        // Why: the tree was verified clean, so a hard reset restores exactly the prior state.
+        const { signal: _abortedSignal, ...restoreOptions } = operationOptions
+        await gitExecFileAsync(['reset', '--hard', 'HEAD'], restoreOptions).catch(() => undefined)
+        throw error
+      }
     })
   )
 }
@@ -150,9 +163,9 @@ export async function autosquashLayer(
 ): Promise<{ status: 'squashed' } | { status: 'conflict' }> {
   const result = await runRebase(
     worktreePath,
-    ['rebase', '-i', '--autosquash', parentBase],
-    options,
-    { ...process.env, GIT_SEQUENCE_EDITOR: 'true' }
+    // Why: -c travels as an argument; env vars are dropped by the WSL `sh -lc` wrapper.
+    ['-c', 'sequence.editor=true', 'rebase', '-i', '--autosquash', parentBase],
+    options
   )
   return result.status === 'conflict' ? result : { status: 'squashed' }
 }
