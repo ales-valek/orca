@@ -40,7 +40,10 @@ function MissionSection({
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
   const setActiveWorktree = useAppStore((s) => s.setActiveWorktree)
   const ensureMissionSession = useAppStore((s) => s.ensureMissionSession)
+  const inspectMissionStacks = useAppStore((s) => s.inspectMissionStacks)
   const collapsed = collapsedGroups.has(missionCollapseKey(mission.id))
+  const membersVisible = !sessionWorkspace || !collapsed
+  const hasTasks = (mission.tasks?.length ?? 0) > 0
   const ensureRequestedRef = useRef(false)
   const activateMissionSession = async (): Promise<void> => {
     const workspace = await ensureMissionSession(mission.id)
@@ -58,6 +61,13 @@ function MissionSection({
     ensureRequestedRef.current = true
     void ensureMissionSession(mission.id)
   }, [sessionWorkspace, ensureMissionSession, mission.id])
+
+  // Why: layer states need git reads, so they load on expand and after a Mission change, never on a timer.
+  useEffect(() => {
+    if (membersVisible && hasTasks) {
+      void inspectMissionStacks(mission.id)
+    }
+  }, [membersVisible, hasTasks, inspectMissionStacks, mission.id, mission.updatedAt])
 
   const missionMenu = (
     <DropdownMenu modal={false}>
