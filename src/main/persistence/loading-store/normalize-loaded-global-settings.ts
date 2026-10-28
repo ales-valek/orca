@@ -2,6 +2,7 @@ import { normalizeAgentDefaultSurface } from '../../../shared/native-chat/native
 import { normalizeNativeChatAppearanceSettings } from '../../../shared/native-chat/native-chat-appearance-settings'
 import { getDefaultVoiceSettings } from '../../../shared/constants'
 import { normalizePRBotAuthorOverrides } from '../../../shared/pr-bot-author-overrides'
+import { normalizeHulyProjects } from '../../../shared/huly/huly-project-settings'
 import { normalizeTerminalQuickCommands } from '../../../shared/terminal-quick-commands'
 import { normalizeOpenInApplications } from '../../../shared/open-in-applications'
 import { normalizeTerminalShortcutPolicy } from '../../../shared/keybindings'
@@ -85,6 +86,7 @@ export function normalizeLoadedGlobalSettings(
     ),
     worktreeVisibilityDefaults: migratedExternalVisibility.defaults,
     prBotAuthorOverrides: normalizePRBotAuthorOverrides(parsed.settings?.prBotAuthorOverrides),
+    hulyProjects: normalizeHulyProjects(parsed.settings?.hulyProjects),
     // Carry the retired sidekick flag into pet settings.
     experimentalPet: parsed.settings?.experimentalPet ?? readLegacySidekickFlag(parsed) ?? false,
     // Migrate old platform defaults once; retain later opt-outs.
