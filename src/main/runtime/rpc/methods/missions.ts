@@ -40,7 +40,8 @@ export const MISSION_METHODS = [
         name: params.name,
         repos: params.repos,
         ...(params.branch ? { branch: params.branch.trim() } : {}),
-        ...(isTuiAgent(params.agent) ? { agent: params.agent } : {})
+        ...(isTuiAgent(params.agent) ? { agent: params.agent } : {}),
+        ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {})
       })
   }),
   defineMethod({

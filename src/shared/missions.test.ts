@@ -413,6 +413,19 @@ describe('mission-owned folder workspace helpers', () => {
       ORCA_PROJECT_GROUP_ID: 'g1'
     })
   })
+
+  it('exposes the Mission root to a mission session that may run in the orchestrator worktree', () => {
+    expect(
+      getFolderWorkspaceOwnerEnv({
+        projectGroupId: 'mission:m1',
+        missionId: 'm1',
+        missionRootPath: '/missions/referral'
+      })
+    ).toEqual({ ORCA_MISSION_ID: 'm1', ORCA_MISSION_ROOT: '/missions/referral' })
+    expect(
+      getFolderWorkspaceOwnerEnv({ projectGroupId: 'g1', missionRootPath: '/missions/referral' })
+    ).toEqual({ ORCA_PROJECT_GROUP_ID: 'g1' })
+  })
 })
 
 describe('normalizeMissions rootPath', () => {

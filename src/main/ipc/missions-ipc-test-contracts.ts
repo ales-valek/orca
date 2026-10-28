@@ -40,6 +40,7 @@ type FakeRepo = {
 type FakeMissionSessionWorkspace = {
   id: string
   missionId: string
+  folderPath: string | null
 }
 
 export type FakeMissionCreateInput = {
@@ -47,6 +48,7 @@ export type FakeMissionCreateInput = {
   branchName?: string | null
   repoIds: string[]
   sessionAgent?: Mission['sessionAgent']
+  orchestratorRepoId?: string | null
 }
 
 export type FakeStore = {

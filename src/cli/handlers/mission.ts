@@ -94,7 +94,8 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
       name: getRequiredStringFlag(flags, 'name'),
       repos: getRequiredRepoSelectors(flags),
       branch: getOptionalStringFlag(flags, 'branch'),
-      agent: getOptionalStringFlag(flags, 'agent')
+      agent: getOptionalStringFlag(flags, 'agent'),
+      orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo')
     })
     printResult(result, json, formatMissionMutation)
   },

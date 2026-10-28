@@ -86,7 +86,7 @@ export const ROOT_HELP_TEXT_SECONDARY = [
   '  orca mission list [--json]',
   '  orca mission show <selector> [--json]',
   '  orca mission current [--json]',
-  '  orca mission create --name <name> --repo <selector> [--repo <selector>...] [--branch <branch>] [--agent <agent>] [--json]',
+  '  orca mission create --name <name> --repo <selector> [--repo <selector>...] [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--json]',
   '  orca mission session <selector> [--json]',
   '  orca mission add-repo <selector> --repo <selector> [--repo <selector>...] [--json]',
   '  orca mission task add <selector> --repo <selector> --title <title> [--ref <key>] [--json]',

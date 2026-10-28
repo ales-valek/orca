@@ -231,9 +231,13 @@ export abstract class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktr
     if (!scope.folderWorkspace) {
       return env
     }
+    const missionId = scope.folderWorkspace.missionId
     return {
       ...env,
-      ...getFolderWorkspaceOwnerEnv(scope.folderWorkspace),
+      ...getFolderWorkspaceOwnerEnv({
+        ...scope.folderWorkspace,
+        missionRootPath: missionId ? this.store?.getMission?.(missionId)?.rootPath : null
+      }),
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
   }
