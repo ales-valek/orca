@@ -12,8 +12,21 @@ import {
 } from '../ipc/missions-ipc-test-harness'
 
 const stackLayerGit = vi.hoisted(() => ({
-  getBranchTip: vi.fn(async () => null),
-  getMergeBase: vi.fn(async (_repoPath: string, _left: string, _right: string) => 'parent-base-sha')
+  getBranchTip: vi.fn(async (_repoPath: string, _branch: string): Promise<string | null> => null),
+  getMergeBase: vi.fn(
+    async (_repoPath: string, _left: string, _right: string): Promise<string | null> =>
+      'parent-base-sha'
+  ),
+  readLayerWorktree: vi.fn(async (_worktreePath: string) => ({
+    branch: null as string | null,
+    headSha: null as string | null,
+    isClean: true,
+    operation: 'unknown' as const
+  })),
+  rebaseLayerOnto: vi.fn(async () => ({ status: 'rebased' as const })),
+  resetPreviewKeep: vi.fn(async (_worktreePath: string, _sha: string) => ({
+    status: 'moved' as const
+  }))
 }))
 
 vi.mock('../git/stack-layer-git', () => stackLayerGit)
@@ -222,6 +235,10 @@ describe('MissionOperations task layers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Why: a test may stub per-branch tips; later tests expect the default unresolved stack.
+    for (const mock of Object.values(stackLayerGit)) {
+      mock.mockReset()
+    }
   })
 
   function seed() {
@@ -284,17 +301,43 @@ describe('MissionOperations task layers', () => {
     ])
   })
 
-  it('stacks a second task on the first and leaves the preview for restack', async () => {
+  it('stacks a second task on the first and moves the existing preview onto it', async () => {
     const { runtime, operations } = seed()
+    const branchByDir: Record<string, string> = {
+      [taskDir]: 'mission-task/referral/omp-1',
+      [path.join(referralRootPath, 'repo-one-r1--omp-2')]: 'mission-task/referral/omp-2',
+      [previewDir]: 'mission-preview/referral'
+    }
+    stackLayerGit.getBranchTip.mockImplementation(async (_repoPath, branch) => `${branch}-tip`)
+    stackLayerGit.getMergeBase.mockImplementation(async (_repoPath, left) => `${left}-tip`)
+    let previewHead = 'mission-task/referral/omp-1-tip'
+    stackLayerGit.readLayerWorktree.mockImplementation(async (worktreePath) => ({
+      branch: branchByDir[worktreePath] ?? 'mission/referral',
+      headSha: worktreePath === previewDir ? previewHead : 'head',
+      isClean: true,
+      operation: 'unknown' as const
+    }))
+    stackLayerGit.resetPreviewKeep.mockImplementation(async (_worktreePath, sha) => {
+      previewHead = sha
+      return { status: 'moved' as const }
+    })
     await addOmp(operations)
     runtime.createManagedWorktree.mockClear()
+    expect(stackLayerGit.resetPreviewKeep).not.toHaveBeenCalled()
 
     const result = await addOmp(operations, 'OMP-2')
 
+    expect(result.error).toBeUndefined()
+    expect(result.warning).toBeUndefined()
     expect(result.task).toMatchObject({ order: 2, branchName: 'mission-task/referral/omp-2' })
     expect(runtime.createManagedWorktree).toHaveBeenCalledTimes(1)
     expect(runtime.createManagedWorktree).toHaveBeenCalledWith(
       expect.objectContaining({ baseBranch: 'mission-task/referral/omp-1' })
+    )
+    expect(stackLayerGit.rebaseLayerOnto).not.toHaveBeenCalled()
+    expect(stackLayerGit.resetPreviewKeep).toHaveBeenCalledExactlyOnceWith(
+      previewDir,
+      'mission-task/referral/omp-2-tip'
     )
   })
 

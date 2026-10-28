@@ -1,4 +1,5 @@
 import { runWithGitWorktreeOperationLock } from '../../shared/git-worktree-operation-lock'
+import type { GitConflictOperation } from '../../shared/git-status-types'
 import {
   gitOptionsForWorktree,
   gitReadOptionsForWorktree,
@@ -59,6 +60,35 @@ export async function isWorktreeClean(
     gitReadOptionsForWorktree(worktreePath, options)
   )
   return stdout.trim() === ''
+}
+
+export type LayerWorktreeSnapshot = {
+  /** Checked-out branch; null while HEAD is detached (e.g. mid-rebase). */
+  branch: string | null
+  headSha: string | null
+  isClean: boolean
+  /** 'unknown' when no merge, rebase or cherry-pick is in progress. */
+  operation: GitConflictOperation
+}
+
+/** Read-only facts restack needs before it may touch a layer checkout. */
+export async function readLayerWorktree(
+  worktreePath: string,
+  options: GitRuntimeOptions = {}
+): Promise<LayerWorktreeSnapshot> {
+  const readOptions = gitReadOptionsForWorktree(worktreePath, options)
+  const readTrimmed = (args: string[]): Promise<string | null> =>
+    gitExecFileAsync(args, readOptions).then(
+      ({ stdout }) => stdout.trim() || null,
+      () => null
+    )
+  const [branch, headSha, isClean, operation] = await Promise.all([
+    readTrimmed(['symbolic-ref', '-q', '--short', 'HEAD']),
+    readTrimmed(['rev-parse', '--verify', '--quiet', 'HEAD^{commit}']),
+    isWorktreeClean(worktreePath, options),
+    detectConflictOperation(worktreePath, options)
+  ])
+  return { branch, headSha, isClean, operation }
 }
 
 type RebaseResult = { status: 'conflict' } | { status: 'done' }
