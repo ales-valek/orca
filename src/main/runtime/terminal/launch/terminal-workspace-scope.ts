@@ -30,6 +30,7 @@ import { resolveTerminalStartupCwd } from '../../../../shared/shell/launch/termi
 
 import type { ResolvedTerminalWorkspaceLaunchTarget } from './terminal-workspace-launch-target'
 import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
+import { getMissionBriefPath } from '../../../../shared/mission-source'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { homedir } from 'node:os'
 import { getExplicitWorktreeIdSelector } from '../../workspaces/catalog/runtime-worktree-selection'
@@ -238,11 +239,13 @@ export abstract class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktr
       return env
     }
     const missionId = scope.folderWorkspace.missionId
+    const mission = missionId ? this.store?.getMission?.(missionId) : null
     return {
       ...env,
       ...getFolderWorkspaceOwnerEnv({
         ...scope.folderWorkspace,
-        missionRootPath: missionId ? this.store?.getMission?.(missionId)?.rootPath : null
+        missionRootPath: mission?.rootPath,
+        missionBriefPath: mission ? getMissionBriefPath(mission) : null
       }),
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
