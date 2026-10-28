@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest'
-import type { Mission } from '../../shared/mission-types'
+import type { Mission, MissionSlot, MissionTask } from '../../shared/mission-types'
 
 export type MissionRootMockSet = {
   MISSIONS_DIR_NAME: string
@@ -14,6 +14,11 @@ export type OwnershipMarkerMockSet = {
   hasMissionWorktreeOwnershipMarker: Mock
   removeMissionWorktreeOwnershipMarker: Mock
 }
+
+export type FakeMissionTaskInput = Pick<
+  MissionTask,
+  'repoId' | 'title' | 'branchName' | 'externalRef' | 'externalId'
+>
 
 export type FakeWorktreeMeta = {
   instanceId?: string
@@ -74,6 +79,21 @@ export type FakeStore = {
     ) => Mission | null
   >
   setMissionMemberError: Mock<(id: string, repoId: string, error: string | null) => Mission | null>
+  setMissionSlotWorktree: Mock<
+    (
+      id: string,
+      repoId: string,
+      slot: MissionSlot,
+      worktreeId: string | null,
+      worktreeInstanceId?: string | null
+    ) => Mission | null
+  >
+  setMissionSlotError: Mock<
+    (id: string, repoId: string, slot: MissionSlot, error: string | null) => Mission | null
+  >
+  addMissionTask: Mock<(id: string, input: FakeMissionTaskInput) => MissionTask | null>
+  removeMissionTask: Mock<(id: string, taskId: string) => Mission | null>
+  setMissionTaskParentBaseSha: Mock<(id: string, taskId: string, sha: string) => Mission | null>
 }
 
 export type FakeWindow = {

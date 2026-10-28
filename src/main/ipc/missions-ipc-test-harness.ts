@@ -9,6 +9,7 @@ import type {
   MissionRootMockSet,
   OwnershipMarkerMockSet
 } from './missions-ipc-test-contracts'
+import { createFakeSlotStoreMethods } from './missions-ipc-test-slot-fakes'
 
 export const missionsBaseDir = path.join(path.sep, 'home', 'u', 'orca', 'missions')
 export const referralRootPath = path.join(missionsBaseDir, 'referral')
@@ -233,7 +234,8 @@ export function makeFakeStore(): FakeStore {
         member.lastError = error
       }
       return mission
-    })
+    }),
+    ...createFakeSlotStoreMethods(() => mission)
   }
 }
 
