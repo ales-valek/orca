@@ -21,6 +21,7 @@ import {
   refuseUnclassified
 } from '../../../shared/agent-session-wire-refusals'
 import { readAgentSessionErrorRefusal } from '../../../shared/agent-session-write-failure'
+import { HulyCodedError } from '../../../shared/huly/huly-error-codes'
 
 class LineageError extends Error {
   code = 'LINEAGE_PARENT_NOT_FOUND'
@@ -406,5 +407,31 @@ describe('thrown agent-session refusals', () => {
     expect(
       'code' in agentSessionRefusalError('agent_session_conflict', { reason: 'claimConflicted' })
     ).toBe(false)
+  })
+})
+
+describe('Huly errors', () => {
+  it.each([
+    'huly_auth_required',
+    'huly_not_connected',
+    'huly_plan_empty',
+    'huly_server_url_must_be_https'
+  ])('passes %s through so remote clients can offer the right fix', (code) => {
+    const failure = mapRuntimeError('rpc_huly', { runtimeId: 'runtime-1' }, new Error(code))
+
+    expect(failure.error.code).toBe(code)
+  })
+
+  it('keeps the code of a Huly selector error that carries detail in its message', () => {
+    const failure = mapRuntimeError(
+      'rpc_huly',
+      { runtimeId: 'runtime-1' },
+      new HulyCodedError('huly_milestone_not_found', 'huly_milestone_not_found: Kiosek in OMP')
+    )
+
+    expect(failure.error).toMatchObject({
+      code: 'huly_milestone_not_found',
+      message: 'huly_milestone_not_found: Kiosek in OMP'
+    })
   })
 })
