@@ -52,3 +52,17 @@ export function deriveMissionLayerState(input: MissionLayerStateInput): MissionL
   }
   return 'current'
 }
+
+/** Why a layer derives as `blocked`, or null when it does not. */
+export function getMissionLayerBlockedReason(input: MissionLayerStateInput): string | null {
+  if (deriveMissionLayerState(input) !== 'blocked') {
+    return null
+  }
+  if (input.parentTip === null) {
+    return 'Parent branch missing'
+  }
+  if (input.parentBaseSha === null) {
+    return 'No recorded base'
+  }
+  return input.isClean ? 'Agent is working' : 'Uncommitted changes'
+}

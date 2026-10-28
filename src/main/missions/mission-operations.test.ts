@@ -24,6 +24,12 @@ const stackLayerGit = vi.hoisted(() => ({
     operation: 'unknown' as const
   })),
   rebaseLayerOnto: vi.fn(async () => ({ status: 'rebased' as const })),
+  isAncestorCommit: vi.fn(
+    async (_worktreePath: string, _ancestor: string, _descendant: string) => true
+  ),
+  getForkPoint: vi.fn(
+    async (_worktreePath: string, _parentBranch: string): Promise<string | null> => null
+  ),
   resetPreviewKeep: vi.fn(async (_worktreePath: string, _sha: string) => ({
     status: 'moved' as const
   }))
@@ -46,7 +52,7 @@ vi.mock('electron', () => ({
 }))
 
 import { registerMissionHandlers } from '../ipc/missions'
-import { MissionOperations } from './mission-operations'
+import { MissionOperations, type MissionOperationsOptions } from './mission-operations'
 import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 
 const setupHookMocks = getSetupHookMocks()
@@ -57,10 +63,10 @@ function createOperations(
   store: FakeStore,
   runtime: ReturnType<typeof makeFakeRuntime>,
   notifyChanged: () => void = vi.fn(),
-  runSetupHook?: ConstructorParameters<typeof MissionOperations>[3]
+  runSetupHook?: MissionOperationsOptions['runSetupHook']
 ): MissionOperations {
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the shared Mission IPC fakes implement every store/runtime method these operations call.
-  return new MissionOperations(store as never, runtime as never, notifyChanged, runSetupHook)
+  return new MissionOperations(store as never, runtime as never, notifyChanged, { runSetupHook })
 }
 
 describe('MissionOperations', () => {

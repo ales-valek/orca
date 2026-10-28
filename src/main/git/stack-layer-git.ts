@@ -71,6 +71,42 @@ export type LayerWorktreeSnapshot = {
   operation: GitConflictOperation
 }
 
+/** True when `ancestor` is reachable from `descendant`; any failure reads false so callers fail closed. */
+export async function isAncestorCommit(
+  worktreePath: string,
+  ancestor: string,
+  descendant: string,
+  options: GitRuntimeOptions = {}
+): Promise<boolean> {
+  if (ancestor.startsWith('-') || descendant.startsWith('-')) {
+    return false
+  }
+  return gitExecFileAsync(
+    ['merge-base', '--is-ancestor', ancestor, descendant],
+    gitReadOptionsForWorktree(worktreePath, options)
+  ).then(
+    () => true,
+    () => false
+  )
+}
+
+/** Newest former tip of `parentBranch` (from its reflog) that HEAD is built on, or null. */
+export async function getForkPoint(
+  worktreePath: string,
+  parentBranch: string,
+  options: GitRuntimeOptions = {}
+): Promise<string | null> {
+  try {
+    const { stdout } = await gitExecFileAsync(
+      ['merge-base', '--fork-point', `refs/heads/${parentBranch}`, 'HEAD'],
+      gitReadOptionsForWorktree(worktreePath, options)
+    )
+    return stdout.trim() || null
+  } catch {
+    return null
+  }
+}
+
 /** Read-only facts restack needs before it may touch a layer checkout. */
 export async function readLayerWorktree(
   worktreePath: string,
