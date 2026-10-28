@@ -263,41 +263,4 @@ export class MissionPersistence {
     scheduleSave(this[missionPersistenceContext].scheduling)
     return mission
   }
-
-  setMissionMemberWorktree(
-    missionId: string,
-    repoId: string,
-    worktreeId: string | null,
-    worktreeInstanceId: string | null = null
-  ): Mission | null {
-    const mission = this.getMission(missionId)
-    if (!mission) {
-      return null
-    }
-    const member = mission.members.find((entry) => entry.repoId === repoId)
-    if (!member) {
-      return null
-    }
-    member.worktreeId = worktreeId
-    member.worktreeInstanceId = worktreeInstanceId
-    member.lastError = null
-    mission.updatedAt = Date.now()
-    scheduleSave(this[missionPersistenceContext].scheduling)
-    return mission
-  }
-
-  setMissionMemberError(missionId: string, repoId: string, error: string | null): Mission | null {
-    const mission = this.getMission(missionId)
-    if (!mission) {
-      return null
-    }
-    const member = mission.members.find((entry) => entry.repoId === repoId)
-    if (!member) {
-      return null
-    }
-    member.lastError = error
-    mission.updatedAt = Date.now()
-    scheduleSave(this[missionPersistenceContext].scheduling)
-    return mission
-  }
 }
