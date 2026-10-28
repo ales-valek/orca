@@ -9,6 +9,10 @@ export const MISSION_HANDLER_GROUP: HandlerGroup = {
     'mission create',
     'mission session',
     'mission add-repo',
+    'mission task add',
+    'mission task rm',
+    'mission restack',
+    'mission absorb',
     'mission rm'
   ],
   load: async () => (await import('./handlers/mission.js')).MISSION_HANDLERS

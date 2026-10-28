@@ -1,11 +1,32 @@
+import type { MissionRestackLayer } from '../shared/mission-layer-state'
 import type {
   MissionMemberResult,
+  RuntimeMissionAbsorbResult,
+  RuntimeMissionLayerRecord,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
   RuntimeMissionRecord,
   RuntimeMissionRemoveResult,
-  RuntimeMissionShow
+  RuntimeMissionRestackResult,
+  RuntimeMissionShow,
+  RuntimeMissionTaskResult
 } from '../shared/mission-types'
+
+function formatLayerState(layer: Pick<MissionRestackLayer, 'state' | 'reason'>): string {
+  return layer.reason ? `${layer.state} (${layer.reason})` : layer.state
+}
+
+function formatStackLayer(layer: RuntimeMissionLayerRecord): string {
+  return [
+    layer.slot,
+    layer.externalRef ?? layer.title,
+    layer.state ? formatLayerState({ state: layer.state, reason: layer.reason }) : null,
+    layer.branch,
+    layer.worktreePath ?? '(no worktree)'
+  ]
+    .filter((part) => part !== null)
+    .join('  ')
+}
 
 function formatMissionRecord(mission: RuntimeMissionRecord): string {
   const lines = [
@@ -22,6 +43,17 @@ function formatMissionRecord(mission: RuntimeMissionRecord): string {
     if (member.error) {
       lines.push(`    error: ${member.error}`)
     }
+  }
+  if (mission.orchestrator) {
+    lines.push(
+      `orchestrator: ${mission.orchestrator.repoId}  ${mission.orchestrator.worktreePath ?? '(no worktree)'}  ${mission.orchestrator.branch}`
+    )
+  }
+  // Why: layers are stored bottom-up, so reading top to bottom matches the stack's order.
+  for (const stack of mission.stacks ?? []) {
+    const repo = stack.repoName ? `${stack.repoName} (${stack.repoId})` : stack.repoId
+    lines.push(`stack ${repo}:`)
+    lines.push(...stack.layers.map((layer) => `  ${formatStackLayer(layer)}`))
   }
   return lines.join('\n')
 }
@@ -68,4 +100,42 @@ export function formatMissionRemove(result: RuntimeMissionRemoveResult): string 
     ),
     ...(result.warning ? [`warning: ${result.warning}`] : [])
   ].join('\n')
+}
+
+export function formatMissionTask(result: RuntimeMissionTaskResult): string {
+  return [
+    ...(result.task
+      ? [`task: ${result.task.externalRef ?? result.task.title}  ${result.task.branch}`]
+      : []),
+    ...(result.error ? [`error: ${result.error}`] : []),
+    ...(result.warning ? [`warning: ${result.warning}`] : []),
+    formatMissionRecord(result.mission)
+  ].join('\n')
+}
+
+export function formatMissionRestack(result: RuntimeMissionRestackResult): string {
+  if (result.reports.length === 0) {
+    return 'Nothing to restack.'
+  }
+  return result.reports
+    .flatMap((report) => [
+      `repo ${report.repoId}:`,
+      ...report.layers.map((layer) => `  ${layer.slot}  ${formatLayerState(layer)}`)
+    ])
+    .join('\n')
+}
+
+export function formatMissionAbsorb(result: RuntimeMissionAbsorbResult): string {
+  const lines = [`Absorbed ${result.applied} edit${result.applied === 1 ? '' : 's'}.`]
+  if (result.ambiguous.length > 0) {
+    lines.push('Ambiguous hunks; choose the owning task with --choose <file:line=taskRef>:')
+    for (const hunk of result.ambiguous) {
+      const candidates = hunk.candidateRefs ?? hunk.candidateTaskIds
+      lines.push(`  ${hunk.file}:${hunk.line}  candidates: ${candidates.join(', ')}`)
+    }
+  }
+  if (result.warning) {
+    lines.push(`warning: ${result.warning}`)
+  }
+  return lines.join('\n')
 }

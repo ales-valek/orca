@@ -6,6 +6,7 @@ import type {
   MissionDeleteResult,
   MissionMemberResult
 } from '../../shared/mission-types'
+import { setMissionWorktreeRebasedListener } from '../missions/mission-rebase-notification'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from '../missions/mission-root-sync'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -52,6 +53,7 @@ export function registerMissionHandlers(
   const { memberLifecycle } = operations
   // Why: `orca mission` RPC must share this instance so per-Mission locks and UI refreshes match IPC.
   runtime.attachMissionOperations(operations)
+  setMissionWorktreeRebasedListener((worktreePath) => operations.onWorktreeRebased(worktreePath))
 
   ipcMain.handle('missions:list', (): Mission[] => operations.list())
 

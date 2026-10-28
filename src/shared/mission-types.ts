@@ -1,3 +1,4 @@
+import type { MissionLayerState, MissionRestackReport } from './mission-layer-state'
 import type { TuiAgent } from './tui-agent'
 
 export type MissionMember = {
@@ -114,6 +115,30 @@ export type RuntimeMissionMemberRecord = {
   error?: string
 }
 
+export type RuntimeMissionLayerRecord = {
+  slot: MissionSlot
+  title: string | null
+  externalRef: string | null
+  branch: string
+  worktreePath: string | null
+  /** Set by `mission show`; list and mutation projections skip the git reads. */
+  state?: MissionLayerState
+  reason?: string
+}
+
+/** One member repo's layers, bottom-up: member, tasks, then preview. */
+export type RuntimeMissionStackRecord = {
+  repoId: string
+  repoName: string | null
+  layers: RuntimeMissionLayerRecord[]
+}
+
+export type RuntimeMissionOrchestratorRecord = {
+  repoId: string
+  worktreePath: string | null
+  branch: string
+}
+
 /** CLI/runtime projection of a Mission with member worktree locations resolved. */
 export type RuntimeMissionRecord = {
   id: string
@@ -121,6 +146,9 @@ export type RuntimeMissionRecord = {
   branch: string
   rootPath: string | null
   members: RuntimeMissionMemberRecord[]
+  orchestrator?: RuntimeMissionOrchestratorRecord | null
+  /** Only repos with task layers appear. */
+  stacks?: RuntimeMissionStackRecord[]
 }
 
 export type RuntimeMissionList = { missions: RuntimeMissionRecord[] }
@@ -132,5 +160,37 @@ export type RuntimeMissionMutationResult = {
   memberResults: MissionMemberResult[]
 }
 
-export type RuntimeMissionRemoveResult = MissionDeleteResult & { missionId: string }
-export type RuntimeMissionSession = { missionId: string; folderId: string; folderPath: string }
+export type RuntimeMissionRemoveResult = MissionDeleteResult & {
+  missionId: string
+}
+export type RuntimeMissionSession = {
+  missionId: string
+  folderId: string
+  folderPath: string
+}
+
+export type RuntimeMissionTaskResult = {
+  mission: RuntimeMissionRecord
+  task: {
+    id: string
+    title: string
+    branch: string
+    externalRef: string | null
+  } | null
+  error?: string
+  warning?: string
+}
+
+export type RuntimeMissionRestackResult = { reports: MissionRestackReport[] }
+
+export type RuntimeMissionAbsorbResult = {
+  applied: number
+  ambiguous: {
+    file: string
+    line: number
+    candidateTaskIds: string[]
+    /** Tracker key or branch name per candidate, usable with `--choose`. */
+    candidateRefs?: string[]
+  }[]
+  warning?: string
+}

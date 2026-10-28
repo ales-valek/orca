@@ -69,6 +69,15 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
   constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMissionCommands>) {
     super(...args)
     this.agentTransitions.subscribe((change) => this.terminalAgentPhonePush.observe(change))
+    this.agentTransitions.subscribe((change) => {
+      if (
+        change.kind === 'moved' &&
+        change.workspace.sshHostId === null &&
+        (change.to === 'done' || change.to === 'rest')
+      ) {
+        this.notifyMissionAgentTurnEnded(change.workspace.worktreeId)
+      }
+    })
   }
 
   /** Attach after higher layers subscribe; also drive generated tab titles. */
