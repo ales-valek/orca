@@ -11,6 +11,7 @@ import {
   type MissionWorktreeOwnershipProof,
   writeMissionWorktreeOwnershipMarker
 } from './mission-worktree-ownership-marker'
+import { collectMissionSlotOwnershipProofs } from './mission-slot-marker-scan'
 
 const tempRoots: string[] = []
 
@@ -207,5 +208,49 @@ describe('Mission worktree ownership marker Git integration', () => {
     ).toBe('mission/referral')
     git(worktreePath, ['checkout', '--quiet', '--detach'])
     expect(resolveMissionWorktreeBranch({ path: worktreePath, branch: '' })).toBe('')
+  })
+})
+
+describe('Mission slot marker scan', () => {
+  function listLinkedWorktrees(worktreePaths: string[]) {
+    return worktreePaths.map((worktreePath) => ({
+      path: worktreePath,
+      head: git(worktreePath, ['rev-parse', 'HEAD']),
+      branch: `refs/heads/${git(worktreePath, ['rev-parse', '--abbrev-ref', 'HEAD'])}`,
+      isBare: false,
+      isMainWorktree: false
+    }))
+  }
+
+  it('skips other slots but still rejects a member checkout on the wrong branch', () => {
+    const { repoPath, rootPath } = createCommittedRepo()
+    const memberPath = addWorktree(repoPath, path.join(rootPath, 'member'), 'mission/referral')
+    const taskBranch = 'mission-task/referral/t1'
+    const taskPath = addWorktree(repoPath, path.join(rootPath, 'task'), taskBranch)
+    const memberProof = createProof(memberPath)
+    const taskProof: MissionWorktreeOwnershipProof = {
+      ...createProof(taskPath),
+      worktreeInstanceId: 'instance-2',
+      missionSlot: 'task:t1'
+    }
+    writeMissionWorktreeOwnershipMarker({ repoPath, worktreePath: memberPath, proof: memberProof })
+    writeMissionWorktreeOwnershipMarker({ repoPath, worktreePath: taskPath, proof: taskProof })
+    const scan = (branchName: string, slot: 'member' | 'task:t1') =>
+      collectMissionSlotOwnershipProofs({
+        missionId: 'mission-1',
+        repoId: 'repo-1',
+        repoPath,
+        branchName,
+        slot,
+        worktrees: listLinkedWorktrees([memberPath, taskPath])
+      })
+
+    expect(scan('mission/referral', 'member')).toEqual([memberProof])
+    expect(scan(taskBranch, 'task:t1')).toEqual([taskProof])
+
+    git(memberPath, ['checkout', '--quiet', '-b', 'elsewhere'])
+    expect(() => scan('mission/referral', 'member')).toThrow(
+      'mission_member_worktree_ownership_unverified'
+    )
   })
 })

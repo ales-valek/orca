@@ -18,6 +18,7 @@ import {
 } from '../ipc/worktree-symlinks'
 import { resolveWorktreeSharedDirectories } from '../git/worktrees/content-paths/worktree-shared-directories'
 import type { RuntimeManagedWorktreeCreateArgs } from './runtime-managed-worktree-create-types'
+import { getNonMemberMissionSlotStamp } from './runtime-mission-worktree-create'
 import type { RemoteTrackingBase } from './runtime-remote-fetch-controller'
 import type { RuntimeStore } from './runtime-store-contract'
 import { attributedSparsePresetId } from '../ipc/sparse-preset-attribution'
@@ -82,6 +83,7 @@ export async function materializeRuntimeLocalWorktree<T>(args: {
       // Why: path-keyed metadata can outlive a checkout; every creation must
       // either stamp current Mission ownership or explicitly clear stale ownership.
       missionId: request.missionId,
+      missionSlot: getNonMemberMissionSlotStamp(request.missionSlot).missionSlot,
       ...getProjectHostSetupWorktreeMeta(store.getProjectHostSetups?.() ?? [], repo),
       lastActivityAt: now,
       createdAt: now,

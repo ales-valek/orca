@@ -56,6 +56,20 @@ export function getMissionTaskParentBranch(
   return parent?.branchName ?? mission.branchName
 }
 
+export function isMissionSlot(value: unknown): value is MissionSlot {
+  return (
+    value === 'member' ||
+    value === 'preview' ||
+    value === 'orchestrator' ||
+    (typeof value === 'string' && value.startsWith('task:') && value.length > 'task:'.length)
+  )
+}
+
+/** Persisted slot stamps omit `'member'`, so only these values may appear on disk. */
+export function isNonMemberMissionSlot(value: unknown): value is Exclude<MissionSlot, 'member'> {
+  return value !== 'member' && isMissionSlot(value)
+}
+
 export function getMissionSlotBranch(
   mission: Mission,
   repoId: string,

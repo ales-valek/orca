@@ -195,6 +195,7 @@ async function performRuntimeLocalWorktreeCreate<T>(
       ? writeMissionWorktreeCreateIntent({
           root: missionCreate.missionRootOwnership,
           repoId: repo.id,
+          slot: request.missionSlot,
           branchName: candidate.branchName,
           worktreePath: candidate.worktreePath,
           worktreeInstanceId: missionCreate.worktreeInstanceId,
