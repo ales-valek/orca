@@ -50,6 +50,20 @@ export type MissionSlotWorktree = {
 
 export type MissionSlot = 'member' | 'preview' | 'orchestrator' | `task:${string}`
 
+/** Where a Mission was imported from; absent for hand-made Missions. */
+export type MissionSource = {
+  provider: 'huly'
+  serverUrl: string
+  workspace: string
+  project: string
+  milestoneId: string
+  milestoneLabel: string
+  milestoneUrl: string
+  /** Stack order per repo (issue identifiers) captured at import time. */
+  importedOrder: Record<string, string[]>
+  lastSyncedAt: number
+}
+
 export type Mission = {
   id: string
   name: string
@@ -72,6 +86,7 @@ export type Mission = {
   /** Trusted parent captured with rootPath so changing workspaceDir does not
    *  make an existing Mission root unverifiable. */
   rootBasePath?: string | null
+  source?: MissionSource | null
   /** Agent auto-launched in the mission session on first open. Persisted so a
    *  failed eager session ensure can still honor the pick on lazy retry. */
   sessionAgent?: TuiAgent
@@ -165,6 +180,8 @@ export type RuntimeMissionRecord = {
   name: string
   branch: string
   rootPath: string | null
+  /** `<rootPath>/MISSION.md`; only for Missions with a `source`. */
+  briefPath?: string | null
   members: RuntimeMissionMemberRecord[]
   orchestrator?: RuntimeMissionOrchestratorRecord | null
   /** Only repos with task layers appear. */
