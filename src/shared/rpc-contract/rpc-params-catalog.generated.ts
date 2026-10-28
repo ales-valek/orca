@@ -445,10 +445,14 @@ import {
   ManagedServerUpdate
 } from './managed-server-params'
 import {
+  MissionAbsorbParams,
   MissionAddReposParams,
+  MissionAddTaskParams,
   MissionCreateParams,
   MissionPathParams,
   MissionRemoveParams,
+  MissionRemoveTaskParams,
+  MissionRestackParams,
   MissionSelectorParams
 } from './mission-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat-params'
@@ -1268,11 +1272,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'managedServer.update': ManagedServerUpdate,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
+  'mission.absorb': MissionAbsorbParams,
   'mission.addRepos': MissionAddReposParams,
+  'mission.addTask': MissionAddTaskParams,
   'mission.create': MissionCreateParams,
   'mission.forPath': MissionPathParams,
   'mission.list': null,
   'mission.remove': MissionRemoveParams,
+  'mission.removeTask': MissionRemoveTaskParams,
+  'mission.restack': MissionRestackParams,
   'mission.session': MissionSelectorParams,
   'mission.show': MissionSelectorParams,
   'mobileRelay.hosts.list': null,
