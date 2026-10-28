@@ -93,6 +93,17 @@ describe('orca mission commands', () => {
     const output = logSpy.mock.calls.flat().join('\n')
     expect(output).toContain('rootPath: /missions/referral')
     expect(output).toContain('api (repo-api)  /missions/referral/api  mission/referral')
+    expect(output).not.toContain('brief:')
+  })
+
+  it('prints the brief path of a Mission imported from Huly', async () => {
+    const briefPath = '/missions/referral/MISSION.md'
+    queueFixtures(callMock, okFixture('req_1', { mission: { ...MISSION, briefPath } }))
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['mission', 'show', 'Referral'], '/tmp')
+
+    expect(logSpy.mock.calls.flat().join('\n')).toContain(`brief: ${briefPath}`)
   })
 
   it('resolves the current Mission from the cwd', async () => {
@@ -169,6 +180,52 @@ describe('orca mission commands', () => {
       branch: 'mission/referral',
       agent: 'claude'
     })
+  })
+
+  it('creates a Mission from a Huly milestone and prints its warnings', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_1', {
+        mission: MISSION,
+        warnings: ['OMP-951: mission_member_worktree_missing']
+      })
+    )
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(
+      [
+        'mission',
+        'create',
+        '--from-huly',
+        'Kiosek',
+        '--project',
+        'OMP',
+        '--orchestrator-repo',
+        'name:orch'
+      ],
+      '/tmp'
+    )
+
+    expect(callMock).toHaveBeenCalledWith('mission.createFromHuly', {
+      milestone: 'Kiosek',
+      project: 'OMP',
+      orchestratorRepo: 'name:orch'
+    })
+    expect(logSpy.mock.calls.flat().join('\n')).toContain(
+      'warning: OMP-951: mission_member_worktree_missing'
+    )
+  })
+
+  it('refuses --from-huly together with --repo', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const priorExitCode = process.exitCode
+
+    await main(['mission', 'create', '--from-huly', 'Kiosek', '--repo', 'name:api'], '/tmp')
+
+    expect(callMock).not.toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+    process.exitCode = priorExitCode
   })
 
   it('requires at least one --repo for create', async () => {

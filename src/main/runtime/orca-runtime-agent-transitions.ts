@@ -7,7 +7,7 @@ import { HEADLESS_RUNTIME_WINDOW_ID } from '../../shared/runtime-session-contrac
 import { parsePaneKey } from '../../shared/workspace-layout/stable-pane-id'
 import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import { getRepoIdFromWorktreeId, worktreeIdsEqual } from '../../shared/worktree/id'
-import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
+import { OrcaRuntimeWithHulyCommands } from './orca-runtime-huly-commands'
 import { getRuntimeDesktopSurface } from './runtime-desktop-surface'
 import {
   getLiveAgentRowPane,
@@ -31,7 +31,7 @@ function unrefTimer(run: () => void, delayMs: number): { cancel: () => void } {
 }
 
 /** All hosts/builds own transition detection and windowless phone pushes. */
-export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMissionCommands {
+export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithHulyCommands {
   readonly agentTransitions = new AgentTransitionDetector({
     resolveTabWorktreeId: (tabId) => this.tabs.get(tabId)?.worktreeId,
     subscribeToPtyExit: (ptyId, listener) => this.subscribeToPtyExit(ptyId, listener),
@@ -85,7 +85,7 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
     this.connectorCloud = cloud
   }
 
-  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMissionCommands>) {
+  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithHulyCommands>) {
     super(...args)
     this.agentTransitions.subscribe((change) => this.terminalAgentPhonePush.observe(change))
     this.agentTransitions.subscribe((change) => this.terminalWorkerTurnStops.observe(change))
