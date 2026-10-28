@@ -171,6 +171,9 @@ export class MissionSlotWorktrees {
           )
         }
         warning = await this.removeOwned(mission, repoId, slot, owned)
+      } else if (isInMissionRoot(mission, owned)) {
+        // Why: an unowned child would stay visible and writable from the Mission session.
+        throw new Error('mission_member_workspace_delete_required')
       } else {
         this.detachWorktree(mission, repoId, owned)
       }

@@ -4,6 +4,7 @@ import type {
   MissionMemberResult,
   MissionSlot
 } from '../../shared/mission-types'
+import { getRepoTaskStack } from '../../shared/mission-task-stack'
 import { folderWorkspaceKey } from '../../shared/workspace-scope'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -146,6 +147,7 @@ export class MissionMemberLifecycle {
         throw new Error('mission_member_workspace_delete_required')
       }
       this.detachOwnership(mission, member.repoId)
+      this.pruneLayerRecords(mission.id, member.repoId)
       this.store.removeMissionMember(mission.id, member.repoId)
       return { repoId: member.repoId, worktreeId: null }
     } catch (error) {
@@ -184,6 +186,20 @@ export class MissionMemberLifecycle {
     }
     for (const candidate of candidates.values()) {
       this.slotWorktrees.detachWorktree(mission, repoId, candidate)
+    }
+  }
+
+  /** Drops a repo's task and preview records; their checkouts are already gone or detached. */
+  private pruneLayerRecords(missionId: string, repoId: string): void {
+    const mission = this.store.getMission(missionId)
+    if (!mission) {
+      return
+    }
+    for (const task of getRepoTaskStack(mission, repoId).toReversed()) {
+      this.store.removeMissionTask(missionId, task.id)
+    }
+    if (getMissionSlotRecord(mission, repoId, 'preview')) {
+      this.store.setMissionSlotWorktree(missionId, repoId, 'preview', null, null)
     }
   }
 

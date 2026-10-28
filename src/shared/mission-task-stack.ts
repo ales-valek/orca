@@ -4,6 +4,8 @@ import type { Mission, MissionSlot, MissionTask } from './mission-types'
 const MISSION_BRANCH_PREFIX = 'mission/'
 const PREVIEW_BRANCH_PREFIX = 'mission-preview/'
 const TASK_BRANCH_PREFIX = 'mission-task/'
+// Why: the task slug names its root directory suffix, which these slots already use.
+const RESERVED_TASK_SLUGS = new Set(['preview', 'orchestrator'])
 
 /** Branch-safe identity of a mission, shared by its preview and task branches. */
 export function getMissionBranchSlug(missionBranch: string): string {
@@ -25,11 +27,15 @@ export function createMissionTaskBranchName(
     slugifyMissionText(seed.externalRef ?? '') || slugifyMissionText(seed.title) || 'task'
   const prefix = `${TASK_BRANCH_PREFIX}${getMissionBranchSlug(mission.branchName)}/`
   const taken = new Set((mission.tasks ?? []).map((task) => task.branchName))
-  let candidate = `${prefix}${taskSlug}`
-  for (let suffix = 2; taken.has(candidate); suffix += 1) {
-    candidate = `${prefix}${taskSlug}-${suffix}`
+  let candidate = taskSlug
+  for (
+    let suffix = 2;
+    taken.has(`${prefix}${candidate}`) || RESERVED_TASK_SLUGS.has(candidate);
+    suffix += 1
+  ) {
+    candidate = `${taskSlug}-${suffix}`
   }
-  return candidate
+  return `${prefix}${candidate}`
 }
 
 export function getRepoTaskStack(mission: Pick<Mission, 'tasks'>, repoId: string): MissionTask[] {

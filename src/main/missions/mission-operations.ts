@@ -3,6 +3,7 @@ import type {
   Mission,
   MissionCreateResult,
   MissionDeleteResult,
+  MissionMember,
   MissionMemberResult,
   MissionTaskResult
 } from '../../shared/mission-types'
@@ -157,6 +158,22 @@ export class MissionOperations {
     return this.tasks.removeTopTask(args)
   }
 
+  /** Removes a member's task stack top-down, then its worktree; any refusal keeps the member.
+   *  Caller holds the Mission run lock. */
+  async removeMemberWithLayers(
+    mission: Mission,
+    member: MissionMember
+  ): Promise<MissionMemberResult> {
+    const stack = await this.tasks.removeRepoStack(mission, member.repoId)
+    if (stack.error) {
+      return { repoId: member.repoId, worktreeId: member.worktreeId, ...stack }
+    }
+    const current = this.store.getMission(mission.id) ?? mission
+    const removed = await this.memberLifecycle.removeWorktree(current, member)
+    const warning = [stack.warning, removed.warning].filter(Boolean).join(' ')
+    return { ...removed, ...(warning ? { warning } : {}) }
+  }
+
   async delete(args: MissionDeleteInput): Promise<MissionDeleteResult> {
     return this.memberLifecycle.run(args.missionId, async () => {
       const mission = this.store.getMission(args.missionId)
@@ -206,16 +223,7 @@ export class MissionOperations {
     // Why: removeWorktree reassigns members; iterate a snapshot so removals don't skip entries.
     const members = [...mission.members]
     for (const member of members) {
-      // Why: layers are checked out above the member branch, so they go first, top-down.
-      const stack = await this.tasks.removeRepoStack(mission, member.repoId)
-      if (stack.error) {
-        memberResults.push({ repoId: member.repoId, worktreeId: member.worktreeId, ...stack })
-        continue
-      }
-      const current = this.store.getMission(mission.id) ?? mission
-      const removed = await this.memberLifecycle.removeWorktree(current, member)
-      const warning = [stack.warning, removed.warning].filter(Boolean).join(' ')
-      memberResults.push({ ...removed, ...(warning ? { warning } : {}) })
+      memberResults.push(await this.removeMemberWithLayers(mission, member))
     }
     const remaining = this.store.getMission(mission.id)
     // Why: keep a Mission with an undeletable worktree visible for a safe retry.
