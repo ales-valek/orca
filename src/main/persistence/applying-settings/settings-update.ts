@@ -22,6 +22,7 @@ import { normalizeAppIconId } from '../../../shared/app-icon'
 import { normalizeUiLanguage } from '../../../shared/ui-language'
 import { normalizeWorktreeVisibilityDefaults } from '../../../shared/external-worktree-visibility'
 import { normalizePRBotAuthorOverrides } from '../../../shared/pr-bot-author-overrides'
+import { normalizeHulyProjectsUpdate } from '../../../shared/huly/huly-project-settings'
 import { normalizeMachineName } from '../../../shared/machine-name'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import {
@@ -200,6 +201,7 @@ export function updateSettings(
       updates.prBotAuthorOverrides
     )
   }
+  Object.assign(sanitizedUpdates, normalizeHulyProjectsUpdate(updates))
   if ('machineName' in updates) {
     sanitizedUpdates.machineName = normalizeMachineName(updates.machineName)
   }
