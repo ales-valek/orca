@@ -3,8 +3,11 @@ import type {
   Mission,
   MissionCreateResult,
   MissionDeleteResult,
-  MissionMemberResult
+  MissionMemberResult,
+  RuntimeMissionHulyCreateResult,
+  RuntimeMissionHulyRefreshResult
 } from '../../../../shared/mission-types'
+import type { HulyApi } from '../../../../preload/api/huly-api'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
@@ -36,6 +39,15 @@ export type MissionsSlice = {
   removeMissionMember: (missionId: string, repoId: string, deleteWorktree: boolean) => Promise<void>
   recreateMissionMemberWorktree: (missionId: string, repoId: string) => Promise<void>
   ensureMissionSession: (missionId: string) => Promise<FolderWorkspace | null>
+  /** Rejects with the Huly error so the dialog can show its copy. */
+  createMissionFromMilestone: (
+    args: Parameters<HulyApi['createMission']>[0]
+  ) => Promise<RuntimeMissionHulyCreateResult>
+  /** Without `apply` it only reports the diff; rejects with the Huly error. */
+  refreshMissionFromHuly: (
+    missionId: string,
+    apply: boolean
+  ) => Promise<RuntimeMissionHulyRefreshResult>
 } & MissionStackSlice
 
 export const missionMemberErrorKey = (missionId: string, repoId: string): string =>
@@ -177,6 +189,21 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         console.error('Failed to ensure mission session:', err)
         return null
       }
+    },
+
+    createMissionFromMilestone: async (args) => {
+      const result = await window.api.huly.createMission(args)
+      await get().fetchMissions()
+      return result
+    },
+
+    refreshMissionFromHuly: async (missionId, apply) => {
+      const result = await window.api.huly.refreshMission({ mission: `id:${missionId}`, apply })
+      if (apply) {
+        await get().fetchMissions()
+        await get().inspectMissionStacks(missionId)
+      }
+      return result
     }
   }
 }
