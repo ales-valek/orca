@@ -1,5 +1,8 @@
 import type { HulyConnectionInfo } from '../../shared/huly/huly-types'
-import type { RuntimeMissionHulyCreateResult } from '../../shared/mission-types'
+import type {
+  RuntimeMissionHulyCreateResult,
+  RuntimeMissionHulyRefreshResult
+} from '../../shared/mission-types'
 import type { TuiAgent } from '../../shared/tui-agent'
 import { HulyConnection } from '../huly/huly-connection'
 import {
@@ -9,7 +12,7 @@ import {
   type HulyMilestonePlanArgs
 } from '../huly/huly-mission-import'
 import { writeMissionBriefIfRooted } from '../missions/mission-brief-file'
-import { toRuntimeMissionRecord } from '../missions/mission-runtime-records'
+import { resolveMissionSelector, toRuntimeMissionRecord } from '../missions/mission-runtime-records'
 import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
 
 export type RuntimeMissionCreateFromHulyInput = {
@@ -120,6 +123,28 @@ export abstract class OrcaRuntimeWithHulyCommands extends OrcaRuntimeWithMission
     })
     return {
       mission: toRuntimeMissionRecord(store, result.mission),
+      warnings: result.warnings
+    }
+  }
+
+  async refreshMissionFromHuly(
+    selector: string,
+    apply: boolean
+  ): Promise<RuntimeMissionHulyRefreshResult> {
+    const operations = this.requireMissionOperations()
+    const store = this.requireStore()
+    const target = resolveMissionSelector(operations.list(), selector)
+    const result = await this.createHulyMissionImport().refreshMissionFromHuly({
+      missionId: target.id,
+      apply
+    })
+    const mission = store.getMission?.(target.id) ?? target
+    return {
+      mission: toRuntimeMissionRecord(store, mission),
+      diff: result.diff,
+      applied: result.applied.flatMap((entry) =>
+        entry.task?.externalRef ? [entry.task.externalRef] : []
+      ),
       warnings: result.warnings
     }
   }

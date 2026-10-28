@@ -3,6 +3,7 @@ import type {
   MissionMemberResult,
   RuntimeMissionAbsorbResult,
   RuntimeMissionHulyCreateResult,
+  RuntimeMissionHulyRefreshResult,
   RuntimeMissionLayerRecord,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
@@ -99,6 +100,45 @@ export function formatMissionMutation(result: RuntimeMissionMutationResult): str
 export function formatMissionHulyCreate(result: RuntimeMissionHulyCreateResult): string {
   return [
     formatMissionRecord(result.mission),
+    ...result.warnings.map((warning) => `warning: ${warning}`)
+  ].join('\n')
+}
+
+export function formatMissionHulyRefresh(result: RuntimeMissionHulyRefreshResult): string {
+  const { diff } = result
+  const sections: [string, string[]][] = [
+    [
+      'Appendable',
+      diff.appendable.flatMap(({ repoId, issues }) =>
+        issues.map((issue) => `${issue.identifier}  ${issue.title}  (${repoId})`)
+      )
+    ],
+    [
+      'Non-appendable',
+      diff.nonAppendable.map(
+        ({ identifier, repoId, reason }) => `${identifier}  ${repoId}  ${reason}`
+      )
+    ],
+    [
+      'Reordered in Huly',
+      diff.reorderedInHuly.map(
+        ({ repoId, before, after }) => `${repoId}: ${before.join(', ')} -> ${after.join(', ')}`
+      )
+    ],
+    [
+      'Moved repo',
+      diff.movedRepo.map(
+        ({ identifier, fromRepoId, toRepoId }) => `${identifier}  ${fromRepoId} -> ${toRepoId}`
+      )
+    ],
+    ['Removed', diff.removed]
+  ]
+  const lines = sections.flatMap(([title, entries]) =>
+    entries.length > 0 ? [`${title}:`, ...entries.map((entry) => `  ${entry}`)] : []
+  )
+  return [
+    ...(lines.length > 0 ? lines : ['Mission is up to date with its milestone.']),
+    ...(result.applied.length > 0 ? [`Appended: ${result.applied.join(', ')}`] : []),
     ...result.warnings.map((warning) => `warning: ${warning}`)
   ].join('\n')
 }

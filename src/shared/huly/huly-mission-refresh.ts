@@ -1,0 +1,112 @@
+import type { Mission } from '../mission-types'
+import type { HulyMissionPlan } from './huly-mission-plan'
+import type { HulyIssue } from './huly-types'
+
+export type HulyNonAppendableReason = 'inserted-in-middle' | 'repo-not-in-mission' | 'blocked-cycle'
+
+export type HulyMissionRefreshDiff = {
+  /** New issues whose plan position is after every existing task of that repo, in plan order. */
+  appendable: { repoId: string; issues: HulyIssue[] }[]
+  /** Huly order vs `source.importedOrder` for issues present in both. */
+  reorderedInHuly: { repoId: string; before: string[]; after: string[] }[]
+  /** Identifiers of existing tasks that left the milestone, were skipped or lost their repo mapping. */
+  removed: string[]
+  movedRepo: { identifier: string; fromRepoId: string; toRepoId: string }[]
+  nonAppendable: { repoId: string; identifier: string; reason: HulyNonAppendableReason }[]
+}
+
+type RefreshMission = Pick<Mission, 'tasks' | 'source' | 'members'>
+
+function isSameSequence(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index])
+}
+
+export function diffMissionAgainstPlan(
+  mission: RefreshMission,
+  plan: HulyMissionPlan
+): HulyMissionRefreshDiff {
+  const importedOrder = mission.source?.importedOrder ?? {}
+  const memberRepoIds = new Set(mission.members.map((member) => member.repoId))
+  const existingTasks = (mission.tasks ?? []).filter(
+    (task): task is typeof task & { externalRef: string } => Boolean(task.externalRef)
+  )
+  const existingRefs = new Set(existingTasks.map((task) => task.externalRef))
+  const importedRefs = new Set(Object.values(importedOrder).flat())
+
+  const planRepoByIdentifier = new Map<string, string>()
+  for (const stack of plan.stacks) {
+    for (const { issue } of stack.tasks) {
+      planRepoByIdentifier.set(issue.identifier, stack.repoId)
+    }
+  }
+  const cycleRepoByIdentifier = new Map<string, string>()
+  for (const cycle of plan.cycles) {
+    for (const identifier of cycle.identifiers) {
+      cycleRepoByIdentifier.set(identifier, cycle.repoId)
+    }
+  }
+
+  const removed: string[] = []
+  const movedRepo: HulyMissionRefreshDiff['movedRepo'] = []
+  for (const task of existingTasks) {
+    const toRepoId = planRepoByIdentifier.get(task.externalRef)
+    const cycleRepoId = cycleRepoByIdentifier.get(task.externalRef)
+    if (toRepoId === undefined && cycleRepoId === undefined) {
+      removed.push(task.externalRef)
+    } else if ((toRepoId ?? cycleRepoId) !== task.repoId) {
+      movedRepo.push({
+        identifier: task.externalRef,
+        fromRepoId: task.repoId,
+        toRepoId: toRepoId ?? cycleRepoId ?? task.repoId
+      })
+    }
+  }
+
+  const appendable: HulyMissionRefreshDiff['appendable'] = []
+  const nonAppendable: HulyMissionRefreshDiff['nonAppendable'] = []
+  const reorderedInHuly: HulyMissionRefreshDiff['reorderedInHuly'] = []
+  for (const stack of plan.stacks) {
+    const identifiers = stack.tasks.map(({ issue }) => issue.identifier)
+    const lastExistingIndex = Math.max(
+      -1,
+      ...existingTasks
+        .filter((task) => task.repoId === stack.repoId)
+        .map((task) => identifiers.indexOf(task.externalRef))
+    )
+    const issues: HulyIssue[] = []
+    for (const [index, { issue }] of stack.tasks.entries()) {
+      const { identifier } = issue
+      if (existingRefs.has(identifier) || importedRefs.has(identifier)) {
+        continue
+      }
+      if (!memberRepoIds.has(stack.repoId)) {
+        nonAppendable.push({ repoId: stack.repoId, identifier, reason: 'repo-not-in-mission' })
+      } else if (index > lastExistingIndex) {
+        issues.push(issue)
+      } else {
+        nonAppendable.push({ repoId: stack.repoId, identifier, reason: 'inserted-in-middle' })
+      }
+    }
+    if (issues.length > 0) {
+      appendable.push({ repoId: stack.repoId, issues })
+    }
+
+    const before = (importedOrder[stack.repoId] ?? []).filter(
+      (identifier) => planRepoByIdentifier.get(identifier) === stack.repoId
+    )
+    const beforeSet = new Set(before)
+    const after = identifiers.filter((identifier) => beforeSet.has(identifier))
+    if (!isSameSequence(before, after)) {
+      reorderedInHuly.push({ repoId: stack.repoId, before, after })
+    }
+  }
+  for (const cycle of plan.cycles) {
+    for (const identifier of cycle.identifiers) {
+      if (!existingRefs.has(identifier) && !importedRefs.has(identifier)) {
+        nonAppendable.push({ repoId: cycle.repoId, identifier, reason: 'blocked-cycle' })
+      }
+    }
+  }
+
+  return { appendable, reorderedInHuly, removed, movedRepo, nonAppendable }
+}

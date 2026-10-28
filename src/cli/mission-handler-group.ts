@@ -7,6 +7,7 @@ export const MISSION_HANDLER_GROUP: HandlerGroup = {
     'mission show',
     'mission current',
     'mission create',
+    'mission refresh',
     'mission session',
     'mission add-repo',
     'mission task add',

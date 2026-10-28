@@ -1,5 +1,9 @@
 import { renderMissionBrief } from '../../shared/huly/huly-mission-brief'
 import {
+  diffMissionAgainstPlan,
+  type HulyMissionRefreshDiff
+} from '../../shared/huly/huly-mission-refresh'
+import {
   buildMissionPlanFromMilestone,
   type HulyMissionPlan
 } from '../../shared/huly/huly-mission-plan'
@@ -20,6 +24,7 @@ import type { MissionCreateInput } from '../ipc/mission-ipc-args'
 import type { MissionAddTaskInput } from '../missions/mission-task-operations'
 import type { HulyApi } from './huly-api'
 import type { HulyConnection } from './huly-connection'
+import { appendStackTasks } from './huly-stack-task-appender'
 
 export type HulyMilestonePlanArgs = {
   project: string
@@ -54,6 +59,12 @@ export type HulyMissionImportDeps = {
   writeBrief: (mission: Mission, markdown: string) => boolean
   getRepoName: (repoId: string) => string | null
   now?: () => number
+}
+
+export type HulyMissionRefreshResult = {
+  diff: HulyMissionRefreshDiff
+  applied: MissionTaskResult[]
+  warnings: string[]
 }
 
 /** Carries the issues that keep the plan from becoming a Mission. */
@@ -177,17 +188,75 @@ export class HulyMissionImport {
       milestoneLabel: milestone.label,
       milestoneUrl: milestone.url,
       importedOrder,
+      ...(args.repoOverrides && Object.keys(args.repoOverrides).length > 0
+        ? { repoOverrides: args.repoOverrides }
+        : {}),
       lastSyncedAt: (this.deps.now ?? Date.now)()
     })
 
     const taskResults: MissionTaskResult[] = []
     for (const stack of plan.stacks) {
-      warnings.push(...(await this.addStackTasks(missionId, stack, taskResults)))
+      const result = await appendStackTasks(
+        this.deps.missions.addTask,
+        missionId,
+        stack,
+        taskResults
+      )
+      warnings.push(...result.warnings)
     }
 
     const mission = this.deps.getMission(missionId) ?? created.mission
     warnings.push(...this.writeBrief(mission, milestone, plan))
     return { mission, taskResults, warnings }
+  }
+
+  /** Diffs the Mission against its milestone; with `apply` only appendable issues are added on top. */
+  async refreshMissionFromHuly(args: {
+    missionId: string
+    apply: boolean
+  }): Promise<HulyMissionRefreshResult> {
+    const mission = this.deps.getMission(args.missionId)
+    if (!mission) {
+      throw new Error('mission_not_found')
+    }
+    const { source } = mission
+    if (!source) {
+      throw new Error('mission_not_from_huly')
+    }
+    const { milestone, plan } = await this.readPlan({
+      project: source.project,
+      milestoneId: source.milestoneId,
+      repoOverrides: source.repoOverrides
+    })
+    const diff = diffMissionAgainstPlan(mission, plan)
+    if (!args.apply) {
+      return { diff, applied: [], warnings: [] }
+    }
+
+    const applied: MissionTaskResult[] = []
+    const warnings: string[] = []
+    const importedOrder = { ...source.importedOrder }
+    for (const { repoId, issues } of diff.appendable) {
+      const wanted = new Set(issues.map((issue) => issue.identifier))
+      const tasks = (plan.stacks.find((stack) => stack.repoId === repoId)?.tasks ?? []).filter(
+        (task) => wanted.has(task.issue.identifier)
+      )
+      const result = await appendStackTasks(
+        this.deps.missions.addTask,
+        mission.id,
+        { repoId, tasks },
+        applied
+      )
+      warnings.push(...result.warnings)
+      importedOrder[repoId] = [...(importedOrder[repoId] ?? []), ...result.appended]
+    }
+    this.deps.setMissionSource(mission.id, {
+      ...source,
+      importedOrder,
+      lastSyncedAt: (this.deps.now ?? Date.now)()
+    })
+    warnings.push(...this.writeBrief(this.deps.getMission(mission.id) ?? mission, milestone, plan))
+    return { diff, applied, warnings }
   }
 
   private async readPlan(args: HulyMilestonePlanArgs): Promise<{
@@ -206,41 +275,6 @@ export class HulyMissionImport {
       ? buildMissionPlanFromMilestone({ ...input, orderOverrides: args.orderOverrides })
       : importedPlan
     return { milestone, plan, importedOrder: getPlanOrder(importedPlan) }
-  }
-
-  /** Stops a repo at its first failed layer: stacking later issues on top would misorder it. */
-  private async addStackTasks(
-    missionId: string,
-    stack: HulyMissionPlan['stacks'][number],
-    taskResults: MissionTaskResult[]
-  ): Promise<string[]> {
-    const warnings: string[] = []
-    for (const [index, { issue }] of stack.tasks.entries()) {
-      let failure: string | null = null
-      try {
-        const result = await this.deps.missions.addTask({
-          missionId,
-          repoId: stack.repoId,
-          title: issue.title,
-          externalRef: issue.identifier,
-          externalId: issue.id
-        })
-        taskResults.push(result)
-        if (result.warning) {
-          warnings.push(`${issue.identifier}: ${result.warning}`)
-        }
-        failure = result.error ?? null
-      } catch (error) {
-        failure = toErrorMessage(error)
-      }
-      if (failure !== null) {
-        const skipped = stack.tasks.slice(index + 1).map((task) => task.issue.identifier)
-        const notAdded = skipped.length > 0 ? `; not added: ${skipped.join(', ')}` : ''
-        warnings.push(`${issue.identifier}: ${failure}${notAdded}`)
-        break
-      }
-    }
-    return warnings
   }
 
   private writeBrief(mission: Mission, milestone: HulyMilestone, plan: HulyMissionPlan): string[] {
