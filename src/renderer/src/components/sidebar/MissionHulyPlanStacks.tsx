@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
-import type { HulyMissionPlan } from '../../../../shared/huly/huly-mission-plan'
+import type { HulyMissionPlan, HulyPlannedTask } from '../../../../shared/huly/huly-mission-plan'
 import type { HulyIssue } from '../../../../shared/huly/huly-types'
 import { getOrderedStackTasks, moveStackTask } from './mission-huly-plan-order'
 
@@ -41,8 +41,24 @@ export function MissionHulyPlanStacks({
   orderByRepo: Record<string, string[]>
   onOrderChange: (repoId: string, identifiers: string[]) => void
 }): React.JSX.Element {
+  const sectionRef = useRef<HTMLElement>(null)
+  // A move re-renders the list and an end button turns disabled, so focus follows the moved task.
+  const move = (repoId: string, tasks: HulyPlannedTask[], index: number, offset: -1 | 1): void => {
+    const identifier = tasks[index].issue.identifier
+    const target = index + offset
+    onOrderChange(repoId, moveStackTask(tasks, index, offset))
+    const atEnd = target <= 0 || target >= tasks.length - 1
+    const sameDirection = offset === -1 ? 'up' : 'down'
+    const direction = atEnd ? (offset === -1 ? 'down' : 'up') : sameDirection
+    requestAnimationFrame(() => {
+      sectionRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-move="${identifier}:${direction}"]`)
+        ?.focus()
+    })
+  }
+
   return (
-    <section className="space-y-2">
+    <section ref={sectionRef} className="space-y-2">
       <h3 className={PLAN_SECTION_LABEL_CLASS}>
         {translate('auto.components.sidebar.MissionHulyPlanStacks.title', 'Task stacks')}
       </h3>
@@ -68,12 +84,13 @@ export function MissionHulyPlanStacks({
                       variant="ghost"
                       size="icon-xs"
                       disabled={index === 0}
+                      data-move={`${task.issue.identifier}:up`}
                       aria-label={translate(
                         'auto.components.sidebar.MissionHulyPlanStacks.moveUp',
                         'Move {{identifier}} up',
                         { identifier: task.issue.identifier }
                       )}
-                      onClick={() => onOrderChange(stack.repoId, moveStackTask(tasks, index, -1))}
+                      onClick={() => move(stack.repoId, tasks, index, -1)}
                     >
                       <ChevronUp />
                     </Button>
@@ -82,12 +99,13 @@ export function MissionHulyPlanStacks({
                       variant="ghost"
                       size="icon-xs"
                       disabled={index === tasks.length - 1}
+                      data-move={`${task.issue.identifier}:down`}
                       aria-label={translate(
                         'auto.components.sidebar.MissionHulyPlanStacks.moveDown',
                         'Move {{identifier}} down',
                         { identifier: task.issue.identifier }
                       )}
-                      onClick={() => onOrderChange(stack.repoId, moveStackTask(tasks, index, 1))}
+                      onClick={() => move(stack.repoId, tasks, index, 1)}
                     >
                       <ChevronDown />
                     </Button>
