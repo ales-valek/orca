@@ -1,6 +1,7 @@
 import { renderMissionBrief } from '../../shared/huly/huly-mission-brief'
 import {
   diffMissionAgainstPlan,
+  insertAppendedIntoImportedOrder,
   type HulyMissionRefreshDiff
 } from '../../shared/huly/huly-mission-refresh'
 import {
@@ -248,7 +249,13 @@ export class HulyMissionImport {
         applied
       )
       warnings.push(...result.warnings)
-      importedOrder[repoId] = [...(importedOrder[repoId] ?? []), ...result.appended]
+      importedOrder[repoId] = insertAppendedIntoImportedOrder(
+        importedOrder[repoId] ?? [],
+        result.appended,
+        (plan.stacks.find((stack) => stack.repoId === repoId)?.tasks ?? []).map(
+          (task) => task.issue.identifier
+        )
+      )
     }
     this.deps.setMissionSource(mission.id, {
       ...source,

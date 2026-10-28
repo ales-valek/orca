@@ -2,7 +2,12 @@ import type { Mission } from '../mission-types'
 import type { HulyMissionPlan } from './huly-mission-plan'
 import type { HulyIssue } from './huly-types'
 
-export type HulyNonAppendableReason = 'inserted-in-middle' | 'repo-not-in-mission' | 'blocked-cycle'
+export type HulyNonAppendableReason =
+  | 'inserted-in-middle'
+  | 'repo-not-in-mission'
+  | 'blocked-cycle'
+  | 'unmapped'
+  | 'blocked-by-pending'
 
 export type HulyMissionRefreshDiff = {
   /** New issues whose plan position is after every existing task of that repo, in plan order. */
@@ -12,7 +17,12 @@ export type HulyMissionRefreshDiff = {
   /** Identifiers of existing tasks that left the milestone, were skipped or lost their repo mapping. */
   removed: string[]
   movedRepo: { identifier: string; fromRepoId: string; toRepoId: string }[]
-  nonAppendable: { repoId: string; identifier: string; reason: HulyNonAppendableReason }[]
+  /** `repoId` is null for an issue whose component maps to no repo. */
+  nonAppendable: {
+    repoId: string | null
+    identifier: string
+    reason: HulyNonAppendableReason
+  }[]
 }
 
 type RefreshMission = Pick<Mission, 'tasks' | 'source' | 'members'>
@@ -67,11 +77,12 @@ export function diffMissionAgainstPlan(
   const reorderedInHuly: HulyMissionRefreshDiff['reorderedInHuly'] = []
   for (const stack of plan.stacks) {
     const identifiers = stack.tasks.map(({ issue }) => issue.identifier)
-    const lastExistingIndex = Math.max(
+    // Why: ids still in importedOrder anchor even after their task was removed, keeping appended ids in plan order.
+    const lastAnchorIndex = Math.max(
       -1,
-      ...existingTasks
-        .filter((task) => task.repoId === stack.repoId)
-        .map((task) => identifiers.indexOf(task.externalRef))
+      ...identifiers.flatMap((identifier, index) =>
+        existingRefs.has(identifier) || importedRefs.has(identifier) ? [index] : []
+      )
     )
     const issues: HulyIssue[] = []
     for (const [index, { issue }] of stack.tasks.entries()) {
@@ -81,7 +92,7 @@ export function diffMissionAgainstPlan(
       }
       if (!memberRepoIds.has(stack.repoId)) {
         nonAppendable.push({ repoId: stack.repoId, identifier, reason: 'repo-not-in-mission' })
-      } else if (index > lastExistingIndex) {
+      } else if (index > lastAnchorIndex) {
         issues.push(issue)
       } else {
         nonAppendable.push({ repoId: stack.repoId, identifier, reason: 'inserted-in-middle' })
@@ -108,5 +119,57 @@ export function diffMissionAgainstPlan(
     }
   }
 
+  for (const issue of plan.unmapped) {
+    if (!existingRefs.has(issue.identifier) && !importedRefs.has(issue.identifier)) {
+      nonAppendable.push({ repoId: null, identifier: issue.identifier, reason: 'unmapped' })
+    }
+  }
+
+  demoteBlockedAppendable(appendable, nonAppendable)
   return { appendable, reorderedInHuly, removed, movedRepo, nonAppendable }
+}
+
+// Why: appending an issue whose blocker cannot be added would skip the blocker in the dependency order.
+function demoteBlockedAppendable(
+  appendable: HulyMissionRefreshDiff['appendable'],
+  nonAppendable: HulyMissionRefreshDiff['nonAppendable']
+): void {
+  const pending = new Set(nonAppendable.map((entry) => entry.identifier))
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const entry of appendable) {
+      const kept = entry.issues.filter((issue) => {
+        if (!issue.blockedBy.some((blocker) => pending.has(blocker))) {
+          return true
+        }
+        pending.add(issue.identifier)
+        nonAppendable.push({
+          repoId: entry.repoId,
+          identifier: issue.identifier,
+          reason: 'blocked-by-pending'
+        })
+        changed = true
+        return false
+      })
+      entry.issues = kept
+    }
+  }
+  appendable.splice(0, appendable.length, ...appendable.filter((entry) => entry.issues.length > 0))
+}
+
+/** Inserts each appended id after the last recorded id that precedes it in the plan. */
+export function insertAppendedIntoImportedOrder(
+  order: string[],
+  appended: string[],
+  planIdentifiers: string[]
+): string[] {
+  const planIndex = new Map(planIdentifiers.map((identifier, index) => [identifier, index]))
+  const result = [...order]
+  for (const identifier of appended) {
+    const position = planIndex.get(identifier) ?? Infinity
+    const after = result.findLastIndex((entry) => (planIndex.get(entry) ?? Infinity) < position)
+    result.splice(after + 1, 0, identifier)
+  }
+  return result
 }

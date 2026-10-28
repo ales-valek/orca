@@ -253,6 +253,29 @@ describe('orca mission commands', () => {
     process.exitCode = priorExitCode
   })
 
+  it('accepts --apply before the Mission selector', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_1', {
+        mission: MISSION,
+        diff: {
+          appendable: [],
+          nonAppendable: [],
+          reorderedInHuly: [],
+          removed: [],
+          movedRepo: []
+        },
+        applied: [],
+        warnings: []
+      })
+    )
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['mission', 'refresh', '--apply', 'Referral'], '/tmp')
+
+    expect(callMock).toHaveBeenCalledWith('mission.refresh', { mission: 'Referral', apply: true })
+  })
+
   it('refuses --from-huly together with --repo', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
