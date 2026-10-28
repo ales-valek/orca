@@ -7,8 +7,16 @@ import {
   makeFakeRuntime,
   makeFakeStore,
   makeFakeWindow,
+  missionsBaseDir,
   referralRootPath
 } from '../ipc/missions-ipc-test-harness'
+
+const stackLayerGit = vi.hoisted(() => ({
+  getBranchTip: vi.fn(async () => null),
+  getMergeBase: vi.fn(async (_repoPath: string, _left: string, _right: string) => 'parent-base-sha')
+}))
+
+vi.mock('../git/stack-layer-git', () => stackLayerGit)
 
 const handlers = new Map<string, (event: unknown, args?: unknown) => unknown>()
 
@@ -205,5 +213,208 @@ describe('MissionMemberOwnershipRecovery slots', () => {
       recovery.recoverLiveOwnedWorktree(store.getMission('m1')!, 'r1', 'task:missing')
     ).rejects.toThrow('mission_member_worktree_ownership_unverified')
     expect(runtime.findManagedWorktreesForMissionOwnership).not.toHaveBeenCalled()
+  })
+})
+
+describe('MissionOperations task layers', () => {
+  const taskDir = path.join(referralRootPath, 'repo-one-r1--omp-1')
+  const previewDir = path.join(referralRootPath, 'repo-one-r1--preview')
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function seed() {
+    const store = makeFakeStore()
+    store.createMission({ name: 'Referral', repoIds: ['r1'] })
+    store.setMissionRootPath('m1', referralRootPath, missionsBaseDir)
+    const member = assignOwnedWorktree(store, 'r1')
+    const runtime = makeFakeRuntime(store)
+    const operations = createOperations(store, runtime)
+    return { store, runtime, operations, member }
+  }
+
+  function addOmp(operations: MissionOperations, externalRef = 'OMP-1') {
+    return operations.addTask({ missionId: 'm1', repoId: 'r1', title: 'Form', externalRef })
+  }
+
+  it('creates the first task on the mission branch and a preview on top of it', async () => {
+    const { store, runtime, operations } = seed()
+
+    const result = await addOmp(operations)
+
+    expect(result.error).toBeUndefined()
+    const taskId = result.task!.id
+    expect(runtime.createManagedWorktree).toHaveBeenCalledTimes(2)
+    expect(runtime.createManagedWorktree).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        branchNameOverride: 'mission-task/referral/omp-1',
+        baseBranch: 'mission/referral',
+        requireExactBranchName: true,
+        missionId: 'm1',
+        missionSlot: `task:${taskId}`,
+        worktreePathOverride: taskDir
+      })
+    )
+    expect(runtime.createManagedWorktree).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        branchNameOverride: 'mission-preview/referral',
+        baseBranch: 'mission-task/referral/omp-1',
+        missionSlot: 'preview',
+        worktreePathOverride: previewDir
+      })
+    )
+    // Why: marker-only recovery needs the task record durable before its checkout exists.
+    expect(store.flushPendingOrThrowAsync.mock.invocationCallOrder[0]).toBeLessThan(
+      runtime.createManagedWorktree.mock.invocationCallOrder[0]
+    )
+    expect(stackLayerGit.getMergeBase).toHaveBeenCalledWith(
+      path.join(path.sep, 'repos', 'r1'),
+      'mission/referral',
+      'mission-task/referral/omp-1'
+    )
+    expect(result.task).toMatchObject({
+      worktreeId: `r1::${taskDir}`,
+      parentBaseSha: 'parent-base-sha'
+    })
+    expect(store.getMission('m1')!.previews).toEqual([
+      expect.objectContaining({ repoId: 'r1', worktreeId: `r1::${previewDir}` })
+    ])
+  })
+
+  it('stacks a second task on the first and leaves the preview for restack', async () => {
+    const { runtime, operations } = seed()
+    await addOmp(operations)
+    runtime.createManagedWorktree.mockClear()
+
+    const result = await addOmp(operations, 'OMP-2')
+
+    expect(result.task).toMatchObject({ order: 2, branchName: 'mission-task/referral/omp-2' })
+    expect(runtime.createManagedWorktree).toHaveBeenCalledTimes(1)
+    expect(runtime.createManagedWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: 'mission-task/referral/omp-1' })
+    )
+  })
+
+  it('refuses a task while the member worktree is missing', async () => {
+    const { store, runtime, operations } = seed()
+    store.setMissionMemberWorktree('m1', 'r1', null, null)
+
+    const result = await addOmp(operations)
+
+    expect(result).toMatchObject({ task: null, error: 'mission_member_worktree_missing' })
+    expect(store.getMission('m1')!.tasks ?? []).toEqual([])
+    expect(runtime.createManagedWorktree).not.toHaveBeenCalled()
+  })
+
+  it('refuses to remove a task that is not on top', async () => {
+    const { runtime, operations } = seed()
+    const first = await addOmp(operations)
+    await addOmp(operations, 'OMP-2')
+
+    const result = await operations.removeTopTask({
+      missionId: 'm1',
+      repoId: 'r1',
+      taskId: first.task!.id,
+      deleteWorktree: true
+    })
+
+    expect(result.error).toBe('mission_task_not_top')
+    expect(runtime.removeManagedWorktree).not.toHaveBeenCalled()
+  })
+
+  it('removes the preview together with the last task, preview first', async () => {
+    const { store, runtime, operations } = seed()
+    const { task } = await addOmp(operations)
+
+    const result = await operations.removeTopTask({
+      missionId: 'm1',
+      repoId: 'r1',
+      deleteWorktree: true
+    })
+
+    expect(result.error).toBeUndefined()
+    expect(runtime.removeManagedWorktree.mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({
+        force: false,
+        expectedOwnership: expect.objectContaining({
+          worktreeId: `r1::${previewDir}`,
+          missionSlot: 'preview'
+        })
+      }),
+      expect.objectContaining({
+        force: false,
+        expectedOwnership: expect.objectContaining({
+          worktreeId: `r1::${taskDir}`,
+          missionSlot: `task:${task!.id}`
+        })
+      })
+    ])
+    expect(store.getMission('m1')).toMatchObject({ tasks: [], previews: [] })
+  })
+
+  it('deletes a Mission top-down: preview, tasks from the top, then the member', async () => {
+    const { runtime, operations } = seed()
+    await addOmp(operations)
+    await addOmp(operations, 'OMP-2')
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: true })
+
+    expect(result).toMatchObject({ deleted: true })
+    expect(runtime.removeManagedWorktree.mock.calls.map((call) => call[0])).toEqual([
+      `id:r1::${previewDir}`,
+      `id:r1::${path.join(referralRootPath, 'repo-one-r1--omp-2')}`,
+      `id:r1::${taskDir}`,
+      `id:r1::${path.join(path.sep, 'wt', 'r1')}`
+    ])
+  })
+
+  it('keeps the Mission when a task layer refuses removal', async () => {
+    const { store, runtime, operations } = seed()
+    await addOmp(operations)
+    runtime.removeManagedWorktree.mockImplementation(async (selector: string) => {
+      if (selector === `id:r1::${taskDir}`) {
+        throw new Error('worktree_dirty')
+      }
+      return {}
+    })
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: true })
+
+    expect(result.deleted).toBe(false)
+    expect(store.getMission('m1')!.members).toHaveLength(1)
+    expect(runtime.removeManagedWorktree).not.toHaveBeenCalledWith(
+      `id:r1::${path.join(path.sep, 'wt', 'r1')}`,
+      expect.anything()
+    )
+  })
+
+  it('detaches every slot when a Mission is deleted keeping its worktrees', async () => {
+    const { store, operations } = seed()
+    await addOmp(operations)
+    const ownedBefore = Object.entries(store.getAllWorktreeMeta()).filter(
+      ([, meta]) => meta.missionId === 'm1'
+    )
+    expect(ownedBefore).toHaveLength(3)
+
+    const result = await operations.delete({ missionId: 'm1', deleteWorktrees: false })
+
+    expect(result.deleted).toBe(true)
+    for (const [worktreeId] of ownedBefore) {
+      expect(store.getWorktreeMeta(worktreeId)?.missionId).toBeUndefined()
+    }
+  })
+
+  it('refuses to detach a member while its task checkout stays in the Mission root', async () => {
+    const { store, operations } = seed()
+    await addOmp(operations)
+    const mission = store.getMission('m1')!
+
+    const result = await operations.memberLifecycle.detachMember(mission, mission.members[0])
+
+    expect(result.error).toBe('mission_member_workspace_delete_required')
+    expect(store.getMission('m1')!.members).toHaveLength(1)
   })
 })

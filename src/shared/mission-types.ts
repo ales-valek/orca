@@ -80,6 +80,13 @@ export type MissionMemberResult = {
   warning?: string
 }
 
+export type MissionTaskResult = {
+  mission: Mission
+  task: MissionTask | null
+  error?: string
+  warning?: string
+}
+
 export type MissionCreateResult = {
   mission: Mission
   memberResults: MissionMemberResult[]

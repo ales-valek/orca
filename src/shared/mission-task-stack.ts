@@ -79,9 +79,12 @@ export function getMissionSlotBranch(
     return mission.members.some((member) => member.repoId === repoId) ? mission.branchName : null
   }
   if (slot === 'preview') {
-    return mission.previews?.some((preview) => preview.repoId === repoId)
-      ? getMissionPreviewBranch(mission)
-      : null
+    // Why: the preview is created before its record, so a member repo with tasks already owns it.
+    const isPreviewRepo =
+      mission.members.some((member) => member.repoId === repoId) &&
+      (getRepoTaskStack(mission, repoId).length > 0 ||
+        Boolean(mission.previews?.some((preview) => preview.repoId === repoId)))
+    return isPreviewRepo ? getMissionPreviewBranch(mission) : null
   }
   if (slot === 'orchestrator') {
     return mission.orchestratorRepoId === repoId ? mission.branchName : null

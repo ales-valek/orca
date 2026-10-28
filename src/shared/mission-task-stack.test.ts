@@ -143,4 +143,12 @@ describe('getMissionSlotBranch', () => {
     expect(getMissionSlotBranch(mission, 'repo-b', 'task:a1')).toBeNull()
     expect(getMissionSlotBranch(mission, 'repo-a', 'task:missing')).toBeNull()
   })
+
+  it('resolves the preview of a repo with tasks before its record exists', () => {
+    const withoutPreview: Mission = { ...mission, previews: [] }
+    const withoutTasks: Mission = { ...mission, tasks: [], previews: [] }
+
+    expect(getMissionSlotBranch(withoutPreview, 'repo-a', 'preview')).toBe('mission-preview/kiosek')
+    expect(getMissionSlotBranch(withoutTasks, 'repo-a', 'preview')).toBeNull()
+  })
 })
