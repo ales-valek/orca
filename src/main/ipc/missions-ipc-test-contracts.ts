@@ -95,6 +95,12 @@ export type FakeStore = {
   addMissionTask: Mock<(id: string, input: FakeMissionTaskInput) => MissionTask | null>
   removeMissionTask: Mock<(id: string, taskId: string) => Mission | null>
   setMissionTaskParentBaseSha: Mock<(id: string, taskId: string, sha: string) => Mission | null>
+  setMissionTaskPendingParentBaseSha: Mock<
+    (id: string, taskId: string, sha: string | null) => Mission | null
+  >
+  setMissionPreviewFollowedSha: Mock<
+    (id: string, repoId: string, sha: string | null) => Mission | null
+  >
 }
 
 export type FakeWindow = {

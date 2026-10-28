@@ -17,7 +17,6 @@ import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import {
   getBranchTip,
-  getForkPoint,
   isAncestorCommit,
   readLayerWorktree,
   rebaseLayerOnto,
@@ -27,7 +26,14 @@ import {
 import { getMissionSlotRecord } from './mission-worktree-ownership'
 
 export type MissionTaskRestackDeps = {
-  store: Pick<Store, 'getRepo' | 'setMissionTaskParentBaseSha' | 'flushPendingOrThrowAsync'>
+  store: Pick<
+    Store,
+    | 'getRepo'
+    | 'setMissionTaskParentBaseSha'
+    | 'setMissionTaskPendingParentBaseSha'
+    | 'setMissionPreviewFollowedSha'
+    | 'flushPendingOrThrowAsync'
+  >
   isWorktreeAgentWorking: (worktreeId: string) => boolean
   /** Defaults to `getBranchTip`; tests use it to move a branch between the read and the write. */
   readBranchTip?: typeof getBranchTip
@@ -39,7 +45,10 @@ type LayerSpec = {
   /** Branch the checkout must be on; anything else is never rewritten. */
   branch: string
   parentTip: string | null
-  getParentBaseSha: (snapshot: LayerWorktreeSnapshot) => string | null
+  getParentBaseSha: (
+    snapshot: LayerWorktreeSnapshot,
+    worktreePath: string
+  ) => Promise<string | null> | string | null
   /** The preview only moves with `reset --keep`, which itself refuses edits it would overwrite. */
   ignoresLocalEdits?: boolean
 }
@@ -104,7 +113,7 @@ export class MissionTaskRestack {
     // Why: once a layer cannot move, rebasing the ones above would stack them on a stale parent.
     let writable = write
     for (const task of getRepoTaskStack(mission, repoId)) {
-      let reading = await this.readTask(mission, repo.path, task, task.parentBaseSha)
+      let reading = await this.readTask(mission, repo.path, task, write)
       if (writable && reading.state === 'stale') {
         reading = await this.rebaseTask(mission, repo.path, task, reading)
       }
@@ -115,6 +124,7 @@ export class MissionTaskRestack {
     }
     if (top) {
       const preview = await this.followTopTask(mission, repoId, repo.path, top, {
+        write,
         writable,
         initialTopTip
       })
@@ -127,15 +137,40 @@ export class MissionTaskRestack {
     mission: Mission,
     repoPath: string,
     task: MissionTask,
-    parentBaseSha: string | null
+    settlePending: boolean
   ): Promise<LayerReading> {
     return this.readLayer({
       slot: `task:${task.id}`,
       worktreeId: task.worktreeId,
       branch: task.branchName,
       parentTip: await this.readBranchTip(repoPath, getMissionTaskParentBranch(mission, task)),
-      getParentBaseSha: () => parentBaseSha
+      getParentBaseSha: (snapshot, worktreePath) =>
+        this.resolveRecordedBase(mission, task, snapshot, worktreePath, settlePending)
     })
+  }
+
+  /** The base the layer sits on, settling one left pending by a conflicted rebase once git is idle. */
+  private async resolveRecordedBase(
+    mission: Mission,
+    task: MissionTask,
+    snapshot: LayerWorktreeSnapshot,
+    worktreePath: string,
+    settle: boolean
+  ): Promise<string | null> {
+    const pending = task.pendingParentBaseSha
+    if (!pending || snapshot.operation !== 'unknown') {
+      return task.parentBaseSha
+    }
+    // Why: a finished rebase contains its target; an aborted one went back to the recorded base.
+    const finished = await isAncestorCommit(worktreePath, pending, 'HEAD')
+    if (settle) {
+      if (finished) {
+        this.deps.store.setMissionTaskParentBaseSha(mission.id, task.id, pending)
+      }
+      this.deps.store.setMissionTaskPendingParentBaseSha(mission.id, task.id, null)
+      await this.deps.store.flushPendingOrThrowAsync()
+    }
+    return finished ? pending : task.parentBaseSha
   }
 
   private async rebaseTask(
@@ -148,11 +183,9 @@ export class MissionTaskRestack {
     if (!worktreePath || !parentTip || !parentBaseSha) {
       return reading
     }
-    // Why: a layer already on the parent tip (rebased by hand or after a resolved conflict) only needs its base recorded.
+    // Why: a layer already on the parent tip (e.g. rebased by hand) only needs its base recorded.
     if (!(await isAncestorCommit(worktreePath, parentTip, 'HEAD'))) {
-      const parentBranch = getMissionTaskParentBranch(mission, task)
-      const base = await this.findReplayBase(worktreePath, parentBranch, parentBaseSha)
-      if (!base) {
+      if (!(await isAncestorCommit(worktreePath, parentBaseSha, 'HEAD'))) {
         return {
           ...reading,
           state: 'blocked',
@@ -160,8 +193,11 @@ export class MissionTaskRestack {
         }
       }
       try {
-        const result = await rebaseLayerOnto(worktreePath, parentTip, base)
+        const result = await rebaseLayerOnto(worktreePath, parentTip, parentBaseSha)
         if (result.status === 'conflict') {
+          // Why: after `rebase --continue` the layer sits on this tip, which the recorded base no longer describes.
+          this.deps.store.setMissionTaskPendingParentBaseSha(mission.id, task.id, parentTip)
+          await this.deps.store.flushPendingOrThrowAsync()
           return { ...reading, state: 'conflict' }
         }
       } catch (error) {
@@ -172,23 +208,8 @@ export class MissionTaskRestack {
     // Why: a lost base after a crash would make the next restack replay parent commits.
     await this.deps.store.flushPendingOrThrowAsync()
     // Why: a parent that moved during the rebase must read stale again, never current.
-    return this.readTask(mission, repoPath, task, parentTip)
-  }
-
-  /** Newest commit below the layer's own commits that belonged to the parent; null when the record is unusable. */
-  private async findReplayBase(
-    worktreePath: string,
-    parentBranch: string,
-    recorded: string
-  ): Promise<string | null> {
-    if (!(await isAncestorCommit(worktreePath, recorded, 'HEAD'))) {
-      return null
-    }
-    // Why: a conflict resolved outside restack leaves the layer on an unrecorded parent tip; the parent's reflog still knows it.
-    const forkPoint = await getForkPoint(worktreePath, parentBranch)
-    return forkPoint && (await isAncestorCommit(worktreePath, recorded, forkPoint))
-      ? forkPoint
-      : recorded
+    const rebased = { ...task, parentBaseSha: parentTip, pendingParentBaseSha: null }
+    return this.readTask(mission, repoPath, rebased, false)
   }
 
   private async followTopTask(
@@ -196,8 +217,9 @@ export class MissionTaskRestack {
     repoId: string,
     repoPath: string,
     top: MissionTask,
-    run: { writable: boolean; initialTopTip: string | null }
+    run: { write: boolean; writable: boolean; initialTopTip: string | null }
   ): Promise<LayerReading> {
+    const followedSha = mission.previews?.find((entry) => entry.repoId === repoId)?.followedSha
     const readPreview = async (): Promise<LayerReading> =>
       this.readLayer({
         slot: 'preview',
@@ -210,10 +232,15 @@ export class MissionTaskRestack {
       })
     const reading = await readPreview()
     const { worktreePath, parentTip, parentBaseSha: head } = reading
+    if (run.write && reading.state === 'current' && head && head !== followedSha) {
+      this.deps.store.setMissionPreviewFollowedSha(mission.id, repoId, head)
+    }
     if (reading.state !== 'stale' || !worktreePath || !parentTip || !head) {
       return reading
     }
+    // Why: a top task rewritten outside restack leaves HEAD on the tip it last followed.
     const followsTop =
+      head === followedSha ||
       (await isAncestorCommit(worktreePath, head, parentTip)) ||
       (run.initialTopTip !== null &&
         (await isAncestorCommit(worktreePath, head, run.initialTopTip)))
@@ -231,6 +258,7 @@ export class MissionTaskRestack {
     } catch (error) {
       return { ...reading, state: 'blocked', reason: toErrorMessage(error) }
     }
+    this.deps.store.setMissionPreviewFollowedSha(mission.id, repoId, parentTip)
     return readPreview()
   }
 
@@ -251,7 +279,7 @@ export class MissionTaskRestack {
       const actual = snapshot.branch ?? 'a detached HEAD'
       return { slot, state: 'blocked', reason: `Checkout is on ${actual}, not ${spec.branch}` }
     }
-    const parentBaseSha = spec.getParentBaseSha(snapshot)
+    const parentBaseSha = await spec.getParentBaseSha(snapshot, worktreePath)
     const input: MissionLayerStateInput = {
       parentTip: spec.parentTip,
       parentBaseSha,

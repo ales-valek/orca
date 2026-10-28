@@ -68,6 +68,22 @@ export function createFakeSlotStoreMethods(getMission: () => Mission | null) {
         task.parentBaseSha = sha
       }
       return mission
+    }),
+    setMissionTaskPendingParentBaseSha: vi.fn((_id: string, taskId: string, sha: string | null) => {
+      const mission = getMission()
+      const task = mission?.tasks?.find((entry) => entry.id === taskId)
+      if (task) {
+        task.pendingParentBaseSha = sha
+      }
+      return mission
+    }),
+    setMissionPreviewFollowedSha: vi.fn((_id: string, repoId: string, sha: string | null) => {
+      const mission = getMission()
+      const preview = mission?.previews?.find((entry) => entry.repoId === repoId)
+      if (preview) {
+        preview.followedSha = sha
+      }
+      return mission
     })
   }
 }

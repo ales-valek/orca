@@ -112,6 +112,35 @@ export class MissionSlotPersistence {
     return this.touchMission(mission)
   }
 
+  setMissionTaskPendingParentBaseSha(
+    missionId: string,
+    taskId: string,
+    sha: string | null
+  ): Mission | null {
+    const mission = this.findMission(missionId)
+    const task = mission?.tasks?.find((entry) => entry.id === taskId)
+    if (!mission || !task) {
+      return null
+    }
+    task.pendingParentBaseSha = sha
+    return this.touchMission(mission)
+  }
+
+  /** Only an existing preview record is updated; a follow never creates one. */
+  setMissionPreviewFollowedSha(
+    missionId: string,
+    repoId: string,
+    sha: string | null
+  ): Mission | null {
+    const mission = this.findMission(missionId)
+    const preview = mission?.previews?.find((entry) => entry.repoId === repoId)
+    if (!mission || !preview) {
+      return null
+    }
+    preview.followedSha = sha
+    return this.touchMission(mission)
+  }
+
   private findMission(missionId: string): Mission | null {
     return (
       (this[missionSlotPersistenceContext].runtime.state.missions ?? []).find(
