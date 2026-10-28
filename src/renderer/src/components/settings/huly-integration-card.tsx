@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertCircle, Milestone } from 'lucide-react'
 import { HulyConnectDialog } from '@/components/huly-connect-dialog'
+import { notifyHulyConnectionChanged } from '@/components/huly-connection-change-event'
 import { formatHulyError } from '@/components/huly-error-copy'
 import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
@@ -41,6 +42,7 @@ export function HulyIntegrationCard(): React.JSX.Element {
     setDisconnecting(true)
     try {
       await window.api.huly.disconnect()
+      notifyHulyConnectionChanged()
       if (mountedRef.current) {
         setStatus({ connected: false })
         setAuthRequired(false)
