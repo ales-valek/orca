@@ -28,7 +28,7 @@ export const projectDocSchema = z.object({
   _id: z.string(),
   identifier: z.string(),
   name: z.string(),
-  type: z.string().optional(),
+  type: z.string(),
   archived: z.boolean().optional()
 })
 
