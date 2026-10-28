@@ -1,4 +1,4 @@
-import { HulyCodedError } from '../../shared/huly/huly-error-codes'
+import { runWithGitOperationLock } from '../../shared/git-operation-lock'
 import { renderMissionBrief } from '../../shared/huly/huly-mission-brief'
 import {
   diffMissionAgainstPlan,
@@ -24,7 +24,6 @@ import { slugifyMissionBranch } from '../../shared/missions'
 import type { TuiAgent } from '../../shared/tui-agent'
 import type { MissionCreateInput } from '../ipc/mission-ipc-args'
 import type { MissionAddTaskInput } from '../missions/mission-task-operations'
-import type { HulyApi } from './huly-api'
 import type { HulyConnection } from './huly-connection'
 import { appendStackTasks } from './huly-stack-task-appender'
 
@@ -87,6 +86,10 @@ export class HulyPlanUnresolvedError extends Error {
   }
 }
 
+function runWithHulyMissionLock<T>(missionId: string, run: () => Promise<T>): Promise<T> {
+  return runWithGitOperationLock(`huly-mission:${missionId}`, undefined, run)
+}
+
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -95,59 +98,6 @@ function getPlanOrder(plan: HulyMissionPlan): Record<string, string[]> {
   return Object.fromEntries(
     plan.stacks.map((stack) => [stack.repoId, stack.tasks.map((task) => task.issue.identifier)])
   )
-}
-
-/** The project as given, else the only configured project, else the only project in the workspace. */
-export async function resolveHulyProject(
-  api: Pick<HulyApi, 'listProjects'>,
-  settings: Partial<HulyGlobalSettings>,
-  project: string | undefined
-): Promise<string> {
-  if (project?.trim()) {
-    return project.trim()
-  }
-  const configured = Object.keys(settings.hulyProjects ?? {})
-  if (configured.length === 1) {
-    return configured[0]
-  }
-  const projects = await api.listProjects()
-  if (projects.length === 1) {
-    return projects[0].identifier
-  }
-  const available = projects.map((entry) => entry.identifier).join(', ')
-  throw new HulyCodedError(
-    'huly_project_required',
-    `huly_project_required: pass --project (one of ${available || 'none'})`
-  )
-}
-
-/** Accepts a milestone id or its exact label, compared case-insensitively. */
-export async function resolveHulyMilestoneId(
-  api: Pick<HulyApi, 'listMilestones'>,
-  project: string,
-  selector: string
-): Promise<string> {
-  const milestones = await api.listMilestones(project)
-  const wanted = selector.trim()
-  const byId = milestones.find((milestone) => milestone.id === wanted)
-  if (byId) {
-    return byId.id
-  }
-  const label = wanted.toLocaleLowerCase()
-  const byLabel = milestones.filter((milestone) => milestone.label.toLocaleLowerCase() === label)
-  if (byLabel.length > 1) {
-    throw new HulyCodedError(
-      'huly_milestone_ambiguous',
-      `huly_milestone_ambiguous: ${byLabel.map((m) => m.id).join(', ')}`
-    )
-  }
-  if (byLabel.length === 0) {
-    throw new HulyCodedError(
-      'huly_milestone_not_found',
-      `huly_milestone_not_found: ${wanted} in ${project}`
-    )
-  }
-  return byLabel[0].id
 }
 
 /** Turns a Huly milestone into a Mission: every Huly read happens before the first Mission write. */
@@ -189,8 +139,7 @@ export class HulyMissionImport {
       [result.error, result.warning].flatMap((text) => (text ? [`${result.repoId}: ${text}`] : []))
     )
 
-    // Why: recorded before the layers so a crash mid-import still knows the Mission's origin.
-    this.deps.setMissionSource(missionId, {
+    const source: MissionSource = {
       provider: 'huly',
       serverUrl: status.info.serverUrl,
       workspace: status.info.workspace,
@@ -198,31 +147,57 @@ export class HulyMissionImport {
       milestoneId: milestone.id,
       milestoneLabel: milestone.label,
       milestoneUrl: milestone.url,
-      importedOrder,
+      importedOrder: {},
       ...(args.repoOverrides && Object.keys(args.repoOverrides).length > 0
         ? { repoOverrides: args.repoOverrides }
         : {}),
       lastSyncedAt: (this.deps.now ?? Date.now)()
-    })
-
-    const taskResults: MissionTaskResult[] = []
-    for (const stack of plan.stacks) {
-      const result = await appendStackTasks(
-        this.deps.missions.addTask,
-        missionId,
-        stack,
-        taskResults
-      )
-      warnings.push(...result.warnings)
     }
+    return runWithHulyMissionLock(missionId, async () => {
+      // Why: recorded before the layers so a crash mid-import still knows the Mission's origin.
+      this.deps.setMissionSource(missionId, source)
+      const taskResults: MissionTaskResult[] = []
+      const appended = new Set<string>()
+      for (const stack of plan.stacks) {
+        const result = await appendStackTasks(
+          this.deps.missions.addTask,
+          missionId,
+          stack,
+          taskResults
+        )
+        warnings.push(...result.warnings)
+        result.appended.forEach((identifier) => appended.add(identifier))
+      }
+      // Why: only appended issues count as imported; the rest must stay offerable on refresh.
+      this.deps.setMissionSource(missionId, {
+        ...source,
+        importedOrder: Object.fromEntries(
+          Object.entries(importedOrder).map(([repoId, order]) => [
+            repoId,
+            order.filter((identifier) => appended.has(identifier))
+          ])
+        )
+      })
 
-    const mission = this.deps.getMission(missionId) ?? created.mission
-    warnings.push(...this.writeBrief(mission, milestone, plan))
-    return { mission, taskResults, warnings }
+      const mission = this.deps.getMission(missionId) ?? created.mission
+      warnings.push(...this.writeBrief(mission, milestone, plan))
+      return { mission, taskResults, warnings }
+    })
   }
 
   /** Diffs the Mission against its milestone; with `apply` only appendable issues are added on top. */
   async refreshMissionFromHuly(args: {
+    missionId: string
+    apply: boolean
+  }): Promise<HulyMissionRefreshResult> {
+    if (!args.apply) {
+      return this.refreshUnlocked(args)
+    }
+    // Why: concurrent applies (CLI and UI) would diff the same state and append each issue twice.
+    return runWithHulyMissionLock(args.missionId, () => this.refreshUnlocked(args))
+  }
+
+  private async refreshUnlocked(args: {
     missionId: string
     apply: boolean
   }): Promise<HulyMissionRefreshResult> {
@@ -296,8 +271,13 @@ export class HulyMissionImport {
 
   private writeBrief(mission: Mission, milestone: HulyMilestone, plan: HulyMissionPlan): string[] {
     const repoNames: Record<string, string> = {}
-    for (const stack of plan.stacks) {
-      repoNames[stack.repoId] = this.deps.getRepoName(stack.repoId) ?? stack.repoId
+    const repoIds = [
+      ...plan.stacks.map((stack) => stack.repoId),
+      ...plan.cycles.map((cycle) => cycle.repoId),
+      ...(mission.tasks ?? []).map((task) => task.repoId)
+    ]
+    for (const repoId of repoIds) {
+      repoNames[repoId] = this.deps.getRepoName(repoId) ?? repoId
     }
     try {
       const markdown = renderMissionBrief({ milestone, plan, mission, repoNames })
