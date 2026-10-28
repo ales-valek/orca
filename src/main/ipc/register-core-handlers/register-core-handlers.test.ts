@@ -49,6 +49,7 @@ const {
   setTrustedBrowserRendererWebContentsIdMock,
   registerFilesystemWatcherHandlersMock,
   registerLspHandlersMock,
+  registerCustomCssHandlersMock,
   registerAppHandlersMock,
   registerLinearHandlersMock,
   registerJiraHandlersMock,
@@ -121,6 +122,7 @@ const {
   setTrustedBrowserRendererWebContentsIdMock: vi.fn(),
   registerFilesystemWatcherHandlersMock: vi.fn(),
   registerLspHandlersMock: vi.fn(),
+  registerCustomCssHandlersMock: vi.fn(),
   registerAppHandlersMock: vi.fn(),
   registerLinearHandlersMock: vi.fn(),
   registerJiraHandlersMock: vi.fn(),
@@ -310,6 +312,10 @@ vi.mock('../lsp', () => ({
   registerLspHandlers: registerLspHandlersMock
 }))
 
+vi.mock('../custom-css', () => ({
+  registerCustomCssHandlers: registerCustomCssHandlersMock
+}))
+
 vi.mock('../rate-limits', () => ({
   registerRateLimitHandlers: registerRateLimitHandlersMock
 }))
@@ -497,6 +503,7 @@ describe('registerCoreHandlers', () => {
     setTrustedBrowserRendererWebContentsIdMock.mockReset()
     registerFilesystemWatcherHandlersMock.mockReset()
     registerLspHandlersMock.mockReset()
+    registerCustomCssHandlersMock.mockReset()
     registerAppHandlersMock.mockReset()
     registerLinearHandlersMock.mockReset()
     registerJiraHandlersMock.mockReset()

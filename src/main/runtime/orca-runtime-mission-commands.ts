@@ -21,7 +21,7 @@ export type RuntimeMissionCreateInput = {
   agent?: TuiAgent
 }
 
-export class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMissionOwnership {
+export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMissionOwnership {
   private missionOperations: MissionOperations | null = null
 
   /** The desktop window owns Mission IPC; RPC reuses its instance for shared locks and UI refresh. */

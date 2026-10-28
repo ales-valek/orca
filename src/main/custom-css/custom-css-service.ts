@@ -2,9 +2,9 @@ import { mkdirSync } from 'node:fs'
 import { basename, dirname } from 'node:path'
 import type { CustomCssSnapshot } from '../../shared/custom-css'
 import {
-  startShallowWatcher,
+  startShallowDirectoryWatcher,
   type ShallowWatcherSubscription
-} from '../ipc/parcel-watcher-shallow-subscription'
+} from '../ipc/filesystem/watcher-process/parcel-watcher-shallow-subscription'
 import { ensureCustomCssFile, getUserCustomCssPath, readCustomCssFile } from './custom-css-file'
 
 // Why: one editor save can fire several events; coalesce them into one reload.
@@ -79,7 +79,8 @@ export class CustomCssService {
       console.error('Failed to create the custom.css folder:', error)
       return
     }
-    this.subscription = startShallowWatcher(
+    // Directory watch: a per-file watch (macOS default) misses a custom.css created later.
+    this.subscription = startShallowDirectoryWatcher(
       directory,
       [basename(this.path)],
       () => this.scheduleReload(),

@@ -20,7 +20,7 @@ function repoHeader(id: string, sidebarHighlight?: boolean): RenderRow {
     key: `repo:${id}`,
     label: id,
     count: 1,
-    tone: 'text-foreground',
+    icon: { kind: 'project' },
     repo: repo(id, sidebarHighlight)
   }
 }

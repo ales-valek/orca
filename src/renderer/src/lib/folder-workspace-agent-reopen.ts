@@ -21,8 +21,8 @@ function buildAgentReopenStartupPayload(
     agent,
     prompt: '',
     cmdOverrides: state.settings?.agentCmdOverrides ?? {},
-    agentArgs: resolveTuiAgentLaunchArgs(agent, state.settings?.agentDefaultArgs),
-    agentEnv: resolveTuiAgentLaunchEnv(agent, state.settings?.agentDefaultEnv),
+    agentArgs: resolveTuiAgentLaunchArgs(agent, state.settings),
+    agentEnv: resolveTuiAgentLaunchEnv(agent, state.settings),
     platform: launchPlatform,
     isRemote,
     allowEmptyPromptLaunch: true

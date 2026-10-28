@@ -27,12 +27,7 @@ import { isPrunableGitFileWorktree } from '../../worktree-prunable-git-file'
 import { findRegisteredDeletableWorktree } from '../../worktree-removal-safety'
 import { removeRuntimeUnregisteredWorktree } from '../runtime-unregistered-worktree-removal'
 import { assertWorktreeUnlockedForRemoval } from '../../../shared/worktree/removal'
-import { isFolderRepo } from '../../../shared/repo-kind'
-import {
-  assertScopedMissionWorktreeOwnership,
-  guardGenericMissionWorktreeRemoval,
-  teardownOwningMissionSession
-} from '../runtime-mission-worktree-removal-guard'
+import { missionRemovalGuard } from '../runtime-mission-worktree-removal-guard'
 import { formatWorktreeRemovalError } from '../../ipc/worktree-logic'
 import { isWindowsAbsolutePathLike } from '../../../shared/cross-platform-path'
 import { isLocalRuntimeWorktreePathMissing } from '../runtime-worktree-filesystem'
@@ -100,7 +95,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
     if ('joined' in admission) {
       return admission.joined
     }
-    const { emitRemoved } = admission
+    const { emitRemoved, cleanupScopeKey, optionsKey } = admission
     const removal = (async (): Promise<RemoveWorktreeResult & { warning?: string }> => {
       return withWorktreeSpan({ stage: 'remove', path: removalTarget.path }, async () => {
         const repoOwner = resolveWorktreeRemovalRepoOwner(
@@ -152,18 +147,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           registeredWorktrees,
           removalHome
         )
-        if (expectedOwnership && repo) {
-          assertScopedMissionWorktreeOwnership({
-            repo,
-            registeredPath: registeredWorktree?.path,
-            removedMeta,
-            expectedOwnership,
-            removalTarget
-          })
-          await teardownOwningMissionSession(store, expectedOwnership.missionId, (workspaceId) =>
-            this.stopPtysForDestructiveWorktreeRemoval(workspaceId)
-          )
-        }
+        await missionGuard.afterRegistrationLookup(repo, registeredWorktree?.path, removedMeta)
         if (await this.retryFailedRemoval(route, removalTarget, registeredWorktrees, options)) {
           return { removing: true }
         }

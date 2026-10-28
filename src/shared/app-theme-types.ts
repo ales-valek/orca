@@ -30,6 +30,8 @@ export type AppearanceThemeSettings = {
   themePreset?: AppThemePresetId
   /** Load `~/.orca/custom.css` on top of the built-in theme and reload it on save. */
   customCssEnabled?: boolean
+  /** Switch the terminal theme along with the interface palette. Absent means on. */
+  syncTerminalThemeWithInterface?: boolean
 }
 
 export type AppThemePreset = {

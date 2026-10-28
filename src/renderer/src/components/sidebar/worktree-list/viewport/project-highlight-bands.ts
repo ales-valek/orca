@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { WorktreeGroupBy } from '../grouping/row-types'
+import type { WorktreeGroupBy } from '../../../../../../shared/sidebar-list/row-types'
 import { getRenderRowKey, type RenderRow } from '../listing/render-row'
 import { resolveProjectGroupHeaderColor } from '../../project-header-color'
 import { shouldUseHeaderTopSpacing } from './virtual-rows'
@@ -44,6 +44,15 @@ export function getProjectHighlightColorForHeader(
 }
 
 /** A highlighted project's section runs from its header to the row before the next header. */
+/** A pinned header's tint: its project's band color when highlighted, else none. */
+export function getStickyHeaderHighlightStyle(
+  row: RenderRow,
+  groupBy: WorktreeGroupBy
+): ProjectHighlightStyle | undefined {
+  const color = getProjectHighlightColorForHeader(row, groupBy)
+  return color ? getProjectHighlightStyle(color) : undefined
+}
+
 export function getProjectHighlightSections(
   rows: readonly RenderRow[],
   groupBy: WorktreeGroupBy

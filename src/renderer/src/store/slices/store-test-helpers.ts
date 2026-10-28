@@ -66,6 +66,8 @@ export {
 } from './store-session-test-harness'
 import { installTabClusterInvariant } from './tabs/tab-cluster-invariant'
 
+export type TestStore = ReturnType<typeof createTestStore>
+
 export function createTestStore() {
   // Why the record middleware: views of one file share a record only through it, as in the app.
   const store = create<AppState>()(

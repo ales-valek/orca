@@ -62,7 +62,7 @@ export abstract class OrcaRuntimeWithAgentTransitions extends OrcaRuntimeWithMis
     this.connectorCloud = cloud
   }
 
-  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMigrationCatalog>) {
+  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithMissionCommands>) {
     super(...args)
     this.agentTransitions.subscribe((change) => this.terminalAgentPhonePush.observe(change))
   }

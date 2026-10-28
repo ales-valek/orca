@@ -5,8 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CustomCssSnapshot } from '../../shared/custom-css'
 import { CustomCssService } from './custom-css-service'
 
-const { startShallowWatcher } = vi.hoisted(() => ({ startShallowWatcher: vi.fn() }))
-vi.mock('../ipc/parcel-watcher-shallow-subscription', () => ({ startShallowWatcher }))
+const { startShallowDirectoryWatcher } = vi.hoisted(() => ({
+  startShallowDirectoryWatcher: vi.fn()
+}))
+vi.mock('../ipc/filesystem/watcher-process/parcel-watcher-shallow-subscription', () => ({
+  startShallowDirectoryWatcher
+}))
 
 describe('CustomCssService watcher recovery', () => {
   let home: string
@@ -18,7 +22,7 @@ describe('CustomCssService watcher recovery', () => {
     vi.useFakeTimers()
     vi.spyOn(console, 'error').mockImplementation(() => {})
     failCurrentWatcher = null
-    startShallowWatcher.mockImplementation(
+    startShallowDirectoryWatcher.mockImplementation(
       (_directory: string, _paths: string[], _onEvents: unknown, onError: (e: Error) => void) => {
         failCurrentWatcher = () => onError(new Error('watcher died'))
         return { unsubscribe: () => Promise.resolve() }
@@ -33,7 +37,7 @@ describe('CustomCssService watcher recovery', () => {
     service.dispose()
     vi.useRealTimers()
     vi.restoreAllMocks()
-    startShallowWatcher.mockReset()
+    startShallowDirectoryWatcher.mockReset()
     rmSync(home, { recursive: true, force: true })
   })
 
@@ -44,7 +48,7 @@ describe('CustomCssService watcher recovery', () => {
 
     await vi.advanceTimersByTimeAsync(500)
 
-    expect(startShallowWatcher).toHaveBeenCalledTimes(2)
+    expect(startShallowDirectoryWatcher).toHaveBeenCalledTimes(2)
     expect(onChanged).toHaveBeenLastCalledWith(
       expect.objectContaining({ exists: true, css: ':root { --background: #1e1e2e; }' })
     )
@@ -57,7 +61,7 @@ describe('CustomCssService watcher recovery', () => {
       await vi.advanceTimersByTimeAsync(60_000)
     }
 
-    expect(startShallowWatcher).toHaveBeenCalledTimes(6)
+    expect(startShallowDirectoryWatcher).toHaveBeenCalledTimes(6)
   })
 
   it('stops retrying once disposed', async () => {
@@ -67,7 +71,7 @@ describe('CustomCssService watcher recovery', () => {
 
     await vi.advanceTimersByTimeAsync(60_000)
 
-    expect(startShallowWatcher).toHaveBeenCalledTimes(1)
+    expect(startShallowDirectoryWatcher).toHaveBeenCalledTimes(1)
     expect(onChanged).not.toHaveBeenCalled()
   })
 })

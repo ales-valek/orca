@@ -5,8 +5,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { translate } from '@/i18n/i18n'
 import { detectLanguage } from '@/lib/language-detect'
 import { joinPath } from '@/lib/path'
-import { getSettingsForWorktreeRuntimeOwner } from '@/lib/worktree-runtime-owner'
-import { getRuntimeGitStatus } from '@/runtime/runtime-git-client'
+import { getExecutionHostIdForWorktree } from '@/lib/worktree-runtime-owner'
+import { getRuntimeGitStatus } from '@/runtime/runtime-git-status-client'
+import { runtimeRpcTargetForAuthorityKey } from '@/runtime/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../../shared/runtime-client-target'
 import { useAppStore } from '@/store'
 import type { GitStatusEntry } from '../../../../../../shared/git-status-types'
 import type { NestedRepoCandidate } from '../../../../../../shared/project-group-types'
@@ -27,14 +29,14 @@ export function FolderSourceControlPanel({
   connectionId,
   executionHostId,
   runtimeEnvironmentId,
-  runtimeSettings
+  runtimeTarget
 }: {
   folderPath: string
   folderWorktreeId: string
   connectionId: string | null
   executionHostId: string
   runtimeEnvironmentId: string | null
-  runtimeSettings: Parameters<typeof getRuntimeGitStatus>[0]['settings']
+  runtimeTarget: RuntimeClientTarget
 }): React.JSX.Element {
   const repos = useAppStore((state) => state.repos)
   const worktreesByRepo = useAppStore((state) => state.worktreesByRepo)
@@ -140,15 +142,17 @@ export function FolderSourceControlPanel({
           return
         }
         try {
-          const settings = worktree
-            ? getSettingsForWorktreeRuntimeOwner(useAppStore.getState(), worktree.id)
-            : runtimeSettings
+          const ownerTarget = worktree
+            ? runtimeRpcTargetForAuthorityKey(
+                getExecutionHostIdForWorktree(useAppStore.getState(), worktree.id)
+              )
+            : runtimeTarget
           const status = await getRuntimeGitStatus(
             {
-              settings,
+              target: ownerTarget ?? runtimeTarget,
               worktreeId: worktree?.id ?? null,
               worktreePath: candidate.path,
-              authorizedParentPath: folderPath,
+              ...(worktree ? {} : { authorizedParentPath: folderPath }),
               connectionId: repo?.connectionId ?? connectionId ?? undefined
             },
             { admissionTier: 'status', includeLineStats: false, signal }
@@ -180,7 +184,7 @@ export function FolderSourceControlPanel({
         }
       })
     },
-    [connectionId, folderPath, repositories, runtimeEnvironmentId, runtimeSettings]
+    [connectionId, folderPath, repositories, runtimeEnvironmentId, runtimeTarget]
   )
 
   useEffect(() => {

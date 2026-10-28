@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import { ChartColumn, Eye, GitCompareArrows, ListChecks, ShieldAlert } from 'lucide-react'
+import { Eye, GitCompareArrows, ListChecks, ShieldAlert } from 'lucide-react'
 import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { cn } from '@/lib/utils'
 import type { OpenFile } from '@/store/slices/editor'
@@ -29,9 +29,6 @@ export function EditorFileTabLeadingIcon({
   }
   if (mode === 'check-details') {
     return <ListChecks className={iconClassName} />
-  }
-  if (mode === 'chat-visual') {
-    return <ChartColumn className={iconClassName} />
   }
   if (mode === 'diff') {
     return <GitCompareArrows className={iconClassName} />
