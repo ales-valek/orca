@@ -3,6 +3,7 @@ import {
   MissionAbsorbParams,
   MissionAddReposParams,
   MissionAddTaskParams,
+  MissionCreateFromHulyParams,
   MissionCreateParams,
   MissionPathParams,
   MissionRemoveParams,
@@ -42,6 +43,22 @@ export const MISSION_METHODS = [
         ...(params.branch ? { branch: params.branch.trim() } : {}),
         ...(isTuiAgent(params.agent) ? { agent: params.agent } : {}),
         ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {})
+      })
+  }),
+  defineMethod({
+    name: 'mission.createFromHuly',
+    permission: 'workspace',
+    params: MissionCreateFromHulyParams,
+    handler: async (params, { runtime }) =>
+      runtime.createMissionFromHuly({
+        milestone: params.milestone,
+        ...(params.project ? { project: params.project } : {}),
+        ...(params.name ? { name: params.name } : {}),
+        ...(params.branch ? { branch: params.branch.trim() } : {}),
+        ...(isTuiAgent(params.agent) ? { agent: params.agent } : {}),
+        ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {}),
+        ...(params.repoOverrides ? { repoOverrides: params.repoOverrides } : {}),
+        ...(params.orderOverrides ? { orderOverrides: params.orderOverrides } : {})
       })
   }),
   defineMethod({

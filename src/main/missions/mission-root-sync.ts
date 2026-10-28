@@ -16,7 +16,10 @@ import {
 } from './mission-root'
 import { hasMissionWorktreeOwnershipMarker } from './mission-worktree-ownership-marker'
 
-function getConfiguredMissionsBaseDir(store: Store): string {
+/** The only Store read base-dir resolution needs; lets the runtime's narrowed store call it. */
+type MissionBaseDirSettings = { getSettings(): { workspaceDir: string } }
+
+function getConfiguredMissionsBaseDir(store: MissionBaseDirSettings): string {
   return resolveMissionsBaseDir(store.getSettings().workspaceDir, os.homedir())
 }
 
@@ -28,7 +31,7 @@ function isMissionsBaseDir(value: string): boolean {
   )
 }
 
-function resolveMissionBaseDir(store: Store, mission: Mission): string {
+export function resolveMissionBaseDir(store: MissionBaseDirSettings, mission: Mission): string {
   if (mission.rootBasePath) {
     if (!isMissionsBaseDir(mission.rootBasePath)) {
       throw new Error('mission_root_invalid_base')
