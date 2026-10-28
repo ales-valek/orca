@@ -1,5 +1,6 @@
 import { lstatSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { getMissionBriefPath } from '../../shared/mission-source'
 import { getMissionSlotBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
 import type {
   Mission,
@@ -81,6 +82,7 @@ export function toRuntimeMissionRecord(
     name: mission.name,
     branch: mission.branchName,
     rootPath: mission.rootPath ?? null,
+    ...(mission.source ? { briefPath: getMissionBriefPath(mission) } : {}),
     members: mission.members.map((member) => ({
       repoId: member.repoId,
       repoName: source.getRepo(member.repoId)?.displayName ?? null,

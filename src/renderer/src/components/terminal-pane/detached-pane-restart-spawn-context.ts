@@ -4,6 +4,7 @@ import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
+import { getMissionBriefPath } from '../../../../shared/mission-source'
 
 export function getWorkspacePath(state: AppState, worktreeId: string): string | null {
   const parsed = parseWorkspaceKey(worktreeId)
@@ -24,15 +25,17 @@ export function buildPaneIdentityEnv(
     parsed?.type === 'folder'
       ? selectFolderWorkspaces(state).find((workspace) => workspace.id === parsed.folderWorkspaceId)
       : null
+  const mission = folderWorkspace
+    ? state.missions.find((entry) => entry.id === folderWorkspace.missionId)
+    : undefined
   return {
     ORCA_WORKSPACE_ID: worktreeId,
     ...(folderWorkspace
       ? {
           ...getFolderWorkspaceOwnerEnv({
             ...folderWorkspace,
-            missionRootPath: state.missions.find(
-              (mission) => mission.id === folderWorkspace.missionId
-            )?.rootPath
+            missionRootPath: mission?.rootPath,
+            missionBriefPath: mission ? getMissionBriefPath(mission) : null
           }),
           ORCA_WORKSPACE_ROOT: folderWorkspace.folderPath
         }

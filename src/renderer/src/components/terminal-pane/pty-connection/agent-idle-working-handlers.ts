@@ -3,6 +3,7 @@ import { useAppStore } from '@/store'
 import { resolveTerminalWorktreeRoute } from '@/lib/terminal-worktree-route'
 import { parseWorkspaceKey } from '../../../../../shared/workspace-scope'
 import { getFolderWorkspaceOwnerEnv } from '../../../../../shared/missions'
+import { getMissionBriefPath } from '../../../../../shared/mission-source'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../../shared/constants'
 import { isEphemeralSetupTerminalWorktreeId } from '../../../../../shared/ephemeral-setup-terminal-worktree-id'
 import { isLocalExecutionHost } from '../../../../../shared/execution-host'
@@ -59,12 +60,13 @@ export function installAgentIdleWorkingHandlers(session: ConnectPanePtySession):
   session.workspaceEnv = { ORCA_WORKSPACE_ID: session.deps.worktreeId }
   if (session.folderWorkspace) {
     const missionId = session.folderWorkspace.missionId
+    const mission = session.state.missions.find((entry) => entry.id === missionId)
     Object.assign(
       session.workspaceEnv,
       getFolderWorkspaceOwnerEnv({
         ...session.folderWorkspace,
-        missionRootPath: session.state.missions.find((mission) => mission.id === missionId)
-          ?.rootPath
+        missionRootPath: mission?.rootPath,
+        missionBriefPath: mission ? getMissionBriefPath(mission) : null
       })
     )
     session.workspaceEnv.ORCA_WORKSPACE_ROOT = session.folderWorkspace.folderPath
