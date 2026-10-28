@@ -40,6 +40,7 @@ vi.mock('./github-api-repository', async (importOriginal) =>
 import { getPRForBranch } from './client/lookup/get-pr-for-branch'
 import { mergePR } from './client/merge/merge-pr'
 import { resetGraphQLRateLimitGuardMocks } from './client-test-harness'
+import { setMissionPullRequestMergedListener } from '../missions/mission-stack-merge-notification'
 
 const { ghExecFileAsyncMock, getOwnerRepoMock, acquireMock, releaseMock } = clientMocks
 
@@ -48,7 +49,10 @@ describe('GitHub GraphQL rate-limit guard', () => {
     resetGraphQLRateLimitGuardMocks(clientMocks)
   })
 
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    setMissionPullRequestMergedListener(null)
+  })
 
   it('hydrates GitHub-registered stack metadata for exact linked PRs', async () => {
     getOwnerRepoMock.mockResolvedValue({ owner: 'stablyai', repo: 'orca', host: 'github.com' })
@@ -185,6 +189,8 @@ describe('GitHub GraphQL rate-limit guard', () => {
       baseSha: undefined
     }
   ])('uses async merge only for GitHub-registered stacks using $objectFormat', async (scenario) => {
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
     ghExecFileAsyncMock
       .mockResolvedValueOnce({
         stdout: JSON.stringify({
@@ -231,11 +237,46 @@ describe('GitHub GraphQL rate-limit guard', () => {
       ])
     )
     expect(mergeCall?.[0]).not.toContain('merge_method=squash')
+    // Why: an enqueued stack is not merged yet.
+    expect(merged).not.toHaveBeenCalled()
     expect(acquireMock).toHaveBeenCalledTimes(2)
     expect(releaseMock).toHaveBeenCalledTimes(2)
     expect(
       ghExecFileAsyncMock.mock.calls.some(([args]) => args[0] === 'pr' && args[1] === 'merge')
     ).toBe(false)
+  })
+
+  it('tells Missions which layers a direct stack merge merged', async () => {
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
+    ghExecFileAsyncMock
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          number: 202,
+          state: 'open',
+          head: { ref: 'stack/api', sha: validStackHeadSha },
+          base: { ref: 'stack/models', sha: 'models-sha' },
+          stack: { number: 51, position: 2, size: 3, base: { ref: 'main', sha: validStackBaseSha } }
+        })
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({ data: { repository: { mergeQueue: null } } })
+      })
+      .mockResolvedValueOnce({ stdout: JSON.stringify({ status: 'merged' }) })
+
+    await expect(
+      mergePR('/repo-root', 202, 'squash', undefined, {
+        owner: 'stablyai',
+        repo: 'orca',
+        host: 'github.com'
+      })
+    ).resolves.toEqual({ ok: true })
+
+    expect(merged).toHaveBeenCalledExactlyOnceWith({
+      repoPath: '/repo-root',
+      headBranch: 'stack/api',
+      mergedCount: 2
+    })
   })
 
   it('never falls back to legacy merge after an async stack merge transport failure', async () => {
@@ -619,6 +660,8 @@ describe('GitHub GraphQL rate-limit guard', () => {
     { stackVariant: 'omits stack', stackField: {} },
     { stackVariant: 'sets stack to null', stackField: { stack: null } }
   ])('keeps legacy merge when an ordinary GitHub response $stackVariant', async (scenario) => {
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
     ghExecFileAsyncMock
       .mockResolvedValueOnce({
         stdout: JSON.stringify({
@@ -664,6 +707,11 @@ describe('GitHub GraphQL rate-limit guard', () => {
       ['pr', 'merge', '13866', '--squash', '--repo', 'stablyai/orca'],
       expect.objectContaining({ env: expect.objectContaining({ GH_PROMPT_DISABLED: '1' }) })
     )
+    expect(merged).toHaveBeenCalledExactlyOnceWith({
+      repoPath: '/repo-root',
+      headBranch: 'sta-3924-stack-merge-fail-closed',
+      mergedCount: 1
+    })
     expect(acquireMock).toHaveBeenCalledTimes(1)
     expect(releaseMock).toHaveBeenCalledTimes(1)
   })

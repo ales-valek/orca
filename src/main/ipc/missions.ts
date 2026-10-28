@@ -11,7 +11,9 @@ import type {
   MissionStackPushResult,
   MissionTaskResult
 } from '../../shared/mission-types'
+import { HulyStatusWriteBack } from '../huly/huly-status-write-back'
 import { setMissionWorktreeRebasedListener } from '../missions/mission-rebase-notification'
+import { setMissionPullRequestMergedListener } from '../missions/mission-stack-merge-notification'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from '../missions/mission-root-sync'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -66,7 +68,13 @@ export function registerMissionHandlers(
     ipcMain.removeHandler(channel)
   }
 
+  const hulyStatusWriteBack = new HulyStatusWriteBack({
+    store,
+    connection: runtime.getHulyConnection(),
+    notifyChanged: () => notifyReposChanged(mainWindow)
+  })
   const operations = new MissionOperations(store, runtime, () => notifyReposChanged(mainWindow), {
+    onMissionEvent: (event) => hulyStatusWriteBack.handle(event),
     isWorktreeAgentWorking: (worktreeId) => runtime.isWorktreeAgentWorking(worktreeId),
     notifyStacksChanged: (missionId) => {
       if (!mainWindow.isDestroyed()) {
@@ -78,6 +86,7 @@ export function registerMissionHandlers(
   // Why: `orca mission` RPC must share this instance so per-Mission locks and UI refreshes match IPC.
   runtime.attachMissionOperations(operations)
   setMissionWorktreeRebasedListener((worktreePath) => operations.onWorktreeRebased(worktreePath))
+  setMissionPullRequestMergedListener((merge) => operations.onPullRequestMerged(merge))
 
   ipcMain.handle('missions:list', (): Mission[] => operations.list())
 

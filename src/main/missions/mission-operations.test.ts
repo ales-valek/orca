@@ -374,13 +374,16 @@ describe('MissionOperations task layers', () => {
     }
   })
 
-  function seed() {
+  function seed(onMissionEvent?: MissionOperationsOptions['onMissionEvent']) {
     const store = makeFakeStore()
     store.createMission({ name: 'Referral', repoIds: ['r1'] })
     store.setMissionRootPath('m1', referralRootPath, missionsBaseDir)
     const member = assignOwnedWorktree(store, 'r1')
     const runtime = makeFakeRuntime(store)
-    const operations = createOperations(store, runtime)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the shared Mission IPC fakes implement every store/runtime method these operations call.
+    const operations = new MissionOperations(store as never, runtime as never, vi.fn(), {
+      onMissionEvent
+    })
     return { store, runtime, operations, member }
   }
 
@@ -474,6 +477,34 @@ describe('MissionOperations task layers', () => {
       'mission-task/referral/omp-2-tip'
     )
     expect(store.getMission('m1')!.previews![0].followedSha).toBe('mission-task/referral/omp-2-tip')
+  })
+
+  it('reports layer-created for a new layer and stack-merged for an Orca merge of it', async () => {
+    const onMissionEvent = vi.fn()
+    const { operations } = seed(onMissionEvent)
+
+    const result = await addOmp(operations)
+    operations.onPullRequestMerged({
+      repoPath: path.join(path.sep, 'repos', 'r1'),
+      headBranch: 'mission-task/referral/omp-1',
+      mergedCount: 1
+    })
+
+    const taskIds = [result.task!.id]
+    expect(onMissionEvent.mock.calls).toEqual([
+      [{ kind: 'layer-created', missionId: 'm1', taskIds }],
+      [{ kind: 'stack-merged', missionId: 'm1', taskIds }]
+    ])
+  })
+
+  it('reports no Mission event for a task that was refused', async () => {
+    const onMissionEvent = vi.fn()
+    const { store, operations } = seed(onMissionEvent)
+    store.setMissionMemberWorktree('m1', 'r1', null, null)
+
+    await addOmp(operations)
+
+    expect(onMissionEvent).not.toHaveBeenCalled()
   })
 
   it('refuses a task while the member worktree is missing', async () => {

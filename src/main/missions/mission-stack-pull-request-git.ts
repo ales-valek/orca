@@ -14,6 +14,8 @@ import { detectHostedReviewProvider } from '../source-control/forge-provider'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
 import { resolveWorktreeCreateBase } from '../worktree-create-base'
 import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'
+import type { Store } from '../persistence'
+import type { MissionStackInspectionDeps } from './mission-stack-inspection'
 import type {
   MissionStackPullRequestDeps,
   MissionStackPushDeps
@@ -87,4 +89,21 @@ export async function readLocalMissionPushTips(
     })
   )
   return new Map(entries)
+}
+
+/** Stack inspection over the local repos: layer states plus pushed tips from the default remote. */
+export function createLocalMissionStackInspectionDeps(
+  store: Pick<Store, 'getRepo'>,
+  inspectRepo: MissionStackInspectionDeps['inspectRepo']
+): MissionStackInspectionDeps {
+  return {
+    inspectRepo,
+    readPushTips: async (repoId, branches) => {
+      const repo = store.getRepo(repoId)
+      if (!repo) {
+        throw new Error('mission_member_not_found')
+      }
+      return readLocalMissionPushTips(repo, branches)
+    }
+  }
 }

@@ -29,6 +29,7 @@ export type HulyApi = {
   listMilestoneIssues(project: string, milestoneId: string): Promise<HulyIssue[]>
   listComponents(project: string): Promise<HulyComponent[]>
   listStatuses(project: string): Promise<HulyStatus[]>
+  getIssueStatus(project: string, identifier: string): Promise<HulyStatus>
   setIssueStatus(project: string, identifier: string, statusName: string): Promise<void>
   close(): Promise<void>
 }
@@ -111,6 +112,14 @@ function createHulyApiOverClient(client: PlatformClient, info: HulyConnectionInf
       import('@hcengineering/text-markdown')
     ])
     return markupToMarkdown(markupToJSON(description))
+  }
+
+  async function findIssue(projectDoc: { _id: string }, project: string, identifier: string) {
+    const raw = await client.findOne(HULY_CLASS.issue, { space: projectDoc._id, identifier })
+    if (raw === undefined) {
+      throw new Error(`Huly issue ${identifier} not found in ${project}`)
+    }
+    return issueDocSchema.parse(raw)
   }
 
   async function findIdentifiers(ids: string[]): Promise<Map<string, string>> {
@@ -216,13 +225,18 @@ function createHulyApiOverClient(client: PlatformClient, info: HulyConnectionInf
       return statuses.map(({ name, category }) => ({ name, category }))
     },
 
+    async getIssueStatus(project, identifier) {
+      const issue = await findIssue(await getProject(project), project, identifier)
+      const [status] = await findStatuses([issue.status])
+      if (!status) {
+        throw new Error(`Huly issue ${identifier} has an unknown status ${issue.status}`)
+      }
+      return { name: status.name, category: status.category }
+    },
+
     async setIssueStatus(project, identifier, statusName) {
       const projectDoc = await getProject(project)
-      const raw = await client.findOne(HULY_CLASS.issue, { space: projectDoc._id, identifier })
-      if (raw === undefined) {
-        throw new Error(`Huly issue ${identifier} not found in ${project}`)
-      }
-      const issue = issueDocSchema.parse(raw)
+      const issue = await findIssue(projectDoc, project, identifier)
       // Huly treats status names as case-insensitive.
       const wanted = statusName.toLocaleLowerCase()
       const status = (await getProjectStatuses(projectDoc)).find(
