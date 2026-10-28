@@ -63,6 +63,8 @@ type LayerReading = {
   parentBaseSha?: string | null
 }
 
+const ANCESTRY_UNKNOWN = 'Could not verify ancestry'
+
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -166,7 +168,7 @@ export class MissionTaskRestack {
     const finished = await getCommitAncestry(worktreePath, pending, 'HEAD')
     if (finished === null) {
       // Why: clearing the pending base on a failed probe could make the next rebase replay its commits.
-      throw new Error('Could not verify ancestry')
+      throw new Error(ANCESTRY_UNKNOWN)
     }
     if (settle) {
       if (finished) {
@@ -188,15 +190,30 @@ export class MissionTaskRestack {
     if (!worktreePath || !parentTip || !parentBaseSha) {
       return reading
     }
-    // Why: a layer already on the parent tip (e.g. rebased by hand) only needs its base recorded.
-    if (!(await isAncestorCommit(worktreePath, parentTip, 'HEAD'))) {
-      if (!(await isAncestorCommit(worktreePath, parentBaseSha, 'HEAD'))) {
-        return {
-          ...reading,
-          state: 'blocked',
-          reason: 'Recorded base is not an ancestor of the layer'
-        }
-      }
+    const blocked = (blockedReason: string): LayerReading => ({
+      ...reading,
+      state: 'blocked',
+      reason: blockedReason
+    })
+    const [onParentTip, baseInLayer] = await Promise.all([
+      getCommitAncestry(worktreePath, parentTip, 'HEAD'),
+      getCommitAncestry(worktreePath, parentBaseSha, 'HEAD')
+    ])
+    if (onParentTip === null || baseInLayer === null) {
+      return blocked(ANCESTRY_UNKNOWN)
+    }
+    if (!baseInLayer && !onParentTip) {
+      return blocked('Recorded base is not an ancestor of the layer')
+    }
+    // Why: a parent that went back (reset, dropped commit) is an ancestor of HEAD too; only a parent
+    // that moved forward from the recorded base, or a layer rebased by hand, may skip the rebase.
+    const parentMovedForward = baseInLayer
+      ? await getCommitAncestry(worktreePath, parentBaseSha, parentTip)
+      : true
+    if (parentMovedForward === null) {
+      return blocked(ANCESTRY_UNKNOWN)
+    }
+    if (!onParentTip || !parentMovedForward) {
       try {
         const result = await rebaseLayerOnto(worktreePath, parentTip, parentBaseSha)
         if (result.status === 'conflict') {
@@ -206,7 +223,7 @@ export class MissionTaskRestack {
           return { ...reading, state: 'conflict' }
         }
       } catch (error) {
-        return { ...reading, state: 'blocked', reason: toErrorMessage(error) }
+        return blocked(toErrorMessage(error))
       }
     }
     this.deps.store.setMissionTaskParentBaseSha(mission.id, task.id, parentTip)
@@ -302,8 +319,17 @@ export class MissionTaskRestack {
       pushedTip: null,
       hasOpenPr: false
     }
+    const reading = { worktreePath, parentTip: spec.parentTip, parentBaseSha }
     const state = deriveMissionLayerState(input)
+    if (state === 'current' && spec.parentTip && snapshot.headSha !== spec.parentTip) {
+      // Why: a recorded base equal to the parent tip says nothing once the layer was reset or rebased elsewhere.
+      const onParentTip = await getCommitAncestry(worktreePath, spec.parentTip, 'HEAD')
+      if (onParentTip !== true) {
+        const reason = onParentTip === null ? ANCESTRY_UNKNOWN : 'Layer is not on its parent tip'
+        return { slot, state: 'blocked', reason, ...reading }
+      }
+    }
     const reason = getMissionLayerBlockedReason(input) ?? undefined
-    return { slot, state, reason, worktreePath, parentTip: spec.parentTip, parentBaseSha }
+    return { slot, state, reason, ...reading }
   }
 }

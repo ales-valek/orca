@@ -255,6 +255,38 @@ describe('MissionTaskRestack', () => {
     expect(bases.get('t2')).toBe(newT1)
   })
 
+  it('drops a commit the parent dropped when the parent moved back', async () => {
+    const { mission, paths, bases, deps } = await createStack()
+    const droppedT1 = await commitFile(paths.t1, 'dropped.txt', 'dropped\n', 't1 dropped')
+    git(paths.t2, ['rebase', '-q', droppedT1])
+    mission.tasks![1].parentBaseSha = droppedT1
+    git(paths.t1, ['reset', '-q', '--hard', 'HEAD~1'])
+    const t1Tip = tipOf(paths.t1)
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(statesOf(report)['task:t2']).toBe('current')
+    expect(bases.get('t2')).toBe(t1Tip)
+    expect(git(paths.t2, ['log', '--format=%s', `${t1Tip}..HEAD`])).toBe('t2')
+    expect(git(paths.t2, ['ls-files', 'dropped.txt'])).toBe('')
+    expect(git(paths.t3, ['ls-files', 'dropped.txt'])).toBe('')
+  })
+
+  it('reports a layer reset below its recorded parent tip as blocked, not current', async () => {
+    const { mission, paths, deps } = await createStack()
+    git(paths.t2, ['reset', '-q', '--hard', mission.tasks![0].parentBaseSha!])
+    const before = tipOf(paths.t2)
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(layerOf(report, 'task:t2')).toEqual({
+      slot: 'task:t2',
+      state: 'blocked',
+      reason: 'Layer is not on its parent tip'
+    })
+    expect(tipOf(paths.t2)).toBe(before)
+  })
+
   it('blocks a layer whose recorded base is not in its history', async () => {
     const { mission, paths, bases, deps } = await createStack()
     await amendTask1(paths)

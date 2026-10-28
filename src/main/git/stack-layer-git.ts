@@ -5,6 +5,7 @@ import {
   gitReadOptionsForWorktree,
   type GitRuntimeOptions
 } from './git-runtime-options'
+import { listPatchPaths, restorePatchPaths } from './layer-patch-restore'
 import { gitExecFileAsync } from './runner'
 import { detectConflictOperation } from './source-control/git-conflict-operation'
 import { runWithGitReadCacheInvalidation } from './status'
@@ -133,6 +134,9 @@ export async function readLayerWorktree(
 
 type RebaseResult = { status: 'conflict' } | { status: 'done' }
 
+// Why: a user's rebase.autoStash would stash concurrent agent edits instead of refusing the dirty tree.
+const NO_AUTOSTASH = ['-c', 'rebase.autoStash=false']
+
 // Why: a non-zero exit with a rebase in progress is a conflict to resolve; any other failure is a real error.
 async function runRebase(
   worktreePath: string,
@@ -164,7 +168,7 @@ export async function rebaseLayerOnto(
 ): Promise<{ status: 'rebased' } | { status: 'conflict' }> {
   const result = await runRebase(
     worktreePath,
-    ['rebase', '--onto', newParentTip, oldParentBase],
+    [...NO_AUTOSTASH, 'rebase', '--onto', newParentTip, oldParentBase],
     options
   )
   return result.status === 'conflict' ? result : { status: 'rebased' }
@@ -214,17 +218,20 @@ export async function commitFixup(
       const operationOptions = gitOptionsForWorktree(worktreePath, options)
       const commitArgs =
         'fixupOf' in target ? [`--fixup=${target.fixupOf}`] : ['-m', target.message]
+      const applyFlags = options.unidiffZero ? ['--unidiff-zero'] : []
+      const paths = await listPatchPaths(worktreePath, patch, applyFlags, options)
+      let applied = false
       try {
-        const applyArgs = ['apply', '--3way', '--index']
-        await gitExecFileAsync(options.unidiffZero ? [...applyArgs, '--unidiff-zero'] : applyArgs, {
+        await gitExecFileAsync(['apply', '--3way', '--index', ...applyFlags], {
           ...operationOptions,
           stdin: patch
         })
+        applied = true
         await gitExecFileAsync(['commit', '-q', ...commitArgs], operationOptions)
       } catch (error) {
-        // Why: the tree was verified clean, so a hard reset restores exactly the prior state.
+        // Why: hooks run for seconds; an edit made meanwhile to any other file must survive.
         const { signal: _abortedSignal, ...restoreOptions } = operationOptions
-        await gitExecFileAsync(['reset', '--hard', 'HEAD'], restoreOptions).catch(() => undefined)
+        await restorePatchPaths(worktreePath, paths, applied, restoreOptions).catch(() => undefined)
         throw error
       }
     })
@@ -240,7 +247,7 @@ export async function autosquashLayer(
   const result = await runRebase(
     worktreePath,
     // Why: -c travels as an argument; env vars are dropped by the WSL `sh -lc` wrapper.
-    ['-c', 'sequence.editor=true', 'rebase', '-i', '--autosquash', parentBase],
+    ['-c', 'sequence.editor=true', ...NO_AUTOSTASH, 'rebase', '-i', '--autosquash', parentBase],
     options
   )
   return result.status === 'conflict' ? result : { status: 'squashed' }
