@@ -451,6 +451,18 @@ describe('Mission source', () => {
     expect(dropped).not.toHaveProperty('source')
   })
 
+  it('keeps valid repoOverrides and drops invalid entries', () => {
+    const [kept, empty] = normalizeMissions([
+      makeMission({
+        id: 'a',
+        source: { ...source, repoOverrides: { 'OMP-1': 'r2', 'OMP-2': 5 } as never }
+      }),
+      makeMission({ id: 'b', source: { ...source, repoOverrides: {} } })
+    ])
+    expect(kept.source?.repoOverrides).toEqual({ 'OMP-1': 'r2' })
+    expect(empty.source).not.toHaveProperty('repoOverrides')
+  })
+
   it('adds no source key to legacy missions', () => {
     expect(normalizeMissions([makeMission({ id: 'a' })])[0]).not.toHaveProperty('source')
   })

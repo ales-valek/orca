@@ -13,6 +13,11 @@ export const MissionSelectorParams = z.object({
   mission: MissionSelectorField
 })
 
+export const MissionRefreshParams = z.object({
+  mission: MissionSelectorField,
+  apply: z.boolean().optional()
+})
+
 export const MissionPathParams = z.object({
   path: requiredString('Missing path')
 })
