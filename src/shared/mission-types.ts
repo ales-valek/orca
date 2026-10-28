@@ -198,6 +198,12 @@ export type RuntimeMissionMutationResult = {
   orchestratorResult?: MissionMemberResult
 }
 
+/** Member, layer and brief failures are warnings: the Mission exists either way. */
+export type RuntimeMissionHulyCreateResult = {
+  mission: RuntimeMissionRecord
+  warnings: string[]
+}
+
 export type RuntimeMissionRemoveResult = MissionDeleteResult & {
   missionId: string
 }

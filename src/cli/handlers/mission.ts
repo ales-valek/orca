@@ -1,6 +1,7 @@
 import { resolve as resolvePath } from 'node:path'
 import type {
   RuntimeMissionAbsorbResult,
+  RuntimeMissionHulyCreateResult,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
   RuntimeMissionRemoveResult,
@@ -14,6 +15,7 @@ import { getOptionalStringFlag, getRepeatedStringFlag, getRequiredStringFlag } f
 import { printResult } from '../format'
 import {
   formatMissionAbsorb,
+  formatMissionHulyCreate,
   formatMissionList,
   formatMissionMutation,
   formatMissionRemove,
@@ -90,6 +92,28 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
     }
   },
   'mission create': async ({ flags, client, json }) => {
+    const milestone = getOptionalStringFlag(flags, 'from-huly')
+    if (milestone !== undefined) {
+      if (getRepeatedStringFlag(flags, 'repo').length > 0) {
+        throw new RuntimeClientError(
+          'invalid_argument',
+          '--from-huly cannot be combined with --repo'
+        )
+      }
+      const result = await client.call<RuntimeMissionHulyCreateResult>('mission.createFromHuly', {
+        milestone,
+        project: getOptionalStringFlag(flags, 'project'),
+        name: getOptionalStringFlag(flags, 'name'),
+        branch: getOptionalStringFlag(flags, 'branch'),
+        agent: getOptionalStringFlag(flags, 'agent'),
+        orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo')
+      })
+      printResult(result, json, formatMissionHulyCreate)
+      return
+    }
+    if (getOptionalStringFlag(flags, 'project') !== undefined) {
+      throw new RuntimeClientError('invalid_argument', '--project requires --from-huly')
+    }
     const result = await client.call<RuntimeMissionMutationResult>('mission.create', {
       name: getRequiredStringFlag(flags, 'name'),
       repos: getRequiredRepoSelectors(flags),

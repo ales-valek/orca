@@ -26,6 +26,7 @@ export type RuntimeStore = {
   getFolderWorkspace?: Store['getFolderWorkspace']
   getFolderWorkspaces?: Store['getFolderWorkspaces']
   getMission?: Store['getMission']
+  setMissionSource?: Store['setMissionSource']
   getMissions?: Store['getMissions']
   getMissionSessionWorkspace?: Store['getMissionSessionWorkspace']
   createFolderWorkspace?: Store['createFolderWorkspace']
@@ -121,6 +122,7 @@ export type RuntimeStore = {
     orchestrationWorkerAutoReleaseEnabled?: GlobalSettings['orchestrationWorkerAutoReleaseEnabled']
     workspaceDir: string
     nestWorkspaces: boolean
+    hulyProjects?: GlobalSettings['hulyProjects']
     workspaceDirHistory?: GlobalSettings['workspaceDirHistory']
     // Read by worktree placement: decides whether this project's worktrees
     // mirror into a WSL distro instead of the Windows drive.

@@ -363,6 +363,7 @@ import {
   HostedReviewCreationEligibility,
   HostedReviewForBranch
 } from './hosted-review-params'
+import { HulyConnectParams, HulyMilestonePlanParams, HulyProjectParams } from './huly-params'
 import { JiraFavouriteFilterParams } from './jira-favourite-filter-params'
 import {
   AssignableUsers,
@@ -440,6 +441,7 @@ import {
   MissionAbsorbParams,
   MissionAddReposParams,
   MissionAddTaskParams,
+  MissionCreateFromHulyParams,
   MissionCreateParams,
   MissionPathParams,
   MissionRemoveParams,
@@ -1170,6 +1172,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'hostedReview.createStacked': HostedReviewCreate,
   'hostedReview.forBranch': HostedReviewForBranch,
   'hostedReview.getCreationEligibility': HostedReviewCreationEligibility,
+  'huly.connect': HulyConnectParams,
+  'huly.disconnect': null,
+  'huly.getMilestonePlan': HulyMilestonePlanParams,
+  'huly.listComponents': HulyProjectParams,
+  'huly.listMilestones': HulyProjectParams,
+  'huly.listProjects': null,
+  'huly.listStatuses': HulyProjectParams,
+  'huly.status': null,
   'jira.addIssueComment': IssueCommentOfJiraParams,
   'jira.attachmentImage': AttachmentImage,
   'jira.cancelGenerateIssueSummary': CancelGenerateIssueSummary,
@@ -1266,6 +1276,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'mission.addRepos': MissionAddReposParams,
   'mission.addTask': MissionAddTaskParams,
   'mission.create': MissionCreateParams,
+  'mission.createFromHuly': MissionCreateFromHulyParams,
   'mission.forPath': MissionPathParams,
   'mission.list': null,
   'mission.remove': MissionRemoveParams,
