@@ -1,4 +1,5 @@
 import type { Mission, MissionMember } from './mission-types'
+import { normalizeMissionSource } from './mission-source'
 import { normalizeMissionStackFields } from './mission-task-normalization'
 import { createNonSecureContextUuid } from './non-secure-context-uuid'
 import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from './execution-host'
@@ -101,11 +102,14 @@ export function getFolderWorkspaceOwnerEnv(workspace: {
   missionId?: string | null
   /** The session may run in the orchestrator worktree, so its folder is not always the root. */
   missionRootPath?: string | null
+  /** Pass only for sourced Missions (see getMissionBriefPath). */
+  missionBriefPath?: string | null
 }): Record<string, string> {
   if (isMissionOwnedFolderWorkspace(workspace) && workspace.missionId) {
     return {
       ORCA_MISSION_ID: workspace.missionId,
-      ...(workspace.missionRootPath ? { ORCA_MISSION_ROOT: workspace.missionRootPath } : {})
+      ...(workspace.missionRootPath ? { ORCA_MISSION_ROOT: workspace.missionRootPath } : {}),
+      ...(workspace.missionBriefPath ? { ORCA_MISSION_BRIEF: workspace.missionBriefPath } : {})
     }
   }
   return { ORCA_PROJECT_GROUP_ID: workspace.projectGroupId }
@@ -247,6 +251,7 @@ export function normalizeMissions(value: unknown): Mission[] {
         raw.rootBasePath.length > 0
           ? raw.rootBasePath
           : null,
+      ...normalizeMissionSource(raw.source),
       ...(isTuiAgent(raw.sessionAgent) ? { sessionAgent: raw.sessionAgent } : {}),
       createdAt:
         typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : now,

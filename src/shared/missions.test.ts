@@ -15,6 +15,7 @@ import {
   slugifyMissionBranch
 } from './missions'
 import type { Mission } from './mission-types'
+import { getMissionBriefPath } from './mission-source'
 
 function makeMission(overrides: Partial<Mission> & { id: string }): Mission {
   return {
@@ -425,6 +426,49 @@ describe('mission-owned folder workspace helpers', () => {
     expect(
       getFolderWorkspaceOwnerEnv({ projectGroupId: 'g1', missionRootPath: '/missions/referral' })
     ).toEqual({ ORCA_PROJECT_GROUP_ID: 'g1' })
+  })
+})
+
+describe('Mission source', () => {
+  const source = {
+    provider: 'huly' as const,
+    serverUrl: 'https://huly.test',
+    workspace: 'ws',
+    project: 'OMP',
+    milestoneId: 'ms1',
+    milestoneLabel: 'Kiosek',
+    milestoneUrl: 'https://huly.test/ms1',
+    importedOrder: { r1: ['OMP-1', 'OMP-2'] },
+    lastSyncedAt: 5
+  }
+
+  it('keeps a valid source and drops one without a milestoneId', () => {
+    const [kept, dropped] = normalizeMissions([
+      makeMission({ id: 'a', source }),
+      makeMission({ id: 'b', source: { ...source, milestoneId: '' } })
+    ])
+    expect(kept.source).toEqual(source)
+    expect(dropped).not.toHaveProperty('source')
+  })
+
+  it('adds no source key to legacy missions', () => {
+    expect(normalizeMissions([makeMission({ id: 'a' })])[0]).not.toHaveProperty('source')
+  })
+
+  it('exposes ORCA_MISSION_BRIEF for a sourced mission only', () => {
+    const env = getFolderWorkspaceOwnerEnv({
+      projectGroupId: 'mission:m1',
+      missionId: 'm1',
+      missionRootPath: '/missions/referral',
+      missionBriefPath: getMissionBriefPath({ rootPath: '/missions/referral', source })
+    })
+    expect(env.ORCA_MISSION_BRIEF).toBe('/missions/referral/MISSION.md')
+    expect(env.ORCA_MISSION_BRIEF.endsWith('MISSION.md')).toBe(true)
+    expect(getMissionBriefPath({ rootPath: '/missions/referral' })).toBeNull()
+    expect(getMissionBriefPath({ rootPath: null, source })).toBeNull()
+    expect(getMissionBriefPath({ rootPath: 'C:\\missions\\referral\\', source })).toBe(
+      'C:\\missions\\referral\\MISSION.md'
+    )
   })
 })
 
