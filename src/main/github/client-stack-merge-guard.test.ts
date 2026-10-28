@@ -252,7 +252,8 @@ describe('GitHub GraphQL rate-limit guard', () => {
       repoPath: '/repo-root',
       headBranch: 'stack/api',
       baseBranch: 'main',
-      mergedCount: 2
+      mergedCount: 2,
+      headSha: validStackHeadSha
     })
   })
 
@@ -688,7 +689,8 @@ describe('GitHub GraphQL rate-limit guard', () => {
       repoPath: '/repo-root',
       headBranch: 'sta-3924-stack-merge-fail-closed',
       baseBranch: 'main',
-      mergedCount: 1
+      mergedCount: 1,
+      headSha: validStackHeadSha
     })
     expect(acquireMock).toHaveBeenCalledTimes(1)
     expect(releaseMock).toHaveBeenCalledTimes(1)

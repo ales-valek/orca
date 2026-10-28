@@ -74,7 +74,8 @@ export async function mergePR(
             repoPath,
             headBranch: restData.headRefName,
             baseBranch: restData.stack.baseRefName,
-            mergedCount: restData.stack.position
+            mergedCount: restData.stack.position,
+            ...(restData.headRefOid ? { headSha: restData.headRefOid } : {})
           })
         }
       }
@@ -107,7 +108,8 @@ export async function mergePR(
         repoPath,
         headBranch: restData.headRefName,
         baseBranch: restData.baseRefName,
-        mergedCount: 1
+        mergedCount: 1,
+        ...(restData.headRefOid ? { headSha: restData.headRefOid } : {})
       })
     }
     return { ok: true }
