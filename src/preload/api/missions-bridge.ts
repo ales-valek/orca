@@ -9,6 +9,7 @@ export const missionsApi = {
   addMembers: (args) => ipcRenderer.invoke('missions:addMembers', args),
   removeMember: (args) => ipcRenderer.invoke('missions:removeMember', args),
   recreateMemberWorktree: (args) => ipcRenderer.invoke('missions:recreateMemberWorktree', args),
+  recreateSlotWorktree: (args) => ipcRenderer.invoke('missions:recreateSlotWorktree', args),
   ensureSession: (args) => ipcRenderer.invoke('missions:ensureSession', args),
   inspectStacks: (args) => ipcRenderer.invoke('missions:inspectStacks', args),
   addTask: (args) => ipcRenderer.invoke('missions:addTask', args),

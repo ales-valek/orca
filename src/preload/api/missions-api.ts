@@ -6,6 +6,7 @@ import type {
   MissionCreateResult,
   MissionDeleteResult,
   MissionMemberResult,
+  MissionSlot,
   MissionStackPullRequestsResult,
   MissionStackPushResult,
   MissionTaskResult
@@ -35,6 +36,12 @@ export type MissionsApi = {
   recreateMemberWorktree: (args: {
     missionId: string
     repoId: string
+  }) => Promise<MissionMemberResult>
+  /** Recreates a missing task, preview or orchestrator checkout of a repo. */
+  recreateSlotWorktree: (args: {
+    missionId: string
+    repoId: string
+    slot: Exclude<MissionSlot, 'member'>
   }) => Promise<MissionMemberResult>
   ensureSession: (args: { missionId: string }) => Promise<FolderWorkspace>
   /** Read-only layer states of every repo stack in the Mission. */

@@ -75,10 +75,15 @@ export class MissionMemberLifecycle {
   }
 
   /** The orchestrator checks out the mission branch itself, like a member. */
-  createOrchestratorWorktree(mission: Mission, repoId: string): Promise<MissionMemberResult> {
+  createOrchestratorWorktree(
+    mission: Mission,
+    repoId: string,
+    options: { baseBranch?: string } = {}
+  ): Promise<MissionMemberResult> {
     const displayName = this.store.getRepo(repoId)?.displayName ?? repoId
     return this.createSlotWorktree(mission, repoId, 'orchestrator', {
       branchName: mission.branchName,
+      ...options,
       directoryName: `${getMissionSlotDirectoryName(displayName, repoId)}--orchestrator`
     })
   }
