@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { vi } from 'vitest'
 import type { Mission } from '../../shared/mission-types'
+import { createMission } from '../../shared/missions'
+import { getMissionSessionFolderPath } from '../../shared/mission-session-folder'
 import type {
   FakeMissionCreateInput,
   FakeStore,
@@ -71,7 +73,7 @@ export function getOwnershipMarkerMocks(): OwnershipMarkerMockSet {
 
 export function makeFakeStore(): FakeStore {
   let mission: Mission | null = null
-  let sessionWorkspace: { id: string; missionId: string } | null = null
+  let sessionWorkspace: { id: string; missionId: string; folderPath: string | null } | null = null
   const worktreeMeta: Record<string, FakeWorktreeMeta> = {}
   const flushOrThrow = vi.fn()
   const flushPendingOrThrowAsync = vi.fn(async () => {})
@@ -126,6 +128,18 @@ export function makeFakeStore(): FakeStore {
           executionHostId: 'ssh:ssh-1' as const
         }
       }
+      if (id === 'o1') {
+        return {
+          id,
+          path: path.join(path.sep, 'repos', id),
+          displayName: 'Orchestration',
+          badgeColor: '#000',
+          addedAt: 1,
+          kind: 'git' as const,
+          connectionId: null,
+          executionHostId: 'local' as const
+        }
+      }
       return null
     },
     getProjects: () => [],
@@ -151,28 +165,16 @@ export function makeFakeStore(): FakeStore {
     getMissionSessionWorkspace: (missionId: string) =>
       sessionWorkspace?.missionId === missionId ? sessionWorkspace : null,
     ensureMissionSessionWorkspace: vi.fn((missionId: string) => {
-      sessionWorkspace ??= { id: 'fw-1', missionId }
+      sessionWorkspace ??= { id: 'fw-1', missionId, folderPath: null }
+      sessionWorkspace.folderPath = mission ? getMissionSessionFolderPath(mission) : null
       return sessionWorkspace
     }),
     getMissions: () => (mission ? [mission] : []),
     getMission: (id: string) => (mission?.id === id ? mission : null),
     createMission: (input: FakeMissionCreateInput) => {
-      mission = {
-        id: 'm1',
-        name: input.name,
-        branchName: input.branchName ?? 'mission/referral',
-        members: input.repoIds.map((repoId) => ({
-          repoId,
-          worktreeId: null,
-          worktreeInstanceId: null,
-          lastError: null,
-          addedAt: 1
-        })),
-        tabOrder: 0,
-        ...(input.sessionAgent ? { sessionAgent: input.sessionAgent } : {}),
-        createdAt: 1,
-        updatedAt: 1
-      }
+      // Why: the real factory owns validation such as the orchestrator/member overlap.
+      const created = createMission({ ...input, tabOrder: 0, now: 1 })
+      mission = { ...created, id: 'm1', branchName: input.branchName ?? 'mission/referral' }
       return mission
     },
     updateMission: vi.fn(() => mission),

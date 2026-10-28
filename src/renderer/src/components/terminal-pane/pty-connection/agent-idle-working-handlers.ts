@@ -58,7 +58,15 @@ export function installAgentIdleWorkingHandlers(session: ConnectPanePtySession):
   session.folderWorkspace = session.ownerContext.folderWorkspace
   session.workspaceEnv = { ORCA_WORKSPACE_ID: session.deps.worktreeId }
   if (session.folderWorkspace) {
-    Object.assign(session.workspaceEnv, getFolderWorkspaceOwnerEnv(session.folderWorkspace))
+    const missionId = session.folderWorkspace.missionId
+    Object.assign(
+      session.workspaceEnv,
+      getFolderWorkspaceOwnerEnv({
+        ...session.folderWorkspace,
+        missionRootPath: session.state.missions.find((mission) => mission.id === missionId)
+          ?.rootPath
+      })
+    )
     session.workspaceEnv.ORCA_WORKSPACE_ROOT = session.folderWorkspace.folderPath
   }
   session.paneIdentityEnv = {

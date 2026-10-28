@@ -8,6 +8,7 @@ import {
   missionSentinelGroupId,
   normalizeMissionName
 } from '../../../shared/missions'
+import { getMissionSessionFolderPath } from '../../../shared/mission-session-folder'
 import { removeWorkspaceSessionOwnerEverywhere } from '../restoring-sessions/session-owner-removal'
 import type { StoreRuntimeState } from './store-runtime-state'
 import type { WriteSchedulingOperations } from './write-scheduling'
@@ -50,6 +51,7 @@ export class MissionPersistence {
     branchName?: string | null
     repoIds: string[]
     sessionAgent?: Mission['sessionAgent']
+    orchestratorRepoId?: string | null
   }): Mission {
     const mission = createMission({
       ...input,
@@ -157,7 +159,8 @@ export class MissionPersistence {
     if (!mission) {
       throw new Error('mission_not_found')
     }
-    if (!mission.rootPath) {
+    const folderPath = getMissionSessionFolderPath(mission)
+    if (!folderPath) {
       throw new Error('mission_root_not_ready')
     }
     const existing = this.getMissionSessionWorkspace(missionId)
@@ -165,14 +168,14 @@ export class MissionPersistence {
       const projectGroupId = missionSentinelGroupId(mission.id)
       if (
         existing.name !== mission.name ||
-        existing.folderPath !== mission.rootPath ||
+        existing.folderPath !== folderPath ||
         existing.projectGroupId !== projectGroupId ||
         existing.connectionId !== null
       ) {
-        // Why: Mission identity and root are authoritative; generic persisted
-        // folder-workspace fields must not permanently diverge across restarts.
+        // Why: Mission identity and session folder are authoritative; this also
+        // re-points the session when the orchestrator worktree appears or goes away.
         existing.name = mission.name
-        existing.folderPath = mission.rootPath
+        existing.folderPath = folderPath
         existing.projectGroupId = projectGroupId
         existing.connectionId = null
         existing.updatedAt = Date.now()
@@ -186,7 +189,7 @@ export class MissionPersistence {
       projectGroupId: missionSentinelGroupId(mission.id),
       missionId: mission.id,
       name: mission.name,
-      folderPath: mission.rootPath,
+      folderPath,
       connectionId: null,
       linkedTask: null,
       comment: '',

@@ -11,7 +11,8 @@ export const MissionCreateArgs = z.object({
     .refine((value) => !value.trim() || isValidGitBranchName(value.trim()))
     .optional(),
   repoIds: z.array(z.string().min(1)).min(1),
-  sessionAgent: z.string().refine(isTuiAgent).optional()
+  sessionAgent: z.string().refine(isTuiAgent).optional(),
+  orchestratorRepoId: z.string().min(1).optional()
 })
 
 export const MissionUpdateArgs = z.object({
