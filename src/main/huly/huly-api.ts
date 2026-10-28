@@ -83,10 +83,12 @@ function createHulyApiOverClient(client: PlatformClient, info: HulyConnectionInf
     })
   }
 
-  async function getProjectStatuses(project: { type?: string }): Promise<StatusRecord[]> {
-    const projectType = projectTypeDocSchema.parse(
-      await client.findOne(HULY_CLASS.projectType, { _id: project.type })
-    )
+  async function getProjectStatuses(project: { type: string }): Promise<StatusRecord[]> {
+    const raw = await client.findOne(HULY_CLASS.projectType, { _id: project.type })
+    if (raw === undefined) {
+      throw new Error(`Huly project type ${project.type} not found`)
+    }
+    const projectType = projectTypeDocSchema.parse(raw)
     return findStatuses([...new Set(projectType.statuses.map((status) => status._id))])
   }
 
@@ -124,7 +126,10 @@ function createHulyApiOverClient(client: PlatformClient, info: HulyConnectionInf
 
   return {
     async listProjects() {
-      const docs = parseHulyDocs(projectDocSchema, await client.findAll(HULY_CLASS.project, {}))
+      const docs = parseHulyDocs(
+        projectDocSchema.pick({ identifier: true, name: true, archived: true }),
+        await client.findAll(HULY_CLASS.project, {})
+      )
       return docs
         .filter((doc) => doc.archived !== true)
         .map((doc) => ({ identifier: doc.identifier, name: doc.name }))

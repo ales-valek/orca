@@ -141,3 +141,4 @@ patchedDependencies:
   minimatch@9.0.9: config/patches/minimatch@9.0.9.patch
   minimatch@10.2.5: config/patches/minimatch@10.2.5.patch
   minimatch@10.2.6: config/patches/minimatch@10.2.6.patch
+  '@hcengineering/client-resources@0.7.423': config/patches/@hcengineering__client-resources@0.7.423.patch
