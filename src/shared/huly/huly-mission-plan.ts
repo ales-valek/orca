@@ -26,10 +26,12 @@ function byNumber(a: HulyIssue, b: HulyIssue): number {
 }
 
 function isSkipped(issue: HulyIssue, settings: HulyProjectSettings): boolean {
+  const statusName = issue.status.name.toLocaleLowerCase()
   return (
     issue.status.category === 'Won' ||
     issue.status.category === 'Lost' ||
-    settings.skipStatusNames.includes(issue.status.name)
+    // Huly treats status names as case-insensitive.
+    settings.skipStatusNames.some((name) => name.toLocaleLowerCase() === statusName)
   )
 }
 
