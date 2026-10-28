@@ -6,8 +6,12 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { useAllWorktrees } from '@/store/selectors'
 import { missionMemberErrorKey } from '@/store/slices/missions'
+import { getRepoTaskStack } from '../../../../shared/mission-task-stack'
 import type { Mission } from '../../../../shared/mission-types'
 import { formatMissionMemberError } from './mission-member-error-copy'
+import { resolveMissionSlotWorktree } from './mission-stack-layers'
+import { MissionStackActionsMenu } from './MissionStackActionsMenu'
+import { MissionStackRows } from './MissionStackRows'
 import WorktreeCard from './WorktreeCard'
 
 export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.Element {
@@ -55,25 +59,21 @@ export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.
     <div className="flex flex-col gap-0.5">
       {mission.members.map((member) => {
         const repo = repoById.get(member.repoId)
+        const repoName = repo?.displayName ?? member.repoId
         const candidate = member.worktreeId ? worktreeById.get(member.worktreeId) : undefined
-        const candidateBranch = candidate?.branch.replace(/^refs\/heads\//, '')
-        const worktree =
-          candidate &&
-          candidate.repoId === member.repoId &&
-          member.worktreeInstanceId &&
-          candidate.instanceId === member.worktreeInstanceId &&
-          // Why: a rebase/bisect detaches HEAD (empty branch) on the same verified checkout;
-          // only a different branch means the member checkout was repurposed.
-          (candidateBranch === mission.branchName || candidateBranch === '')
-            ? candidate
-            : undefined
+        const worktree = resolveMissionSlotWorktree(
+          candidate,
+          member,
+          member.repoId,
+          mission.branchName
+        )
         const error =
           missionMemberErrors[missionMemberErrorKey(mission.id, member.repoId)] ??
           member.lastError ??
           undefined
-        if (worktree) {
-          return (
-            <div key={member.repoId} className="group/mission-member min-w-0">
+        const renderMember = (stateBadge: React.ReactNode): React.ReactNode =>
+          worktree ? (
+            <div className="group/mission-member min-w-0">
               <div className="flex min-w-0 items-center gap-1">
                 <div className="min-w-0 flex-1">
                   <WorktreeCard
@@ -94,10 +94,14 @@ export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.
                     affiliateListMode
                   />
                 </div>
+                {stateBadge}
+                <MissionStackActionsMenu
+                  mission={mission}
+                  repoId={member.repoId}
+                  repoName={repoName}
+                />
                 <RemoveMemberButton
-                  onClick={() =>
-                    void removeMember(member.repoId, repo?.displayName ?? member.repoId, true)
-                  }
+                  onClick={() => void removeMember(member.repoId, repoName, true)}
                 />
               </div>
               {error ? (
@@ -122,34 +126,43 @@ export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.
                 </div>
               ) : null}
             </div>
+          ) : (
+            <div className="group/mission-member flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-worktree-sidebar-accent">
+              <span className="truncate">{repoName}</span>
+              <span className="min-w-0 truncate text-[11px] text-muted-foreground/70" title={error}>
+                {error
+                  ? formatMissionMemberError(error)
+                  : translate(
+                      'auto.components.sidebar.MissionList.280576fc92',
+                      'Workspace missing'
+                    )}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="ml-auto shrink-0 text-muted-foreground"
+                aria-label={translate('auto.components.sidebar.MissionList.d241d824cb', 'Recreate')}
+                onClick={() => void recreateMissionMemberWorktree(mission.id, member.repoId)}
+              >
+                <RefreshCw className="size-3.5" />
+              </Button>
+              {stateBadge}
+              <RemoveMemberButton
+                onClick={() => void removeMember(member.repoId, repoName, false)}
+              />
+            </div>
           )
+        if (getRepoTaskStack(mission, member.repoId).length === 0) {
+          return <React.Fragment key={member.repoId}>{renderMember(null)}</React.Fragment>
         }
         return (
-          <div
+          <MissionStackRows
             key={member.repoId}
-            className="group/mission-member flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-worktree-sidebar-accent"
-          >
-            <span className="truncate">{repo?.displayName ?? member.repoId}</span>
-            <span className="min-w-0 truncate text-[11px] text-muted-foreground/70" title={error}>
-              {error
-                ? formatMissionMemberError(error)
-                : translate('auto.components.sidebar.MissionList.280576fc92', 'Workspace missing')}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="ml-auto shrink-0 text-muted-foreground"
-              aria-label={translate('auto.components.sidebar.MissionList.d241d824cb', 'Recreate')}
-              onClick={() => void recreateMissionMemberWorktree(mission.id, member.repoId)}
-            >
-              <RefreshCw className="size-3.5" />
-            </Button>
-            <RemoveMemberButton
-              onClick={() =>
-                void removeMember(member.repoId, repo?.displayName ?? member.repoId, false)
-              }
-            />
-          </div>
+            mission={mission}
+            repoId={member.repoId}
+            repoName={repoName}
+            renderMember={renderMember}
+          />
         )
       })}
     </div>

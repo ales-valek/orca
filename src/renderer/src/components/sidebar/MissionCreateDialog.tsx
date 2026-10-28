@@ -31,6 +31,10 @@ import { formatMissionMemberError } from './mission-member-error-copy'
 import { getMissionEligibleGroupRepoIds } from './mission-group-selection'
 import { isRendererMissionEligibleRepo } from './mission-repo-eligibility'
 import {
+  getEffectiveOrchestratorRepoId,
+  MissionOrchestratorRepoPicker
+} from './MissionOrchestratorRepoPicker'
+import {
   MissionCreateMemberStatusList,
   type MissionCreateMemberStatus
 } from './MissionCreateMemberStatusList'
@@ -53,10 +57,12 @@ export default function MissionCreateDialog(): React.JSX.Element {
 
   const nameId = useId()
   const branchId = useId()
+  const orchestratorId = useId()
   const [name, setName] = useState('')
   const [branch, setBranch] = useState('')
   const branchDirtyRef = useRef(false)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const [orchestratorRepoId, setOrchestratorRepoId] = useState<string | null>(null)
   // Why: mirror the composer's selection rules — a disabled or undetected
   // default must not be submitted invisibly, and a user pick survives
   // detection updates via the override (repaired during render, not effects).
@@ -111,6 +117,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
   const effectiveBranch =
     branchDirtyRef.current && branch.trim() ? branch.trim() : slugifyMissionBranch(name)
   const selectedIds = useMemo(() => [...selected], [selected])
+  const effectiveOrchestratorRepoId = getEffectiveOrchestratorRepoId(orchestratorRepoId, selected)
   const canSubmit = name.trim().length > 0 && selectedIds.length > 0 && !submitting
 
   const statusEntries: MissionCreateMemberStatus[] = memberResults
@@ -132,6 +139,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
     setBranch('')
     branchDirtyRef.current = false
     setSelected(new Set())
+    setOrchestratorRepoId(null)
     setSubmitting(false)
     setCreateFailed(false)
     setMemberResults(null)
@@ -156,7 +164,8 @@ export default function MissionCreateDialog(): React.JSX.Element {
       name: name.trim(),
       branchName: effectiveBranch,
       repoIds: selectedIds,
-      ...(sessionAgent ? { sessionAgent } : {})
+      ...(sessionAgent ? { sessionAgent } : {}),
+      ...(effectiveOrchestratorRepoId ? { orchestratorRepoId: effectiveOrchestratorRepoId } : {})
     })
     if (!result) {
       // Why: a rejected IPC (invalid args, no valid repos) resolves to null in
@@ -217,7 +226,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
           ) : (
             <>
               <div className="space-y-1">
-                <Label htmlFor={nameId} className="text-[11px] text-muted-foreground">
+                <Label htmlFor={nameId} variant="settings">
                   {translate(
                     'auto.components.sidebar.MissionCreateDialog.48ec5c5b11',
                     'Mission Name'
@@ -231,7 +240,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor={branchId} className="text-[11px] text-muted-foreground">
+                <Label htmlFor={branchId} variant="settings">
                   {translate('auto.components.sidebar.MissionCreateDialog.0c9fe9ce6d', 'Branch')}
                 </Label>
                 <Input
@@ -245,7 +254,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">
+                <Label variant="settings">
                   {translate('auto.components.sidebar.MissionCreateDialog.bcea32d392', 'Projects')}
                 </Label>
                 <RepoMultiCombobox
@@ -257,7 +266,22 @@ export default function MissionCreateDialog(): React.JSX.Element {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-[11px] text-muted-foreground">
+                <Label htmlFor={orchestratorId} variant="settings">
+                  {translate(
+                    'auto.components.sidebar.MissionCreateDialog.4956049559',
+                    'Orchestrator project (optional)'
+                  )}
+                </Label>
+                <MissionOrchestratorRepoPicker
+                  id={orchestratorId}
+                  eligibleRepos={eligibleRepos}
+                  memberRepoIds={selected}
+                  value={orchestratorRepoId}
+                  onChange={setOrchestratorRepoId}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label variant="settings">
                   {translate('auto.components.sidebar.MissionCreateDialog.ba57f70473', 'Agent')}
                 </Label>
                 <AgentCombobox

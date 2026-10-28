@@ -14,4 +14,13 @@ describe('formatMissionMemberError', () => {
     const raw = 'Branch "mission/x" already exists locally. Pick a different branch.'
     expect(formatMissionMemberError(raw)).toBe(raw)
   })
+
+  it('maps stack error codes to short sentences', () => {
+    expect(formatMissionMemberError('mission_absorb_layers_busy')).toBe(
+      'A task layer has uncommitted changes or a working agent. Absorb needs every affected layer clean and idle.'
+    )
+    expect(
+      formatMissionMemberError('Layer mission-task/x/a: mission_layer_not_clean')
+    ).not.toContain('mission_layer_not_clean')
+  })
 })
