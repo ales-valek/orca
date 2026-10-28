@@ -63,10 +63,24 @@ describe('createMissionTaskBranchName', () => {
     ).toBe('mission-task/kiosek/omp-951-2')
   })
 
-  it('falls back to the title and always yields a valid git branch', () => {
+  it('falls back to the title and folds diacritics into ASCII', () => {
     const branch = createMissionTaskBranchName(base, { title: 'Košík a objednávka' })
-    expect(branch.startsWith('mission-task/kiosek/')).toBe(true)
+    expect(branch).toBe('mission-task/kiosek/kosik-a-objednavka')
     expect(isValidGitBranchName(branch)).toBe(true)
+  })
+
+  it('caps a long title slug at a word boundary', () => {
+    const branch = createMissionTaskBranchName(base, {
+      title: 'Přidat podporu pro hromadné úpravy objednávek v administraci'
+    })
+    expect(branch).toBe('mission-task/kiosek/pridat-podporu-pro-hromadne-upravy')
+  })
+
+  it('skips a name whose branch already exists in the repo', () => {
+    const existing = new Set(['mission-task/kiosek/omp-951', 'mission-task/kiosek/omp-951-2'])
+    expect(
+      createMissionTaskBranchName(base, { title: 'x', externalRef: 'OMP-951' }, existing)
+    ).toBe('mission-task/kiosek/omp-951-3')
   })
 
   it('uses a generic slug when nothing survives sanitization', () => {
