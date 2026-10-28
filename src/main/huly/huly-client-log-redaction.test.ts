@@ -17,9 +17,28 @@ function loadClientResources(): { connect: (...args: unknown[]) => { close(): Pr
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('patched @hcengineering/client-resources', () => {
+  it('connects where Node exposes sessionStorage but no window', async () => {
+    // Why: Node 25+ has a global sessionStorage; the unpatched client then calls window.addEventListener.
+    const storage = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => void storage.set(key, value),
+      removeItem: (key: string) => void storage.delete(key)
+    })
+    const { connect } = loadClientResources()
+
+    const connection = connect('wss://huly.test/_transactor/token', () => {}, 'ws', 'user', {
+      socketFactory: (): FakeSocket => ({ readyState: 0, send: () => {}, close: () => {} })
+    })
+    await connection.close()
+
+    expect(storage.size).toBe(0)
+  })
+
   it('redacts the workspace token from websocket error logs', async () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
     const sockets: FakeSocket[] = []
