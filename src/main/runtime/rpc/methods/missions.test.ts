@@ -60,13 +60,15 @@ function makeHarness(options: { attach?: boolean } = {}) {
       applied: 0,
       ambiguous: [{ file: 'a.ts', line: 3, candidateTaskIds: ['t1'] }]
     })),
-    inspectRepo: vi.fn(async () => ({
-      repoId: 'repo-api',
-      layers: [
-        { slot: 'member', state: 'current' },
-        { slot: 'task:t1', state: 'blocked', reason: 'Uncommitted changes' }
-      ]
-    })),
+    inspectStacks: vi.fn(async () => [
+      {
+        repoId: 'repo-api',
+        layers: [
+          { slot: 'member', state: 'needs-push' },
+          { slot: 'task:t1', state: 'blocked', reason: 'Uncommitted changes' }
+        ]
+      }
+    ]),
     ensureSession: vi.fn(async () => ({
       id: 'folder-1',
       projectGroupId: 'mission:mission-1',
@@ -196,14 +198,14 @@ describe('mission RPC methods', () => {
     expect(operations.absorb).not.toHaveBeenCalled()
   })
 
-  it('shows layer states only on show, not on list', async () => {
+  it('shows layer states with the sidebar needs-push rule only on show, not on list', async () => {
     const { operations, dispatcher } = makeHarness()
     operations.list.mockReturnValue([STACKED])
 
     const listed = await dispatcher.dispatch(makeRequest('mission.list'))
     const shown = await dispatcher.dispatch(makeRequest('mission.show', { mission: 'Referral' }))
 
-    expect(operations.inspectRepo).toHaveBeenCalledTimes(1)
+    expect(operations.inspectStacks).toHaveBeenCalledTimes(1)
     expect(listed).toMatchObject({
       result: {
         missions: [
@@ -218,7 +220,7 @@ describe('mission RPC methods', () => {
           stacks: [
             {
               layers: [
-                { slot: 'member', state: 'current' },
+                { slot: 'member', state: 'needs-push' },
                 { slot: 'task:t1', state: 'blocked', reason: 'Uncommitted changes' },
                 { slot: 'preview' }
               ]

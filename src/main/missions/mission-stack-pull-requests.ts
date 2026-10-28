@@ -4,7 +4,11 @@ import type {
   CreateStackedHostedReviewResult,
   HostedReviewProvider
 } from '../../shared/hosted-review'
-import { deriveMissionLayerState, getMissionLayerPushInput } from '../../shared/mission-layer-state'
+import {
+  deriveMissionLayerState,
+  getMissionLayerPushInput,
+  type MissionRestackReport
+} from '../../shared/mission-layer-state'
 import { getMissionTaskParentBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
 import type {
   Mission,
@@ -27,6 +31,8 @@ export type MissionStackPullRequestDeps = {
   getCommitsAheadCount: (base: string, branch: string) => Promise<number>
   /** First publication only: never overwrites a remote branch. */
   pushBranch: (branch: string) => Promise<void>
+  /** Read-only layer states of the repo's stack, needs-push included. */
+  inspectStack: () => Promise<MissionRestackReport>
 }
 
 export type MissionStackPushDeps = {
@@ -35,13 +41,18 @@ export type MissionStackPushDeps = {
   getRemoteTrackingTip: (branch: string) => Promise<string | null>
   /** Overwrites the remote branch only while it still sits at `leaseSha`. */
   pushBranch: (branch: string, leaseSha: string) => Promise<void>
+  /** Whether `ancestor` is reachable from `descendant`; null when git could not tell. */
+  getCommitAncestry: (ancestor: string, descendant: string) => Promise<boolean | null>
 }
 
 export type { MissionStackPullRequestsResult } from '../../shared/mission-types'
 
 type LayerCheckout = { branch: string; path: string }
 
-const PUSH_REJECTED_PATTERN = /rejected|non-fast-forward|fetch first|diverged/i
+// Why: `[remote rejected]` (protected branch, permissions) is not a rewritten layer; its raw message says why.
+const PUSH_REJECTED_PATTERN = /non-fast-forward|fetch first|stale info|(?<!remote )rejected\]/i
+
+const PUSHABLE_TASK_STATES = new Set(['current', 'needs-push'])
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -59,6 +70,20 @@ function getMemberCheckout(mission: Mission, repoId: string): LayerCheckout | nu
   const member = mission.members.find((entry) => entry.repoId === repoId)
   const path = worktreePathOf(member?.worktreeId)
   return path ? { branch: mission.branchName, path } : null
+}
+
+/** `<branch> (<state>)` of every task layer that is neither current nor only awaiting a push. */
+function getNotCurrentTaskLayers(
+  mission: Mission,
+  repoId: string,
+  report: MissionRestackReport
+): string[] {
+  return getRepoTaskStack(mission, repoId).flatMap((task) => {
+    const state = report.layers.find((layer) => layer.slot === `task:${task.id}`)?.state
+    return state && PUSHABLE_TASK_STATES.has(state)
+      ? []
+      : [`${task.branchName} (${state ?? 'unknown'})`]
+  })
 }
 
 /** Pushes then opens a PR for each layer bottom-up; stops at the first failure. */
@@ -118,6 +143,18 @@ export async function createMissionStackPullRequests(
       // Why: layer 1 has no parent PR to stack under; its parent is the mission PR or the default base.
       stacked: task.order > 1
     })
+  }
+
+  let report: MissionRestackReport
+  try {
+    report = await deps.inspectStack()
+  } catch (error) {
+    return fail(toErrorMessage(error))
+  }
+  const notCurrent = getNotCurrentTaskLayers(mission, repoId, report)
+  if (notCurrent.length > 0) {
+    // Why: a stale or blocked layer would publish a PR on an outdated parent.
+    return fail(`mission_stack_not_current: ${notCurrent.join(', ')}`)
   }
 
   for (const layer of layers) {
@@ -183,6 +220,13 @@ export async function pushMissionStack(
       deps.getRemoteTrackingTip(branch),
       parentBranch ? deps.getBranchTip(member.path, parentBranch) : Promise.resolve(null)
     ])
+    const isLocalBehindPushed =
+      localTip && pushedTip && localTip !== pushedTip
+        ? await deps.getCommitAncestry(localTip, pushedTip)
+        : false
+    if (isLocalBehindPushed === null) {
+      throw new Error(`Could not compare ${branch} with its remote branch`)
+    }
     const state = deriveMissionLayerState({
       parentTip,
       parentBaseSha,
@@ -190,7 +234,7 @@ export async function pushMissionStack(
       isAgentWorking: false,
       conflict: false,
       prMerged: false,
-      ...getMissionLayerPushInput({ localTip, pushedTip })
+      ...getMissionLayerPushInput({ localTip, pushedTip, isLocalBehindPushed })
     })
     return { state, pushedTip }
   }

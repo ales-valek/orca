@@ -66,7 +66,8 @@ describe('needs-push rule', () => {
   it.each<[string, MissionLayerPushTips, boolean]>([
     ['never pushed', { localTip: 'l2', pushedTip: null }, false],
     ['pushed and unchanged', { localTip: 'l1', pushedTip: 'l1' }, false],
-    ['pushed and moved', { localTip: 'l2', pushedTip: 'l1' }, true]
+    ['pushed and moved', { localTip: 'l2', pushedTip: 'l1' }, true],
+    ['remote ahead of local', { localTip: 'l1', pushedTip: 'r2', isLocalBehindPushed: true }, false]
   ])('%s', (_title, tips, pending) => {
     // Both the push action and the sidebar badge derive from these two calls.
     expect(isMissionLayerPushPending(getMissionLayerPushInput(tips))).toBe(pending)
