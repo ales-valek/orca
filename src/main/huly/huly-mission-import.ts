@@ -1,3 +1,4 @@
+import { HulyCodedError } from '../../shared/huly/huly-error-codes'
 import { renderMissionBrief } from '../../shared/huly/huly-mission-brief'
 import {
   diffMissionAgainstPlan,
@@ -114,7 +115,10 @@ export async function resolveHulyProject(
     return projects[0].identifier
   }
   const available = projects.map((entry) => entry.identifier).join(', ')
-  throw new Error(`huly_project_required: pass --project (one of ${available || 'none'})`)
+  throw new HulyCodedError(
+    'huly_project_required',
+    `huly_project_required: pass --project (one of ${available || 'none'})`
+  )
 }
 
 /** Accepts a milestone id or its exact label, compared case-insensitively. */
@@ -132,10 +136,16 @@ export async function resolveHulyMilestoneId(
   const label = wanted.toLocaleLowerCase()
   const byLabel = milestones.filter((milestone) => milestone.label.toLocaleLowerCase() === label)
   if (byLabel.length > 1) {
-    throw new Error(`huly_milestone_ambiguous: ${byLabel.map((m) => m.id).join(', ')}`)
+    throw new HulyCodedError(
+      'huly_milestone_ambiguous',
+      `huly_milestone_ambiguous: ${byLabel.map((m) => m.id).join(', ')}`
+    )
   }
   if (byLabel.length === 0) {
-    throw new Error(`huly_milestone_not_found: ${wanted} in ${project}`)
+    throw new HulyCodedError(
+      'huly_milestone_not_found',
+      `huly_milestone_not_found: ${wanted} in ${project}`
+    )
   }
   return byLabel[0].id
 }
