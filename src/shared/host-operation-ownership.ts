@@ -42,6 +42,7 @@ export const HOST_OPERATION_OWNERSHIP = {
   managedRuntime: 'host',
   managedServer: 'host',
   markdown: 'host',
+  mission: 'host',
   mobileRelay: 'host',
   mobileWeb: 'host',
   nativeChat: 'host',
