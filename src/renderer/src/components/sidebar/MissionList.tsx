@@ -62,11 +62,19 @@ function MissionSection({
     void ensureMissionSession(mission.id)
   }, [sessionWorkspace, ensureMissionSession, mission.id])
 
+  const membersWereVisibleRef = useRef(false)
   // Why: layer states need git reads, so they load on expand and after a Mission change, never on a timer.
   useEffect(() => {
-    if (membersVisible && hasTasks) {
-      void inspectMissionStacks(mission.id)
+    const justExpanded = membersVisible && !membersWereVisibleRef.current
+    membersWereVisibleRef.current = membersVisible
+    if (!membersVisible || !hasTasks) {
+      return
     }
+    // A record change after a stack action was usually inspected by that action already.
+    void inspectMissionStacks(
+      mission.id,
+      justExpanded ? undefined : { unlessInspectedSince: mission.updatedAt }
+    )
   }, [membersVisible, hasTasks, inspectMissionStacks, mission.id, mission.updatedAt])
 
   const missionMenu = (

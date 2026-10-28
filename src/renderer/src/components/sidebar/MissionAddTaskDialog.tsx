@@ -59,15 +59,6 @@ export function MissionAddTaskDialog({
       ...(externalRef.trim() ? { externalRef: externalRef.trim() } : {})
     })
     setSubmitting(false)
-    if (!result) {
-      setError(
-        translate(
-          'auto.components.sidebar.MissionAddTaskDialog.4d09a9a0ed',
-          'Could not add the task. Try again.'
-        )
-      )
-      return
-    }
     if (result.error) {
       setError(formatMissionMemberError(result.error))
       return

@@ -48,6 +48,7 @@ export function MissionStackRows({
   const layers = getMissionStackLayers(mission, repoId, previewTitle)
   const needsPush = [...layerBySlot.values()].some((layer) => layer.state === 'needs-push')
   const stackError = missionSlotErrors[missionSlotErrorKey(mission.id, repoId, 'member')]
+  const statesOutdated = useAppStore((s) => s.missionStackReportsStale[mission.id] === true)
 
   const pushRewrittenLayers = async (): Promise<void> => {
     setPushing(true)
@@ -56,9 +57,9 @@ export function MissionStackRows({
       if (result && result.pushed.length > 0) {
         toast.success(
           translate(
-            'auto.components.sidebar.MissionStackRows.1ad5a140a2',
-            'Pushed {{value0}} rewritten layers.',
-            { value0: result.pushed.length }
+            'components.missions.stack.pushedLayers',
+            'Pushed {{count}} rewritten layers.',
+            { count: result.pushed.length }
           )
         )
       }
@@ -83,6 +84,14 @@ export function MissionStackRows({
             error={missionSlotErrors[missionSlotErrorKey(mission.id, repoId, layer.slot)]}
           />
         ))}
+        {statesOutdated ? (
+          <p className="px-2 text-2xs text-muted-foreground">
+            {translate(
+              'auto.components.sidebar.MissionStackRows.4721fec37a',
+              'Layer states may be outdated.'
+            )}
+          </p>
+        ) : null}
         {stackError ? (
           <p className="px-2 text-2xs break-words text-destructive">
             {formatMissionMemberError(stackError)}
