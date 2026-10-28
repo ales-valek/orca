@@ -20,6 +20,7 @@ import { MobileTabSelectionPersistence } from './mobile-tab-selection-persistenc
 import { RemoteLayoutSnapshotPersistence } from '../../remote-layout-snapshot/remote-layout-snapshot-persistence'
 import { SparsePresetPersistence } from './sparse-preset-persistence'
 import { MissionPersistence } from './mission-persistence'
+import { MissionSlotPersistence } from './mission-slot-persistence'
 import { PtyBindingPersistenceOperations } from './pty-binding-persistence'
 import { LayoutCommandPersistence } from '../terminal-topology/layout-command-persistence'
 import { SshProfileOperations } from './ssh-profile-operations'
@@ -37,6 +38,7 @@ export type StoreDomainOperations = WriteSchedulingOperations &
   RemoteLayoutSnapshotPersistence &
   SparsePresetPersistence &
   MissionPersistence &
+  MissionSlotPersistence &
   AutomationPersistence &
   MetadataLineageOperations &
   ProfilePreferences &
@@ -72,6 +74,7 @@ export type StoreDomains = {
   remoteLayoutSnapshots: RemoteLayoutSnapshotPersistence
   sparsePresets: SparsePresetPersistence
   missions: MissionPersistence
+  missionSlots: MissionSlotPersistence
   ptyBindings: PtyBindingPersistenceOperations
   layoutCommands: LayoutCommandPersistence
   sshProfiles: SshProfileOperations
@@ -91,6 +94,7 @@ export const STORE_DOMAIN_OPERATION_CLASSES = [
   RemoteLayoutSnapshotPersistence,
   SparsePresetPersistence,
   MissionPersistence,
+  MissionSlotPersistence,
   AutomationPersistence,
   MetadataLineageOperations,
   ProfilePreferences,
@@ -142,6 +146,7 @@ export function createStoreDomains(runtime: StoreRuntimeState): StoreDomains {
   const remoteLayoutSnapshots = new RemoteLayoutSnapshotPersistence(runtime, scheduling)
   const sparsePresets = new SparsePresetPersistence(runtime, scheduling)
   const missions = new MissionPersistence(runtime, scheduling)
+  const missionSlots = new MissionSlotPersistence(runtime, scheduling)
   const ptyBindings = new PtyBindingPersistenceOperations(runtime, sessions)
   const sshProfiles = new SshProfileOperations(runtime, scheduling, repos)
   const retiredWorktreeNames = new RetiredWorktreeNamePersistence(runtime, scheduling)
@@ -172,6 +177,7 @@ export function createStoreDomains(runtime: StoreRuntimeState): StoreDomains {
     remoteLayoutSnapshots,
     sparsePresets,
     missions,
+    missionSlots,
     ptyBindings,
     layoutCommands: new LayoutCommandPersistence(
       runtime,
