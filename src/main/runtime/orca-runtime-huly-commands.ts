@@ -5,12 +5,8 @@ import type {
 } from '../../shared/mission-types'
 import type { TuiAgent } from '../../shared/tui-agent'
 import { HulyConnection } from '../huly/huly-connection'
-import {
-  HulyMissionImport,
-  resolveHulyMilestoneId,
-  resolveHulyProject,
-  type HulyMilestonePlanArgs
-} from '../huly/huly-mission-import'
+import { HulyMissionImport, type HulyMilestonePlanArgs } from '../huly/huly-mission-import'
+import { resolveHulyMilestoneId, resolveHulyProject } from '../huly/huly-milestone-selectors'
 import { writeMissionBriefIfRooted } from '../missions/mission-brief-file'
 import { resolveMissionSelector, toRuntimeMissionRecord } from '../missions/mission-runtime-records'
 import { OrcaRuntimeWithMissionCommands } from './orca-runtime-mission-commands'
