@@ -56,6 +56,7 @@ const DIFF: HulyMissionRefreshDiff = {
     { repoId: 'repo-eshop', before: ['OMP-948', 'OMP-953'], after: ['OMP-953', 'OMP-948'] }
   ],
   removed: ['OMP-960'],
+  completed: ['OMP-948'],
   movedRepo: [{ identifier: 'OMP-951', fromRepoId: 'repo-eshop', toRepoId: 'repo-admin' }],
   nonAppendable: [
     { repoId: 'repo-eshop', identifier: 'OMP-949', reason: 'inserted-in-middle' },

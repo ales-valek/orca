@@ -7607,6 +7607,8 @@
           "reorderedDetail": "Was {{before}}, now {{after}}",
           "removed": "No longer in the milestone",
           "removedNote": "Their task layers stay in the Mission.",
+          "completed": "Completed in Huly",
+          "completedNote": "Their task layers stay in the Mission.",
           "movedRepo": "Moved to another repository",
           "movedRepoNote": "Their task layers stay in their current repository.",
           "movedRepoDetail": "{{from}} to {{to}}",
