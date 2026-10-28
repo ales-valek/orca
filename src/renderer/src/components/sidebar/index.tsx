@@ -46,6 +46,7 @@ const ForgetSshWorkspaceDialog = lazyWithRetry(
 )
 const AgentDashboardSidebarHost = lazyWithRetry(() => import('./AgentDashboardSidebarHost'))
 const MissionCreateDialog = lazyWithRetry(() => import('./MissionCreateDialog'))
+const MissionFromHulyDialog = lazyWithRetry(() => import('./MissionFromHulyDialog'))
 
 const MIN_WIDTH = 220
 const MAX_WIDTH = 500
@@ -300,6 +301,7 @@ function Sidebar({
         {activeModal === 'confirm-orca-yaml-hooks' ? <OrcaYamlTrustDialog /> : null}
         {activeModal === 'forget-ssh-workspace' ? <ForgetSshWorkspaceDialog /> : null}
         {activeModal === 'mission-create' ? <MissionCreateDialog /> : null}
+        {activeModal === 'mission-create-huly' ? <MissionFromHulyDialog /> : null}
       </React.Suspense>
       {sidebarOpen ? (
         <WorkspaceKanbanDrawer
