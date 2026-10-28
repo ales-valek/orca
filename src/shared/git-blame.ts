@@ -43,10 +43,16 @@ export function buildGitShowIndexArgv(filePath: string): string[] {
   return ['show', '--end-of-options', `:${filePath.replace(/\\/g, '/')}`]
 }
 
+export type GitBlameOptions = {
+  /** Defaults to true; ownership checks need whitespace-only edits attributed to their own commit. */
+  ignoreWhitespace?: boolean
+}
+
 export function buildGitBlameArgv(
   filePath: string,
   revision?: string,
-  contentsSource?: GitBlameContentsSource
+  contentsSource?: GitBlameContentsSource,
+  blameOptions: GitBlameOptions = {}
 ): string[] {
   const blameRevision =
     revision ?? (contentsSource === GIT_BLAME_INDEX_CONTENTS ? GIT_BLAME_HEAD_REVISION : undefined)
@@ -54,7 +60,7 @@ export function buildGitBlameArgv(
     'blame',
     '--encoding=UTF-8',
     '--line-porcelain',
-    '-w',
+    ...(blameOptions.ignoreWhitespace === false ? [] : ['-w']),
     ...(contentsSource === GIT_BLAME_INDEX_CONTENTS ? ['--contents', '-'] : []),
     ...(blameRevision ? [blameRevision] : []),
     '--end-of-options',

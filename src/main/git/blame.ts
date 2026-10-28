@@ -1,4 +1,8 @@
-import type { GitBlameContentsSource, GitBlameResult } from '../../shared/git-blame'
+import type {
+  GitBlameContentsSource,
+  GitBlameOptions,
+  GitBlameResult
+} from '../../shared/git-blame'
 import {
   buildGitBlameArgv,
   buildGitShowIndexArgv,
@@ -16,7 +20,8 @@ export async function getFileBlame(
   filePath: string,
   options: GitRuntimeOptions = {},
   revision?: string,
-  contentsSource?: GitBlameContentsSource
+  contentsSource?: GitBlameContentsSource,
+  blameOptions?: GitBlameOptions
 ): Promise<GitBlameResult> {
   try {
     const readOptions = gitReadOptionsForWorktree(worktreePath, {
@@ -34,7 +39,7 @@ export async function getFileBlame(
       stdin = shown.stdout
     }
     const { stdout } = await gitExecFileAsync(
-      buildGitBlameArgv(filePath, revision, contentsSource),
+      buildGitBlameArgv(filePath, revision, contentsSource, blameOptions),
       stdin === undefined ? execOptions : { ...execOptions, stdin }
     )
     return { status: 'ready', lines: parseBlamePorcelain(stdout) }
