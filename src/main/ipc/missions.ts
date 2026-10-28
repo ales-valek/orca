@@ -1,27 +1,39 @@
 import { ipcMain, type BrowserWindow } from 'electron'
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
+import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   Mission,
+  MissionAbsorbResult,
   MissionCreateResult,
   MissionDeleteResult,
-  MissionMemberResult
+  MissionMemberResult,
+  MissionStackPullRequestsResult,
+  MissionStackPushResult,
+  MissionTaskResult
 } from '../../shared/mission-types'
 import { setMissionWorktreeRebasedListener } from '../missions/mission-rebase-notification'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from '../missions/mission-root-sync'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import {
+  MissionAbsorbArgs,
   MissionAddMembersArgs,
+  MissionAddTaskArgs,
   MissionCreateArgs,
   MissionDeleteArgs,
   MissionMemberSelectorArgs,
   MissionRemoveMemberArgs,
+  MissionRemoveTaskArgs,
+  MissionRestackArgs,
   MissionSelectorArgs,
+  MissionStackPullRequestsArgs,
   MissionUpdateArgs,
   parseMissionIpcArgs
 } from './mission-ipc-args'
 import { notifyReposChanged } from './repos/repos-changed-notification'
 import { MissionOperations } from '../missions/mission-operations'
+import { inspectMissionStacks } from '../missions/mission-stack-inspection'
+import { readLocalMissionPushTips } from '../missions/mission-stack-pull-request-git'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -35,7 +47,14 @@ const MISSION_CHANNELS = [
   'missions:addMembers',
   'missions:removeMember',
   'missions:recreateMemberWorktree',
-  'missions:ensureSession'
+  'missions:ensureSession',
+  'missions:inspectStacks',
+  'missions:addTask',
+  'missions:removeTask',
+  'missions:restack',
+  'missions:absorb',
+  'missions:createStackPullRequests',
+  'missions:pushStack'
 ] as const
 
 export function registerMissionHandlers(
@@ -157,5 +176,78 @@ export function registerMissionHandlers(
       )
       return operations.ensureSession(args.missionId)
     }
+  )
+  ipcMain.handle(
+    'missions:inspectStacks',
+    async (_event, rawArgs: unknown): Promise<MissionRestackReport[]> => {
+      const args = parseMissionIpcArgs(
+        MissionSelectorArgs,
+        rawArgs,
+        'invalid_mission_inspect_stacks_args'
+      )
+      const mission = store.getMission(args.missionId)
+      if (!mission) {
+        return []
+      }
+      return inspectMissionStacks(mission, {
+        inspectRepo: operations.inspectRepo,
+        readPushTips: async (repoId, branches) => {
+          const repo = store.getRepo(repoId)
+          if (!repo) {
+            throw new Error('mission_member_not_found')
+          }
+          return readLocalMissionPushTips(repo, branches)
+        }
+      })
+    }
+  )
+  ipcMain.handle('missions:addTask', async (_event, rawArgs: unknown): Promise<MissionTaskResult> =>
+    operations.addTask(
+      parseMissionIpcArgs(MissionAddTaskArgs, rawArgs, 'invalid_mission_add_task_args')
+    )
+  )
+  ipcMain.handle(
+    'missions:removeTask',
+    async (_event, rawArgs: unknown): Promise<MissionTaskResult> => {
+      const args = parseMissionIpcArgs(
+        MissionRemoveTaskArgs,
+        rawArgs,
+        'invalid_mission_remove_task_args'
+      )
+      // Why: a layer checkout inside the Mission root cannot be kept, so removal always deletes it.
+      return operations.removeTopTask({ ...args, deleteWorktree: true })
+    }
+  )
+  ipcMain.handle(
+    'missions:restack',
+    async (_event, rawArgs: unknown): Promise<MissionRestackReport[]> =>
+      operations.restack(
+        parseMissionIpcArgs(MissionRestackArgs, rawArgs, 'invalid_mission_restack_args')
+      )
+  )
+  ipcMain.handle(
+    'missions:absorb',
+    async (_event, rawArgs: unknown): Promise<MissionAbsorbResult> =>
+      operations.absorb(
+        parseMissionIpcArgs(MissionAbsorbArgs, rawArgs, 'invalid_mission_absorb_args')
+      )
+  )
+  ipcMain.handle(
+    'missions:createStackPullRequests',
+    async (_event, rawArgs: unknown): Promise<MissionStackPullRequestsResult> =>
+      operations.createStackPullRequests(
+        parseMissionIpcArgs(
+          MissionStackPullRequestsArgs,
+          rawArgs,
+          'invalid_mission_stack_pull_requests_args'
+        )
+      )
+  )
+  ipcMain.handle(
+    'missions:pushStack',
+    async (_event, rawArgs: unknown): Promise<MissionStackPushResult> =>
+      operations.pushStack(
+        parseMissionIpcArgs(MissionMemberSelectorArgs, rawArgs, 'invalid_mission_push_stack_args')
+      )
   )
 }

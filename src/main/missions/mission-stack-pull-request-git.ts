@@ -13,6 +13,7 @@ import { createHostedReview } from '../source-control/hosted-review-creation'
 import { detectHostedReviewProvider } from '../source-control/forge-provider'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
 import { resolveWorktreeCreateBase } from '../worktree-create-base'
+import type { LayerPushTips } from './mission-stack-inspection'
 import type {
   MissionStackPullRequestDeps,
   MissionStackPushDeps
@@ -60,4 +61,22 @@ export async function createLocalMissionStackPushDeps(repo: Repo): Promise<Missi
     getRemoteTrackingTip: (branch) => getRemoteTrackingTip(repo.path, remote, branch),
     pushBranch: (branch, leaseSha) => pushStackBranch(repo.path, remote, branch, leaseSha)
   }
+}
+
+/** Reads each branch's local and remote-tracking tip from the repo's default remote. */
+export async function readLocalMissionPushTips(
+  repo: Repo,
+  branches: readonly string[]
+): Promise<Map<string, LayerPushTips>> {
+  const remote = await getDefaultRemote(repo.path)
+  const entries = await Promise.all(
+    branches.map(async (branch): Promise<[string, LayerPushTips]> => {
+      const [localTip, pushedTip] = await Promise.all([
+        getBranchTip(repo.path, branch),
+        getRemoteTrackingTip(repo.path, remote, branch)
+      ])
+      return [branch, { localTip, pushedTip }]
+    })
+  )
+  return new Map(entries)
 }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { create, type StateCreator } from 'zustand'
 import { createMissionsSlice, missionMemberErrorKey, type MissionsSlice } from './missions'
+import { missionSlotErrorKey } from './mission-stack-actions'
 import type { Mission, MissionCreateResult } from '../../../../shared/mission-types'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 
@@ -12,7 +13,14 @@ const missionsApi = {
   addMembers: vi.fn(),
   removeMember: vi.fn(),
   recreateMemberWorktree: vi.fn(),
-  ensureSession: vi.fn()
+  ensureSession: vi.fn(),
+  inspectStacks: vi.fn(),
+  addTask: vi.fn(),
+  removeTask: vi.fn(),
+  restack: vi.fn(),
+  absorb: vi.fn(),
+  createStackPullRequests: vi.fn(),
+  pushStack: vi.fn()
 }
 
 vi.stubGlobal('window', {
@@ -210,5 +218,41 @@ describe('missions slice', () => {
     await store.getState().recreateMissionMemberWorktree('m1', 'r2')
 
     expect(store.getState().missionMemberErrors[missionMemberErrorKey('m1', 'r2')]).toBeUndefined()
+  })
+
+  it('keeps a refused top-task removal as an error on that task slot and re-reads layer states', async () => {
+    missionsApi.removeTask.mockResolvedValue({ mission, task: null, error: 'mission_task_not_top' })
+    missionsApi.list.mockResolvedValue([mission])
+    const reports = [{ repoId: 'r1', layers: [{ slot: 'member', state: 'current' }] }]
+    missionsApi.inspectStacks.mockResolvedValue(reports)
+    const store = makeStore()
+
+    await store.getState().removeMissionTopTask('m1', 'r1', 't1')
+
+    expect(missionsApi.removeTask).toHaveBeenCalledWith({
+      missionId: 'm1',
+      repoId: 'r1',
+      taskId: 't1'
+    })
+    expect(store.getState().missionSlotErrors[missionSlotErrorKey('m1', 'r1', 'task:t1')]).toBe(
+      'mission_task_not_top'
+    )
+    expect(store.getState().missionStackReports.m1).toEqual(reports)
+  })
+
+  it('stores a rejected absorb as the bare error code on the preview slot', async () => {
+    missionsApi.absorb.mockRejectedValue(
+      new Error("Error invoking remote method 'missions:absorb': Error: mission_absorb_layers_busy")
+    )
+    missionsApi.list.mockResolvedValue([mission])
+    missionsApi.inspectStacks.mockResolvedValue([])
+    const store = makeStore()
+
+    const result = await store.getState().absorbMissionPreview('m1', 'r1')
+
+    expect(result).toBeNull()
+    expect(store.getState().missionSlotErrors[missionSlotErrorKey('m1', 'r1', 'preview')]).toBe(
+      'mission_absorb_layers_busy'
+    )
   })
 })
