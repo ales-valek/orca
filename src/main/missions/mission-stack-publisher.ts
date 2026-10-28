@@ -34,7 +34,7 @@ export class MissionStackPublisher {
   }): Promise<MissionStackPullRequestsResult> {
     return this.runOnMemberRepo(
       args,
-      (error) => ({ created: [], error }),
+      (error) => ({ created: [], skipped: [], error }),
       async (mission, repo, memberPath) =>
         createMissionStackPullRequests(
           { mission, repoId: args.repoId, draft: args.draft },
@@ -62,14 +62,18 @@ export class MissionStackPublisher {
   ): Promise<T> {
     return this.lifecycle.run(args.missionId, async () => {
       const mission = this.store.getMission(args.missionId)
+      const member = mission?.members.find((entry) => entry.repoId === args.repoId)
       if (!mission) {
-        throw new Error('mission_not_found')
+        return toFailure('mission_not_found')
       }
-      const member = mission.members.find((entry) => entry.repoId === args.repoId)
       if (!member) {
-        throw new Error('mission_member_not_found')
+        return toFailure('mission_member_not_found')
       }
-      requireNativeLocalMissionRepos(this.store, [args.repoId])
+      try {
+        requireNativeLocalMissionRepos(this.store, [args.repoId])
+      } catch (error) {
+        return toFailure(toErrorMessage(error))
+      }
       const repo = this.store.getRepo(args.repoId)
       const memberPath = member.worktreeId ? splitWorktreeId(member.worktreeId)?.worktreePath : null
       if (!repo || !memberPath) {
