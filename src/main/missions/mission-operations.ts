@@ -31,6 +31,8 @@ import {
   type MissionRestackInput
 } from './mission-task-operations'
 import { MissionTaskAbsorb, type MissionAbsorbResult } from './mission-task-absorb'
+import { MissionStackPublisher } from './mission-stack-publisher'
+import type { MissionStackPullRequestsResult } from './mission-stack-pull-requests'
 import { MissionRestackTrigger } from './mission-restack-trigger'
 import { MissionTaskRestack } from './mission-task-restack'
 
@@ -62,6 +64,7 @@ export class MissionOperations {
   readonly inspectRepo: MissionTaskRestack['inspectRepo']
   private readonly restackTrigger: MissionRestackTrigger
   private readonly deletion: MissionDeletion
+  private readonly publisher: MissionStackPublisher
   private readonly runSetupHook: MissionSetupHookRunner
 
   constructor(
@@ -81,6 +84,7 @@ export class MissionOperations {
       restacker: restacker,
       isWorktreeAgentWorking
     })
+    this.publisher = new MissionStackPublisher(store, this.memberLifecycle)
     this.restackTrigger = new MissionRestackTrigger({
       store,
       restack: (input) => this.restack(input)
@@ -250,6 +254,23 @@ export class MissionOperations {
         this.notifyChanged()
       }
     })
+  }
+
+  /** Pushes and opens a PR for each layer of a repo's stack, bottom-up; the preview never gets one. */
+  createStackPullRequests(args: {
+    missionId: string
+    repoId: string
+    draft?: boolean
+  }): Promise<MissionStackPullRequestsResult> {
+    return this.publisher.createStackPullRequests(args)
+  }
+
+  /** Force-with-lease push of layers that moved since their last push; only on explicit user action. */
+  pushStack(args: {
+    missionId: string
+    repoId: string
+  }): Promise<{ pushed: string[]; error?: string }> {
+    return this.publisher.pushStack(args)
   }
 
   /** Removes a member's task stack top-down, then its worktree; any refusal keeps the member.
