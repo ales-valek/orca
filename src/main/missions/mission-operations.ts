@@ -12,6 +12,7 @@ import type {
   MissionCreateInput,
   MissionDeleteInput
 } from '../ipc/mission-ipc-args'
+import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { MissionMemberLifecycle } from './mission-member-lifecycle'
@@ -25,8 +26,10 @@ import { runMissionSetupHook, type MissionSetupHookEvent } from './mission-setup
 import {
   MissionTaskOperations,
   type MissionAddTaskInput,
-  type MissionRemoveTopTaskInput
+  type MissionRemoveTopTaskInput,
+  type MissionRestackInput
 } from './mission-task-operations'
+import { MissionTaskRestack } from './mission-task-restack'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -43,10 +46,16 @@ export class MissionOperations {
     private readonly store: Store,
     runtime: OrcaRuntimeService,
     private readonly notifyChanged: () => void,
-    private readonly runSetupHook: MissionSetupHookRunner = runMissionSetupHook
+    private readonly runSetupHook: MissionSetupHookRunner = runMissionSetupHook,
+    isWorktreeAgentWorking: (worktreeId: string) => boolean = () => false
   ) {
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
-    this.tasks = new MissionTaskOperations(store, this.memberLifecycle, notifyChanged)
+    this.tasks = new MissionTaskOperations(
+      store,
+      this.memberLifecycle,
+      notifyChanged,
+      new MissionTaskRestack({ store, isWorktreeAgentWorking })
+    )
   }
 
   list(): Mission[] {
@@ -156,6 +165,10 @@ export class MissionOperations {
 
   removeTopTask(args: MissionRemoveTopTaskInput): Promise<MissionTaskResult> {
     return this.tasks.removeTopTask(args)
+  }
+
+  restack(args: MissionRestackInput): Promise<MissionRestackReport[]> {
+    return this.tasks.restack(args)
   }
 
   /** Removes a member's task stack top-down, then its worktree; any refusal keeps the member.
