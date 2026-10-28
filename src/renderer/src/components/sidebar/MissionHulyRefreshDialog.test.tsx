@@ -112,6 +112,7 @@ describe('MissionHulyRefreshDialog', () => {
         diff({
           appendable: [{ repoId: 'r1', issues: [issue('OMP-7'), issue('OMP-8')] }],
           removed: ['OMP-1'],
+          completed: ['OMP-4'],
           reorderedInHuly: [
             { repoId: 'r1', before: ['OMP-2', 'OMP-3'], after: ['OMP-3', 'OMP-2'] }
           ],
@@ -126,6 +127,9 @@ describe('MissionHulyRefreshDialog', () => {
     expect(mocks.refreshMissionFromHuly).toHaveBeenCalledWith('mission-1', false)
     expect(getButtonLabels(container)).toEqual(['Close', 'Append 2 new tasks'])
     expect(container.textContent).toContain('Huly orders it below existing tasks')
+    expect(container.textContent).toContain(
+      'Completed in HulyTheir task layers stay in the Mission.OMP-4'
+    )
 
     await act(async () => {
       ;[...container.querySelectorAll('button')]
