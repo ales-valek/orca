@@ -1,5 +1,9 @@
 import { LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
-import type { HostedReviewProvider } from '../../shared/hosted-review'
+import type {
+  CreateHostedReviewResult,
+  CreateStackedHostedReviewResult,
+  HostedReviewProvider
+} from '../../shared/hosted-review'
 import { deriveMissionLayerState } from '../../shared/mission-layer-state'
 import { getMissionTaskParentBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
 import type { Mission, MissionTask } from '../../shared/mission-types'
@@ -31,10 +35,14 @@ export type MissionStackPushDeps = {
 
 export type MissionStackPullRequestsResult = {
   created: { branch: string; url: string }[]
+  /** Layers that already had an open PR (only distinguishable on the plain-create path). */
+  skipped: { branch: string; url?: string }[]
   error?: string
 }
 
 type LayerCheckout = { branch: string; path: string }
+
+const PUSH_REJECTED_PATTERN = /rejected|non-fast-forward|fetch first|diverged/i
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -61,8 +69,10 @@ export async function createMissionStackPullRequests(
 ): Promise<MissionStackPullRequestsResult> {
   const { mission, repoId } = args
   const created: MissionStackPullRequestsResult['created'] = []
+  const skipped: MissionStackPullRequestsResult['skipped'] = []
   const fail = (error: string): MissionStackPullRequestsResult => ({
     created,
+    skipped,
     error
   })
 
@@ -116,7 +126,12 @@ export async function createMissionStackPullRequests(
     try {
       await deps.pushBranch(branch)
     } catch (error) {
-      return fail(`${branch}: ${toErrorMessage(error)}`)
+      const message = toErrorMessage(error)
+      return fail(
+        PUSH_REJECTED_PATTERN.test(message)
+          ? `Layer ${branch} was rewritten; push the stack first`
+          : `${branch}: ${message}`
+      )
     }
     const input = {
       provider: 'github' as const,
@@ -127,19 +142,25 @@ export async function createMissionStackPullRequests(
       worktreePath: path,
       useTemplate: true
     }
-    const result = layer.stacked
-      ? await deps.createStackedHostedReview(path, input, LOCAL_EXECUTION_HOST_ID)
-      : await deps.createHostedReview(path, input, LOCAL_EXECUTION_HOST_ID)
+    let result: CreateHostedReviewResult | CreateStackedHostedReviewResult
+    try {
+      result = layer.stacked
+        ? await deps.createStackedHostedReview(path, input, LOCAL_EXECUTION_HOST_ID)
+        : await deps.createHostedReview(path, input, LOCAL_EXECUTION_HOST_ID)
+    } catch (error) {
+      return fail(`${branch}: ${toErrorMessage(error)}`)
+    }
     if (result.ok) {
       created.push({ branch, url: result.url })
       continue
     }
     if ('existingReview' in result && result.code === 'already_exists') {
+      skipped.push({ branch, url: result.existingReview?.url })
       continue
     }
     return fail(`${branch}: ${result.error}`)
   }
-  return { created }
+  return { created, skipped }
 }
 
 /** Force-with-lease push of layers that moved since their last push; explicit user action only. */
