@@ -143,12 +143,15 @@ function toHulyError(error: unknown): unknown {
 }
 
 const TRANSACTOR_TOKEN_SEGMENT = /(_transactor\/)[^/\s'"?#]+/g
+const WEBSOCKET_LAST_SEGMENT = /(wss?:\/\/[^\s'"?#]*\/)[^/\s'"?#]+/g
 const REDACTED = '<redacted>'
 
 // Third-party client errors can embed the WebSocket URL, and the token is its last path segment.
 function redactHulyToken(error: unknown, tokens: readonly string[]): unknown {
   const message = error instanceof Error ? error.message : String(error)
-  let redacted = message.replace(TRANSACTOR_TOKEN_SEGMENT, `$1${REDACTED}`)
+  let redacted = message
+    .replace(TRANSACTOR_TOKEN_SEGMENT, `$1${REDACTED}`)
+    .replace(WEBSOCKET_LAST_SEGMENT, `$1${REDACTED}`)
   for (const token of tokens) {
     if (token) {
       redacted = redacted.split(token).join(REDACTED)
