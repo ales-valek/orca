@@ -344,6 +344,31 @@ describe('HulyMissionImport.refreshMissionFromHuly', () => {
     expect(writeBrief.mock.calls[0][1]).toContain('mission-task/kiosek/omp-980')
   })
 
+  it('keeps importedOrder aligned with the plan across repeated refreshes', async () => {
+    const { importer, addTask } = await importKiosek()
+    mission = {
+      ...mission,
+      tasks: (mission.tasks ?? []).filter((task) => task.externalRef !== 'OMP-978')
+    }
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(956, { blockedBy: ['OMP-955'] }),
+      createIssue(979, { blockedBy: ['OMP-978'] })
+    ])
+
+    const first = await importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+
+    expect(first.diff.nonAppendable).toEqual([
+      { repoId: 'eshop', identifier: 'OMP-956', reason: 'inserted-in-middle' }
+    ])
+    expect(addTask.mock.calls.map(([args]) => args.externalRef)).toEqual(['OMP-979'])
+    const second = await importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+
+    expect(second.diff.reorderedInHuly).toEqual([])
+    expect(second.diff.appendable).toEqual([])
+    expect(addTask).toHaveBeenCalledOnce()
+  })
+
   it('records only the issues that were actually appended', async () => {
     const { importer } = await importKiosek()
     api.issuesByMilestone.set('ms-kiosek', [

@@ -116,7 +116,7 @@ export function formatMissionHulyRefresh(result: RuntimeMissionHulyRefreshResult
     [
       'Non-appendable',
       diff.nonAppendable.map(
-        ({ identifier, repoId, reason }) => `${identifier}  ${repoId}  ${reason}`
+        ({ identifier, repoId, reason }) => `${identifier}  ${repoId ?? '(no repo)'}  ${reason}`
       )
     ],
     [
