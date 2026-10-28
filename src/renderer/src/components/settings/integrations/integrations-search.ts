@@ -191,6 +191,32 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
+    title: translate('auto.components.settings.integrations.search.hulyTitle', 'Huly Integration'),
+    description: translate(
+      'auto.components.settings.integrations.search.hulyDescription',
+      'Connect Huly and map its components and statuses for Missions.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.integrations.search.hulyKeyword', 'huly'),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.milestoneKeyword',
+        'milestone'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.missionKeyword',
+        'mission'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.c450244ad7',
+        'integration'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.integrations.search.3c3d3d8ffa',
+        'connect'
+      )
+    ]
+  },
+  {
     title: translate(
       'auto.components.settings.integrations.search.b027b4b318',
       'Linear Integration'
