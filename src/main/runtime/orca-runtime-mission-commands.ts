@@ -28,6 +28,7 @@ export type RuntimeMissionCreateInput = {
   repos: string[]
   branch?: string
   agent?: TuiAgent
+  orchestratorRepo?: string
 }
 
 export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMissionOwnership {
@@ -112,11 +113,15 @@ export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMiss
       name: input.name,
       repoIds: await this.resolveMissionRepoIds(input.repos),
       ...(input.branch ? { branchName: input.branch } : {}),
-      ...(input.agent ? { sessionAgent: input.agent } : {})
+      ...(input.agent ? { sessionAgent: input.agent } : {}),
+      ...(input.orchestratorRepo
+        ? { orchestratorRepoId: (await this.resolveRepoSelector(input.orchestratorRepo)).id }
+        : {})
     })
     return {
       mission: toRuntimeMissionRecord(this.requireStore(), result.mission),
-      memberResults: result.memberResults
+      memberResults: result.memberResults,
+      ...(result.orchestratorResult ? { orchestratorResult: result.orchestratorResult } : {})
     }
   }
 

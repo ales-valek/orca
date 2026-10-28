@@ -198,6 +198,14 @@ export class MissionMemberOwnershipRecovery {
         await this.recoverLiveOwnedWorktree(currentMission, currentMember.repoId, slot)
       }
     }
+    const orchestratorRepoId = mission.orchestratorRepoId
+    if (orchestratorRepoId) {
+      const currentMission = this.store.getMission(mission.id)
+      if (!currentMission) {
+        throw new Error('mission_not_found')
+      }
+      await this.recoverLiveOwnedWorktree(currentMission, orchestratorRepoId, 'orchestrator')
+    }
     // Why: deleting while preserving checkouts may remove the root view next;
     // persist recovered pointers before that irreversible ordering boundary.
     await this.store.flushPendingOrThrowAsync()

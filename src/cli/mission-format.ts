@@ -48,6 +48,9 @@ function formatMissionRecord(mission: RuntimeMissionRecord): string {
     lines.push(
       `orchestrator: ${mission.orchestrator.repoId}  ${mission.orchestrator.worktreePath ?? '(no worktree)'}  ${mission.orchestrator.branch}`
     )
+    if (mission.orchestrator.error) {
+      lines.push(`  error: ${mission.orchestrator.error}`)
+    }
   }
   // Why: layers are stored bottom-up, so reading top to bottom matches the stack's order.
   for (const stack of mission.stacks ?? []) {
@@ -82,9 +85,13 @@ export function formatMissionShow(result: RuntimeMissionShow): string {
 }
 
 export function formatMissionMutation(result: RuntimeMissionMutationResult): string {
-  return [formatMissionRecord(result.mission), ...formatMemberResults(result.memberResults)].join(
-    '\n'
-  )
+  return [
+    formatMissionRecord(result.mission),
+    ...formatMemberResults([
+      ...result.memberResults,
+      ...(result.orchestratorResult ? [result.orchestratorResult] : [])
+    ])
+  ].join('\n')
 }
 
 export function formatMissionRemove(result: RuntimeMissionRemoveResult): string {
@@ -95,9 +102,10 @@ export function formatMissionRemove(result: RuntimeMissionRemoveResult): string 
     headline,
     ...(result.error ? [`error: ${result.error}`] : []),
     // Why: member warnings are already folded into result.warning.
-    ...result.memberResults.flatMap((member) =>
-      member.error ? [`error (${member.repoId}): ${member.error}`] : []
-    ),
+    ...[
+      ...result.memberResults,
+      ...(result.orchestratorResult ? [result.orchestratorResult] : [])
+    ].flatMap((member) => (member.error ? [`error (${member.repoId}): ${member.error}`] : [])),
     ...(result.warning ? [`warning: ${result.warning}`] : [])
   ].join('\n')
 }

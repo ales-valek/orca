@@ -23,7 +23,11 @@ export const MissionCreateParams = z.object({
     (value) => value === undefined || isValidGitBranchName(value.trim()),
     'Invalid git branch name'
   ),
-  agent: OptionalString.refine((value) => value === undefined || isTuiAgent(value), 'Unknown agent')
+  agent: OptionalString.refine(
+    (value) => value === undefined || isTuiAgent(value),
+    'Unknown agent'
+  ),
+  orchestratorRepo: OptionalString
 })
 
 export const MissionAddReposParams = z.object({
