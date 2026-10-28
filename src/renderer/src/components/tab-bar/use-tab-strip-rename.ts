@@ -78,6 +78,7 @@ export function useTabStripRename({
     setRenameValue,
     handleRenameOpen,
     commitRename,
+    cancelRename,
     setRenameInputElement,
     onRenameKeyDown,
     onRenameKeyUp: imeEnter.onKeyUp,

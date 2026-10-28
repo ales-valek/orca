@@ -14,7 +14,6 @@ import { createTabsDragPreviewActions } from './tabs-drag-preview-actions'
 import { createTabsSessionActions } from './tabs-session-actions'
 import { pruneSplitLandingGroupsOnGroupRemoval } from './split-landing-groups'
 import { createTabsClusterActions } from './tabs-cluster-actions'
-import { createTabsSecondaryActions } from './tabs-secondary-actions'
 
 export const createTabsSlice: StateCreator<AppState, [], [], TabsSlice> = (set, get, api) => {
   pruneSplitLandingGroupsOnGroupRemoval(api)
@@ -36,7 +35,6 @@ export const createTabsSlice: StateCreator<AppState, [], [], TabsSlice> = (set, 
     ...createTabsDropActions(set, get),
     ...createTabsSplitRatioActions(set),
     ...createTabsDragPreviewActions(set),
-    ...createTabsSecondaryActions(set, get),
     ...createTabsClusterActions(set, get),
     ...createTabsSessionActions(set, get)
   }

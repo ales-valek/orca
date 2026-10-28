@@ -13,6 +13,8 @@ import { getLineageAncestorIndex, getSortedWorktreeRankIndex } from './visible-w
 
 // Separate store binding avoids attention-slice import cycles; shared builders retain the filter rules.
 
+const EMPTY_MISSION_MEMBER_IDS: ReadonlySet<string> = new Set()
+
 export type VisibleWorktreeOptions = {
   filterRepoIds: readonly string[]
   showSleepingWorkspaces: boolean
@@ -26,7 +28,8 @@ export type VisibleWorktreeOptions = {
   hideCliCreatedWorkspaces: boolean
   // Why required: mission member worktrees belong to the Missions tab; a
   // caller that forgets this set would silently resurface them here.
-  missionMemberWorktreeIds: ReadonlySet<string>
+  /** Absent means no Mission hides any row. */
+  missionMemberWorktreeIds?: ReadonlySet<string>
   hideDetachedHeadWorkspaces: boolean
   hideWorkspacesFromOtherDevices: boolean
   pairedDeviceIdsByEnvironment: ReadonlyMap<string, string>
@@ -57,19 +60,16 @@ export function computeVisibleWorktrees(
     ? getWorktreeHostIdentity
     : (worktree: Worktree) => worktree.id
   const rows = getIndexedAllWorktrees(worktreesByRepo)
+  const missionMemberIds = opts.missionMemberWorktreeIds ?? EMPTY_MISSION_MEMBER_IDS
   const visibleRows =
-    opts.missionMemberWorktreeIds.size > 0
-      ? rows.filter((worktree) => !opts.missionMemberWorktreeIds.has(worktree.id))
-      : rows
+    missionMemberIds.size > 0 ? rows.filter((worktree) => !missionMemberIds.has(worktree.id)) : rows
   // Mission members belong to the Missions tab and must not resurface as lineage parents.
   const lineageAncestorIndex = getLineageAncestorIndex(worktreesByRepo)
   const ancestorByIdentity =
-    opts.missionMemberWorktreeIds.size === 0
+    missionMemberIds.size === 0
       ? lineageAncestorIndex
       : new Map(
-          [...lineageAncestorIndex].filter(
-            ([, worktree]) => !opts.missionMemberWorktreeIds.has(worktree.id)
-          )
+          [...lineageAncestorIndex].filter(([, worktree]) => !missionMemberIds.has(worktree.id))
         )
   return selectVisibleSidebarWorktrees({
     rows: visibleRows,

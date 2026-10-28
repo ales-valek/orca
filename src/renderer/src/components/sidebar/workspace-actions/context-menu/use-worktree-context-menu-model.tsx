@@ -11,7 +11,6 @@ import {
 } from './workspace-lineage-menu-actions'
 import { parseWorkspaceKey } from '../../../../../../shared/workspace-scope'
 import { getDeleteStateForWorktreeHost } from '../deletion/worktree-delete-state-host-match'
-import { isListedMissionSessionWorkspace } from '../../../../../../shared/missions'
 import {
   EMPTY_AGENT_STATUS_BY_PANE_KEY,
   EMPTY_BROWSER_TABS_BY_WORKTREE,
@@ -23,7 +22,7 @@ import {
   EMPTY_WORKSPACE_LINEAGE_BY_CHILD_KEY,
   EMPTY_WORKTREE_LINEAGE_BY_ID,
   getSharedWorkspaceStatus,
-  getSingleContextDeleteRestriction,
+
   isContextWorktreeDeletable,
   selectMenuScopedMap,
   shouldRemoveProjectFromContextMenu
@@ -190,15 +189,6 @@ export function useWorktreeContextMenuModel({
     [activeContextWorktrees, repoMap]
   )
   const removesProject = shouldRemoveProjectFromContextMenu(repo, worktree)
-  const isMissionSessionWorkspace = useAppStore((s) =>
-    isListedMissionSessionWorkspace(s.folderWorkspaces, folderWorkspaceId)
-  )
-  const singleContextDeleteRestriction = getSingleContextDeleteRestriction({
-    isMultiContext,
-    isMissionSessionWorkspace,
-    isMainWorktree: worktree.isMainWorktree,
-    removesProject
-  })
   const { sleepLabel, deleteLabel } = getWorktreeContextMenuBatchLabels(
     {
       isMultiContext,
@@ -376,7 +366,6 @@ export function useWorktreeContextMenuModel({
     projectGroups,
     ptyIdsByTabId,
     removesProject,
-    singleContextDeleteRestriction,
     repo,
     scopeRef,
     setContextWorktrees,

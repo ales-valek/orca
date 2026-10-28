@@ -27,10 +27,7 @@ import { getVirtualRowTransform } from '../viewport/virtual-rows'
 import { getSidebarHeaderVisual } from './header-visuals'
 import { resolveProjectGroupHeaderColor } from './project-header-color'
 import { ProjectHeaderActions } from './ProjectHeaderActions'
-import {
-  getProjectHighlightColorForHeader,
-  getProjectHighlightStyle
-} from '../viewport/project-highlight-bands'
+import { getStickyHeaderHighlightStyle } from '../viewport/project-highlight-bands'
 import {
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
@@ -159,9 +156,10 @@ export function renderWorktreeSectionHeaderRow(
     headerKey: row.key,
     badgeColor: row.repo?.badgeColor
   })
-  const projectHighlightColor = isActiveStickyHeader
-    ? getProjectHighlightColorForHeader(row, ctx.groupBy)
-    : undefined
+  // A pinned header's only style is its project tint; a scrolling one is placed by transform.
+  const headerStyle = isActiveStickyHeader
+    ? getStickyHeaderHighlightStyle(row, ctx.groupBy)
+    : { transform: getVirtualRowTransform(vItem.start) }
   const folderBackedProjectGroup =
     isProjectGroupHeader &&
     !row.repo &&
@@ -202,20 +200,13 @@ export function renderWorktreeSectionHeaderRow(
         isActiveStickyHeader
           ? cn(
               'sticky z-20',
-              // Why: a pinned header must stay opaque; highlighted projects keep their band tint.
-              projectHighlightColor ? 'worktree-project-highlight' : 'bg-worktree-sidebar',
+              headerStyle ? 'worktree-project-highlight' : 'bg-worktree-sidebar',
               // Why: when a host card is pinned, the group tier pins flush beneath it, not at the viewport top.
               args.hasStickyHost ? 'top-[35px]' : '-top-px'
             )
           : 'absolute top-0'
       )}
-      style={
-        isActiveStickyHeader
-          ? projectHighlightColor
-            ? getProjectHighlightStyle(projectHighlightColor)
-            : undefined
-          : { transform: getVirtualRowTransform(vItem.start) }
-      }
+      style={headerStyle}
     >
       <ProjectHeaderHostTooltip label={label} context={hostContext}>
         <div

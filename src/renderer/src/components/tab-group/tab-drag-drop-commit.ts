@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import type { DragEndEvent } from '@dnd-kit/core'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
+import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/worktree-runtime-owner'
 import { useAppStore } from '../../store'
 import type { AppState } from '../../store/types'
 import { resolveHostSessionTabIdForWebSessionTab } from '../../runtime/web-session-tabs-sync/tracking-mappings'
@@ -230,7 +230,7 @@ function mirrorTabStripReorder(
   tabOrder: string[]
 ): void {
   const state = useAppStore.getState()
-  const environmentId = getRuntimeEnvironmentIdForWorktree(state, worktreeId)
+  const environmentId = runtimeEnvironmentIdOrLocalUnlessTwin(state, worktreeId)
   const tabId = environmentId
     ? (tabOrder.find(
         (id) =>

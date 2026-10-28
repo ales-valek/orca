@@ -5,7 +5,7 @@ import { folderWorkspaceKey } from '../../shared/workspace-scope'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { areWorktreePathsEqual } from '../ipc/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import {
@@ -17,6 +17,7 @@ import {
   removeMissionWorktreeOwnershipMarker,
   type MissionWorktreeOwnershipProof
 } from './mission-worktree-ownership-marker'
+import { localMissionWorktreeTarget } from './local-mission-worktree-target'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -280,7 +281,9 @@ export class MissionMemberLifecycle {
           // must not prevent clearing Orca's non-destructive Mission metadata.
         }
       }
-      this.store.setWorktreeMeta(candidate.worktreeId, { missionId: undefined })
+      this.store.setWorktreeMeta(localMissionWorktreeTarget(candidate.worktreeId), {
+        missionId: undefined
+      })
     }
   }
 

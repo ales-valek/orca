@@ -2,6 +2,7 @@ import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser/browser-handler-groups'
 import { JIRA_HANDLER_GROUP } from './jira-handler-group'
 import { LINEAR_HANDLER_GROUP } from './linear-handler-group'
+import { MISSION_HANDLER_GROUP } from './mission-handler-group'
 import { REFERENCE_HANDLER_GROUP } from './reference-handler-group'
 import { SERVE_PAIRING_HANDLER_GROUPS } from './serve-pairing-handler-groups'
 import { PLUGIN_HANDLER_GROUPS } from './plugin-handler-groups'
@@ -92,19 +93,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/repo.js')).REPO_HANDLERS
   },
   ...WORKTREE_HANDLER_GROUPS,
-  {
-    name: 'mission',
-    keys: [
-      'mission list',
-      'mission show',
-      'mission current',
-      'mission create',
-      'mission session',
-      'mission add-repo',
-      'mission rm'
-    ],
-    load: async () => (await import('./handlers/mission.js')).MISSION_HANDLERS
-  },
+  MISSION_HANDLER_GROUP,
   {
     name: 'file',
     keys: ['file open', 'file diff', 'file open-changed'],

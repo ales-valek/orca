@@ -101,5 +101,5 @@ export function useTabRenameReturnFocus({
     [cancelRename, commitRename, restoreContentFocus]
   )
 
-  return { renameOwnerRef, onRenameKeyDown }
+  return { renameOwnerRef, onRenameKeyDown, restoreContentFocus }
 }

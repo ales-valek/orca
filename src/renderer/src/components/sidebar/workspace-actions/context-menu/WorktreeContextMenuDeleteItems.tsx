@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react'
 import { DropdownMenuItem, DropdownMenuShortcut } from '@/components/ui/dropdown-menu'
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useTranslate } from '@/i18n/use-translate'
+import { useSingleContextDeleteRestriction } from './use-single-context-delete-restriction'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 
 export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeContextMenuModel }) {
@@ -17,9 +18,9 @@ export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeConte
     handleDelete,
     isMultiContext,
     lineageDescendantCount,
-    removesProject,
-    singleContextDeleteRestriction
+    removesProject
   } = model
+  const singleContextDeleteRestriction = useSingleContextDeleteRestriction(model)
   const label = contextDeletePending
     ? t('auto.components.sidebar.WorktreeContextMenu.b42391d8bf', 'Deleting…')
     : isMultiContext

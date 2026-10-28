@@ -22,6 +22,10 @@ vi.mock('../../store', () => ({
   })
 }))
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
+// Bulk closes ask first; these cases exercise the cluster scope, so always confirm.
+vi.mock('../confirmation-dialog-context', () => ({
+  useConfirmationDialog: () => async () => true
+}))
 
 const WT = 'repo1::/tmp/feature'
 const PANE = 'pane'
@@ -35,15 +39,10 @@ function pane() {
 
 function commands() {
   return renderHook(() => {
-    const groupTabs = store
-      .getState()
-      .unifiedTabsByWorktree[WT].filter((tab) => tab.groupId === PANE)
     const closeCommands = useTabGroupTabCloseCommands({ worktreeId: WT })
     return useTabGroupCloseScopeCommands({
       worktreeId: WT,
       groupId: PANE,
-      group: pane(),
-      groupTabs,
       ...closeCommands
     })
   }).result.current
@@ -107,10 +106,10 @@ describe('scope closes across a collapsed cluster', () => {
     { name: 'close-others', command: 'closeOthers', target: 'left', active: 'left' }
   ] as const)(
     '$name includes hidden members and keeps pinned tabs',
-    ({ command, target, active }) => {
+    async ({ command, target, active }) => {
       expect([...getHiddenClusterTabIds(pane())]).toEqual(['b', 'c'])
       const closeCommands = commands()
-      act(() => closeCommands[command](target))
+      await act(async () => closeCommands[command](target))
 
       expect(pane().tabOrder).toEqual(['pinned', target])
       expect(pane().tabClusters).toBeUndefined()
@@ -132,9 +131,9 @@ describe('scope closes across a collapsed cluster', () => {
     }
   )
 
-  it('closing others around a hidden target selects a visible pinned successor without expanding', () => {
+  it('closing others around a hidden target selects a visible pinned successor without expanding', async () => {
     const closeCommands = commands()
-    act(() => closeCommands.closeOthers('b'))
+    await act(async () => closeCommands.closeOthers('b'))
 
     expect(pane().tabOrder).toEqual(['pinned', 'b'])
     expect(pane().activeTabId).toBe('pinned')

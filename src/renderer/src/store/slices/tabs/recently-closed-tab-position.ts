@@ -145,6 +145,7 @@ type RestoreState = Pick<
   | 'unifiedTabsByWorktree'
   | 'setTabBarOrder'
   | 'reorderUnifiedTabs'
+  | 'moveTabsInStrip'
 > &
   Parameters<typeof recordLayoutApply>[0]
 
