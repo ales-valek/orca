@@ -54,6 +54,7 @@ function makeHarness() {
     })
   }
   const operations = {
+    list: () => (mission ? [mission] : []),
     create: vi.fn(async (args: MissionCreateInput) => {
       mission = {
         id: 'mission-1',
@@ -89,7 +90,7 @@ function makeHarness() {
     })
   )
   const dispatcher = new RpcDispatcher({ runtime, methods: [...HULY_METHODS, ...MISSION_METHODS] })
-  return { dispatcher, operations, store }
+  return { dispatcher, operations, store, api }
 }
 
 describe('Huly RPC methods', () => {
@@ -133,5 +134,29 @@ describe('Huly RPC methods', () => {
         warnings: ['MISSION.md was not written: the Mission root does not exist yet']
       }
     })
+  })
+
+  it('refreshes a Mission: previews the diff, then appends the new issue on apply', async () => {
+    const { dispatcher, operations, api } = makeHarness()
+    await dispatcher.dispatch(makeRequest('mission.createFromHuly', { milestone: 'kiosek' }))
+    operations.addTask.mockClear()
+    api.issuesByMilestone.set('ms-1', [createIssue(2), createIssue(1), createIssue(3)])
+
+    const preview = await dispatcher.dispatch(makeRequest('mission.refresh', { mission: 'Kiosek' }))
+
+    expect(preview).toMatchObject({
+      ok: true,
+      result: {
+        applied: [],
+        diff: { appendable: [{ repoId: 'repo-eshop', issues: [{ identifier: 'OMP-3' }] }] }
+      }
+    })
+    expect(operations.addTask).not.toHaveBeenCalled()
+
+    await dispatcher.dispatch(makeRequest('mission.refresh', { mission: 'Kiosek', apply: true }))
+
+    expect(operations.addTask.mock.calls.map(([args]) => args)).toMatchObject([
+      { externalRef: 'OMP-3', externalId: 'id-3' }
+    ])
   })
 })

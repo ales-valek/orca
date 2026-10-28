@@ -1,3 +1,4 @@
+import type { HulyMissionRefreshDiff } from './huly/huly-mission-refresh'
 import type { MissionLayerState, MissionRestackReport } from './mission-layer-state'
 import type { TuiAgent } from './tui-agent'
 
@@ -61,6 +62,8 @@ export type MissionSource = {
   milestoneUrl: string
   /** Stack order per repo (issue identifiers) captured at import time. */
   importedOrder: Record<string, string[]>
+  /** Issue identifier to repo id chosen at import; refresh rebuilds the plan with them. */
+  repoOverrides?: Record<string, string>
   lastSyncedAt: number
 }
 
@@ -201,6 +204,14 @@ export type RuntimeMissionMutationResult = {
 /** Member, layer and brief failures are warnings: the Mission exists either way. */
 export type RuntimeMissionHulyCreateResult = {
   mission: RuntimeMissionRecord
+  warnings: string[]
+}
+
+/** `applied` lists the identifiers appended as task layers; failures land in `warnings`. */
+export type RuntimeMissionHulyRefreshResult = {
+  mission: RuntimeMissionRecord
+  diff: HulyMissionRefreshDiff
+  applied: string[]
   warnings: string[]
 }
 

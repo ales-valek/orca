@@ -264,6 +264,124 @@ describe('HulyMissionImport.createMissionFromMilestone', () => {
   })
 })
 
+describe('HulyMissionImport.refreshMissionFromHuly', () => {
+  async function importKiosek(createArgs: { repoOverrides?: Record<string, string> } = {}) {
+    const harness = makeHarness()
+    await harness.importer.createMissionFromMilestone({
+      project: 'OMP',
+      milestoneId: 'ms-kiosek',
+      ...createArgs
+    })
+    harness.addTask.mockClear()
+    harness.writeBrief.mockClear()
+    harness.setMissionSource.mockClear()
+    return harness
+  }
+
+  it('stores the creation repoOverrides in the Mission source', async () => {
+    await importKiosek({ repoOverrides: { 'OMP-962': 'eshop' } })
+    expect(mission.source?.repoOverrides).toEqual({ 'OMP-962': 'eshop' })
+  })
+
+  it('does not report user-moved issues as movedRepo when repoOverrides were stored', async () => {
+    const { importer } = await importKiosek({ repoOverrides: { 'OMP-962': 'eshop' } })
+
+    const { diff } = await importer.refreshMissionFromHuly({
+      missionId: mission.id,
+      apply: false
+    })
+
+    expect(diff.movedRepo).toEqual([])
+    expect(diff.reorderedInHuly).toEqual([])
+  })
+
+  it('previews without writing anything', async () => {
+    const { importer, addTask, setMissionSource, writeBrief } = await importKiosek()
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(979, { blockedBy: ['OMP-978'] })
+    ])
+
+    const { diff, applied } = await importer.refreshMissionFromHuly({
+      missionId: mission.id,
+      apply: false
+    })
+
+    expect(diff.appendable.map((entry) => entry.issues.map((i) => i.identifier))).toEqual([
+      ['OMP-979']
+    ])
+    expect(applied).toEqual([])
+    expect(addTask).not.toHaveBeenCalled()
+    expect(setMissionSource).not.toHaveBeenCalled()
+    expect(writeBrief).not.toHaveBeenCalled()
+  })
+
+  it('appends only appendable issues, updates importedOrder, rewrites the brief and syncs', async () => {
+    const { importer, addTask, writeBrief } = await importKiosek()
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(979, { blockedBy: ['OMP-978'] }),
+      createIssue(980, { blockedBy: ['OMP-979'] }),
+      createIssue(950, { blockedBy: [] }),
+      createIssue(965, { componentId: 'c-admin', blockedBy: ['OMP-960'] })
+    ])
+
+    const result = await importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+
+    expect(result.diff.nonAppendable.map((entry) => entry.identifier)).toEqual(['OMP-950'])
+    expect(
+      addTask.mock.calls.map(([args]) => [args.repoId, args.externalRef, args.externalId])
+    ).toEqual([
+      ['admin', 'OMP-965', 'id-965'],
+      ['eshop', 'OMP-979', 'id-979'],
+      ['eshop', 'OMP-980', 'id-980']
+    ])
+    expect(result.applied).toHaveLength(3)
+    expect(mission.source?.importedOrder.eshop).toEqual([...ESHOP_ORDER, 'OMP-979', 'OMP-980'])
+    expect(mission.source?.importedOrder.admin).toEqual(['OMP-960', 'OMP-965'])
+    expect(mission.source?.lastSyncedAt).toBe(42)
+    expect(writeBrief).toHaveBeenCalledOnce()
+    expect(writeBrief.mock.calls[0][1]).toContain('mission-task/kiosek/omp-980')
+  })
+
+  it('records only the issues that were actually appended', async () => {
+    const { importer } = await importKiosek()
+    api.issuesByMilestone.set('ms-kiosek', [
+      ...createKiosekIssues(),
+      createIssue(979, { blockedBy: ['OMP-978'] }),
+      createIssue(980, { blockedBy: ['OMP-979'] })
+    ])
+    failingRepo = 'eshop'
+
+    const result = await importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+
+    expect(result.warnings.join('\n')).toContain('not added: OMP-980')
+    expect(mission.source?.importedOrder.eshop).toEqual(ESHOP_ORDER)
+  })
+
+  it('reads Huly before any write', async () => {
+    const { importer, addTask, setMissionSource } = await importKiosek()
+    api.listMilestoneIssues = async () => {
+      throw new Error('ERROR: platform:status:TokenExpired {}')
+    }
+
+    await expect(
+      importer.refreshMissionFromHuly({ missionId: mission.id, apply: true })
+    ).rejects.toThrow('huly_auth_required')
+    expect(addTask).not.toHaveBeenCalled()
+    expect(setMissionSource).not.toHaveBeenCalled()
+  })
+
+  it('rejects a Mission without a Huly source', async () => {
+    const { importer } = await importKiosek()
+    mission = { ...mission, source: null }
+
+    await expect(
+      importer.refreshMissionFromHuly({ missionId: mission.id, apply: false })
+    ).rejects.toThrow('mission_not_from_huly')
+  })
+})
+
 describe('Huly selector resolution', () => {
   it('resolves a milestone by id or by case-insensitive exact label', async () => {
     await expect(resolveHulyMilestoneId(api, 'OMP', 'ms-kiosek')).resolves.toBe('ms-kiosek')

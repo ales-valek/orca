@@ -19,6 +19,19 @@ function normalizeImportedOrder(value: unknown): Record<string, string[]> {
   return order
 }
 
+function normalizeRepoOverrides(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const overrides: Record<string, string> = {}
+  for (const [identifier, repoId] of Object.entries(value)) {
+    if (isNonEmptyString(repoId)) {
+      overrides[identifier] = repoId
+    }
+  }
+  return Object.keys(overrides).length > 0 ? overrides : undefined
+}
+
 /** Legacy missions have no source; an invalid one is dropped rather than half-kept. */
 export function normalizeMissionSource(value: unknown): Pick<Mission, 'source'> {
   if (!value || typeof value !== 'object') {
@@ -34,6 +47,7 @@ export function normalizeMissionSource(value: unknown): Pick<Mission, 'source'> 
   ) {
     return {}
   }
+  const repoOverrides = normalizeRepoOverrides(raw.repoOverrides)
   return {
     source: {
       provider: 'huly',
@@ -44,6 +58,7 @@ export function normalizeMissionSource(value: unknown): Pick<Mission, 'source'> 
       milestoneLabel: typeof raw.milestoneLabel === 'string' ? raw.milestoneLabel : '',
       milestoneUrl: typeof raw.milestoneUrl === 'string' ? raw.milestoneUrl : '',
       importedOrder: normalizeImportedOrder(raw.importedOrder),
+      ...(repoOverrides ? { repoOverrides } : {}),
       lastSyncedAt:
         typeof raw.lastSyncedAt === 'number' && Number.isFinite(raw.lastSyncedAt)
           ? raw.lastSyncedAt

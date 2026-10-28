@@ -2,6 +2,7 @@ import { resolve as resolvePath } from 'node:path'
 import type {
   RuntimeMissionAbsorbResult,
   RuntimeMissionHulyCreateResult,
+  RuntimeMissionHulyRefreshResult,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
   RuntimeMissionRemoveResult,
@@ -16,6 +17,7 @@ import { printResult } from '../format'
 import {
   formatMissionAbsorb,
   formatMissionHulyCreate,
+  formatMissionHulyRefresh,
   formatMissionList,
   formatMissionMutation,
   formatMissionRemove,
@@ -122,6 +124,13 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
       orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo')
     })
     printResult(result, json, formatMissionMutation)
+  },
+  'mission refresh': async ({ flags, client, json }) => {
+    const result = await client.call<RuntimeMissionHulyRefreshResult>('mission.refresh', {
+      mission: getRequiredStringFlag(flags, 'mission'),
+      apply: flags.get('apply') === true
+    })
+    printResult(result, json, formatMissionHulyRefresh)
   },
   'mission session': async ({ flags, client, json }) => {
     const result = await client.call<RuntimeMissionSession>('mission.session', {

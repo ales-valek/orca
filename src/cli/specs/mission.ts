@@ -62,6 +62,19 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
     ]
   },
   {
+    path: ['mission', 'refresh'],
+    summary: 'Compare a Huly-sourced Mission with its milestone and append new issues on top',
+    usage: 'orca mission refresh <selector> [--apply] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'apply'],
+    positionalArgs: ['mission'],
+    notes: [
+      MISSION_SELECTOR_NOTE,
+      'Without --apply it only prints the diff. With --apply it appends the new issues that belong after every existing task of their repo, then rewrites MISSION.md.',
+      'Issues that would land in the middle of a stack, belong to a repo outside the Mission, or sit in a blockedBy cycle are listed as non-appendable and never added; the exit code stays 0.'
+    ],
+    examples: ['orca mission refresh kiosek', 'orca mission refresh kiosek --apply']
+  },
+  {
     path: ['mission', 'session'],
     summary: 'Open the Mission root session and print its folder selector for terminals',
     usage: 'orca mission session <selector> [--json]',
