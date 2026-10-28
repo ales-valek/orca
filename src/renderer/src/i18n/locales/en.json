@@ -7698,7 +7698,6 @@
           "d4a0733f96": "Absorb"
         },
         "MissionAddTaskDialog": {
-          "4d09a9a0ed": "Could not add the task. Try again.",
           "de2ee3046d": "Add Task",
           "5f616845f8": "The task gets its own branch and workspace on top of the {{value0}} stack.",
           "f078e5c302": "Title",
@@ -7717,9 +7716,7 @@
           "8501d7774b": "None"
         },
         "MissionStackActionsMenu": {
-          "5beff8fa13": "Moved {{value0}} preview edits into their tasks.",
           "79d129156d": "No preview edits to absorb.",
-          "380d1a8f89": "{{value0}} pull requests open for this stack.",
           "cd047f3f64": "Stack actions",
           "aefbb3d1aa": "Add task",
           "4c981beb64": "Restack",
@@ -7729,13 +7726,13 @@
         "MissionStackRows": {
           "1310031885": "Pushing...",
           "9414629caf": "Preview",
-          "1ad5a140a2": "Pushed {{value0}} rewritten layers.",
           "7f9fcbbbb2": "Push rewritten layers",
           "9b611165e0": "Remove task and delete workspace?",
           "3ef7b62ac7": "This deletes the workspace of {{value0}}. Git work that cannot be deleted safely is preserved on its branch.",
           "c47dd46ba2": "Delete workspace",
           "6739390591": "Workspace missing",
-          "a463ece8dd": "Remove task"
+          "a463ece8dd": "Remove task",
+          "4721fec37a": "Layer states may be outdated."
         },
         "DeleteNestedWorktreesDialog": {
           "unsupportedHost": "This host does not support nested worktree deletion."
@@ -21739,6 +21736,19 @@
       "stepDownload": "Download",
       "stepUnpack": "Unpack",
       "stepCheck": "Check"
+    },
+    "missions": {
+      "stack": {
+        "movedPreviewEdits": "Moved {{count}} preview edits into their tasks.",
+        "movedPreviewEdits_one": "Moved {{count}} preview edit into its task.",
+        "movedPreviewEdits_other": "Moved {{count}} preview edits into their tasks.",
+        "openPullRequests": "{{count}} pull requests open for this stack.",
+        "openPullRequests_one": "{{count}} pull request open for this stack.",
+        "openPullRequests_other": "{{count}} pull requests open for this stack.",
+        "pushedLayers": "Pushed {{count}} rewritten layers.",
+        "pushedLayers_one": "Pushed {{count}} rewritten layer.",
+        "pushedLayers_other": "Pushed {{count}} rewritten layers."
+      }
     },
     "orchestrationCrew": {
       "mentionAll": "Mention all",

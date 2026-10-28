@@ -47,10 +47,26 @@ export function deriveMissionLayerState(input: MissionLayerStateInput): MissionL
     }
     return !input.isClean || input.isAgentWorking ? 'blocked' : 'stale'
   }
-  if (input.hasOpenPr && input.localTip !== input.pushedTip) {
-    return 'needs-push'
-  }
-  return 'current'
+  return isMissionLayerPushPending(input) ? 'needs-push' : 'current'
+}
+
+/** Local and last pushed tip of a layer branch; a null pushed tip means it was never pushed. */
+export type MissionLayerPushTips = { localTip: string | null; pushedTip: string | null }
+
+/** The single needs-push rule: a published layer whose local tip moved since its last push. */
+export function isMissionLayerPushPending(
+  input: Pick<MissionLayerStateInput, 'hasOpenPr' | 'localTip' | 'pushedTip'>
+): boolean {
+  return input.hasOpenPr && input.localTip !== input.pushedTip
+}
+
+/** Push inputs read from git alone.
+ *  ponytail: a remote-tracking ref stands in for "has an open PR"; a branch pushed without a PR is
+ *  also treated as published, and a stale ref hides a PR closed elsewhere. Needs a PR lookup to be exact. */
+export function getMissionLayerPushInput(
+  tips: MissionLayerPushTips
+): Pick<MissionLayerStateInput, 'hasOpenPr' | 'localTip' | 'pushedTip'> {
+  return { ...tips, hasOpenPr: tips.pushedTip !== null }
 }
 
 /** Why a layer derives as `blocked`, or null when it does not. */

@@ -4,7 +4,7 @@ import type {
   CreateStackedHostedReviewResult,
   HostedReviewProvider
 } from '../../shared/hosted-review'
-import { deriveMissionLayerState } from '../../shared/mission-layer-state'
+import { deriveMissionLayerState, getMissionLayerPushInput } from '../../shared/mission-layer-state'
 import { getMissionTaskParentBranch, getRepoTaskStack } from '../../shared/mission-task-stack'
 import type {
   Mission,
@@ -183,8 +183,6 @@ export async function pushMissionStack(
       deps.getRemoteTrackingTip(branch),
       parentBranch ? deps.getBranchTip(member.path, parentBranch) : Promise.resolve(null)
     ])
-    // ponytail: a remote-tracking ref stands in for "has an open PR"; a branch pushed without a PR
-    // is also treated as published, and a stale ref hides a PR closed elsewhere. Needs a PR lookup to be exact.
     const state = deriveMissionLayerState({
       parentTip,
       parentBaseSha,
@@ -192,9 +190,7 @@ export async function pushMissionStack(
       isAgentWorking: false,
       conflict: false,
       prMerged: false,
-      localTip,
-      pushedTip,
-      hasOpenPr: pushedTip !== null
+      ...getMissionLayerPushInput({ localTip, pushedTip })
     })
     return { state, pushedTip }
   }

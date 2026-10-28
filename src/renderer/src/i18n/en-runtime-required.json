@@ -1995,6 +1995,16 @@
           "discarded_other": "Unsaved edits in {{count}} files will be discarded:"
         }
       }
+    },
+    "missions": {
+      "stack": {
+        "movedPreviewEdits_one": "Moved {{count}} preview edit into its task.",
+        "movedPreviewEdits_other": "Moved {{count}} preview edits into their tasks.",
+        "openPullRequests_one": "{{count}} pull request open for this stack.",
+        "openPullRequests_other": "{{count}} pull requests open for this stack.",
+        "pushedLayers_one": "Pushed {{count}} rewritten layer.",
+        "pushedLayers_other": "Pushed {{count}} rewritten layers."
+      }
     }
   },
   "dashboard": {
