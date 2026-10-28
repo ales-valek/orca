@@ -95,6 +95,28 @@ describe('findMissionForPath', () => {
   })
 })
 
+describe('toRuntimeMissionRecord brief path', () => {
+  const source = {
+    provider: 'huly' as const,
+    serverUrl: 'https://huly.test',
+    workspace: 'ws',
+    project: 'OMP',
+    milestoneId: 'ms1',
+    milestoneLabel: 'Kiosek',
+    milestoneUrl: 'https://huly.test/ms1',
+    importedOrder: {},
+    lastSyncedAt: 1
+  }
+
+  it('reports briefPath only for sourced missions', () => {
+    const getRepo = () => null
+    const sourced = makeMission({ id: 'm1', name: 'Kiosek', rootPath: '/root/kiosek', source })
+    expect(toRuntimeMissionRecord({ getRepo }, sourced).briefPath).toBe('/root/kiosek/MISSION.md')
+    const plain = makeMission({ id: 'm2', name: 'Plain', rootPath: '/root/plain' })
+    expect(toRuntimeMissionRecord({ getRepo }, plain)).not.toHaveProperty('briefPath')
+  })
+})
+
 describe('toRuntimeMissionRecord', () => {
   it('projects member repo names, worktree paths, and errors', () => {
     const worktreePath = path.join(tmp, 'root', 'api')
