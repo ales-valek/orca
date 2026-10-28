@@ -79,13 +79,14 @@ export function isMissionOwnedFolderWorkspace(workspace: { missionId?: string | 
   return typeof workspace.missionId === 'string' && workspace.missionId.length > 0
 }
 
+// Partial store snapshots (headless readers, older fixtures) may lack the catalogs: treat as empty.
 export function isListedMissionSessionWorkspace(
-  folderWorkspaces: readonly { id: string; missionId?: string | null }[],
+  folderWorkspaces: readonly { id: string; missionId?: string | null }[] | undefined,
   folderWorkspaceId: string | null
 ): boolean {
   return (
     folderWorkspaceId != null &&
-    folderWorkspaces.some(
+    (folderWorkspaces ?? []).some(
       (workspace) => workspace.id === folderWorkspaceId && isMissionOwnedFolderWorkspace(workspace)
     )
   )
@@ -282,9 +283,9 @@ export function isMissionEligibleRepo(
 /** Worktree ids owned by mission members. The Projects view hides these —
  *  mission work belongs to the Missions tab; only the mission views (and the
  *  workspace itself) surface them. */
-export function getMissionMemberWorktreeIds(missions: readonly Mission[]): Set<string> {
+export function getMissionMemberWorktreeIds(missions: readonly Mission[] | undefined): Set<string> {
   const ids = new Set<string>()
-  for (const mission of missions) {
+  for (const mission of missions ?? []) {
     for (const member of mission.members) {
       if (member.worktreeId) {
         ids.add(member.worktreeId)
