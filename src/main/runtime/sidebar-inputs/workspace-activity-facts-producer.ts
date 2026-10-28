@@ -36,6 +36,34 @@ const AGENT_FRESHNESS_DEADLINE = 'agent-freshness'
 
 type AgentPane = { worktreeId: string; status: LiveAgentWorktreeStatus; staleAt: number }
 
+/** A hook row's live agent and workspace; null when provider-only, unattributed, stale or done. */
+export function getLiveAgentRowPane(
+  row: AgentStatusIpcPayload,
+  resolveTabWorktreeId: (tabId: string) => string | undefined,
+  now: number
+): AgentPane | null {
+  const entry = {
+    state: row.state,
+    workingMode: row.workingMode,
+    updatedAt: row.receivedAt,
+    evidenceObservedAt: row.evidenceObservedAt,
+    restoredUnconfirmed: row.restoredUnconfirmed,
+    ...(row.structuredHost === 'owned' ? { structuredHostOwned: true as const } : {})
+  }
+  // The window's own attribution rule, over this runtime's tabs.
+  const worktreeId = resolveAgentStatusWorktreeId(row, { get: resolveTabWorktreeId })
+  if (row.providerSessionOnly || !worktreeId || !isFreshNonDoneAgentStatus(entry, now)) {
+    return null
+  }
+  return {
+    worktreeId,
+    status: liveAgentStatusOf(entry),
+    staleAt: entry.structuredHostOwned
+      ? Infinity
+      : agentStatusEvidenceObservedAt(entry) + AGENT_STATUS_STALE_AFTER_MS + 1
+  }
+}
+
 /** Refresh surfaces per workspace publication; hook mutations re-derive only their pane without re-reading surfaces. */
 export class WorkspaceActivityFactsProducer {
   private readonly facts = new Map<string, WorkspaceActivityFacts>()
@@ -137,26 +165,10 @@ export class WorkspaceActivityFactsProducer {
     const now = Date.now()
     const live: AgentPane[] = []
     for (const row of rows) {
-      const entry = {
-        state: row.state,
-        workingMode: row.workingMode,
-        updatedAt: row.receivedAt,
-        evidenceObservedAt: row.evidenceObservedAt,
-        restoredUnconfirmed: row.restoredUnconfirmed,
-        ...(row.structuredHost === 'owned' ? { structuredHostOwned: true as const } : {})
+      const pane = getLiveAgentRowPane(row, this.deps.resolveTabWorktreeId, now)
+      if (pane) {
+        live.push(pane)
       }
-      // The window's own attribution rule, over this runtime's tabs.
-      const worktreeId = resolveAgentStatusWorktreeId(row, { get: this.deps.resolveTabWorktreeId })
-      if (row.providerSessionOnly || !worktreeId || !isFreshNonDoneAgentStatus(entry, now)) {
-        continue
-      }
-      live.push({
-        worktreeId,
-        status: liveAgentStatusOf(entry),
-        staleAt: entry.structuredHostOwned
-          ? Infinity
-          : agentStatusEvidenceObservedAt(entry) + AGENT_STATUS_STALE_AFTER_MS + 1
-      })
     }
     if (live.length === 0) {
       return null
