@@ -131,7 +131,8 @@ export function formatMissionHulyRefresh(result: RuntimeMissionHulyRefreshResult
         ({ identifier, fromRepoId, toRepoId }) => `${identifier}  ${fromRepoId} -> ${toRepoId}`
       )
     ],
-    ['Removed', diff.removed]
+    ['Removed', diff.removed],
+    ['Completed in Huly', diff.completed ?? []]
   ]
   const lines = sections.flatMap(([title, entries]) =>
     entries.length > 0 ? [`${title}:`, ...entries.map((entry) => `  ${entry}`)] : []

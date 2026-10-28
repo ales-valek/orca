@@ -116,6 +116,15 @@ describe('buildMissionPlanFromMilestone', () => {
     expect(ids(plan.stacks[0].tasks)).toEqual(['OMP-3'])
   })
 
+  it('matches skip status names case-insensitively', () => {
+    const plan = buildMissionPlanFromMilestone({
+      issues: [issue(1, { status: { name: 'Merged in Milestone', category: 'Active' } }), issue(2)],
+      settings: makeSettings()
+    })
+    expect(plan.skipped.map((entry) => entry.identifier)).toEqual(['OMP-1'])
+    expect(ids(plan.stacks[0].tasks)).toEqual(['OMP-2'])
+  })
+
   it('places an issue blocked only by a skipped issue', () => {
     const plan = buildMissionPlanFromMilestone({
       issues: [
