@@ -11,6 +11,7 @@ src/**/*.d.ts
 !src/renderer/src/env.d.ts
 !src/renderer/src/mermaid.d.ts
 !src/types/build-constants.d.ts
+!src/types/hcengineering-modules.d.ts
 
 node_modules/
 # Match symlinked installs too; the trailing-slash pattern only matches directories.
