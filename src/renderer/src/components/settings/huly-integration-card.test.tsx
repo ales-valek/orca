@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getHulyProjectSettings,
@@ -11,20 +11,26 @@ import type {
   HulyProjectSummary,
   HulyStatus
 } from '../../../../shared/huly/huly-types'
+import type { Repo } from '../../../../shared/repo-types'
 import { HulyIntegrationCard } from './huly-integration-card'
 
 const mocks = vi.hoisted(() => {
   const hulyProjects: Record<string, HulyProjectSettings> = {}
+  const repos: Repo[] = []
   return {
     state: {
       settings: { hulyProjects, localWindowsRuntimeDefault: undefined },
-      repos: [],
+      repos,
       endpointProjects: [],
       endpointProjectHostSetups: [],
-      updateSettings: vi.fn(async () => {})
+      updateSettings: vi.fn(
+        async (_updates: { hulyProjects?: Record<string, HulyProjectSettings> }) => {}
+      )
     }
   }
 })
+
+vi.mock('@/components/ui/select', () => import('@/components/ui/select-test-double'))
 
 vi.mock('@/store', () => ({
   useAppStore: (selector: (state: typeof mocks.state) => unknown) => selector(mocks.state)
@@ -52,6 +58,7 @@ beforeEach(() => {
   huly.connect.mockResolvedValue(CONNECTED)
   huly.listProjects.mockResolvedValue([])
   mocks.state.settings.hulyProjects = {}
+  mocks.state.repos = []
   mocks.state.updateSettings.mockClear()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the card only calls the Huly namespace, which this fake implements.
   window.api = { huly } as unknown as typeof window.api
@@ -128,6 +135,82 @@ describe('HulyIntegrationCard', () => {
         OTHER: other,
         OMP: { ...getHulyProjectSettings({}, 'OMP'), statusWriteBack: true }
       }
+    })
+  })
+
+  describe('project settings editors', () => {
+    const omp = (): HulyProjectSettings => ({
+      ...getHulyProjectSettings({}, 'OMP'),
+      statusWriteBack: true
+    })
+
+    beforeEach(() => {
+      mocks.state.settings.hulyProjects = { OMP: omp() }
+      mocks.state.repos = [
+        { id: 'repo-eshop', path: '/repos/eshop', displayName: 'eshop', badgeColor: '', addedAt: 0 }
+      ]
+      huly.status.mockResolvedValue(CONNECTED)
+      huly.listProjects.mockResolvedValue([{ identifier: 'OMP', name: 'OrderMage' }])
+      huly.listStatuses.mockResolvedValue([
+        { name: 'Backlog', category: 'UnStarted' },
+        { name: 'In Progress', category: 'Active' }
+      ])
+      huly.listComponents.mockResolvedValue([{ id: 'c-eshop', label: 'Eshop' }])
+    })
+
+    async function pickOption(selectLabel: string, option: string): Promise<void> {
+      const trigger = await screen.findByRole('combobox', { name: selectLabel })
+      const select = trigger.closest('[data-slot="select"]')
+      if (!(select instanceof HTMLElement)) {
+        throw new Error(`No select around ${selectLabel}`)
+      }
+      fireEvent.click(within(select).getByRole('option', { name: option }))
+    }
+
+    function getSavedOmp(): HulyProjectSettings | undefined {
+      const [updates] = mocks.state.updateSettings.mock.lastCall ?? []
+      return updates?.hulyProjects?.OMP
+    }
+
+    it('saves "Don\'t change" as a null target', async () => {
+      render(<HulyIntegrationCard />)
+
+      await pickOption('Status after: Task layer created', "Don't change")
+
+      expect(getSavedOmp()?.statusRules['layer-created']).toEqual({
+        ...omp().statusRules['layer-created'],
+        target: null
+      })
+    })
+
+    it('adds a status to a rule from-set', async () => {
+      render(<HulyIntegrationCard />)
+
+      fireEvent.click(
+        await screen.findByRole('combobox', {
+          name: 'Statuses to move from: Stacked pull request created'
+        })
+      )
+      const options = await screen.findAllByRole('option', { name: 'Backlog' })
+      const popoverOption = options.find((option) => !option.closest('[data-slot="select"]'))
+      if (!popoverOption) {
+        throw new Error('The from-set popover did not open')
+      }
+      fireEvent.click(popoverOption)
+
+      expect(getSavedOmp()?.statusRules['stack-pr-created'].fromStatusNames).toEqual([
+        'In Progress',
+        'Rozpracováno',
+        'Backlog'
+      ])
+    })
+
+    it('maps a component to a repository', async () => {
+      render(<HulyIntegrationCard />)
+
+      await pickOption('Repository for Eshop', 'eshop')
+
+      expect(getSavedOmp()?.componentRepoMap).toEqual({ 'c-eshop': 'repo-eshop' })
     })
   })
 })

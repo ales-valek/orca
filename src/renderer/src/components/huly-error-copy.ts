@@ -73,3 +73,26 @@ export function formatHulyError(error: unknown): string {
     translate('auto.components.HulyErrorCopy.requestFailed', 'The Huly request failed.')
   )
 }
+
+/** Connect failures: the token being checked is new, and unexpected errors never echo it. */
+export function formatHulyConnectError(error: unknown, token: string): string {
+  const code = getHulyErrorCode(error)
+  if (code === 'huly_auth_required') {
+    return translate(
+      'auto.components.HulyErrorCopy.connectAuthRejected',
+      'Huly rejected this token.'
+    )
+  }
+  if (code) {
+    return HULY_ERROR_COPY[code]()
+  }
+  const detail = extractIpcErrorMessage(error, '')
+  if (!detail) {
+    return translate('auto.components.HulyErrorCopy.requestFailed', 'The Huly request failed.')
+  }
+  return translate(
+    'auto.components.HulyErrorCopy.connectFailed',
+    'Could not connect to Huly: {{detail}}',
+    { detail: token ? detail.split(token).join('<redacted>') : detail }
+  )
+}
