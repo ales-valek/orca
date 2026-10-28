@@ -6,6 +6,7 @@ import {
   getRepoTaskStack,
   getTopMissionTask
 } from '../../shared/mission-task-stack'
+import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Mission, MissionTask, MissionTaskResult } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import type { Store } from '../persistence'
@@ -14,6 +15,7 @@ import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from './mission-root-sync'
 import { getMissionSlotDirectoryName } from './mission-slot-worktrees'
+import type { MissionTaskRestack } from './mission-task-restack'
 import { getMissionOwnedWorktree, getMissionSlotRecord } from './mission-worktree-ownership'
 
 export type MissionAddTaskInput = {
@@ -31,6 +33,8 @@ export type MissionRemoveTopTaskInput = {
   taskId?: string
   deleteWorktree: boolean
 }
+
+export type MissionRestackInput = { missionId: string; repoId?: string }
 
 type LayerOutcome = { error?: string; warning?: string }
 
@@ -53,7 +57,8 @@ export class MissionTaskOperations {
   constructor(
     private readonly store: Store,
     private readonly lifecycle: MissionMemberLifecycle,
-    private readonly notifyChanged: () => void
+    private readonly notifyChanged: () => void,
+    private readonly restacker: MissionTaskRestack
   ) {}
 
   addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
@@ -98,7 +103,13 @@ export class MissionTaskOperations {
         throw error
       }
       this.notifyChanged()
-      const outcome = await this.createTaskLayer(mission.id, task, repo)
+      const created = await this.createTaskLayer(mission.id, task, repo)
+      const outcome = created.error
+        ? created
+        : joinWarnings([
+            created.warning,
+            (await this.followNewTop(mission.id, args.repoId)).warning
+          ])
       syncMissionRootIfPresent(this.store, mission.id)
       this.notifyChanged()
       const updated = this.store.getMission(mission.id) ?? rooted
@@ -133,6 +144,29 @@ export class MissionTaskOperations {
     })
   }
 
+  /** Rebases each repo's task layers onto their parents' current tips and moves the preview along. */
+  restack(args: MissionRestackInput): Promise<MissionRestackReport[]> {
+    return this.lifecycle.run(args.missionId, async () => {
+      const mission = this.store.getMission(args.missionId)
+      if (!mission) {
+        throw new Error('mission_not_found')
+      }
+      const memberRepoIds = mission.members.map((member) => member.repoId)
+      if (args.repoId && !memberRepoIds.includes(args.repoId)) {
+        throw new Error('mission_member_not_found')
+      }
+      const repoIds = args.repoId ? [args.repoId] : memberRepoIds
+      requireNativeLocalMissionRepos(this.store, repoIds)
+      const reports: MissionRestackReport[] = []
+      for (const repoId of repoIds) {
+        const current = this.store.getMission(mission.id) ?? mission
+        reports.push(await this.restacker.restackRepo(current, repoId))
+      }
+      this.notifyChanged()
+      return reports
+    })
+  }
+
   /** Top-down teardown of a repo's stack: preview, then tasks from the top. Caller holds the run lock. */
   async removeRepoStack(mission: Mission, repoId: string): Promise<LayerOutcome> {
     const warnings: (string | undefined)[] = []
@@ -154,6 +188,25 @@ export class MissionTaskOperations {
       current = this.store.getMission(mission.id)
     }
     return joinWarnings(warnings)
+  }
+
+  /** Restacks inside the caller's run so an existing preview follows the new top task. */
+  private async followNewTop(missionId: string, repoId: string): Promise<LayerOutcome> {
+    const mission = this.store.getMission(missionId)
+    if (!mission) {
+      return {}
+    }
+    try {
+      const report = await this.restacker.restackRepo(mission, repoId)
+      const preview = report.layers.find((layer) => layer.slot === 'preview')
+      if (!preview || preview.state === 'current') {
+        return {}
+      }
+      const reason = preview.reason ? `: ${preview.reason}` : '.'
+      return { warning: `Preview did not follow the new top task (${preview.state})${reason}` }
+    } catch (error) {
+      return { warning: `Restack after adding the task failed: ${toErrorMessage(error)}` }
+    }
   }
 
   private async createTaskLayer(
