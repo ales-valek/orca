@@ -4,6 +4,8 @@ export type MissionPullRequestMerge = {
   headBranch: string
   baseBranch: string
   mergedCount: number
+  /** Head commit of the merged PR; without it a mission-branch merge reports no layer. */
+  headSha?: string
 }
 
 type PullRequestMergedListener = (merge: MissionPullRequestMerge) => void

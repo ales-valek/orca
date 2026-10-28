@@ -7,6 +7,7 @@ import type {
   MissionTaskResult
 } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
+import { getBranchTip, isAncestorCommit } from '../git/stack-layer-git'
 import type { Store } from '../persistence'
 import type { MissionPullRequestMerge } from './mission-stack-merge-notification'
 import { resolveLocalMissionDefaultBaseBranch } from './mission-stack-pull-request-git'
@@ -25,18 +26,43 @@ export function getStackPrCreatedTaskIds(
     .map((task) => task.id)
 }
 
-export type MissionMergeCandidate = { repoId: string; event: MissionEvent }
+/** `viaMissionBranch`: the layers still need an ancestry check against the merged head. */
+export type MissionMergeCandidate = {
+  repoId: string
+  event: MissionEvent
+  viaMissionBranch: boolean
+}
 
-/** Layers a merge took along, before checking its base: a merged task layer plus the layers
- *  below it, or every layer of the repo when the mission branch itself was merged. */
+export type MissionEventGit = {
+  getDefaultBaseBranch: (repo: Repo) => Promise<string>
+  /** True only when git proved `branch`'s local tip is an ancestor of `headSha`. */
+  isBranchContainedIn: (repo: Repo, branch: string, headSha: string) => Promise<boolean>
+}
+
+const LOCAL_MISSION_EVENT_GIT: MissionEventGit = {
+  getDefaultBaseBranch: resolveLocalMissionDefaultBaseBranch,
+  isBranchContainedIn: async (repo, branch, headSha) => {
+    const tip = await getBranchTip(repo.path, branch)
+    return tip !== null && (await isAncestorCommit(repo.path, tip, headSha))
+  }
+}
+
+/** Layers a merge may have taken along, before checking its base: a merged task layer plus the
+ *  layers below it, or every layer of the repo when the mission branch itself was merged. */
 export function getMissionMergeCandidates(
   missions: readonly Mission[],
   getRepoPath: (repoId: string) => string | null,
   merge: MissionPullRequestMerge
 ): MissionMergeCandidate[] {
-  const toCandidate = (mission: Mission, repoId: string, taskIds: string[]) => ({
+  const toCandidate = (
+    mission: Mission,
+    repoId: string,
+    taskIds: string[],
+    viaMissionBranch = false
+  ) => ({
     repoId,
-    event: { kind: 'stack-merged' as const, missionId: mission.id, taskIds }
+    event: { kind: 'stack-merged' as const, missionId: mission.id, taskIds },
+    viaMissionBranch
   })
   return missions.flatMap((mission) => {
     if (mission.branchName === merge.headBranch) {
@@ -46,7 +72,8 @@ export function getMissionMergeCandidates(
           toCandidate(
             mission,
             member.repoId,
-            getRepoTaskStack(mission, member.repoId).map((task) => task.id)
+            getRepoTaskStack(mission, member.repoId).map((task) => task.id),
+            true
           )
         )
     }
@@ -87,9 +114,7 @@ export class MissionEventReporter {
   constructor(
     private readonly store: Pick<Store, 'getMission' | 'getMissions' | 'getRepo'>,
     private readonly listener: MissionEventListener | undefined,
-    private readonly getDefaultBaseBranch: (
-      repo: Repo
-    ) => Promise<string> = resolveLocalMissionDefaultBaseBranch
+    private readonly git: MissionEventGit = LOCAL_MISSION_EVENT_GIT
   ) {}
 
   taskAdded(missionId: string, result: MissionTaskResult): MissionTaskResult {
@@ -123,7 +148,7 @@ export class MissionEventReporter {
     const getRepoPath = (repoId: string) => this.store.getRepo(repoId)?.path ?? null
     const candidates = getMissionMergeCandidates(this.store.getMissions(), getRepoPath, merge)
     const defaultBases = new Map<string, Promise<string | null>>()
-    for (const { repoId, event } of candidates) {
+    for (const { repoId, event, viaMissionBranch } of candidates) {
       const repo = this.store.getRepo(repoId)
       if (!repo) {
         continue
@@ -131,15 +156,44 @@ export class MissionEventReporter {
       if (!defaultBases.has(repoId)) {
         defaultBases.set(
           repoId,
-          this.getDefaultBaseBranch(repo).catch((error: unknown) => {
+          this.git.getDefaultBaseBranch(repo).catch((error: unknown) => {
             console.error('[missions] could not resolve the default base branch:', error)
             return null
           })
         )
       }
-      if ((await defaultBases.get(repoId)) === normalizeHostedReviewBaseRef(merge.baseBranch)) {
-        emitMissionEvent(this.listener, event)
+      if ((await defaultBases.get(repoId)) !== normalizeHostedReviewBaseRef(merge.baseBranch)) {
+        continue
       }
+      const taskIds = viaMissionBranch
+        ? await this.getTaskIdsContainedIn(repo, event, merge.headSha)
+        : event.taskIds
+      emitMissionEvent(this.listener, { ...event, taskIds })
     }
+  }
+
+  // Why: a mission-branch merge carries only the layers already merged into it; unproven ones stay put.
+  private async getTaskIdsContainedIn(
+    repo: Repo,
+    event: MissionEvent,
+    headSha: string | undefined
+  ): Promise<string[]> {
+    const mission = this.store.getMission(event.missionId)
+    if (!headSha || !mission) {
+      return []
+    }
+    const contained = await Promise.all(
+      event.taskIds.map(async (taskId) => {
+        const branch = mission.tasks?.find((task) => task.id === taskId)?.branchName
+        if (!branch) {
+          return false
+        }
+        return this.git.isBranchContainedIn(repo, branch, headSha).catch((error: unknown) => {
+          console.error('[missions] could not verify a merged layer:', error)
+          return false
+        })
+      })
+    )
+    return event.taskIds.filter((_taskId, index) => contained[index])
   }
 }
