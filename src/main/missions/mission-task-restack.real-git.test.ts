@@ -317,6 +317,28 @@ describe('MissionTaskRestack', () => {
     ])
   })
 
+  it('keeps the pending base and blocks the layer when git cannot verify its ancestry', async () => {
+    const { mission, paths, bases, deps } = await createStack()
+    await amendTask1(paths)
+    // Why: an object git cannot read makes `merge-base --is-ancestor` fail with an error, not "no".
+    const unreadable = 'f'.repeat(40)
+    mission.tasks![1].pendingParentBaseSha = unreadable
+    const before = { t2: tipOf(paths.t2), t3: tipOf(paths.t3), preview: tipOf(paths.preview) }
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(layerOf(report, 'task:t2')).toEqual({
+      slot: 'task:t2',
+      state: 'blocked',
+      reason: 'Could not verify ancestry'
+    })
+    expect(mission.tasks![1].pendingParentBaseSha).toBe(unreadable)
+    expect({ t2: tipOf(paths.t2), t3: tipOf(paths.t3), preview: tipOf(paths.preview) }).toEqual(
+      before
+    )
+    expect(bases.size).toBe(0)
+  })
+
   it('keeps every layer commit when the parent once pointed into the layer history', async () => {
     const { mission, paths, deps } = await createStack()
     const originalT1 = tipOf(paths.t1)
