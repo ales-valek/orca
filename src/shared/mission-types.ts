@@ -13,6 +13,36 @@ export type MissionMember = {
   addedAt: number
 }
 
+/** One layer of a repo's task stack, stacked above the mission branch. */
+export type MissionTask = {
+  id: string
+  repoId: string
+  /** Position in the repo's stack; 1 = directly above the mission branch. */
+  order: number
+  title: string
+  branchName: string
+  worktreeId: string | null
+  worktreeInstanceId?: string | null
+  /** Parent tip this layer was last rebased onto; `rebase --onto` needs it
+   *  after the parent was rewritten (autosquash). */
+  parentBaseSha: string | null
+  /** Slot for an external tracker key (e.g. `OMP-951`); display only for now. */
+  externalRef?: string | null
+  externalId?: string | null
+  lastError?: string | null
+  addedAt: number
+}
+
+/** Single-purpose worktree of a mission repo (preview or orchestrator). */
+export type MissionSlotWorktree = {
+  repoId: string
+  worktreeId: string | null
+  worktreeInstanceId?: string | null
+  lastError?: string | null
+}
+
+export type MissionSlot = 'member' | 'preview' | 'orchestrator' | `task:${string}`
+
 export type Mission = {
   id: string
   name: string
@@ -20,6 +50,13 @@ export type Mission = {
    *  Immutable after creation (renaming a branch across N repos is unsafe). */
   branchName: string
   members: MissionMember[]
+  /** Task layers stacked above the mission branch, per member repo. */
+  tasks?: MissionTask[]
+  /** Per-repo worktree on the preview branch, above the top task layer. */
+  previews?: MissionSlotWorktree[]
+  /** Repo the root orchestrator runs from; never also a member. */
+  orchestratorRepoId?: string | null
+  orchestrator?: MissionSlotWorktree | null
   tabOrder: number
   /** Physical mission root holding direct-child worktrees for local members.
    *  Legacy out-of-root members retain a compatibility link. Resolved lazily

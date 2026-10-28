@@ -1,4 +1,5 @@
 import type { Mission, MissionMember } from './mission-types'
+import { normalizeMissionStackFields } from './mission-task-normalization'
 import { createNonSecureContextUuid } from './non-secure-context-uuid'
 import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from './execution-host'
 import { isValidGitBranchName } from './git-branch-name'
@@ -19,7 +20,7 @@ export function normalizeMissionName(name: string, fallback = 'Untitled mission'
 /** Shared slug chain for the mission branch and root directory. Restricted to
  *  a conservative charset; `..` runs and trailing `.lock` are stripped because
  *  git check-ref-format rejects both anywhere in a ref component. */
-function slugifyMissionText(name: string): string {
+export function slugifyMissionText(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')
@@ -127,6 +128,7 @@ export function createMission(input: {
   repoIds: readonly string[]
   tabOrder: number
   sessionAgent?: Mission['sessionAgent']
+  orchestratorRepoId?: string | null
   now?: number
 }): Mission {
   const now = input.now ?? Date.now()
@@ -147,11 +149,16 @@ export function createMission(input: {
       addedAt: now
     })
   }
+  const orchestratorRepoId = input.orchestratorRepoId || null
+  if (orchestratorRepoId && seen.has(orchestratorRepoId)) {
+    throw new Error('mission_orchestrator_repo_is_member')
+  }
   return {
     id,
     name,
     branchName: normalizeMissionBranchName(input.branchName, name, id),
     members,
+    ...(orchestratorRepoId ? { orchestratorRepoId } : {}),
     tabOrder: input.tabOrder,
     ...(input.sessionAgent ? { sessionAgent: input.sessionAgent } : {}),
     createdAt: now,
@@ -214,6 +221,8 @@ export function normalizeMissions(value: unknown): Mission[] {
     seen.add(raw.id)
     const now = Date.now()
     const name = normalizeMissionName(typeof raw.name === 'string' ? raw.name : '')
+    const members = normalizeMissionMembers(raw.members, now)
+    const memberRepoIds = new Set(members.map((member) => member.repoId))
     missions.push({
       id: raw.id,
       name,
@@ -221,7 +230,8 @@ export function normalizeMissions(value: unknown): Mission[] {
         typeof raw.branchName === 'string' && raw.branchName.trim().length > 0
           ? raw.branchName
           : slugifyMissionBranch(name, raw.id),
-      members: normalizeMissionMembers(raw.members, now),
+      members,
+      ...normalizeMissionStackFields(raw, memberRepoIds, now),
       tabOrder:
         typeof raw.tabOrder === 'number' && Number.isFinite(raw.tabOrder) ? raw.tabOrder : 0,
       rootPath: typeof raw.rootPath === 'string' && raw.rootPath.length > 0 ? raw.rootPath : null,
@@ -245,7 +255,8 @@ export function normalizeMissions(value: unknown): Mission[] {
   return missions
 }
 
-/** Hydrate-time sanitization: drop members whose repo was removed from Orca.
+/** Hydrate-time sanitization: drop members, task layers and previews whose repo
+ *  was removed from Orca, and clear an orchestrator repo that disappeared.
  *  Dangling worktreeIds are intentionally kept — the renderer resolves them
  *  against live worktrees and degrades to a "recreate" row. */
 export function clearMissingMissionMembers(
@@ -256,11 +267,26 @@ export function clearMissingMissionMembers(
   let changed = false
   const next = missions.map((mission) => {
     const members = mission.members.filter((member) => repoIds.has(member.repoId))
-    if (members.length === mission.members.length) {
+    const tasks = mission.tasks?.filter((task) => repoIds.has(task.repoId))
+    const previews = mission.previews?.filter((preview) => repoIds.has(preview.repoId))
+    const orchestratorGone =
+      mission.orchestratorRepoId != null && !repoIds.has(mission.orchestratorRepoId)
+    if (
+      members.length === mission.members.length &&
+      tasks?.length === mission.tasks?.length &&
+      previews?.length === mission.previews?.length &&
+      !orchestratorGone
+    ) {
       return mission
     }
     changed = true
-    return { ...mission, members }
+    return {
+      ...mission,
+      members,
+      ...(tasks ? { tasks } : {}),
+      ...(previews ? { previews } : {}),
+      ...(orchestratorGone ? { orchestratorRepoId: null, orchestrator: null } : {})
+    }
   })
   return { missions: changed ? next : (missions as Mission[]), changed }
 }
