@@ -37,18 +37,26 @@ function toErrorMessage(error: unknown): string {
 
 type MissionSetupHookRunner = (mission: Mission, event: MissionSetupHookEvent) => Promise<void>
 
+export type MissionOperationsOptions = {
+  runSetupHook?: MissionSetupHookRunner
+  /** Restack never touches a layer whose agent is mid-turn; absent means no agent is ever busy. */
+  isWorktreeAgentWorking?: (worktreeId: string) => boolean
+}
+
 /** Mission mutations shared by the desktop IPC handlers and the runtime RPC (`orca mission`). */
 export class MissionOperations {
   readonly memberLifecycle: MissionMemberLifecycle
   private readonly tasks: MissionTaskOperations
+  private readonly runSetupHook: MissionSetupHookRunner
 
   constructor(
     private readonly store: Store,
     runtime: OrcaRuntimeService,
     private readonly notifyChanged: () => void,
-    private readonly runSetupHook: MissionSetupHookRunner = runMissionSetupHook,
-    isWorktreeAgentWorking: (worktreeId: string) => boolean = () => false
+    options: MissionOperationsOptions = {}
   ) {
+    this.runSetupHook = options.runSetupHook ?? runMissionSetupHook
+    const isWorktreeAgentWorking = options.isWorktreeAgentWorking ?? (() => false)
     this.memberLifecycle = new MissionMemberLifecycle(store, runtime)
     this.tasks = new MissionTaskOperations(
       store,
