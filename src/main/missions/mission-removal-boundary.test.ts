@@ -109,4 +109,101 @@ describe('Mission worktree removal boundary', () => {
       'mission_member_worktree_ownership_unverified'
     )
   })
+
+  describe('non-member slots', () => {
+    const taskMission = (): Mission => ({
+      ...mission(),
+      rootBasePath: '/workspaces/missions',
+      rootPath: '/workspaces/missions/cross-repo-task',
+      tasks: [
+        {
+          id: 't1',
+          repoId: 'repo-1',
+          order: 1,
+          title: 'Task',
+          branchName: 'mission-task/cross-repo-task/t1',
+          worktreeId: null,
+          parentBaseSha: null,
+          addedAt: 1
+        }
+      ]
+    })
+
+    function intentFor(slot: string) {
+      return {
+        version: 1,
+        missionId: 'mission-1',
+        repoId: 'repo-1',
+        branchName: 'branch',
+        worktreePath: target.worktreePath,
+        worktreeInstanceId: 'instance-1',
+        preserveBranchOnDelete: false,
+        slot
+      }
+    }
+
+    it.each(['task:t1', 'preview'])(
+      'blocks generic removal during the %s intent-only crash window',
+      (slot) => {
+        readCreateIntent.mockImplementation((_root, _repoId, requested?: string) =>
+          requested === slot ? intentFor(slot) : null
+        )
+        const store = { getMissions: () => [taskMission()], getWorktreeMeta: () => undefined }
+
+        expect(() => assertWorktreeIsNotMissionManaged(store, worktreeId, target)).toThrow(
+          'mission_member_managed_by_mission'
+        )
+      }
+    )
+
+    it('blocks generic removal of an orchestrator checkout in its intent window', () => {
+      readCreateIntent.mockImplementation((_root, repoId: string, requested?: string) =>
+        repoId === 'repo-1' && requested === 'orchestrator' ? intentFor('orchestrator') : null
+      )
+      const orchestrated: Mission = { ...taskMission(), members: [], tasks: [] }
+      orchestrated.orchestratorRepoId = 'repo-1'
+      const store = { getMissions: () => [orchestrated], getWorktreeMeta: () => undefined }
+
+      expect(() => assertWorktreeIsNotMissionManaged(store, worktreeId, target)).toThrow(
+        'mission_member_managed_by_mission'
+      )
+    })
+
+    it.each([
+      ['task', { missionSlot: 'task:t1' }, taskMission],
+      [
+        'orchestrator',
+        { missionSlot: 'orchestrator' },
+        () => ({
+          ...taskMission(),
+          members: [],
+          tasks: [],
+          orchestratorRepoId: 'repo-1'
+        })
+      ]
+    ])('blocks generic removal of a live %s marker', (_kind, slotStamp, makeMission) => {
+      readOwnershipMarker.mockReturnValue({
+        missionId: 'mission-1',
+        repoId: 'repo-1',
+        worktreeId,
+        worktreeInstanceId: 'instance-1',
+        ...slotStamp
+      })
+      const store = { getMissions: () => [makeMission()], getWorktreeMeta: () => undefined }
+
+      expect(() => assertWorktreeIsNotMissionManaged(store, worktreeId, target)).toThrow(
+        'mission_member_managed_by_mission'
+      )
+    })
+
+    it('blocks generic removal of a worktree a task record points at', () => {
+      const pointed = taskMission()
+      pointed.tasks![0].worktreeId = worktreeId
+      const store = { getMissions: () => [pointed], getWorktreeMeta: () => undefined }
+
+      expect(() => assertWorktreeIsNotMissionManaged(store, worktreeId)).toThrow(
+        'mission_member_managed_by_mission'
+      )
+    })
+  })
 })
