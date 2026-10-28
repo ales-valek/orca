@@ -189,6 +189,22 @@ describe('HulyStatusWriteBack', () => {
     expect(notifyChanged).toHaveBeenCalled()
   })
 
+  it('keeps a layer error on the task and only reports the Huly warning', async () => {
+    const mission = createMission()
+    mission.tasks![0].lastError = 'mission_task_worktree_missing'
+    const { api, store, writeBack } = setup({ statusWriteBack: true, mission })
+    vi.spyOn(api, 'setIssueStatus').mockRejectedValue(new Error('status not allowed'))
+
+    const result = await writeBack.handle({
+      kind: 'layer-created',
+      missionId: 'm1',
+      taskIds: ['t1']
+    })
+
+    expect(result.warnings).toEqual(['Huly: status not allowed'])
+    expect(store.setMissionSlotError).not.toHaveBeenCalled()
+  })
+
   it('clears its own earlier warning after a successful write', async () => {
     const mission = createMission()
     mission.tasks![0].lastError = 'Huly: huly_auth_required'

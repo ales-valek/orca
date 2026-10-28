@@ -35,6 +35,11 @@ async function getDefaultBaseBranch(repo: Repo, remote: string): Promise<string>
   return normalizeHostedReviewBaseRef(withoutRemote)
 }
 
+/** The repo's default PR base without a remote prefix (e.g. `main`), as stack PRs resolve it. */
+export async function resolveLocalMissionDefaultBaseBranch(repo: Repo): Promise<string> {
+  return getDefaultBaseBranch(repo, await getDefaultRemote(repo.path))
+}
+
 /** Real git and GitHub wiring; `memberPath` is the mission branch checkout, shared refs serve every layer. */
 export async function createLocalMissionStackPullRequestDeps(
   repo: Repo,
