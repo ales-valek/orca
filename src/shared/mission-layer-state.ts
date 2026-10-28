@@ -21,6 +21,8 @@ export type MissionLayerStateInput = {
   localTip: string | null
   pushedTip: string | null
   hasOpenPr: boolean
+  /** The local tip is an ancestor of the pushed tip: the remote gained commits, nothing local is unpushed. */
+  isLocalBehindPushed?: boolean
 }
 
 export type MissionRestackLayer = {
@@ -51,21 +53,27 @@ export function deriveMissionLayerState(input: MissionLayerStateInput): MissionL
 }
 
 /** Local and last pushed tip of a layer branch; a null pushed tip means it was never pushed. */
-export type MissionLayerPushTips = { localTip: string | null; pushedTip: string | null }
+export type MissionLayerPushTips = {
+  localTip: string | null
+  pushedTip: string | null
+  isLocalBehindPushed?: boolean
+}
 
-/** The single needs-push rule: a published layer whose local tip moved since its last push. */
-export function isMissionLayerPushPending(
-  input: Pick<MissionLayerStateInput, 'hasOpenPr' | 'localTip' | 'pushedTip'>
-): boolean {
-  return input.hasOpenPr && input.localTip !== input.pushedTip
+type MissionLayerPushInput = Pick<
+  MissionLayerStateInput,
+  'hasOpenPr' | 'localTip' | 'pushedTip' | 'isLocalBehindPushed'
+>
+
+/** The single needs-push rule: a published layer whose local tip moved since its last push.
+ *  A local tip the remote already contains never needs a push; pushing it would drop remote commits. */
+export function isMissionLayerPushPending(input: MissionLayerPushInput): boolean {
+  return input.hasOpenPr && input.localTip !== input.pushedTip && input.isLocalBehindPushed !== true
 }
 
 /** Push inputs read from git alone.
  *  ponytail: a remote-tracking ref stands in for "has an open PR"; a branch pushed without a PR is
  *  also treated as published, and a stale ref hides a PR closed elsewhere. Needs a PR lookup to be exact. */
-export function getMissionLayerPushInput(
-  tips: MissionLayerPushTips
-): Pick<MissionLayerStateInput, 'hasOpenPr' | 'localTip' | 'pushedTip'> {
+export function getMissionLayerPushInput(tips: MissionLayerPushTips): MissionLayerPushInput {
   return { ...tips, hasOpenPr: tips.pushedTip !== null }
 }
 

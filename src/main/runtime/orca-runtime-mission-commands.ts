@@ -77,24 +77,20 @@ export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMiss
     return { mission: await this.toInspectedMissionRecord(mission) }
   }
 
-  /** Adds layer states from git; a repo whose inspection fails keeps its layers without state. */
+  /** Adds layer states from git with the sidebar's needs-push rule; a repo whose inspection fails keeps its layers without state. */
   private async toInspectedMissionRecord(mission: Mission): Promise<RuntimeMissionRecord> {
-    const operations = this.requireMissionOperations()
+    const reports = await this.requireMissionOperations().inspectStacks(mission)
     const record = toRuntimeMissionRecord(this.requireStore(), mission)
     for (const stack of record.stacks ?? []) {
-      try {
-        const report = await operations.inspectRepo(mission, stack.repoId)
-        for (const layer of stack.layers) {
-          const inspected = report.layers.find((entry) => entry.slot === layer.slot)
-          if (inspected) {
-            layer.state = inspected.state
-            if (inspected.reason) {
-              layer.reason = inspected.reason
-            }
+      const report = reports.find((entry) => entry.repoId === stack.repoId)
+      for (const layer of stack.layers) {
+        const inspected = report?.layers.find((entry) => entry.slot === layer.slot)
+        if (inspected) {
+          layer.state = inspected.state
+          if (inspected.reason) {
+            layer.reason = inspected.reason
           }
         }
-      } catch (error) {
-        console.error('[missions] layer inspection failed:', error)
       }
     }
     return record

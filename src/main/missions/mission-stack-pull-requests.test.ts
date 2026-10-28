@@ -74,6 +74,14 @@ function createDeps(overrides: Partial<MissionStackPullRequestDeps> = {}) {
     getProvider: async () => 'github',
     getCommitsAheadCount: vi.fn(async () => 1),
     pushBranch: vi.fn(async () => undefined),
+    inspectStack: vi.fn(async () => ({
+      repoId: 'r1',
+      layers: [
+        { slot: 'member' as const, state: 'current' as const },
+        { slot: 'task:t1' as const, state: 'needs-push' as const },
+        { slot: 'task:t2' as const, state: 'current' as const }
+      ]
+    })),
     ...overrides
   }
   return { deps, calls }
@@ -198,9 +206,43 @@ describe('createMissionStackPullRequests', () => {
     expect(deps.pushBranch).not.toHaveBeenCalled()
   })
 
+  it('refuses before the first push while a task layer is not current, listing the layers', async () => {
+    const { deps } = createDeps({
+      inspectStack: vi.fn(async () => ({
+        repoId: 'r1',
+        layers: [
+          { slot: 'member' as const, state: 'current' as const },
+          { slot: 'task:t1' as const, state: 'stale' as const }
+        ]
+      }))
+    })
+
+    const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
+
+    expect(result.error).toBe(
+      'mission_stack_not_current: mission-task/referral/omp-1 (stale), mission-task/referral/second (unknown)'
+    )
+    expect(deps.pushBranch).not.toHaveBeenCalled()
+    expect(deps.createHostedReview).not.toHaveBeenCalled()
+  })
+
+  it('keeps the raw message when the remote itself rejects the push', async () => {
+    const message =
+      ' ! [remote rejected] mission/referral -> mission/referral (protected branch hook declined)'
+    const { deps } = createDeps({
+      pushBranch: vi.fn().mockRejectedValueOnce(new Error(message))
+    })
+
+    const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
+
+    expect(result.error).toBe(`mission/referral: ${message}`)
+  })
+
   it('reports a push failure and creates nothing further', async () => {
     const { deps } = createDeps({
-      pushBranch: vi.fn().mockRejectedValueOnce(new Error('rejected'))
+      pushBranch: vi
+        .fn()
+        .mockRejectedValueOnce(new Error(' ! [rejected] mission/referral (fetch first)'))
     })
 
     const result = await createMissionStackPullRequests({ mission, repoId: 'r1' }, deps)
@@ -233,7 +275,8 @@ describe('pushMissionStack', () => {
     return {
       getBranchTip: vi.fn(async (_path: string, branch: string) => localTips[branch] ?? null),
       getRemoteTrackingTip: vi.fn(async (branch: string) => remoteTips[branch] ?? null),
-      pushBranch: vi.fn(async () => undefined)
+      pushBranch: vi.fn(async () => undefined),
+      getCommitAncestry: vi.fn(async () => false)
     }
   }
 
@@ -249,6 +292,22 @@ describe('pushMissionStack', () => {
     expect(result).toEqual({ pushed: ['mission-task/referral/omp-1'] })
     expect(deps.pushBranch).toHaveBeenCalledTimes(1)
     expect(deps.pushBranch).toHaveBeenCalledWith('mission-task/referral/omp-1', oldTip)
+  })
+
+  it('never pushes a layer whose remote branch is ahead of the local one', async () => {
+    const remoteAhead = 'r'.repeat(40)
+    const deps = pushDeps({
+      'mission/referral': missionTip,
+      'mission-task/referral/omp-1': remoteAhead
+    })
+    vi.mocked(deps.getCommitAncestry).mockImplementation(
+      async (ancestor, descendant) => ancestor === t1Tip && descendant === remoteAhead
+    )
+
+    const result = await pushMissionStack({ mission: stackWithBases, repoId: 'r1' }, deps)
+
+    expect(result).toEqual({ pushed: [] })
+    expect(deps.pushBranch).not.toHaveBeenCalled()
   })
 
   it('stops at the first push failure', async () => {

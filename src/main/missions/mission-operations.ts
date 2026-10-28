@@ -31,6 +31,12 @@ import {
   type MissionRestackInput
 } from './mission-task-operations'
 import { MissionTaskAbsorb, type MissionAbsorbResult } from './mission-task-absorb'
+import {
+  inspectMissionRepoStack,
+  inspectMissionStacks,
+  type MissionStackInspectionDeps
+} from './mission-stack-inspection'
+import { readLocalMissionPushTips } from './mission-stack-pull-request-git'
 import { MissionStackPublisher } from './mission-stack-publisher'
 import type { MissionStackPullRequestsResult } from './mission-stack-pull-requests'
 import { MissionRestackTrigger } from './mission-restack-trigger'
@@ -62,6 +68,7 @@ export class MissionOperations {
   private readonly absorber: MissionTaskAbsorb
   /** Read-only layer states of a repo's stack; takes no lock and writes nothing. */
   readonly inspectRepo: MissionTaskRestack['inspectRepo']
+  private readonly stackInspection: MissionStackInspectionDeps
   private readonly restackTrigger: MissionRestackTrigger
   private readonly deletion: MissionDeletion
   private readonly publisher: MissionStackPublisher
@@ -84,7 +91,19 @@ export class MissionOperations {
       restacker: restacker,
       isWorktreeAgentWorking
     })
-    this.publisher = new MissionStackPublisher(store, this.memberLifecycle)
+    this.stackInspection = {
+      inspectRepo: this.inspectRepo,
+      readPushTips: async (repoId, branches) => {
+        const repo = store.getRepo(repoId)
+        if (!repo) {
+          throw new Error('mission_member_not_found')
+        }
+        return readLocalMissionPushTips(repo, branches)
+      }
+    }
+    this.publisher = new MissionStackPublisher(store, this.memberLifecycle, (mission, repoId) =>
+      inspectMissionRepoStack(mission, repoId, this.stackInspection)
+    )
     this.restackTrigger = new MissionRestackTrigger({
       store,
       restack: (input) => this.restack(input)
@@ -212,6 +231,11 @@ export class MissionOperations {
       }
       return { mission: updated, memberResults }
     })
+  }
+
+  /** Read-only layer states of every repo stack, needs-push included; shared by IPC and `orca mission show`. */
+  inspectStacks(mission: Mission): Promise<MissionRestackReport[]> {
+    return inspectMissionStacks(mission, this.stackInspection)
   }
 
   addTask(args: MissionAddTaskInput): Promise<MissionTaskResult> {
