@@ -41,6 +41,7 @@ import {
   installIndependentCheckFixtures,
   resetGraphQLRateLimitGuardMocks
 } from './client-test-harness'
+import { setMissionPullRequestMergedListener } from '../missions/mission-stack-merge-notification'
 
 const { acquireMock, releaseMock } = clientMocks
 
@@ -54,10 +55,50 @@ describe('GitHub GraphQL rate-limit guard', () => {
     installIndependentCheckFixtures(clientMocks, metadataRequests, unexpectedChecks)
   })
 
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    setMissionPullRequestMergedListener(null)
+  })
 
   const validStackHeadSha = 'a'.repeat(40)
   const validStackBaseSha = 'b'.repeat(40)
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
+    // Why: an enqueued stack is not merged yet.
+    expect(merged).not.toHaveBeenCalled()
+
+  it('tells Missions which layers a direct stack merge merged', async () => {
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
+    ghExecFileAsyncMock
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          number: 202,
+          state: 'open',
+          head: { ref: 'stack/api', sha: validStackHeadSha },
+          base: { ref: 'stack/models', sha: 'models-sha' },
+          stack: { number: 51, position: 2, size: 3, base: { ref: 'main', sha: validStackBaseSha } }
+        })
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({ data: { repository: { mergeQueue: null } } })
+      })
+      .mockResolvedValueOnce({ stdout: JSON.stringify({ status: 'merged' }) })
+
+    await expect(
+      mergePR('/repo-root', 202, 'squash', undefined, {
+        owner: 'stablyai',
+        repo: 'orca',
+        host: 'github.com'
+      })
+    ).resolves.toEqual({ ok: true })
+
+    expect(merged).toHaveBeenCalledExactlyOnceWith({
+      repoPath: '/repo-root',
+      headBranch: 'stack/api',
+      mergedCount: 2
+    })
+  })
 
   it('never falls back to legacy merge after an async stack merge transport failure', async () => {
     metadataRequests
@@ -433,4 +474,11 @@ describe('GitHub GraphQL rate-limit guard', () => {
       )
     expect.soft(consoleWarnSpy).toHaveBeenCalledTimes(1)
   })
+    const merged = vi.fn()
+    setMissionPullRequestMergedListener(merged)
+    expect(merged).toHaveBeenCalledExactlyOnceWith({
+      repoPath: '/repo-root',
+      headBranch: 'sta-3924-stack-merge-fail-closed',
+      mergedCount: 1
+    })
 })

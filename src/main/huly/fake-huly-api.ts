@@ -20,6 +20,8 @@ export class FakeHulyApi implements HulyApi {
     { name: 'Done', category: 'Won' },
     { name: 'Canceled', category: 'Lost' }
   ]
+  /** Current status per issue identifier; falls back to the milestone issues. */
+  issueStatuses = new Map<string, HulyStatus>()
   statusWrites: { project: string; identifier: string; statusName: string }[] = []
   /** Every call rejects like the package does for a revoked or invalid token. */
   failWithAuth = false
@@ -59,9 +61,27 @@ export class FakeHulyApi implements HulyApi {
     return this.statuses
   }
 
+  async getIssueStatus(project: string, identifier: string): Promise<HulyStatus> {
+    this.assertAuthorized()
+    const status =
+      this.issueStatuses.get(identifier) ??
+      [...this.issuesByMilestone.values()].flat().find((issue) => issue.identifier === identifier)
+        ?.status
+    if (!status) {
+      throw new Error(`Huly issue ${identifier} not found in ${project}`)
+    }
+    return status
+  }
+
   async setIssueStatus(project: string, identifier: string, statusName: string): Promise<void> {
     this.assertAuthorized()
     this.statusWrites.push({ project, identifier, statusName })
+    const status = this.statuses.find(
+      (candidate) => candidate.name.toLocaleLowerCase() === statusName.toLocaleLowerCase()
+    )
+    if (status) {
+      this.issueStatuses.set(identifier, status)
+    }
   }
 
   async close(): Promise<void> {

@@ -160,6 +160,18 @@ describe('createHulyApi', () => {
     ])
   })
 
+  it('reads the current status of one issue', async () => {
+    const api = await createHulyApi({ serverUrl: 'https://huly.test', workspace: 'acme' }, 'token')
+
+    await expect(api.getIssueStatus('OMP', 'OMP-2')).resolves.toEqual({
+      name: 'CODE REVIEW',
+      category: 'Active'
+    })
+    await expect(api.getIssueStatus('OMP', 'OMP-404')).rejects.toThrow(
+      'Huly issue OMP-404 not found in OMP'
+    )
+  })
+
   it('sets an issue status by its case-insensitive name', async () => {
     const api = await createHulyApi({ serverUrl: 'https://huly.test', workspace: 'acme' }, 'token')
 
