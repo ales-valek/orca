@@ -90,23 +90,6 @@ export async function isAncestorCommit(
   )
 }
 
-/** Newest former tip of `parentBranch` (from its reflog) that HEAD is built on, or null. */
-export async function getForkPoint(
-  worktreePath: string,
-  parentBranch: string,
-  options: GitRuntimeOptions = {}
-): Promise<string | null> {
-  try {
-    const { stdout } = await gitExecFileAsync(
-      ['merge-base', '--fork-point', `refs/heads/${parentBranch}`, 'HEAD'],
-      gitReadOptionsForWorktree(worktreePath, options)
-    )
-    return stdout.trim() || null
-  } catch {
-    return null
-  }
-}
-
 /** Read-only facts restack needs before it may touch a layer checkout. */
 export async function readLayerWorktree(
   worktreePath: string,

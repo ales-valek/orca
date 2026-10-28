@@ -308,7 +308,7 @@ describe('MissionOperations task layers', () => {
   })
 
   it('stacks a second task on the first and moves the existing preview onto it', async () => {
-    const { runtime, operations } = seed()
+    const { store, runtime, operations } = seed()
     const branchByDir: Record<string, string> = {
       [taskDir]: 'mission-task/referral/omp-1',
       [path.join(referralRootPath, 'repo-one-r1--omp-2')]: 'mission-task/referral/omp-2',
@@ -330,6 +330,7 @@ describe('MissionOperations task layers', () => {
     await addOmp(operations)
     runtime.createManagedWorktree.mockClear()
     expect(stackLayerGit.resetPreviewKeep).not.toHaveBeenCalled()
+    expect(store.getMission('m1')!.previews![0].followedSha).toBe('mission-task/referral/omp-1-tip')
 
     const result = await addOmp(operations, 'OMP-2')
 
@@ -345,6 +346,7 @@ describe('MissionOperations task layers', () => {
       previewDir,
       'mission-task/referral/omp-2-tip'
     )
+    expect(store.getMission('m1')!.previews![0].followedSha).toBe('mission-task/referral/omp-2-tip')
   })
 
   it('refuses a task while the member worktree is missing', async () => {

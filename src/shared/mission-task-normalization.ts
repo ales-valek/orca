@@ -15,6 +15,7 @@ function normalizeMissionSlotWorktree(value: unknown): MissionSlotWorktree | nul
     return null
   }
   const worktreeId = normalizeOptionalString(raw.worktreeId)
+  const followedSha = normalizeOptionalString(raw.followedSha)
   return {
     repoId: raw.repoId,
     worktreeId,
@@ -23,7 +24,8 @@ function normalizeMissionSlotWorktree(value: unknown): MissionSlotWorktree | nul
     lastError:
       typeof raw.lastError === 'string' && raw.lastError.trim().length > 0
         ? raw.lastError.trim()
-        : null
+        : null,
+    ...(followedSha ? { followedSha } : {})
   }
 }
 
@@ -80,6 +82,7 @@ function normalizeMissionTasks(
     }
     seen.add(raw.id)
     const worktreeId = normalizeOptionalString(raw.worktreeId)
+    const pendingParentBaseSha = normalizeOptionalString(raw.pendingParentBaseSha)
     tasks.push({
       id: raw.id,
       repoId: raw.repoId,
@@ -89,6 +92,7 @@ function normalizeMissionTasks(
       worktreeId,
       worktreeInstanceId: worktreeId ? normalizeOptionalString(raw.worktreeInstanceId) : null,
       parentBaseSha: normalizeOptionalString(raw.parentBaseSha),
+      ...(pendingParentBaseSha ? { pendingParentBaseSha } : {}),
       externalRef: normalizeOptionalString(raw.externalRef),
       externalId: normalizeOptionalString(raw.externalId),
       lastError:

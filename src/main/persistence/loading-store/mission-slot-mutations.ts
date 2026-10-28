@@ -4,6 +4,7 @@ type SlotEntry = {
   worktreeId: string | null
   worktreeInstanceId?: string | null
   lastError?: string | null
+  followedSha?: string | null
 }
 
 function ensureSingleSlot(mission: Mission, repoId: string, slot: 'preview' | 'orchestrator') {
@@ -61,6 +62,10 @@ export function applyMissionSlotWorktree(
   const entry = resolveSlotEntry(mission, repoId, slot)
   if (!entry) {
     return false
+  }
+  if ('followedSha' in entry && entry.worktreeId !== worktreeId) {
+    // Why: a different preview checkout never followed the recorded tip.
+    entry.followedSha = null
   }
   entry.worktreeId = worktreeId
   entry.worktreeInstanceId = worktreeInstanceId

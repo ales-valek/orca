@@ -28,6 +28,7 @@ async function commitFile(cwd: string, file: string, content: string, message: s
 }
 
 type StackFixture = {
+  root: string
   mission: Mission
   paths: Record<'member' | 't1' | 't2' | 't3' | 'preview', string>
   bases: Map<string, string>
@@ -85,7 +86,8 @@ async function createStack(): Promise<StackFixture> {
     branchName: MISSION_BRANCH,
     members: [{ repoId: 'r1', worktreeId: `r1::${member}`, addedAt: 0 }],
     tasks,
-    previews: [{ repoId: 'r1', worktreeId: `r1::${paths.preview}` }],
+    // Why: preview creation records the top-task tip it started from.
+    previews: [{ repoId: 'r1', worktreeId: `r1::${paths.preview}`, followedSha: parentTip }],
     tabOrder: 0,
     createdAt: 0,
     updatedAt: 0
@@ -103,11 +105,25 @@ async function createStack(): Promise<StackFixture> {
         }
         return mission
       },
+      setMissionTaskPendingParentBaseSha: (_missionId, taskId, sha) => {
+        const task = mission.tasks?.find((entry) => entry.id === taskId)
+        if (task) {
+          task.pendingParentBaseSha = sha
+        }
+        return mission
+      },
+      setMissionPreviewFollowedSha: (_missionId, repoId, sha) => {
+        const preview = mission.previews?.find((entry) => entry.repoId === repoId)
+        if (preview) {
+          preview.followedSha = sha
+        }
+        return mission
+      },
       flushPendingOrThrowAsync: async () => {}
     },
     isWorktreeAgentWorking: () => false
   }
-  return { mission, paths, bases, deps }
+  return { root, mission, paths, bases, deps }
 }
 
 function tipOf(cwd: string): string {
@@ -252,9 +268,14 @@ describe('MissionTaskRestack', () => {
   })
 
   it('replays only the layer commits after a resolved conflict when the parent is amended again', async () => {
-    const { mission, paths, deps } = await createConflictingStack()
+    const { root, mission, paths, deps } = await createConflictingStack()
+    // Why: the pending base must carry the resolved conflict, not branch reflogs.
+    git(root, ['config', 'core.logAllRefUpdates', 'false'])
+    await rm(path.join(root, '.git', 'logs'), { recursive: true, force: true })
     const restack = new MissionTaskRestack(deps)
     expect(statesOf(await restack.restackRepo(mission, 'r1'))['task:t2']).toBe('conflict')
+    const conflictTarget = tipOf(paths.t1)
+    expect(mission.tasks![1].pendingParentBaseSha).toBe(conflictTarget)
     await writeFile(path.join(paths.t2, 'shared.txt'), 'from t1\nfrom t2\n', 'utf8')
     git(paths.t2, ['add', 'shared.txt'])
     git(paths.t2, ['-c', 'core.editor=true', 'rebase', '--continue'])
@@ -272,6 +293,45 @@ describe('MissionTaskRestack', () => {
     ])
     expect(git(paths.t2, ['ls-files', 'old-only.txt'])).toBe('')
     expect(mission.tasks![1].parentBaseSha).toBe(amendedT1)
+    expect(mission.tasks![1].pendingParentBaseSha).toBeNull()
+  })
+
+  it('drops the pending base after an aborted rebase and restacks from the recorded one', async () => {
+    const { mission, paths, deps } = await createConflictingStack()
+    const restack = new MissionTaskRestack(deps)
+    const recordedBase = mission.tasks![1].parentBaseSha
+    expect(statesOf(await restack.restackRepo(mission, 'r1'))['task:t2']).toBe('conflict')
+    git(paths.t2, ['rebase', '--abort'])
+    // Why: the conflicting parent commit goes away, so the retry can succeed.
+    git(paths.t1, ['reset', '-q', '--hard', 'HEAD~1'])
+    const newT1 = await commitFile(paths.t1, 'other.txt', 'other\n', 't1 other')
+
+    const report = await restack.restackRepo(mission, 'r1')
+
+    expect(recordedBase).not.toBe(newT1)
+    expect(statesOf(report)['task:t2']).toBe('current')
+    expect(mission.tasks![1]).toMatchObject({ parentBaseSha: newT1, pendingParentBaseSha: null })
+    expect(git(paths.t2, ['log', '--format=%s', `${newT1}..HEAD`]).split('\n')).toEqual([
+      't2 shared',
+      't2'
+    ])
+  })
+
+  it('keeps every layer commit when the parent once pointed into the layer history', async () => {
+    const { mission, paths, deps } = await createStack()
+    const originalT1 = tipOf(paths.t1)
+    const layerTip = await commitFile(paths.t2, 'b.txt', 'b\n', 't2 b')
+    git(paths.t1, ['merge', '-q', '--ff-only', layerTip])
+    git(paths.t1, ['reset', '-q', '--hard', originalT1])
+    const newT1 = await commitFile(paths.t1, 'c.txt', 'c\n', 't1 c')
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(statesOf(report)['task:t2']).toBe('current')
+    expect(git(paths.t2, ['log', '--format=%s', `${newT1}..HEAD`]).split('\n')).toEqual([
+      't2 b',
+      't2'
+    ])
   })
 
   it('records the base without a rebase when the layer already sits on the parent tip', async () => {
@@ -304,6 +364,19 @@ describe('MissionTaskRestack', () => {
     })
     expect(tipOf(paths.t2)).toBe(before)
     expect(bases.size).toBe(0)
+  })
+
+  it('follows a top task rewritten outside restack', async () => {
+    const { mission, paths, deps } = await createStack()
+    await writeFile(path.join(paths.t3, 't3.txt'), 't3 amended\n', 'utf8')
+    git(paths.t3, ['commit', '-q', '--amend', '-a', '-m', 't3 amended'])
+    const amendedT3 = tipOf(paths.t3)
+
+    const report = await new MissionTaskRestack(deps).restackRepo(mission, 'r1')
+
+    expect(statesOf(report).preview).toBe('current')
+    expect(tipOf(paths.preview)).toBe(amendedT3)
+    expect(mission.previews![0].followedSha).toBe(amendedT3)
   })
 
   it('never resets a preview that has commits of its own', async () => {

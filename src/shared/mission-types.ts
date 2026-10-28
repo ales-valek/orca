@@ -26,6 +26,9 @@ export type MissionTask = {
   /** Parent tip this layer was last rebased onto; `rebase --onto` needs it
    *  after the parent was rewritten (autosquash). */
   parentBaseSha: string | null
+  /** Parent tip a restack was rebasing onto when it hit a conflict; promoted to
+   *  `parentBaseSha` once that rebase finishes, dropped when it was aborted. */
+  pendingParentBaseSha?: string | null
   /** Slot for an external tracker key (e.g. `OMP-951`); display only for now. */
   externalRef?: string | null
   externalId?: string | null
@@ -39,6 +42,9 @@ export type MissionSlotWorktree = {
   worktreeId: string | null
   worktreeInstanceId?: string | null
   lastError?: string | null
+  /** Preview only: top-task tip the preview was last moved to, so a top task
+   *  rewritten outside restack can still be followed. */
+  followedSha?: string | null
 }
 
 export type MissionSlot = 'member' | 'preview' | 'orchestrator' | `task:${string}`
