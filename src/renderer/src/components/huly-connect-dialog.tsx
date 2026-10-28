@@ -15,6 +15,7 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { preventOutsideDismissWhenDirty } from '@/lib/outside-dismiss-guard'
 import { translate } from '@/i18n/i18n'
 import type { HulyConnectionInfo, HulyConnectionStatus } from '../../../shared/huly/huly-types'
+import { notifyHulyConnectionChanged } from './huly-connection-change-event'
 import { formatHulyConnectError } from './huly-error-copy'
 
 type HulyConnectDialogProps = {
@@ -74,6 +75,7 @@ export function HulyConnectDialog({
         workspace: workspace.trim(),
         token: submittedToken
       })
+      notifyHulyConnectionChanged()
       if (!mountedRef.current) {
         return
       }
