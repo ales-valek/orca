@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Plus, SquareTerminal } from 'lucide-react'
+import { Milestone, MoreHorizontal, Plus, SquareTerminal } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +15,8 @@ import { ProjectGroupNameDialog } from './ProjectGroupNameDialog'
 import { MissionDeleteDialog } from './MissionDeleteDialog'
 import { MissionAddProjectsDialog } from './MissionAddProjectsDialog'
 import { MissionMemberRows } from './MissionMemberRows'
+import { MissionHulyRefreshDialog } from './MissionHulyRefreshDialog'
+import { useHulyConnected } from './use-huly-connected'
 import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspace-worktree'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { Mission } from '../../../../shared/mission-types'
@@ -25,12 +27,14 @@ function MissionSection({
   mission,
   onRename,
   onDelete,
-  onAddProjects
+  onAddProjects,
+  onRefreshFromHuly
 }: {
   mission: Mission
   onRename: (mission: Mission) => void
   onDelete: (mission: Mission) => void
   onAddProjects: (mission: Mission) => void
+  onRefreshFromHuly: (mission: Mission) => void
 }): React.JSX.Element {
   const collapsedGroups = useAppStore((s) => s.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((s) => s.toggleCollapsedGroup)
@@ -99,6 +103,11 @@ function MissionSection({
         <DropdownMenuItem onSelect={() => onRename(mission)}>
           {translate('auto.components.sidebar.MissionList.d12c29d655', 'Rename')}
         </DropdownMenuItem>
+        {mission.source?.provider === 'huly' ? (
+          <DropdownMenuItem onSelect={() => onRefreshFromHuly(mission)}>
+            {translate('auto.components.sidebar.MissionList.refreshFromHuly', 'Refresh from Huly')}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => onDelete(mission)}>
           {translate('auto.components.sidebar.MissionList.b32972019a', 'Delete mission')}
@@ -176,6 +185,12 @@ export default function MissionList(): React.JSX.Element {
   const [renaming, setRenaming] = useState<Mission | null>(null)
   const [deleting, setDeleting] = useState<Mission | null>(null)
   const [addingTo, setAddingTo] = useState<Mission | null>(null)
+  const [refreshing, setRefreshing] = useState<Mission | null>(null)
+  const hulyConnected = useHulyConnected()
+  const newFromHulyLabel = translate(
+    'auto.components.sidebar.MissionList.newFromHuly',
+    'New Mission from Huly milestone'
+  )
 
   if (missions.length === 0) {
     return (
@@ -198,6 +213,12 @@ export default function MissionList(): React.JSX.Element {
           <Plus className="size-3.5" />
           {translate('auto.components.sidebar.MissionList.e4cb2a2294', 'New Mission')}
         </Button>
+        {hulyConnected ? (
+          <Button variant="ghost" size="xs" onClick={() => openModal('mission-create-huly')}>
+            <Milestone />
+            {newFromHulyLabel}
+          </Button>
+        ) : null}
       </div>
     )
   }
@@ -212,8 +233,20 @@ export default function MissionList(): React.JSX.Element {
             onRename={setRenaming}
             onDelete={setDeleting}
             onAddProjects={setAddingTo}
+            onRefreshFromHuly={setRefreshing}
           />
         ))}
+        {hulyConnected ? (
+          <Button
+            variant="ghost"
+            size="xs"
+            className="justify-start"
+            onClick={() => openModal('mission-create-huly')}
+          >
+            <Milestone />
+            {newFromHulyLabel}
+          </Button>
+        ) : null}
       </div>
       <ProjectGroupNameDialog
         open={renaming !== null}
@@ -237,6 +270,10 @@ export default function MissionList(): React.JSX.Element {
       <MissionAddProjectsDialog
         mission={addingTo}
         onOpenChange={(open) => !open && setAddingTo(null)}
+      />
+      <MissionHulyRefreshDialog
+        mission={refreshing}
+        onOpenChange={(open) => !open && setRefreshing(null)}
       />
     </div>
   )

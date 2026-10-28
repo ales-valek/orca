@@ -56,6 +56,7 @@ export type UISliceContextual = {
     | 'agent-session-history'
     | 'node-dist-mirror'
     | 'mission-create'
+    | 'mission-create-huly'
   modalData: Record<string, unknown>
   openModal: (modal: UISliceContextual['activeModal'], data?: Record<string, unknown>) => void
   closeModal: () => void
