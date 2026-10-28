@@ -7,8 +7,11 @@ import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { worktreePathComparisonKey } from '../worktree-path-comparison-key'
 import {
   findMissionOwnedWorktreeCandidates,
+  getMissionRepoNonMemberSlots,
   getMissionSlotRecord,
-  type MissionOwnedWorktree
+  writeMissionSlotPointer,
+  type MissionOwnedWorktree,
+  type MissionSlotRecord
 } from './mission-worktree-ownership'
 import {
   assertMissionWorktreeOwnershipMarker,
@@ -190,6 +193,10 @@ export class MissionMemberOwnershipRecovery {
           recovered.worktreeInstanceId
         )
       }
+      // Why: an intent-only task or preview checkout needs its marker before root cleanup too.
+      for (const slot of getMissionRepoNonMemberSlots(currentMission, currentMember.repoId)) {
+        await this.recoverLiveOwnedWorktree(currentMission, currentMember.repoId, slot)
+      }
     }
     // Why: deleting while preserving checkouts may remove the root view next;
     // persist recovered pointers before that irreversible ordering boundary.
@@ -201,11 +208,19 @@ export class MissionMemberOwnershipRecovery {
     return recoveredMission
   }
 
-  async clearStrictlyMissingMemberPointer(mission: Mission, member: MissionMember): Promise<void> {
-    if (!member.worktreeId) {
+  clearStrictlyMissingMemberPointer(mission: Mission, member: MissionMember): Promise<void> {
+    return this.clearStrictlyMissingSlotPointer(mission, 'member', member)
+  }
+
+  async clearStrictlyMissingSlotPointer(
+    mission: Mission,
+    slot: MissionSlot,
+    record: MissionSlotRecord
+  ): Promise<void> {
+    if (!record.worktreeId) {
       throw new Error('mission_member_worktree_ownership_unverified')
     }
-    const inspection = await this.runtime.inspectManagedWorktreeForOwnership(member.worktreeId)
+    const inspection = await this.runtime.inspectManagedWorktreeForOwnership(record.worktreeId)
     if (inspection.status === 'unavailable') {
       throw new Error('mission_member_worktree_liveness_unavailable')
     }
@@ -214,6 +229,6 @@ export class MissionMemberOwnershipRecovery {
     }
     // Why: generic/external deletion can remove checkout metadata before the
     // Mission pointer; only a strict missing result permits clearing it.
-    this.store.setMissionMemberWorktree(mission.id, member.repoId, null, null)
+    writeMissionSlotPointer(this.store, mission.id, record.repoId, slot, null, null)
   }
 }

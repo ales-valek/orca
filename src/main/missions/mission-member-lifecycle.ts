@@ -1,13 +1,20 @@
-import path from 'node:path'
-import { getMissionRootDirName, getMissionWorktreeName } from '../../shared/missions'
-import type { Mission, MissionMember, MissionMemberResult } from '../../shared/mission-types'
+import type {
+  Mission,
+  MissionMember,
+  MissionMemberResult,
+  MissionSlot
+} from '../../shared/mission-types'
 import { folderWorkspaceKey } from '../../shared/workspace-scope'
-import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
+import {
+  getMissionSlotDirectoryName,
+  isInMissionRoot,
+  MissionSlotWorktrees,
+  type MissionSlotWorktreeOptions
+} from './mission-slot-worktrees'
 import {
   findMissionRepoOwnedWorktrees,
   getMissionOwnedWorktree,
@@ -15,11 +22,6 @@ import {
   getMissionSlotRecord,
   type MissionOwnedWorktree
 } from './mission-worktree-ownership'
-import {
-  removeMissionWorktreeOwnershipMarker,
-  type MissionWorktreeOwnershipProof
-} from './mission-worktree-ownership-marker'
-import { localMissionWorktreeTarget } from './local-mission-worktree-target'
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -28,12 +30,14 @@ function toErrorMessage(error: unknown): string {
 export class MissionMemberLifecycle {
   private readonly operationTails = new Map<string, Promise<void>>()
   private readonly ownershipRecovery: MissionMemberOwnershipRecovery
+  private readonly slotWorktrees: MissionSlotWorktrees
 
   constructor(
     private readonly store: Store,
     private readonly runtime: OrcaRuntimeService
   ) {
     this.ownershipRecovery = new MissionMemberOwnershipRecovery(store, runtime)
+    this.slotWorktrees = new MissionSlotWorktrees(store, runtime, this.ownershipRecovery)
   }
 
   run<T>(missionId: string, operation: () => Promise<T>): Promise<T> {
@@ -52,93 +56,30 @@ export class MissionMemberLifecycle {
     return current
   }
 
-  async createWorktree(mission: Mission, repoId: string): Promise<MissionMemberResult> {
-    try {
-      requireNativeLocalMissionRepos(this.store, [repoId])
-      const currentMission = this.store.getMission(mission.id)
-      const member = currentMission?.members.find((entry) => entry.repoId === repoId)
-      if (!currentMission || !member) {
-        throw new Error('mission_member_not_found')
-      }
+  createSlotWorktree(
+    mission: Mission,
+    repoId: string,
+    slot: MissionSlot,
+    opts: MissionSlotWorktreeOptions
+  ): Promise<MissionMemberResult> {
+    return this.slotWorktrees.create(mission, repoId, slot, opts)
+  }
 
-      // Why: metadata ownership is durable before the member pointer. Adopt
-      // that crash-window worktree instead of creating a second checkout.
-      const recovered = await this.ownershipRecovery.recoverLiveOwnedWorktree(
-        currentMission,
-        repoId
-      )
-      if (recovered) {
-        this.store.setMissionMemberWorktree(
-          currentMission.id,
-          repoId,
-          recovered.worktreeId,
-          recovered.worktreeInstanceId
-        )
-        return {
-          repoId,
-          worktreeId: recovered.worktreeId,
-          worktreeInstanceId: recovered.worktreeInstanceId
-        }
-      }
-      const recorded = getMissionOwnedWorktree(this.store, currentMission, member)
-      if ((member.worktreeId || member.worktreeInstanceId) && !recorded) {
-        await this.ownershipRecovery.clearStrictlyMissingMemberPointer(currentMission, member)
-      }
+  createWorktree(mission: Mission, repoId: string): Promise<MissionMemberResult> {
+    const displayName = this.store.getRepo(repoId)?.displayName ?? repoId
+    return this.createSlotWorktree(mission, repoId, 'member', {
+      branchName: mission.branchName,
+      directoryName: getMissionSlotDirectoryName(displayName, repoId)
+    })
+  }
 
-      const pathSeed = [
-        getMissionWorktreeName(currentMission.branchName),
-        currentMission.id.slice(0, 8),
-        repoId.slice(0, 8)
-      ].join('-')
-      const repo = this.store.getRepo(repoId)
-      if (!repo || !currentMission.rootPath) {
-        throw new Error('mission_root_not_ready')
-      }
-      const memberDirectoryName = `${getMissionRootDirName(repo.displayName)}-${repoId.slice(0, 8)}`
-      const created = await this.runtime.createManagedWorktree({
-        repoSelector: `id:${repoId}`,
-        // Why: flat workspace layouts share one directory; the path seed must
-        // be unique without changing the branch shared across repositories.
-        name: pathSeed,
-        displayName: this.store.getRepo(repoId)?.displayName ?? currentMission.name,
-        branchNameOverride: currentMission.branchName,
-        requireExactBranchName: true,
-        missionId: currentMission.id,
-        // Why: agents launched at the Mission root need canonical in-tree
-        // directories for discovery and sandbox writes; sibling symlinks are insufficient.
-        worktreePathOverride: path.join(currentMission.rootPath, memberDirectoryName),
-        activate: false,
-        skipInitialTerminal: true,
-        runHooks: false,
-        setupDecision: 'skip'
-      })
-      const parsed = splitWorktreeId(created.worktree.id)
-      const meta = this.store.getWorktreeMeta(created.worktree.id)
-      const actualBranch = created.worktree.branch.replace(/^refs\/heads\//, '')
-      if (
-        parsed?.repoId !== repoId ||
-        actualBranch !== currentMission.branchName ||
-        meta?.missionId !== currentMission.id ||
-        !meta.instanceId
-      ) {
-        throw new Error('mission_member_worktree_ownership_stamp_failed')
-      }
-      this.store.setMissionMemberWorktree(
-        currentMission.id,
-        repoId,
-        created.worktree.id,
-        meta.instanceId
-      )
-      return {
-        repoId,
-        worktreeId: created.worktree.id,
-        worktreeInstanceId: meta.instanceId
-      }
-    } catch (error) {
-      const message = toErrorMessage(error)
-      this.store.setMissionMemberError(mission.id, repoId, message)
-      return { repoId, worktreeId: null, error: message }
-    }
+  removeSlotWorktree(
+    mission: Mission,
+    repoId: string,
+    slot: Exclude<MissionSlot, 'member'>,
+    deleteWorktree: boolean
+  ): Promise<MissionMemberResult> {
+    return this.slotWorktrees.remove(mission, repoId, slot, deleteWorktree)
   }
 
   // Why: parallel create calls can contend on Git locks; deterministic member
@@ -176,30 +117,9 @@ export class MissionMemberLifecycle {
           owned.worktreeInstanceId
         )
       }
-      // Why: Mission creation has no hook-trust confirmation, so deletion may
-      // not execute archive hooks merely because the worktree is Mission-owned.
-      const removed = await this.runtime.removeManagedWorktree(`id:${owned.worktreeId}`, {
-        force: false,
-        runHooks: false,
-        expectedOwnership: {
-          missionId: mission.id,
-          repoId: member.repoId,
-          worktreeId: owned.worktreeId,
-          worktreeInstanceId: owned.worktreeInstanceId
-        }
-      })
+      const warning = await this.slotWorktrees.removeOwned(mission, member.repoId, 'member', owned)
       this.store.removeMissionMember(mission.id, member.repoId)
-      const warnings = [
-        removed.warning,
-        removed.preservedBranch
-          ? `Preserved local branch ${removed.preservedBranch.branchName}.`
-          : undefined
-      ].filter((warning): warning is string => Boolean(warning))
-      return {
-        repoId: member.repoId,
-        worktreeId: null,
-        ...(warnings.length > 0 ? { warning: warnings.join(' ') } : {})
-      }
+      return { repoId: member.repoId, worktreeId: null, ...(warning ? { warning } : {}) }
     } catch (error) {
       const message = toErrorMessage(error)
       this.store.setMissionMemberError(mission.id, member.repoId, message)
@@ -217,17 +137,13 @@ export class MissionMemberLifecycle {
           await this.ownershipRecovery.clearStrictlyMissingMemberPointer(mission, member)
         }
       }
-      if (owned) {
-        const parsed = splitWorktreeId(owned.worktreeId)
-        if (
-          parsed &&
-          mission.rootPath &&
-          areWorktreePathsEqual(path.dirname(parsed.worktreePath), mission.rootPath)
-        ) {
-          // Why: leaving a physical child behind would keep the removed repo
-          // visible and writable from the still-active Mission session.
-          throw new Error('mission_member_workspace_delete_required')
-        }
+      if (
+        (owned && isInMissionRoot(mission, owned)) ||
+        (await this.slotWorktrees.hasNonMemberCheckoutInRoot(mission, member.repoId))
+      ) {
+        // Why: leaving a physical child behind would keep the removed repo
+        // visible and writable from the still-active Mission session.
+        throw new Error('mission_member_workspace_delete_required')
       }
       this.detachOwnership(mission, member.repoId)
       this.store.removeMissionMember(mission.id, member.repoId)
@@ -267,29 +183,7 @@ export class MissionMemberLifecycle {
       candidates.set(candidate.worktreeId, candidate)
     }
     for (const candidate of candidates.values()) {
-      const repo = this.store.getRepo(repoId)
-      const parsed = splitWorktreeId(candidate.worktreeId)
-      if (repo && parsed) {
-        const proof: MissionWorktreeOwnershipProof = {
-          missionId: mission.id,
-          repoId,
-          worktreeId: candidate.worktreeId,
-          worktreeInstanceId: candidate.worktreeInstanceId
-        }
-        try {
-          removeMissionWorktreeOwnershipMarker({
-            repoPath: repo.path,
-            worktreePath: parsed.worktreePath,
-            proof
-          })
-        } catch {
-          // The checkout is intentionally preserved; stale or missing markers
-          // must not prevent clearing Orca's non-destructive Mission metadata.
-        }
-      }
-      this.store.setWorktreeMeta(localMissionWorktreeTarget(candidate.worktreeId), {
-        missionId: undefined
-      })
+      this.slotWorktrees.detachWorktree(mission, repoId, candidate)
     }
   }
 
