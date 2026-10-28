@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { isValidGitBranchName } from '../git-branch-name'
 import { isTuiAgent } from '../tui-agent-config'
+import { HulyOrderOverrides, HulyRepoOverrides } from './huly-params'
 import { OptionalString, requiredString } from './rpc-param-primitives'
 
 const MissionSelectorField = requiredString('Missing mission selector')
@@ -64,4 +65,16 @@ export const MissionAbsorbParams = z.object({
   repo: MissionRepoSelector,
   /** `file:line` of an ambiguous hunk mapped to a task ref (tracker key, branch or id). */
   choose: z.record(z.string(), requiredString('Missing task ref')).optional()
+})
+
+export const MissionCreateFromHulyParams = z.object({
+  /** Milestone id or exact label (case-insensitive). */
+  milestone: requiredString('Missing Huly milestone'),
+  project: OptionalString,
+  name: OptionalString,
+  branch: MissionCreateParams.shape.branch,
+  agent: MissionCreateParams.shape.agent,
+  orchestratorRepo: OptionalString,
+  repoOverrides: HulyRepoOverrides,
+  orderOverrides: HulyOrderOverrides
 })

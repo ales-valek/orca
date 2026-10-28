@@ -34,19 +34,31 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
     path: ['mission', 'create'],
     summary: 'Create a Mission root with one worktree per repo on a shared branch',
     usage:
-      'orca mission create --name <name> --repo <selector> [--repo <selector>...] [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'name', 'repo', 'branch', 'agent', 'orchestrator-repo'],
+      'orca mission create (--name <name> --repo <selector> [--repo <selector>...] | --from-huly <milestone> [--project <key>] [--name <name>]) [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--json]',
+    allowedFlags: [
+      ...GLOBAL_FLAGS,
+      'name',
+      'repo',
+      'branch',
+      'agent',
+      'orchestrator-repo',
+      'from-huly',
+      'project'
+    ],
     repeatableFlags: ['repo'],
     notes: [
       REPO_SELECTOR_NOTE,
       '--branch defaults to a branch derived from the Mission name.',
       '--agent picks the agent auto-launched when the Mission session first opens.',
       '--orchestrator-repo checks out the Mission branch of a non-member repo in the root; the Mission session runs there.',
+      '--from-huly takes a Huly milestone id or exact label instead of --repo: each mapped component becomes a member repo, each issue a task layer, and MISSION.md is written to the root. It fails and lists unmapped issues or blockedBy cycles.',
+      '--project is the Huly project key; it defaults to the only configured or workspace project. --name and --branch default to the milestone label.',
       SETUP_HOOK_NOTE
     ],
     examples: [
       'orca mission create --name referral --repo name:api --repo name:web',
-      'orca mission create --name referral --repo id:<repoId> --branch mission/referral --agent claude --json'
+      'orca mission create --name referral --repo id:<repoId> --branch mission/referral --agent claude --json',
+      'orca mission create --from-huly Kiosek --project OMP --orchestrator-repo name:orchestration'
     ]
   },
   {

@@ -2,6 +2,7 @@ import type { MissionRestackLayer } from '../shared/mission-layer-state'
 import type {
   MissionMemberResult,
   RuntimeMissionAbsorbResult,
+  RuntimeMissionHulyCreateResult,
   RuntimeMissionLayerRecord,
   RuntimeMissionList,
   RuntimeMissionMutationResult,
@@ -34,6 +35,7 @@ function formatMissionRecord(mission: RuntimeMissionRecord): string {
     `name: ${mission.name}`,
     `branch: ${mission.branch}`,
     `rootPath: ${mission.rootPath ?? '(not created)'}`,
+    ...(mission.briefPath ? [`brief: ${mission.briefPath}`] : []),
     `members: ${mission.members.length}`
   ]
   for (const member of mission.members) {
@@ -91,6 +93,13 @@ export function formatMissionMutation(result: RuntimeMissionMutationResult): str
       ...result.memberResults,
       ...(result.orchestratorResult ? [result.orchestratorResult] : [])
     ])
+  ].join('\n')
+}
+
+export function formatMissionHulyCreate(result: RuntimeMissionHulyCreateResult): string {
+  return [
+    formatMissionRecord(result.mission),
+    ...result.warnings.map((warning) => `warning: ${warning}`)
   ].join('\n')
 }
 
