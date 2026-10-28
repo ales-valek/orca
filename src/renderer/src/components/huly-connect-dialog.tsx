@@ -15,7 +15,7 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { preventOutsideDismissWhenDirty } from '@/lib/outside-dismiss-guard'
 import { translate } from '@/i18n/i18n'
 import type { HulyConnectionInfo, HulyConnectionStatus } from '../../../shared/huly/huly-types'
-import { formatHulyError } from './huly-error-copy'
+import { formatHulyConnectError } from './huly-error-copy'
 
 type HulyConnectDialogProps = {
   open: boolean
@@ -42,9 +42,10 @@ export function HulyConnectDialog({
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Reset before paint on each open so a previous token can never flash or persist.
+  // Drop the token on close and reset before paint on each open, so it never outlives the dialog.
   useLayoutEffect(() => {
     if (!open) {
+      setToken('')
       return
     }
     setServerUrl(initialInfo?.serverUrl ?? '')
@@ -62,25 +63,27 @@ export function HulyConnectDialog({
     if (!canSubmit) {
       return
     }
+    const submittedToken = token.trim()
     setConnecting(true)
     setError(null)
+    // The token lives only for the call; a retry asks for it again.
+    setToken('')
     try {
       const status = await window.api.huly.connect({
         serverUrl: serverUrl.trim(),
         workspace: workspace.trim(),
-        token: token.trim()
+        token: submittedToken
       })
       if (!mountedRef.current) {
         return
       }
-      setToken('')
       setConnecting(false)
       onOpenChange(false)
       onConnected(status)
     } catch (connectError) {
       if (mountedRef.current) {
         setConnecting(false)
-        setError(formatHulyError(connectError))
+        setError(formatHulyConnectError(connectError, submittedToken))
       }
     }
   }
