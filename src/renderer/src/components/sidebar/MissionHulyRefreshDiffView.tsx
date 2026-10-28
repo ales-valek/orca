@@ -43,6 +43,7 @@ function isDiffEmpty(diff: HulyMissionRefreshDiff): boolean {
     getAppendableCount(diff) === 0 &&
     diff.reorderedInHuly.length === 0 &&
     diff.removed.length === 0 &&
+    (diff.completed ?? []).length === 0 &&
     diff.movedRepo.length === 0 &&
     diff.nonAppendable.length === 0
   )
@@ -163,6 +164,22 @@ export function MissionHulyRefreshDiffView({
           )}
         >
           {diff.removed.map((identifier) => (
+            <DiffRow key={identifier} identifier={identifier} detail="" />
+          ))}
+        </DiffSection>
+      ) : null}
+      {diff.completed && diff.completed.length > 0 ? (
+        <DiffSection
+          title={translate(
+            'auto.components.sidebar.MissionHulyRefreshDialog.completed',
+            'Completed in Huly'
+          )}
+          note={translate(
+            'auto.components.sidebar.MissionHulyRefreshDialog.completedNote',
+            'Their task layers stay in the Mission.'
+          )}
+        >
+          {diff.completed.map((identifier) => (
             <DiffRow key={identifier} identifier={identifier} detail="" />
           ))}
         </DiffSection>

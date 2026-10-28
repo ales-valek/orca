@@ -88,6 +88,7 @@ describe('diffMissionAgainstPlan', () => {
       appendable: [],
       reorderedInHuly: [],
       removed: [],
+      completed: [],
       movedRepo: [],
       nonAppendable: []
     })
@@ -125,9 +126,11 @@ describe('diffMissionAgainstPlan', () => {
     ])
   })
 
-  it('reports an issue moved to a skipped status as removed', () => {
+  it('reports an issue moved to a skipped status as completed, not removed', () => {
     const items = [issue(1), issue(2, { status: MERGED })]
-    expect(diffMissionAgainstPlan(baseMission, plan(items)).removed).toEqual(['OMP-2'])
+    const diff = diffMissionAgainstPlan(baseMission, plan(items))
+    expect(diff.completed).toEqual(['OMP-2'])
+    expect(diff.removed).toEqual([])
   })
 
   it('reports an issue that left the milestone as removed', () => {

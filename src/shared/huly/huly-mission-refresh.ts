@@ -14,8 +14,11 @@ export type HulyMissionRefreshDiff = {
   appendable: { repoId: string; issues: HulyIssue[] }[]
   /** Huly order vs `source.importedOrder` for issues present in both. */
   reorderedInHuly: { repoId: string; before: string[]; after: string[] }[]
-  /** Identifiers of existing tasks that left the milestone, were skipped or lost their repo mapping. */
+  /** Identifiers of existing tasks that left the milestone or lost their repo mapping. */
   removed: string[]
+  /** Identifiers of existing tasks whose issue is now skipped (Won, Lost or a skip status).
+   *  Optional: older runtimes report these in `removed`. */
+  completed?: string[]
   movedRepo: { identifier: string; fromRepoId: string; toRepoId: string }[]
   /** `repoId` is null for an issue whose component maps to no repo. */
   nonAppendable: {
@@ -56,13 +59,15 @@ export function diffMissionAgainstPlan(
     }
   }
 
+  const skippedRefs = new Set(plan.skipped.map((issue) => issue.identifier))
   const removed: string[] = []
+  const completed: string[] = []
   const movedRepo: HulyMissionRefreshDiff['movedRepo'] = []
   for (const task of existingTasks) {
     const toRepoId = planRepoByIdentifier.get(task.externalRef)
     const cycleRepoId = cycleRepoByIdentifier.get(task.externalRef)
     if (toRepoId === undefined && cycleRepoId === undefined) {
-      removed.push(task.externalRef)
+      ;(skippedRefs.has(task.externalRef) ? completed : removed).push(task.externalRef)
     } else if ((toRepoId ?? cycleRepoId) !== task.repoId) {
       movedRepo.push({
         identifier: task.externalRef,
@@ -126,7 +131,7 @@ export function diffMissionAgainstPlan(
   }
 
   demoteBlockedAppendable(appendable, nonAppendable)
-  return { appendable, reorderedInHuly, removed, movedRepo, nonAppendable }
+  return { appendable, reorderedInHuly, removed, completed, movedRepo, nonAppendable }
 }
 
 // Why: appending an issue whose blocker cannot be added would skip the blocker in the dependency order.

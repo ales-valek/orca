@@ -228,6 +228,7 @@ describe('orca mission commands', () => {
           ],
           reorderedInHuly: [],
           removed: ['OMP-2'],
+          completed: ['OMP-6'],
           movedRepo: [{ identifier: 'OMP-4', fromRepoId: 'repo-api', toRepoId: 'repo-web' }]
         },
         applied: [],
@@ -249,6 +250,7 @@ describe('orca mission commands', () => {
     expect(output).toContain('OMP-5  repo-api  inserted-in-middle')
     expect(output).toContain('OMP-4  repo-api -> repo-web')
     expect(output).toContain('Removed:')
+    expect(output).toContain('Completed in Huly:\n  OMP-6')
     expect(process.exitCode).toBeUndefined()
     process.exitCode = priorExitCode
   })
