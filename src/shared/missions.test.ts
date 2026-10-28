@@ -230,6 +230,158 @@ describe('clearMissingMissionMembers', () => {
   })
 })
 
+describe('normalizeMissions task stacks', () => {
+  const member = (repoId: string) => ({ repoId, worktreeId: null, addedAt: 1 })
+  const task = (overrides: Record<string, unknown>) => ({
+    id: 't1',
+    repoId: 'repo-a',
+    order: 1,
+    title: 'Cart',
+    branchName: 'mission-task/m/t1',
+    worktreeId: null,
+    parentBaseSha: null,
+    addedAt: 1,
+    ...overrides
+  })
+
+  it('leaves legacy missions without task, preview or orchestrator fields', () => {
+    const [mission] = normalizeMissions([
+      { id: 'm1', name: 'M', branchName: 'mission/m', members: [member('repo-a')] }
+    ])
+    expect(mission).not.toHaveProperty('tasks')
+    expect(mission).not.toHaveProperty('previews')
+    expect(mission).not.toHaveProperty('orchestrator')
+    expect(mission.orchestratorRepoId ?? null).toBeNull()
+  })
+
+  it('keeps valid tasks with their stack metadata and drops invalid ones', () => {
+    const [mission] = normalizeMissions([
+      {
+        id: 'm1',
+        name: 'M',
+        branchName: 'mission/m',
+        members: [member('repo-a')],
+        tasks: [
+          task({ id: 't1', parentBaseSha: 'abc123', externalRef: 'OMP-951' }),
+          task({ id: 't1', order: 2 }),
+          task({ id: 't2', repoId: '' }),
+          task({ id: 't3', repoId: 'repo-x' }),
+          task({ id: 't4', branchName: '' }),
+          'junk'
+        ]
+      }
+    ])
+    expect(mission.tasks).toHaveLength(1)
+    expect(mission.tasks?.[0]).toMatchObject({
+      id: 't1',
+      repoId: 'repo-a',
+      order: 1,
+      parentBaseSha: 'abc123',
+      externalRef: 'OMP-951'
+    })
+  })
+
+  it('keeps previews and the orchestrator slot only for valid repos', () => {
+    const [mission] = normalizeMissions([
+      {
+        id: 'm1',
+        name: 'M',
+        branchName: 'mission/m',
+        members: [member('repo-a')],
+        previews: [
+          { repoId: 'repo-a', worktreeId: 'wt-p' },
+          { repoId: 'repo-a', worktreeId: 'dup' },
+          { repoId: 'repo-x', worktreeId: 'wt-x' }
+        ],
+        orchestratorRepoId: 'repo-o',
+        orchestrator: { repoId: 'repo-o', worktreeId: 'wt-o' }
+      }
+    ])
+    expect(mission.previews).toEqual([
+      { repoId: 'repo-a', worktreeId: 'wt-p', worktreeInstanceId: null, lastError: null }
+    ])
+    expect(mission.orchestratorRepoId).toBe('repo-o')
+    expect(mission.orchestrator).toMatchObject({ repoId: 'repo-o', worktreeId: 'wt-o' })
+  })
+
+  it('drops an orchestrator repo that is also a member', () => {
+    const [mission] = normalizeMissions([
+      {
+        id: 'm1',
+        name: 'M',
+        branchName: 'mission/m',
+        members: [member('repo-a')],
+        orchestratorRepoId: 'repo-a',
+        orchestrator: { repoId: 'repo-a', worktreeId: 'wt' }
+      }
+    ])
+    expect(mission.orchestratorRepoId ?? null).toBeNull()
+    expect(mission).not.toHaveProperty('orchestrator')
+  })
+})
+
+describe('createMission orchestrator repo', () => {
+  it('stores the orchestrator repo and rejects one that is also a member', () => {
+    const mission = createMission({
+      name: 'M',
+      repoIds: ['repo-a'],
+      orchestratorRepoId: 'repo-o',
+      tabOrder: 0
+    })
+    expect(mission.orchestratorRepoId).toBe('repo-o')
+    expect(() =>
+      createMission({ name: 'M', repoIds: ['repo-a'], orchestratorRepoId: 'repo-a', tabOrder: 0 })
+    ).toThrow('mission_orchestrator_repo_is_member')
+  })
+})
+
+describe('clearMissingMissionMembers task stacks', () => {
+  it('drops tasks and previews of a removed repo and clears a removed orchestrator repo', () => {
+    const mission = makeMission({
+      id: 'm1',
+      members: [
+        { repoId: 'repo-a', worktreeId: null, addedAt: 1 },
+        { repoId: 'repo-b', worktreeId: null, addedAt: 1 }
+      ],
+      tasks: [
+        {
+          id: 't1',
+          repoId: 'repo-a',
+          order: 1,
+          title: 'A',
+          branchName: 'mission-task/m/a',
+          worktreeId: null,
+          parentBaseSha: null,
+          addedAt: 1
+        },
+        {
+          id: 't2',
+          repoId: 'repo-b',
+          order: 1,
+          title: 'B',
+          branchName: 'mission-task/m/b',
+          worktreeId: null,
+          parentBaseSha: null,
+          addedAt: 1
+        }
+      ],
+      previews: [
+        { repoId: 'repo-a', worktreeId: null },
+        { repoId: 'repo-b', worktreeId: null }
+      ],
+      orchestratorRepoId: 'repo-o',
+      orchestrator: { repoId: 'repo-o', worktreeId: null }
+    })
+    const result = clearMissingMissionMembers([mission], [{ id: 'repo-a' }])
+    expect(result.changed).toBe(true)
+    expect(result.missions[0].members.map((m) => m.repoId)).toEqual(['repo-a'])
+    expect(result.missions[0].tasks?.map((t) => t.id)).toEqual(['t1'])
+    expect(result.missions[0].previews?.map((p) => p.repoId)).toEqual(['repo-a'])
+    expect(result.missions[0].orchestratorRepoId).toBeNull()
+    expect(result.missions[0].orchestrator).toBeNull()
+  })
+})
+
 describe('getMissionRootDirName', () => {
   it('produces a directory-safe slug with fallback', () => {
     expect(getMissionRootDirName('Referral Flow!')).toBe('referral-flow')
