@@ -4,7 +4,7 @@ import {
   getMissionTaskParentBranch,
   getRepoTaskStack
 } from '../../shared/mission-task-stack'
-import type { Mission, MissionTask } from '../../shared/mission-types'
+import type { Mission, MissionAbsorbResult, MissionTask } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import { getFileBlame } from '../git/blame'
 import { getBranchTip, listLayerCommits, readLayerWorktree } from '../git/stack-layer-git'
@@ -24,12 +24,7 @@ import {
 import type { MissionTaskRestack, MissionTaskRestackDeps } from './mission-task-restack'
 import { getMissionSlotRecord } from './mission-worktree-ownership'
 
-export type MissionAbsorbResult = {
-  applied: number
-  ambiguous: { file: string; line: number; candidateTaskIds: string[] }[]
-  /** Set when the edits are in their layers but the restack afterwards did not bring them back. */
-  warning?: string
-}
+export type { MissionAbsorbResult } from '../../shared/mission-types'
 
 export type MissionTaskAbsorbDeps = {
   store: MissionTaskRestackDeps['store']

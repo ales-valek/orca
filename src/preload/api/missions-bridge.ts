@@ -9,5 +9,12 @@ export const missionsApi = {
   addMembers: (args) => ipcRenderer.invoke('missions:addMembers', args),
   removeMember: (args) => ipcRenderer.invoke('missions:removeMember', args),
   recreateMemberWorktree: (args) => ipcRenderer.invoke('missions:recreateMemberWorktree', args),
-  ensureSession: (args) => ipcRenderer.invoke('missions:ensureSession', args)
+  ensureSession: (args) => ipcRenderer.invoke('missions:ensureSession', args),
+  inspectStacks: (args) => ipcRenderer.invoke('missions:inspectStacks', args),
+  addTask: (args) => ipcRenderer.invoke('missions:addTask', args),
+  removeTask: (args) => ipcRenderer.invoke('missions:removeTask', args),
+  restack: (args) => ipcRenderer.invoke('missions:restack', args),
+  absorb: (args) => ipcRenderer.invoke('missions:absorb', args),
+  createStackPullRequests: (args) => ipcRenderer.invoke('missions:createStackPullRequests', args),
+  pushStack: (args) => ipcRenderer.invoke('missions:pushStack', args)
 } satisfies PreloadApi['missions']
