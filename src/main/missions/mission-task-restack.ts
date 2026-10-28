@@ -17,6 +17,7 @@ import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence'
 import {
   getBranchTip,
+  getCommitAncestry,
   isAncestorCommit,
   readLayerWorktree,
   rebaseLayerOnto,
@@ -162,7 +163,11 @@ export class MissionTaskRestack {
       return task.parentBaseSha
     }
     // Why: a finished rebase contains its target; an aborted one went back to the recorded base.
-    const finished = await isAncestorCommit(worktreePath, pending, 'HEAD')
+    const finished = await getCommitAncestry(worktreePath, pending, 'HEAD')
+    if (finished === null) {
+      // Why: clearing the pending base on a failed probe could make the next rebase replay its commits.
+      throw new Error('Could not verify ancestry')
+    }
     if (settle) {
       if (finished) {
         this.deps.store.setMissionTaskParentBaseSha(mission.id, task.id, pending)
@@ -279,7 +284,12 @@ export class MissionTaskRestack {
       const actual = snapshot.branch ?? 'a detached HEAD'
       return { slot, state: 'blocked', reason: `Checkout is on ${actual}, not ${spec.branch}` }
     }
-    const parentBaseSha = await spec.getParentBaseSha(snapshot, worktreePath)
+    let parentBaseSha: string | null
+    try {
+      parentBaseSha = await spec.getParentBaseSha(snapshot, worktreePath)
+    } catch (error) {
+      return { slot, state: 'blocked', reason: toErrorMessage(error) }
+    }
     const input: MissionLayerStateInput = {
       parentTip: spec.parentTip,
       parentBaseSha,

@@ -27,6 +27,13 @@ const stackLayerGit = vi.hoisted(() => ({
   isAncestorCommit: vi.fn(
     async (_worktreePath: string, _ancestor: string, _descendant: string) => true
   ),
+  getCommitAncestry: vi.fn(
+    async (
+      _worktreePath: string,
+      _ancestor: string,
+      _descendant: string
+    ): Promise<boolean | null> => true
+  ),
   getForkPoint: vi.fn(
     async (_worktreePath: string, _parentBranch: string): Promise<string | null> => null
   ),
