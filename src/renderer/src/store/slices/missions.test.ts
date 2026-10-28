@@ -255,4 +255,62 @@ describe('missions slice', () => {
       'mission_absorb_layers_busy'
     )
   })
+
+  it('keeps only the newest inspection when an older one resolves later', async () => {
+    const older = { repoId: 'r1', layers: [{ slot: 'member', state: 'stale' }] }
+    const newer = { repoId: 'r1', layers: [{ slot: 'member', state: 'current' }] }
+    let resolveOlder: (reports: unknown[]) => void = () => {}
+    missionsApi.inspectStacks
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveOlder = resolve)))
+      .mockResolvedValueOnce([newer])
+    const store = makeStore()
+
+    const first = store.getState().inspectMissionStacks('m1')
+    await store.getState().inspectMissionStacks('m1')
+    resolveOlder([older])
+    await first
+
+    expect(store.getState().missionStackReports.m1).toEqual([newer])
+  })
+
+  it('keeps the last reports but marks them outdated when an inspection fails', async () => {
+    const reports = [{ repoId: 'r1', layers: [{ slot: 'member', state: 'current' }] }]
+    missionsApi.inspectStacks.mockResolvedValueOnce(reports).mockRejectedValueOnce(new Error('git'))
+    const store = makeStore()
+
+    await store.getState().inspectMissionStacks('m1')
+    await store.getState().inspectMissionStacks('m1')
+
+    expect(store.getState().missionStackReports.m1).toEqual(reports)
+    expect(store.getState().missionStackReportsStale.m1).toBe(true)
+  })
+
+  it('skips a record-change inspection that a stack action already ran', async () => {
+    missionsApi.restack.mockResolvedValue([])
+    missionsApi.list.mockResolvedValue([mission])
+    missionsApi.inspectStacks.mockResolvedValue([])
+    const store = makeStore()
+
+    await store.getState().restackMissionRepo('m1', 'r1')
+    await store.getState().inspectMissionStacks('m1', { unlessInspectedSince: mission.updatedAt })
+
+    expect(missionsApi.inspectStacks).toHaveBeenCalledOnce()
+  })
+
+  it('surfaces a thrown add-task error as its bare code', async () => {
+    missionsApi.addTask.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'missions:addTask': Error: mission_task_parent_missing"
+      )
+    )
+    missionsApi.list.mockResolvedValue([mission])
+    missionsApi.inspectStacks.mockResolvedValue([])
+    const store = makeStore()
+
+    await expect(
+      store.getState().addMissionTask('m1', 'r1', { title: 'Coupons' })
+    ).resolves.toEqual({
+      error: 'mission_task_parent_missing'
+    })
+  })
 })

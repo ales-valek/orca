@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   deriveMissionLayerState,
   getMissionLayerBlockedReason,
+  getMissionLayerPushInput,
+  isMissionLayerPushPending,
+  type MissionLayerPushTips,
   type MissionLayerStateInput
 } from './mission-layer-state'
 
@@ -56,5 +59,19 @@ describe('getMissionLayerBlockedReason', () => {
     ['not blocked', { parentTip: 'p2' }, null]
   ])('%s', (_name, overrides, expected) => {
     expect(getMissionLayerBlockedReason({ ...current, ...overrides })).toBe(expected)
+  })
+})
+
+describe('needs-push rule', () => {
+  it.each<[string, MissionLayerPushTips, boolean]>([
+    ['never pushed', { localTip: 'l2', pushedTip: null }, false],
+    ['pushed and unchanged', { localTip: 'l1', pushedTip: 'l1' }, false],
+    ['pushed and moved', { localTip: 'l2', pushedTip: 'l1' }, true]
+  ])('%s', (_title, tips, pending) => {
+    // Both the push action and the sidebar badge derive from these two calls.
+    expect(isMissionLayerPushPending(getMissionLayerPushInput(tips))).toBe(pending)
+    expect(deriveMissionLayerState({ ...current, ...getMissionLayerPushInput(tips) })).toBe(
+      pending ? 'needs-push' : 'current'
+    )
   })
 })
