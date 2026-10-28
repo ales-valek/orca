@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { formatHulyError } from '@/components/huly-error-copy'
+import { formatHulyError, isHulyAuthRequiredError } from '@/components/huly-error-copy'
+import { HulyReconnectNotice } from '@/components/huly-reconnect-notice'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,13 +15,52 @@ import {
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import type { HulyMissionRefreshDiff } from '../../../../shared/huly/huly-mission-refresh'
-import type { Mission } from '../../../../shared/mission-types'
+import type { Mission, RuntimeMissionHulyRefreshResult } from '../../../../shared/mission-types'
 import { getAppendableCount, MissionHulyRefreshDiffView } from './MissionHulyRefreshDiffView'
 
 type DiffState =
   | { state: 'loading' }
   | { state: 'ready'; diff: HulyMissionRefreshDiff }
   | { state: 'error'; message: string }
+
+/** What the last read or apply produced, for the Mission it was made for. */
+type Outcome = {
+  missionId: string
+  diff: DiffState
+  applyError: string | null
+  authRequired: boolean
+}
+
+function showAppendResult(result: RuntimeMissionHulyRefreshResult): void {
+  const count = result.applied.length
+  const description = result.warnings.length > 0 ? result.warnings.join('\n') : undefined
+  if (count === 0) {
+    toast.warning(
+      translate(
+        'auto.components.sidebar.MissionHulyRefreshDialog.appendedNone',
+        'No new tasks were appended.'
+      ),
+      description ? { description } : undefined
+    )
+    return
+  }
+  const message =
+    count === 1
+      ? translate(
+          'auto.components.sidebar.MissionHulyRefreshDialog.appendedOne',
+          'Appended 1 new task'
+        )
+      : translate(
+          'auto.components.sidebar.MissionHulyRefreshDialog.appendedMany',
+          'Appended {{count}} new tasks',
+          { count }
+        )
+  if (description) {
+    toast.warning(message, { description })
+  } else {
+    toast.success(message)
+  }
+}
 
 /** "Refresh from Huly": shows what changed in the milestone; only appending new tasks is applied. */
 export function MissionHulyRefreshDialog({
@@ -33,64 +73,65 @@ export function MissionHulyRefreshDialog({
   const refreshMissionFromHuly = useAppStore((s) => s.refreshMissionFromHuly)
   const repos = useAppStore((s) => s.repos)
   const repoNameById = new Map(repos.map((repo) => [repo.id, repo.displayName]))
-  const [diffState, setDiffState] = useState<DiffState>({ state: 'loading' })
-  const [applying, setApplying] = useState(false)
-  const [applyError, setApplyError] = useState<string | null>(null)
   const missionId = mission?.id ?? null
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const [applying, setApplying] = useState(false)
+  // A closed dialog or another Mission never shows the previous diff, not even for one render.
+  if (outcome !== null && outcome.missionId !== missionId) {
+    setOutcome(null)
+  }
+  const current = outcome?.missionId === missionId ? outcome : null
+  const diffState: DiffState = current?.diff ?? { state: 'loading' }
 
   useEffect(() => {
     if (!missionId) {
       return
     }
     let cancelled = false
-    setDiffState({ state: 'loading' })
-    setApplyError(null)
     refreshMissionFromHuly(missionId, false).then(
       (result) => {
         if (!cancelled) {
-          setDiffState({ state: 'ready', diff: result.diff })
+          const diff = { state: 'ready' as const, diff: result.diff }
+          setOutcome({ missionId, diff, applyError: null, authRequired: false })
         }
       },
       (error: unknown) => {
         if (!cancelled) {
-          setDiffState({ state: 'error', message: formatHulyError(error) })
+          const diff = { state: 'error' as const, message: formatHulyError(error) }
+          const authRequired = isHulyAuthRequiredError(error)
+          setOutcome({ missionId, diff, applyError: null, authRequired })
         }
       }
     )
     return () => {
       cancelled = true
     }
-  }, [missionId, refreshMissionFromHuly])
+  }, [missionId, attempt, refreshMissionFromHuly])
 
   const appendableCount = diffState.state === 'ready' ? getAppendableCount(diffState.diff) : 0
+  const authRequired = current?.authRequired ?? false
+
+  function reloadAfterReconnect(): void {
+    setOutcome(null)
+    setAttempt((value) => value + 1)
+  }
 
   async function handleAppend(): Promise<void> {
-    if (!missionId) {
+    if (!missionId || !current) {
       return
     }
     setApplying(true)
-    setApplyError(null)
+    setOutcome({ ...current, applyError: null })
     try {
-      const result = await refreshMissionFromHuly(missionId, true)
-      const message =
-        result.applied.length === 1
-          ? translate(
-              'auto.components.sidebar.MissionHulyRefreshDialog.appendedOne',
-              'Appended 1 new task'
-            )
-          : translate(
-              'auto.components.sidebar.MissionHulyRefreshDialog.appendedMany',
-              'Appended {{count}} new tasks',
-              { count: result.applied.length }
-            )
-      if (result.warnings.length > 0) {
-        toast.warning(message, { description: result.warnings.join('\n') })
-      } else {
-        toast.success(message)
-      }
+      showAppendResult(await refreshMissionFromHuly(missionId, true))
       onOpenChange(false)
     } catch (error) {
-      setApplyError(formatHulyError(error))
+      setOutcome({
+        ...current,
+        applyError: formatHulyError(error),
+        authRequired: isHulyAuthRequiredError(error)
+      })
     } finally {
       setApplying(false)
     }
@@ -118,16 +159,17 @@ export function MissionHulyRefreshDialog({
               'Comparing with Huly...'
             )}
           </div>
-        ) : diffState.state === 'error' ? (
+        ) : authRequired ? null : diffState.state === 'error' ? (
           <p role="alert" className="text-xs text-destructive">
             {diffState.message}
           </p>
         ) : (
           <MissionHulyRefreshDiffView diff={diffState.diff} repoNameById={repoNameById} />
         )}
-        {applyError ? (
+        {authRequired ? <HulyReconnectNotice onReconnected={reloadAfterReconnect} /> : null}
+        {current?.applyError && !authRequired ? (
           <p role="alert" className="text-xs text-destructive">
-            {applyError}
+            {current.applyError}
           </p>
         ) : null}
         <DialogFooter>
@@ -140,7 +182,7 @@ export function MissionHulyRefreshDialog({
           >
             {translate('auto.components.sidebar.MissionHulyRefreshDialog.close', 'Close')}
           </Button>
-          {appendableCount > 0 ? (
+          {appendableCount > 0 && !authRequired ? (
             <Button type="button" size="sm" disabled={applying} onClick={() => void handleAppend()}>
               {applying ? <Loader2 className="size-4 animate-spin" /> : null}
               {appendableCount === 1
