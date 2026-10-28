@@ -22,12 +22,15 @@ function PlanError(props: { message: string; onRetry: () => void }): React.JSX.E
 /** The plan area of the create dialog for every load state. */
 export function MissionHulyPlanBody({
   planState,
+  hideErrors,
   repos,
   repoNameById,
   picks,
   onPicksChange
 }: {
   planState: HulyMilestonePlanState
+  /** Set while a reconnect notice already explains the failure. */
+  hideErrors: boolean
   repos: readonly Repo[]
   repoNameById: ReadonlyMap<string, string>
   picks: MissionHulyPlanPicks
@@ -45,6 +48,9 @@ export function MissionHulyPlanBody({
     )
   }
   if (planState.state === 'error') {
+    if (hideErrors) {
+      return null
+    }
     return <PlanError message={planState.message} onRetry={planState.retry} />
   }
   const { plan } = planState
@@ -52,7 +58,7 @@ export function MissionHulyPlanBody({
     plan.stacks.length === 0 && plan.cycles.length === 0 && planState.unmapped.length === 0
   return (
     <div className="space-y-3">
-      {planState.planError ? (
+      {planState.planError && !hideErrors ? (
         <PlanError message={planState.planError} onRetry={planState.retry} />
       ) : null}
       {isEmpty ? (

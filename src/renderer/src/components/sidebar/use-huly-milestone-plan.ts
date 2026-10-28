@@ -28,8 +28,6 @@ export type HulyMilestonePlanState =
       retry: () => void
     }
 
-const IGNORE_AUTH_REQUIRED = (): void => {}
-
 function isRequest(read: PlanRead, request: PlanRequest): boolean {
   return (
     read.request.project === request.project &&
@@ -51,7 +49,8 @@ async function readPlan(request: PlanRequest): Promise<PlanRead> {
 export function useHulyMilestonePlan(
   project: string | null,
   milestoneId: string | null,
-  repoOverrides: Record<string, string>
+  repoOverrides: Record<string, string>,
+  onAuthRequired: () => void
 ): HulyMilestonePlanState {
   const hasOverrides = Object.keys(repoOverrides).length > 0
   const baseRead = useCallback(
@@ -63,11 +62,8 @@ export function useHulyMilestonePlan(
     [project, milestoneId, repoOverrides]
   )
   const selected = project !== null && milestoneId !== null
-  const base = useHulyRead(selected ? baseRead : null, IGNORE_AUTH_REQUIRED)
-  const withOverrides = useHulyRead(
-    selected && hasOverrides ? overrideRead : null,
-    IGNORE_AUTH_REQUIRED
-  )
+  const base = useHulyRead(selected ? baseRead : null, onAuthRequired)
+  const withOverrides = useHulyRead(selected && hasOverrides ? overrideRead : null, onAuthRequired)
 
   if (!selected) {
     return { state: 'idle' }
@@ -105,10 +101,10 @@ export function useHulyMilestonePlan(
   return { ...ready, plan: baseValue.plan, pending: true, planError: null }
 }
 
-export function useHulyMilestones(project: string | null) {
+export function useHulyMilestones(project: string | null, onAuthRequired: () => void) {
   const read = useCallback(
     () => window.api.huly.listMilestones({ project: project ?? '' }),
     [project]
   )
-  return useHulyRead(project ? read : null, IGNORE_AUTH_REQUIRED)
+  return useHulyRead(project ? read : null, onAuthRequired)
 }

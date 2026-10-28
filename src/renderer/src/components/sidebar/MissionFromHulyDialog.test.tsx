@@ -49,6 +49,15 @@ vi.mock('@/components/ui/dialog', () => ({
 }))
 vi.mock('@/components/ui/select', () => import('@/components/ui/select-test-double'))
 vi.mock('@/components/agent/AgentCombobox', () => ({ default: () => null }))
+// Why: the connect dialog has its own tests; here only its success callback matters.
+vi.mock('@/components/huly-connect-dialog', () => ({
+  HulyConnectDialog: (props: { open: boolean; onConnected: () => void }) =>
+    props.open ? (
+      <button type="button" onClick={props.onConnected}>
+        connect stub
+      </button>
+    ) : null
+}))
 vi.mock('sonner', () => ({ toast: { warning: mocks.toastWarning, success: vi.fn() } }))
 
 import MissionFromHulyDialog from './MissionFromHulyDialog'
@@ -156,7 +165,11 @@ describe('MissionFromHulyDialog', () => {
           listMilestones: vi
             .fn()
             .mockResolvedValue([{ id: 'm1', label: 'Referral', status: 'InProgress' }]),
-          getMilestonePlan: mocks.getMilestonePlan
+          getMilestonePlan: mocks.getMilestonePlan,
+          status: vi.fn().mockResolvedValue({
+            connected: true,
+            info: { serverUrl: 'https://huly.test', workspace: 'acme' }
+          })
         }
       }
     })
@@ -271,6 +284,63 @@ describe('MissionFromHulyDialog', () => {
     })
     expect(mocks.createMissionFromMilestone).toHaveBeenCalledWith(
       expect.objectContaining({ repoOverrides: { 'OMP-5': 'r2' } })
+    )
+  })
+
+  it('offers to reconnect when the token expired and reloads the plan afterwards', async () => {
+    mocks.getMilestonePlan
+      .mockRejectedValueOnce(
+        new Error("Error invoking remote method 'huly:getMilestonePlan': huly_auth_required")
+      )
+      .mockResolvedValue({ milestone: MILESTONE, plan: plan({ stacks: [stack('r1', ['OMP-1'])] }) })
+    const container = await renderWithMilestone()
+
+    const reconnect = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Reconnect Huly'
+    )
+    expect(reconnect).toBeDefined()
+    expect(getCreateButton(container).disabled).toBe(true)
+
+    await act(async () => {
+      reconnect?.click()
+    })
+    await act(async () => {
+      ;[...container.querySelectorAll('button')]
+        .find((button) => button.textContent === 'connect stub')
+        ?.click()
+    })
+
+    expect(mocks.getMilestonePlan).toHaveBeenCalledTimes(2)
+    expect(container.textContent).not.toContain('Reconnect Huly')
+    expect(container.textContent).toContain('Title OMP-1')
+    expect(getCreateButton(container).disabled).toBe(false)
+  })
+
+  it('saves remembered mappings only after the Mission was created', async () => {
+    mocks.settings = { hulyProjects: {} }
+    mocks.getMilestonePlan.mockImplementation(async (args: { repoOverrides?: object }) => ({
+      milestone: MILESTONE,
+      plan: args.repoOverrides
+        ? plan({ stacks: [stack('r2', ['OMP-5'])] })
+        : plan({ unmapped: [issue('OMP-5', 'c-admin')] })
+    }))
+    mocks.createMissionFromMilestone.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'huly:createMission': Error: invalid_mission_branch_name"
+      )
+    )
+    const container = await renderWithMilestone()
+    await act(async () => {
+      pickOption(container, 'Repository for OMP-5', 'r2')
+    })
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[role="checkbox"]')?.click()
+    })
+    await submit(container)
+
+    expect(mocks.updateSettings).not.toHaveBeenCalled()
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+      'The branch name is not a valid Git branch name.'
     )
   })
 })
