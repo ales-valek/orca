@@ -71,6 +71,27 @@ describe('planAbsorb', () => {
     })
   })
 
+  it('assigns a hunk spanning two layers to the only one it can be placed in', () => {
+    const spanning = hunk('app.ts', [2, 3])
+    const isPlaceable = (_hunk: AbsorbHunk, taskId: string) => taskId !== 't1'
+
+    const plan = planAbsorb([spanning], blameByFile, layers, 't2', new Map(), isPlaceable)
+
+    expect(plan).toEqual({
+      assignments: [{ hunk: spanning, taskId: 't2', fixupOf: 'c2' }],
+      ambiguous: []
+    })
+  })
+
+  it('rejects a choice of a layer the hunk cannot be placed in, naming the hunk', () => {
+    const spanning = hunk('app.ts', [2, 3])
+    const isPlaceable = (_hunk: AbsorbHunk, taskId: string) => taskId !== 't1'
+
+    expect(() =>
+      planAbsorb([spanning], blameByFile, layers, 't2', new Map([['app.ts:2', 't1']]), isPlaceable)
+    ).toThrow('mission_absorb_override_unplaceable: app.ts:2')
+  })
+
   it('never places an opaque change or an unblamed line by itself', () => {
     const deleted: AbsorbHunk = { ...hunk('gone.ts', []), opaque: true }
     const unblamed = hunk('other.ts', [7])
