@@ -20,6 +20,7 @@ export const devEnvApi = {
   infraDown: (args) => ipcRenderer.invoke('devEnv:infraDown', args),
   revealSecret: (args) => ipcRenderer.invoke('devEnv:revealSecret', args),
   revealCredential: (args) => ipcRenderer.invoke('devEnv:revealCredential', args),
+  bindRemote: (args) => ipcRenderer.invoke('devEnv:bindRemote', args),
   secretsList: () => ipcRenderer.invoke('devEnv:secretsList'),
   secretSet: (args) => ipcRenderer.invoke('devEnv:secretSet', args),
   secretDelete: (args) => ipcRenderer.invoke('devEnv:secretDelete', args),

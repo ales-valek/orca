@@ -37,6 +37,10 @@ export type DevEnvApi = {
   /** Desktop only: never exposed over RPC. */
   revealSecret: (args: EnvArgs & { slot: string; path: string; key: string }) => Promise<string>
   revealCredential: (args: EnvArgs & { label: string }) => Promise<string>
+  /** Desktop only: remote tiers are never bound over RPC or the CLI. */
+  bindRemote: (
+    args: EnvArgs & { dependency: string; tierId: string; confirmation?: string }
+  ) => Promise<DevEnv>
   secretsList: () => Promise<string[]>
   secretSet: (args: { name: string; value: string }) => Promise<void>
   secretDelete: (args: { name: string }) => Promise<boolean>
