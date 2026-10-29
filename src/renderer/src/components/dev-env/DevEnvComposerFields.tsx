@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useMemo } from 'react'
 import { useAppStore } from '@/store'
 import { Label } from '@/components/ui/label'
@@ -9,7 +10,6 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import type { DevEnvSummary, DevEnvTemplate } from '../../../../shared/dev-env/dev-env-types'
-import { t } from './dev-env-labels'
 import { getDevEnvProviders } from './dev-env-providers'
 import { selectDevEnvs } from './DevEnvStatusBadge'
 import { DevEnvTemplatePicker, useDevEnvTemplates } from './DevEnvTemplatePicker'
@@ -77,7 +77,9 @@ export function DevEnvComposerFields({
       />
       {dependencies.length > 0 ? (
         <div className="space-y-1">
-          <Label variant="settings">{t('composer.dependencies', 'Dependencies')}</Label>
+          <Label variant="settings">
+            {translate('devEnv.composer.dependencies', 'Dependencies')}
+          </Label>
           {dependencies.map((dependency) => {
             const providers = getDevEnvProviders(envs, templates, dependency)
             return (
@@ -99,10 +101,12 @@ export function DevEnvComposerFields({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>{t('deps.notBound', 'Not bound')}</SelectItem>
+                    <SelectItem value={NONE}>
+                      {translate('devEnv.deps.notBound', 'Not bound')}
+                    </SelectItem>
                     {providers.map((provider) => (
                       <SelectItem key={provider.id} value={provider.id}>
-                        {t('deps.local', 'Local')} · {provider.name}
+                        {translate('devEnv.deps.local', 'Local')} · {provider.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -111,8 +115,8 @@ export function DevEnvComposerFields({
             )
           })}
           <p className="text-xs text-muted-foreground">
-            {t(
-              'composer.remoteLater',
+            {translate(
+              'devEnv.composer.remoteLater',
               'Running and stopped local environments that provide the service. Dev, staging and prod come later.'
             )}
           </p>

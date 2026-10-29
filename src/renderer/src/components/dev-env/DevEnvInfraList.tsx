@@ -1,8 +1,9 @@
+import { translate } from '@/i18n/i18n'
 import React from 'react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { runDevEnvAction } from './dev-env-actions'
-import { getDevEnvInfraTone, t } from './dev-env-labels'
+import { getDevEnvInfraTone } from './dev-env-labels'
 import { DevEnvStatusDot } from './DevEnvStatusDot'
 
 function SectionLabel({
@@ -28,13 +29,16 @@ export function DevEnvInfraList(): React.JSX.Element {
   const services = infra?.services ?? []
   const running = services.filter((service) => service.status === 'running').length
   const start = (service: string): void => {
-    void runDevEnvAction(t('infra.startFailed', 'Could not start infra'), async () => {
-      const result = await window.api.devEnv.infraUp({ service })
-      if (!result.ok) {
-        throw new Error(result.error ?? service)
+    void runDevEnvAction(
+      translate('devEnv.infra.startFailed', 'Could not start infra'),
+      async () => {
+        const result = await window.api.devEnv.infraUp({ service })
+        if (!result.ok) {
+          throw new Error(result.error ?? service)
+        }
+        await fetchDevEnvInfra()
       }
-      await fetchDevEnvInfra()
-    })
+    )
   }
   return (
     <section>
@@ -47,7 +51,7 @@ export function DevEnvInfraList(): React.JSX.Element {
           ) : null
         }
       >
-        {t('infra.title', 'Shared infra')}
+        {translate('devEnv.infra.title', 'Shared infra')}
       </SectionLabel>
       {infra?.error ? (
         <div className="flex flex-col gap-1.5 px-2 py-1 text-xs text-destructive">
@@ -58,13 +62,13 @@ export function DevEnvInfraList(): React.JSX.Element {
             className="self-start"
             onClick={() => void fetchDevEnvInfra()}
           >
-            {t('infra.retry', 'Retry')}
+            {translate('devEnv.infra.retry', 'Retry')}
           </Button>
         </div>
       ) : null}
       {!infra?.error && services.length === 0 ? (
         <p className="px-2 py-1 text-xs text-muted-foreground">
-          {t('infra.none', 'No infra services configured.')}
+          {translate('devEnv.infra.none', 'No infra services configured.')}
         </p>
       ) : null}
       {services.map((service) => (
@@ -88,7 +92,7 @@ export function DevEnvInfraList(): React.JSX.Element {
             </span>
           ) : (
             <Button variant="outline" size="xs" onClick={() => start(service.name)}>
-              {t('infra.start', 'Start')}
+              {translate('devEnv.infra.start', 'Start')}
             </Button>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import React from 'react'
 import { useAppStore } from '@/store'
 import { Label } from '@/components/ui/label'
@@ -10,7 +11,6 @@ import {
 } from '@/components/ui/select'
 import { isWebClient } from '../sidebar/worktree-card-model'
 import type { DevEnvTemplate } from '../../../../shared/dev-env/dev-env-types'
-import { t } from './dev-env-labels'
 import { getDevEnvTemplateNotes } from './dev-env-template-notes'
 
 const NONE = '__none__'
@@ -39,13 +39,13 @@ export function DevEnvTemplatePicker({
   const notes = selected && repoIds ? getDevEnvTemplateNotes(selected, repoIds) : []
   return (
     <div className="space-y-1">
-      <Label variant="settings">{t('picker.label', 'Dev Environment')}</Label>
+      <Label variant="settings">{translate('devEnv.picker.label', 'Dev Environment')}</Label>
       <Select value={value ?? NONE} onValueChange={(next) => onChange(next === NONE ? null : next)}>
         <SelectTrigger size="sm" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={NONE}>{t('picker.none', 'None')}</SelectItem>
+          <SelectItem value={NONE}>{translate('devEnv.picker.none', 'None')}</SelectItem>
           {templates.map((template) => (
             <SelectItem key={template.id} value={template.id}>
               {template.name}
@@ -55,8 +55,8 @@ export function DevEnvTemplatePicker({
       </Select>
       {selected ? (
         <p className="text-xs text-muted-foreground">
-          {t(
-            'picker.help',
+          {translate(
+            'devEnv.picker.help',
             'After create: env, dependencies, infra and data. Start services yourself.'
           )}
         </p>

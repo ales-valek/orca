@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { translate } from '@/i18n/i18n'
+import React, { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -13,7 +14,6 @@ import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store'
 import type { DevEnvDetail, DevEnvInfraService } from '../../../../shared/dev-env/dev-env-types'
 import { runDevEnvAction } from './dev-env-actions'
-import { t } from './dev-env-labels'
 
 const NO_INFRA: readonly DevEnvInfraService[] = []
 
@@ -37,6 +37,7 @@ function ConfirmWithOption({
   onConfirm: (option: boolean) => void
 }): React.JSX.Element {
   const [option, setOption] = useState(defaultOption)
+  const optionId = useId()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -44,13 +45,17 @@ function ConfirmWithOption({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{body}</DialogDescription>
         </DialogHeader>
-        <Label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={option} onCheckedChange={(value) => setOption(value === true)} />
-          {optionLabel}
-        </Label>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={optionId}
+            checked={option}
+            onCheckedChange={(value) => setOption(value === true)}
+          />
+          <Label htmlFor={optionId}>{optionLabel}</Label>
+        </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t('data.cancel', 'Cancel')}
+            {translate('devEnv.data.cancel', 'Cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -76,11 +81,14 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
     <div className="flex flex-col gap-3 p-4">
       <div className="rounded-xl border border-border bg-card p-3 text-[13px]">
         <div className="mb-2 text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-          {t('data.title', 'Data of this environment')}
+          {translate('devEnv.data.title', 'Data of this environment')}
         </div>
         {resources.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            {t('data.noResources', 'No infra service defines per-environment resources.')}
+            {translate(
+              'devEnv.data.noResources',
+              'No infra service defines per-environment resources.'
+            )}
           </p>
         ) : (
           resources.map((name) => (
@@ -95,12 +103,13 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
             size="sm"
             disabled={detail.setupRunning}
             onClick={() =>
-              void runDevEnvAction(t('data.seedFailed', 'Could not start the seed'), () =>
-                window.api.devEnv.seed({ env: detail.key })
+              void runDevEnvAction(
+                translate('devEnv.data.seedFailed', 'Could not start the seed'),
+                () => window.api.devEnv.seed({ env: detail.key })
               )
             }
           >
-            {t('data.seed', 'Seed')}
+            {translate('devEnv.data.seed', 'Seed')}
           </Button>
           <Button
             variant="outline"
@@ -108,38 +117,44 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
             disabled={detail.setupRunning}
             onClick={() => setResetOpen(true)}
           >
-            {t('data.reset', 'Reset data')}
+            {translate('devEnv.data.reset', 'Reset data')}
           </Button>
         </div>
       </div>
       <div className="flex items-center gap-3 rounded-xl border border-border p-3 text-[13px]">
         <span className="flex-1 text-muted-foreground">
           {detail.detached
-            ? t(
-                'data.detached',
+            ? translate(
+                'devEnv.data.detached',
                 'Its mission or worktree is gone. Delete the environment when you no longer need its data.'
               )
-            : t(
-                'data.deleteHint',
+            : translate(
+                'devEnv.data.deleteHint',
                 'Deleting stops the services and removes the environment from Orca.'
               )}
         </span>
         <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-          {t('data.delete', 'Delete…')}
+          {translate('devEnv.data.delete', 'Delete…')}
         </Button>
       </div>
       <ConfirmWithOption
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title={t('data.resetTitle', 'Reset data')}
-        body={t('data.resetBody', 'This drops {resources} for {env} and recreates them.')
-          .replace('{resources}', resources.join(', ') || t('data.allResources', 'all resources'))
+        title={translate('devEnv.data.resetTitle', 'Reset data')}
+        body={translate(
+          'devEnv.data.resetBody',
+          'This drops {resources} for {env} and recreates them.'
+        )
+          .replace(
+            '{resources}',
+            resources.join(', ') || translate('devEnv.data.allResources', 'all resources')
+          )
           .replace('{env}', detail.name)}
-        optionLabel={t('data.reseed', 'Run the seed afterwards')}
+        optionLabel={translate('devEnv.data.reseed', 'Run the seed afterwards')}
         defaultOption
-        confirmLabel={t('data.reset', 'Reset data')}
+        confirmLabel={translate('devEnv.data.reset', 'Reset data')}
         onConfirm={(reseed) =>
-          void runDevEnvAction(t('data.resetFailed', 'Could not reset data'), () =>
+          void runDevEnvAction(translate('devEnv.data.resetFailed', 'Could not reset data'), () =>
             window.api.devEnv.reset({ env: detail.key, reseed })
           )
         }
@@ -147,16 +162,16 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
       <ConfirmWithOption
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={t('data.deleteTitle', 'Delete Dev Environment')}
-        body={t(
-          'data.deleteBody',
+        title={translate('devEnv.data.deleteTitle', 'Delete Dev Environment')}
+        body={translate(
+          'devEnv.data.deleteBody',
           'Stops the services of {env} and deletes it. Worktrees and repos stay.'
         ).replace('{env}', detail.name)}
-        optionLabel={t('data.dropData', 'Also drop its data in the shared infra')}
+        optionLabel={translate('devEnv.data.dropData', 'Also drop its data in the shared infra')}
         defaultOption={false}
-        confirmLabel={t('data.deleteConfirm', 'Delete')}
+        confirmLabel={translate('devEnv.data.deleteConfirm', 'Delete')}
         onConfirm={(dropData) =>
-          void runDevEnvAction(t('data.deleteFailed', 'Could not delete'), () =>
+          void runDevEnvAction(translate('devEnv.data.deleteFailed', 'Could not delete'), () =>
             window.api.devEnv.delete({ env: detail.key, dropData })
           )
         }
