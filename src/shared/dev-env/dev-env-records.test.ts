@@ -58,6 +58,17 @@ describe('normalizeDevEnvs', () => {
     expect(env.setup).toEqual({ ports: { status: 'done' } })
   })
 
+  it('marks a step that was running when Orca quit as interrupted', () => {
+    const [env] = normalizeDevEnvs([
+      { ...ENV, setup: { install: { status: 'running', startedAt: 5 } } }
+    ])
+    expect(env.setup.install).toEqual({
+      status: 'failed',
+      startedAt: 5,
+      error: 'Interrupted: Orca quit while this step was running'
+    })
+  })
+
   it('returns an empty list for non-arrays', () => {
     expect(normalizeDevEnvs(undefined)).toEqual([])
   })

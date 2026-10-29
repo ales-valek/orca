@@ -7,6 +7,7 @@ import {
   parseDevEnvEnvLines,
   removeDevEnvService,
   removeDevEnvSlot,
+  replaceDevEnvTemplate,
   upsertDevEnvService
 } from './dev-env-template-edit'
 
@@ -46,5 +47,23 @@ describe('dev env template edits', () => {
 
   it('formats lines back', () => {
     expect(formatDevEnvEnvLines([{ key: 'A', value: '1' }])).toBe('A = 1')
+  })
+
+  it('replaces a valid draft in place', () => {
+    const saved = addDevEnvSlot(BASE, 'admin')
+    const draft = { ...saved, name: 'Renamed' }
+    expect(replaceDevEnvTemplate([saved], draft)).toEqual({ templates: [draft] })
+  })
+
+  it('refuses an invalid draft and leaves the saved list alone', () => {
+    const withSlots = addDevEnvSlot(addDevEnvSlot(BASE, 'a'), 'b')
+    const service = { name: 'x', command: 'c', portOffset: 1, dependsOn: [] }
+    const draft = upsertDevEnvService(
+      upsertDevEnvService(withSlots, 'a', null, service),
+      'b',
+      null,
+      { ...service, portOffset: 2 }
+    )
+    expect(replaceDevEnvTemplate([BASE], draft)).toEqual({ error: 'Duplicate service name "x"' })
   })
 })

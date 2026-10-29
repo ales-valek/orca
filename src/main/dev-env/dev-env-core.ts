@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { buildDevEnvContext, getDevEnvServiceHost } from '../../shared/dev-env/dev-env-context'
-import { interpolateDevEnvValue } from '../../shared/dev-env/dev-env-expression'
+import { renderDevEnvServiceCommand } from '../../shared/dev-env/dev-env-expression'
 import { DEV_ENV_MAX_PORT_SLOT, getDevEnvPort } from '../../shared/dev-env/dev-env-ports'
 import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
 import type { DevEnvWorktreeLookup } from '../../shared/dev-env/dev-env-slot-binding'
@@ -10,15 +10,24 @@ import type { DevEnv, DevEnvTemplate } from '../../shared/dev-env/dev-env-types'
 import type { Mission } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
-import { splitWorktreeId } from '../../shared/worktree/id'
+import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import { resolveDevEnvDependencies } from './dev-env-dependencies'
 import { isDevEnvFileGitIgnored } from './dev-env-git-ignore'
 import { DevEnvHostProxy } from './dev-env-host-proxy'
 import { DevEnvInfra } from './dev-env-infra'
-import { isPortFree, isPortListening, probeHttpReady } from './dev-env-port-owner'
+import {
+  describePortHolder,
+  isPortFree,
+  isPortListening,
+  probeHttpReady
+} from './dev-env-port-owner'
 import { DevEnvSecretStore } from './dev-env-secret-store'
 import { DevEnvServices, type DevEnvTerminalPort } from './dev-env-services'
-import { DevEnvSetupPipeline, type DevEnvSetupOptions } from './dev-env-setup-pipeline'
+import {
+  DevEnvSetupPipeline,
+  mergeDevEnvSetupOptions,
+  type DevEnvSetupOptions
+} from './dev-env-setup-pipeline'
 
 export type DevEnvStore = {
   getDevEnvs(): DevEnv[]
@@ -70,7 +79,7 @@ export abstract class DevEnvCore {
   protected readonly isPortFree: (port: number) => Promise<boolean>
   protected readonly worktreeExists: (path: string) => boolean
   protected readonly hostnameErrors = new Map<string, string>()
-  protected readonly pendingSlotRuns = new Map<string, Set<string>>()
+  protected readonly pendingSetups = new Map<string, DevEnvSetupOptions>()
 
   constructor(protected readonly deps: DevEnvOperationsDeps) {
     const root = join(deps.userDataDir, 'dev-envs')
@@ -92,6 +101,8 @@ export abstract class DevEnvCore {
         terminals: deps.terminals,
         probePort: isPortListening,
         probeHttp: probeHttpReady,
+        findPortHolder: async (port) =>
+          (await this.isPortFree(port)) ? null : describePortHolder(port),
         notify: deps.notify,
         renderCommand: (env, template, command) => this.renderCommand(env, template, command)
       })
@@ -157,15 +168,16 @@ export abstract class DevEnvCore {
   }
 
   protected readonly lookupWorktree: DevEnvWorktreeLookup = (worktreeId) => {
-    const parsed = splitWorktreeId(worktreeId)
-    const meta = this.deps.store.getWorktreeMeta(worktreeId)
-    if (!parsed || !meta || !this.worktreeExists(parsed.worktreePath)) {
+    // Why: folder workspace ids carry an instance suffix; meta is sparse (a main checkout may have none).
+    const parsed = splitWorktreeIdForFilesystem(worktreeId)
+    if (!parsed || !this.worktreeExists(parsed.worktreePath)) {
       return null
     }
     return {
       path: parsed.worktreePath,
       repoId: parsed.repoId,
-      label: meta.displayName || basename(parsed.worktreePath)
+      label:
+        this.deps.store.getWorktreeMeta(worktreeId)?.displayName || basename(parsed.worktreePath)
     }
   }
 
@@ -184,7 +196,7 @@ export abstract class DevEnvCore {
     env: DevEnv,
     template: DevEnvTemplate,
     command: string
-  ): Promise<string> {
+  ): Promise<{ command: string } | { error: string }> {
     const settings = this.deps.getSettings()
     const context = buildDevEnvContext({
       env,
@@ -194,8 +206,7 @@ export abstract class DevEnvCore {
       secrets: this.secrets.getAll(),
       dependencies: this.resolveDependencies(env)
     })
-    const result = interpolateDevEnvValue(command, context)
-    return 'error' in result ? command : result.value
+    return renderDevEnvServiceCommand(command, context)
   }
 
   protected async allocatePortSlot(template: DevEnvTemplate): Promise<number> {
@@ -266,19 +277,19 @@ export abstract class DevEnvCore {
   /** Starts setup in the background; a run already in progress picks the slots up afterwards. */
   startSetup(envId: string, options: DevEnvSetupOptions = {}): void {
     if (this.pipeline.isRunning(envId)) {
-      const pending = this.pendingSlotRuns.get(envId) ?? new Set<string>()
-      for (const slot of options.slots ?? []) {
-        pending.add(slot)
-      }
-      this.pendingSlotRuns.set(envId, pending)
+      const pending = this.pendingSetups.get(envId)
+      this.pendingSetups.set(envId, pending ? mergeDevEnvSetupOptions(pending, options) : options)
       return
     }
-    void this.pipeline.run(envId, options).then(() => {
-      const pending = this.pendingSlotRuns.get(envId)
-      this.pendingSlotRuns.delete(envId)
-      if (pending && pending.size > 0) {
-        this.startSetup(envId, { steps: ['env', 'install'], slots: [...pending] })
-      }
-    })
+    void this.pipeline
+      .run(envId, options)
+      .catch((error: unknown) => console.error('[dev-env] setup failed', envId, error))
+      .then(() => {
+        const pending = this.pendingSetups.get(envId)
+        this.pendingSetups.delete(envId)
+        if (pending) {
+          this.startSetup(envId, pending)
+        }
+      })
   }
 }

@@ -80,9 +80,16 @@ export const DEVENV_HANDLERS: Record<string, CommandHandler> = {
     printResult(result, json, () => 'Seed started.')
   },
   'devenv reset': async ({ flags, client, json }) => {
+    if (flags.get('yes') !== true) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Resetting drops this environment data; pass --yes to confirm'
+      )
+    }
     const result = await client.call<{ started: boolean }>('devenv.reset', {
       env: env(flags),
-      reseed: flags.get('reseed') === true
+      reseed: flags.get('reseed') === true,
+      confirm: true
     })
     printResult(result, json, () => 'Data dropped; provisioning started.')
   },

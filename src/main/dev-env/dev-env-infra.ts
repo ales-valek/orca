@@ -206,7 +206,16 @@ export class DevEnvInfra {
     }
     const result = await this.runExec(
       'docker',
-      [...this.composeArgs(), 'up', '-d', '--no-recreate', ...toStart],
+      [
+        ...this.composeArgs(),
+        'up',
+        '-d',
+        '--wait',
+        '--wait-timeout',
+        '300',
+        '--no-recreate',
+        ...toStart
+      ],
       {
         timeoutMs: COMPOSE_UP_TIMEOUT_MS,
         logPath

@@ -10,13 +10,18 @@ type ForwardOptions = {
   preserveHost: boolean
 }
 
+/** URL hostnames bracket IPv6 literals; socket APIs want them bare. */
+function connectHost(target: URL): string {
+  return connectableLoopbackHost(target.hostname).replace(/^\[(.*)\]$/, '$1')
+}
+
 function requestForTarget(
   target: URL,
   options: { method?: string; headers: http.OutgoingHttpHeaders }
 ): http.ClientRequest {
   const requestOptions = {
     protocol: target.protocol,
-    hostname: connectableLoopbackHost(target.hostname),
+    hostname: connectHost(target),
     port: target.port || (target.protocol === 'https:' ? 443 : 80),
     path: `${target.pathname}${target.search}`,
     method: options.method,
@@ -89,7 +94,7 @@ export function forwardProxyUpgrade(
 ): void {
   const target = targetUrlForRequest(routeTarget, request)
   const targetPort = Number(target.port || (target.protocol === 'https:' ? 443 : 80))
-  const targetSocket = net.connect(targetPort, connectableLoopbackHost(target.hostname), () => {
+  const targetSocket = net.connect(targetPort, connectHost(target), () => {
     const headers = requestHeadersForTarget(request, routeTarget, options)
     targetSocket.write(
       `${request.method ?? 'GET'} ${target.pathname}${target.search} HTTP/${request.httpVersion}\r\n`
