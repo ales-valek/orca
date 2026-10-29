@@ -55,7 +55,14 @@ const TEMPLATE: DevEnvTemplate = {
 
 const SETTINGS: DevEnvGlobalSettings = {
   devEnvInfra: [],
-  devEnvRemoteTiers: [],
+  devEnvRemoteTiers: [
+    {
+      id: 'prod',
+      name: 'Prod',
+      danger: true,
+      dependencies: { 'admin-api': { url: 'https://api.admin.prod.example', values: {} } }
+    }
+  ],
   devEnvTemplates: [TEMPLATE],
   devEnvProxyPort: 80
 }
@@ -348,5 +355,24 @@ describe('DevEnvOperations', () => {
     await operations.restore()
     expect([...publishedRoutes.keys()]).toEqual([kept.id])
     expect(envs.find((env) => env.id === 'e-orphan')?.detached).toBe(true)
+  })
+
+  it('binds a danger tier only with the environment key typed, and badges it', async () => {
+    const env = await operations.createForWorktree(STANDALONE, 't1')
+    expect(() => operations.bindRemote(env.id, 'admin-api', 'prod', 'nope')).toThrow(
+      'Type the environment key to bind it to Prod'
+    )
+    expect(() => operations.bindRemote(env.id, 'admin-api', 'gone', env.key)).toThrow(
+      'Unknown remote tier gone'
+    )
+    operations.bindRemote(env.id, 'admin-api', 'prod', env.key)
+    expect(envs.find((entry) => entry.id === env.id)?.bindings['admin-api']).toEqual({
+      kind: 'remote',
+      tierId: 'prod'
+    })
+    const detail = await operations.show(env.id)
+    expect(detail.badge.danger).toBe(true)
+    expect(detail.remoteTiers['admin-api']).toEqual({ tierId: 'prod', name: 'Prod', danger: true })
+    expect(detail.dependencyStates['admin-api']).toBe('remote')
   })
 })

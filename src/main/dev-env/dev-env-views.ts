@@ -18,11 +18,12 @@ import type { DevEnvRenderedFile } from './dev-env-file-writer'
 export function getDevEnvBadge(
   env: DevEnv,
   services: DevEnvServiceState[],
-  setupRunning: boolean
+  setupRunning: boolean,
+  danger = false
 ): DevEnvBadge {
   const bound = services.filter((service) => service.status !== 'unbound')
   const up = bound.filter((service) => service.status === 'up').length
-  const base = { envId: env.id, up, total: bound.length }
+  const base = { envId: env.id, up, total: bound.length, ...(danger ? { danger: true } : {}) }
   if (setupRunning) {
     return { ...base, state: 'setting-up' }
   }
@@ -41,11 +42,12 @@ export function buildDevEnvSummary(input: {
   services: DevEnvServiceState[]
   setupRunning: boolean
   attachmentLabel: string
+  danger?: boolean
 }): DevEnvSummary {
   return {
     ...input.env,
     templateName: input.template?.name ?? 'Missing template',
-    badge: getDevEnvBadge(input.env, input.services, input.setupRunning),
+    badge: getDevEnvBadge(input.env, input.services, input.setupRunning, input.danger),
     portRange: getDevEnvPortRange(input.env.portSlot),
     attachmentLabel: input.attachmentLabel
   }
