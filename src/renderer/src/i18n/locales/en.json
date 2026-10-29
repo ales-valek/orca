@@ -23433,7 +23433,7 @@
   "devEnv": {
     "composer": {
       "dependencies": "Dependencies",
-      "remoteLater": "Running and stopped local environments that provide the service. Dev, staging and prod come later."
+      "providersHint": "Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists."
     },
     "deps": {
       "notBound": "Not bound",
@@ -23445,13 +23445,18 @@
       "title": "Dependencies",
       "none": "Every service of this template runs in this environment.",
       "bindFailed": "Could not pair the dependency",
-      "remoteLater": "Dev, staging and prod targets come in a later delivery.",
       "state": {
         "up": "up",
         "down": "down",
         "missing": "provider deleted",
-        "unbound": "not bound"
-      }
+        "unbound": "not bound",
+        "remote": "remote"
+      },
+      "remote": "Remote",
+      "noTiers": "Add dev, staging or prod targets under Settings → Dev Environments → Remote tiers.",
+      "dangerTitle": "Bind to {tier}",
+      "dangerBody": "{env} will talk to {tier} for {dependency}. Type the environment key to confirm.",
+      "dangerConfirm": "Bind"
     },
     "data": {
       "cancel": "Cancel",
@@ -23494,9 +23499,7 @@
       "retry": "Retry",
       "none": "No infra services configured.",
       "start": "Start",
-      "notArray": "Expected a JSON array of services",
-      "dropped": "{count} invalid service(s) were not saved",
-      "help": "Each service: name, image or build, ports [{name, host, container}], environment, volumes, healthcheck, resource {create, drop}. Resource commands run inside the container for each environment and must be safe to run twice.",
+      "help": "Each service: name, image or build, ports [{name, host, container}], environment, volumes, healthcheck, resource {create, drop, dump, restore}. Resource commands run inside the container for each environment and must be safe to run twice; dump writes the data to stdout and restore reads it from stdin.",
       "save": "Save infra",
       "import": "Import infra JSON"
     },
@@ -23514,7 +23517,12 @@
       "stopFailed": "Could not stop services",
       "stopAll": "Stop all",
       "startFailed": "Could not start services",
-      "startAll": "Start all"
+      "startAll": "Start all",
+      "mode": "Run mode",
+      "modeFailed": "Could not switch the run mode",
+      "modeDev": "Dev",
+      "modeProdHint": "Runs each service’s prod build and start commands; switching stops the services.",
+      "modeProd": "Prod build"
     },
     "tab": {
       "services": "Services",
@@ -23573,7 +23581,8 @@
       "title": "Dev Environment {name}",
       "setup": "setup",
       "settingUp": "setup…",
-      "stopped": "stopped"
+      "stopped": "stopped",
+      "prod": "prod"
     },
     "picker": {
       "label": "Dev Environment",
@@ -23636,7 +23645,11 @@
       "deleteBody": "{{count}} Dev Environment(s) use it and will show \"Template no longer exists\" until you delete them.",
       "cancel": "Cancel",
       "deleteConfirm": "Delete template",
-      "valuesFileHelp": "Personal values file outside the repos; read on every render and masked like secrets."
+      "valuesFileHelp": "Personal values file outside the repos; read on every render and masked like secrets.",
+      "remoteTiers": "Remote tiers",
+      "prodVariant": "prod build",
+      "prodBuild": "Prod build command",
+      "prodStart": "Prod start command"
     },
     "search": {
       "title": "Dev Environments",
@@ -23644,14 +23657,6 @@
     },
     "nav": "Dev Environments",
     "createFailed": "Dev Environment was not created",
-    "step": {
-      "ports": "Allocate ports",
-      "env": "Render env",
-      "install": "Install dependencies",
-      "infra": "Ensure shared infra",
-      "data": "Provision data",
-      "seed": "Seed"
-    },
     "create": {
       "failed": "Could not create the Dev Environment",
       "title": "Create Dev Environment",
@@ -23659,6 +23664,46 @@
       "cancel": "Cancel",
       "confirm": "Create",
       "menuItem": "Create Dev Environment…"
+    },
+    "confirm": {
+      "typeKey": "Type the environment key",
+      "cancel": "Cancel"
+    },
+    "snapshots": {
+      "saveFailed": "Could not save the snapshot",
+      "title": "Snapshots",
+      "empty": "No snapshots yet.",
+      "restore": "Restore…",
+      "delete": "Delete…",
+      "namePlaceholder": "before-import",
+      "name": "Snapshot name",
+      "save": "Save snapshot",
+      "nameHint": "Use lowercase letters, digits and dashes.",
+      "restoreTitle": "Restore snapshot",
+      "deleteTitle": "Delete snapshot",
+      "restoreBody": "Stops the services of {env}, replaces its data with {snapshot}, then starts the services that were up.",
+      "deleteBody": "Deletes the snapshot files of {snapshot}.",
+      "restoreConfirm": "Restore",
+      "deleteConfirm": "Delete",
+      "restoreFailed": "Could not restore the snapshot",
+      "deleteFailed": "Could not delete the snapshot"
+    },
+    "json": {
+      "notArray": "Expected a JSON array",
+      "dropped": "{count} invalid entries were not saved"
+    },
+    "tiers": {
+      "help": "Each tier: id, name, danger (true for prod), dependencies {<service>: {url, values {<export>: value}}}. Values may use ${secret.<name>} and stay masked. Tiers are bound only from this desktop app; a danger tier asks for the environment key.",
+      "save": "Save tiers",
+      "import": "Import tiers JSON"
+    },
+    "step": {
+      "ports": "Allocate ports",
+      "env": "Render env",
+      "install": "Install dependencies",
+      "infra": "Ensure shared infra",
+      "data": "Provision data",
+      "seed": "Seed"
     }
   },
   "keybindings": {

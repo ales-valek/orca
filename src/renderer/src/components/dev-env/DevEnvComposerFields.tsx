@@ -116,8 +116,8 @@ export function DevEnvComposerFields({
           })}
           <p className="text-xs text-muted-foreground">
             {translate(
-              'devEnv.composer.remoteLater',
-              'Running and stopped local environments that provide the service. Dev, staging and prod come later.'
+              'devEnv.composer.providersHint',
+              'Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists.'
             )}
           </p>
         </div>

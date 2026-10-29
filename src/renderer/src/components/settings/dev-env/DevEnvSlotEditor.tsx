@@ -22,60 +22,94 @@ function ServiceRow({
   onChange: (service: DevEnvServiceDef) => void
   onRemove: () => void
 }): React.JSX.Element {
+  const setProd = (prod: { build: string; start: string }): void =>
+    onChange({
+      ...service,
+      prod:
+        prod.build || prod.start
+          ? { ...(prod.build ? { build: prod.build } : {}), start: prod.start }
+          : undefined
+    })
   return (
-    <div className="grid grid-cols-[8rem_1fr_3.5rem_9rem_9rem_6rem_auto] items-center gap-1.5">
-      <Input
-        variant="code"
-        density="compact"
-        value={service.name}
-        onChange={(e) => onChange({ ...service, name: e.target.value })}
-      />
-      <Input
-        variant="code"
-        density="compact"
-        value={service.command}
-        onChange={(e) => onChange({ ...service, command: e.target.value })}
-      />
-      <Input
-        variant="code"
-        density="compact"
-        type="number"
-        min={0}
-        max={99}
-        value={service.portOffset}
-        onChange={(e) => onChange({ ...service, portOffset: Number(e.target.value) })}
-      />
-      <Input
-        variant="code"
-        density="compact"
-        placeholder="admin.${devEnv.key}"
-        value={service.host ?? ''}
-        onChange={(e) => onChange({ ...service, host: e.target.value || undefined })}
-      />
-      <Input
-        variant="code"
-        density="compact"
-        placeholder="postgres, api"
-        value={service.dependsOn.join(', ')}
-        onChange={(e) => onChange({ ...service, dependsOn: parseDevEnvList(e.target.value) })}
-      />
-      <Input
-        variant="code"
-        density="compact"
-        placeholder="/health"
-        value={service.ready?.httpPath ?? ''}
-        onChange={(e) =>
-          onChange({ ...service, ready: e.target.value ? { httpPath: e.target.value } : undefined })
-        }
-      />
-      <Button
-        variant="ghost"
-        size="xs"
-        aria-label={translate('devEnv.settings.removeService', 'Remove service')}
-        onClick={onRemove}
-      >
-        <Trash2 />
-      </Button>
+    <div className="space-y-1">
+      <div className="grid grid-cols-[8rem_1fr_3.5rem_9rem_9rem_6rem_auto] items-center gap-1.5">
+        <Input
+          variant="code"
+          density="compact"
+          value={service.name}
+          onChange={(e) => onChange({ ...service, name: e.target.value })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          value={service.command}
+          onChange={(e) => onChange({ ...service, command: e.target.value })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          type="number"
+          min={0}
+          max={99}
+          value={service.portOffset}
+          onChange={(e) => onChange({ ...service, portOffset: Number(e.target.value) })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          placeholder="admin.${devEnv.key}"
+          value={service.host ?? ''}
+          onChange={(e) => onChange({ ...service, host: e.target.value || undefined })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          placeholder="postgres, api"
+          value={service.dependsOn.join(', ')}
+          onChange={(e) => onChange({ ...service, dependsOn: parseDevEnvList(e.target.value) })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          placeholder="/health"
+          value={service.ready?.httpPath ?? ''}
+          onChange={(e) =>
+            onChange({
+              ...service,
+              ready: e.target.value ? { httpPath: e.target.value } : undefined
+            })
+          }
+        />
+        <Button
+          variant="ghost"
+          size="xs"
+          aria-label={translate('devEnv.settings.removeService', 'Remove service')}
+          onClick={onRemove}
+        >
+          <Trash2 />
+        </Button>
+      </div>
+      <div className="grid grid-cols-[8rem_1fr_1fr] items-center gap-1.5">
+        <span className="text-right text-2xs text-muted-foreground">
+          {translate('devEnv.settings.prodVariant', 'prod build')}
+        </span>
+        <Input
+          variant="code"
+          density="compact"
+          placeholder="pnpm build"
+          aria-label={translate('devEnv.settings.prodBuild', 'Prod build command')}
+          value={service.prod?.build ?? ''}
+          onChange={(e) => setProd({ build: e.target.value, start: service.prod?.start ?? '' })}
+        />
+        <Input
+          variant="code"
+          density="compact"
+          placeholder="pnpm start"
+          aria-label={translate('devEnv.settings.prodStart', 'Prod start command')}
+          value={service.prod?.start ?? ''}
+          onChange={(e) => setProd({ build: service.prod?.build ?? '', start: e.target.value })}
+        />
+      </div>
     </div>
   )
 }
