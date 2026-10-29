@@ -1,4 +1,5 @@
 import type { MissionsSlice } from './slices/missions'
+import type { DevEnvsSlice } from './slices/dev-envs'
 import type { RepoSlice } from './repos/repo-state'
 import type { SparsePresetsSlice } from './slices/sparse-presets'
 import type { WorktreeSlice } from './slices/worktrees'
@@ -53,6 +54,7 @@ import type { WorkspaceAttentionSlice } from './slices/workspace-attention/works
 
 export type AppState = RepoSlice &
   MissionsSlice &
+  DevEnvsSlice &
   SparsePresetsSlice &
   WorktreeSlice &
   TerminalSlice &
