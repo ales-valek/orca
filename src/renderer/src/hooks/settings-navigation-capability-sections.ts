@@ -4,6 +4,7 @@ import { getAgentsPaneSearchEntries } from '@/components/settings/agents/agents-
 import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use/computer-use-search'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general/general-search'
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations/integrations-search'
+import { getDevEnvPaneSearchEntries } from '@/components/settings/dev-env/dev-env-search'
 import { getLinearAgentSkillPaneSearchEntries } from '@/components/settings/skills/linear/linear-agent-skill-search'
 import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile/mobile-settings-search'
 import { getOrcaAccountSettingsSearchEntries } from '@/components/settings/accounts/orca/orca-account-settings-search'
@@ -16,6 +17,7 @@ import type { SettingsNavSection } from '@/lib/settings-navigation-types'
 import {
   Blocks,
   Bot,
+  Container,
   CircleUserRound,
   Mic,
   MousePointerClick,
@@ -186,6 +188,21 @@ export function buildSetupSettingsSections(
       searchEntries: getIntegrationsPaneSearchEntries(),
       group: 'setup'
     },
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'dev-envs',
+            title: translate('devEnv.settings.title', 'Dev Environments'),
+            description: translate(
+              'devEnv.settings.description',
+              'Shared infra, templates and secrets for running missions and worktrees.'
+            ),
+            icon: Container,
+            searchEntries: getDevEnvPaneSearchEntries(),
+            group: 'setup' as const
+          }
+        ]
+      : []),
     ...(showDesktopOnlySettings
       ? [
           {
