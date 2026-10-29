@@ -42,6 +42,7 @@ export type HulyApi = {
     branch?: string
     agent?: TuiAgent
     orchestratorRepo?: string
+    devEnvTemplate?: string
     repoOverrides?: Record<string, string>
     orderOverrides?: Record<string, string[]>
   }) => Promise<RuntimeMissionHulyCreateResult>

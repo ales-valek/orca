@@ -35,6 +35,21 @@ import { beginWorkspaceCreateTelemetry } from '../../../workspaces/creation/work
 import { assertWslMoveRepoWritable } from '../../../persistence/moving-wsl-projects/wsl-move-scope-guard'
 import { applyWorkspaceCreatePluginHook } from '../../../plugins/hooks/workspace-create-plugin-hook'
 
+async function createWorktreeDevEnv(
+  runtime: Pick<WorktreeIpcContext['runtime'], 'getDevEnvOperations'>,
+  worktreeId: string,
+  devEnv: NonNullable<CreateWorktreeArgs['devEnv']>
+): Promise<string | null> {
+  try {
+    await runtime
+      .getDevEnvOperations()
+      .createForWorktree(worktreeId, devEnv.templateId, devEnv.bindings)
+    return null
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
+
 export function registerWorktreeCreateHandlers(context: WorktreeIpcContext): void {
   const { mainWindow, store, runtime, options } = context
 
@@ -126,8 +141,15 @@ export function registerWorktreeCreateHandlers(context: WorktreeIpcContext): voi
           branch: result.worktree.branch
         })
 
+        const devEnvError = args.devEnv
+          ? await createWorktreeDevEnv(runtime, result.worktree.id, args.devEnv)
+          : null
         // Stamp after the create notification bumps generation so the reply names its resulting catalog.
-        return { ...result, catalogVersion: getLocalWorktreeCatalogVersion(repo.id) }
+        return {
+          ...result,
+          catalogVersion: getLocalWorktreeCatalogVersion(repo.id),
+          ...(devEnvError ? { devEnvError } : {})
+        }
       })
     }
   )

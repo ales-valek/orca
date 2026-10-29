@@ -39,6 +39,7 @@ export type HulyMissionCreateArgs = HulyMilestonePlanArgs & {
   branchName?: string
   orchestratorRepoId?: string | null
   sessionAgent?: TuiAgent
+  devEnvTemplateId?: string
 }
 
 export type HulyMissionCreateResult = {
@@ -53,6 +54,8 @@ export type HulyMissionImportDeps = {
   missions: {
     create(args: MissionCreateInput): Promise<MissionCreateResult>
     addTask(args: MissionAddTaskInput): Promise<MissionTaskResult>
+    /** Returns an error message instead of throwing; see MissionOperations.createMissionDevEnv. */
+    createDevEnv?(missionId: string, templateId: string | undefined): Promise<string | null>
   }
   getMission: (missionId: string) => Mission | null
   setMissionSource: (missionId: string, source: MissionSource) => Mission | null
@@ -181,6 +184,11 @@ export class HulyMissionImport {
 
       const mission = this.deps.getMission(missionId) ?? created.mission
       warnings.push(...this.writeBrief(mission, milestone, plan))
+      // Why: after the layers, so the environment binds the previews instead of moving to them.
+      const devEnvError = await this.deps.missions.createDevEnv?.(missionId, args.devEnvTemplateId)
+      if (devEnvError) {
+        warnings.push(`Dev Environment: ${devEnvError}`)
+      }
       return { mission, taskResults, warnings }
     })
   }

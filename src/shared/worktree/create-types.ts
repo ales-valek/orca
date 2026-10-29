@@ -102,6 +102,8 @@ export type CreateWorktreeArgs = {
   setupDecision?: SetupDecision
   /** Per-create choice; omitted callers use the execution host's saved default. */
   setupOnly?: boolean
+  /** Dev Environment to create for the new worktree; bindings map a dependency to a provider env id. */
+  devEnv?: { templateId: string; bindings?: Record<string, string> }
   sparseCheckout?: CreateSparseCheckoutRequest
   linkedIssue?: number
   linkedPR?: number
@@ -170,6 +172,8 @@ export type CreateWorktreeResult = {
   lineage?: WorktreeLineage | null
   workspaceLineage?: WorkspaceLineage | null
   warnings?: WorktreeLineageWarning[]
+  /** Set when the requested Dev Environment could not be created; the worktree exists either way. */
+  devEnvError?: string
   setup?: WorktreeSetupLaunch
   setupReceipt?: {
     requested: 'run' | 'skip' | 'inherit'

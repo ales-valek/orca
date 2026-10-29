@@ -1,3 +1,4 @@
+import { createMissionDevEnv } from '../dev-env/dev-env-mission-create'
 import type { HulyConnectionInfo } from '../../shared/huly/huly-types'
 import type {
   RuntimeMissionHulyCreateResult,
@@ -18,6 +19,7 @@ export type RuntimeMissionCreateFromHulyInput = {
   branch?: string
   agent?: TuiAgent
   orchestratorRepo?: string
+  devEnvTemplate?: string
   repoOverrides?: Record<string, string>
   orderOverrides?: Record<string, string[]>
 }
@@ -44,7 +46,9 @@ export abstract class OrcaRuntimeWithHulyCommands extends OrcaRuntimeWithMission
       // Why: resolved per call so plan previews work while no desktop window owns Missions.
       missions: {
         create: (args) => this.requireMissionOperations().create(args),
-        addTask: (args) => this.requireMissionOperations().addTask(args)
+        addTask: (args) => this.requireMissionOperations().addTask(args),
+        createDevEnv: (missionId, templateId) =>
+          createMissionDevEnv(() => this.getDevEnvOperations(), missionId, templateId)
       },
       getMission: (missionId) => store.getMission?.(missionId) ?? null,
       setMissionSource: (missionId, source) => {
@@ -114,6 +118,7 @@ export abstract class OrcaRuntimeWithHulyCommands extends OrcaRuntimeWithMission
       ...(input.name ? { name: input.name } : {}),
       ...(input.branch ? { branchName: input.branch } : {}),
       ...(input.agent ? { sessionAgent: input.agent } : {}),
+      ...(input.devEnvTemplate ? { devEnvTemplateId: input.devEnvTemplate } : {}),
       ...(input.repoOverrides ? { repoOverrides: input.repoOverrides } : {}),
       ...(input.orderOverrides ? { orderOverrides: input.orderOverrides } : {})
     })
