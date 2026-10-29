@@ -80,6 +80,8 @@ export abstract class DevEnvCore {
   protected readonly worktreeExists: (path: string) => boolean
   protected readonly hostnameErrors = new Map<string, string>()
   protected readonly pendingSetups = new Map<string, DevEnvSetupOptions>()
+  /** Envs whose data a snapshot or restore is reading or replacing. */
+  protected readonly dataBusy = new Map<string, string>()
 
   constructor(protected readonly deps: DevEnvOperationsDeps) {
     const root = join(deps.userDataDir, 'dev-envs')
@@ -276,7 +278,7 @@ export abstract class DevEnvCore {
 
   /** Starts setup in the background; a run already in progress picks the slots up afterwards. */
   startSetup(envId: string, options: DevEnvSetupOptions = {}): void {
-    if (this.pipeline.isRunning(envId)) {
+    if (this.pipeline.isRunning(envId) || this.dataBusy.has(envId)) {
       const pending = this.pendingSetups.get(envId)
       this.pendingSetups.set(envId, pending ? mergeDevEnvSetupOptions(pending, options) : options)
       return
@@ -284,12 +286,21 @@ export abstract class DevEnvCore {
     void this.pipeline
       .run(envId, options)
       .catch((error: unknown) => console.error('[dev-env] setup failed', envId, error))
-      .then(() => {
-        const pending = this.pendingSetups.get(envId)
-        this.pendingSetups.delete(envId)
-        if (pending) {
-          this.startSetup(envId, pending)
-        }
-      })
+      .then(() => this.startPendingSetup(envId))
+  }
+
+  protected startPendingSetup(envId: string): void {
+    const pending = this.pendingSetups.get(envId)
+    this.pendingSetups.delete(envId)
+    if (pending) {
+      this.startSetup(envId, pending)
+    }
+  }
+
+  protected assertDataIdle(envId: string): void {
+    const running = this.dataBusy.get(envId)
+    if (running) {
+      throw new Error(`A ${running} of this environment is running`)
+    }
   }
 }

@@ -76,10 +76,12 @@ describe('getDevEnvServiceCommand', () => {
       prod: { build: 'pnpm build', start: 'pnpm start' }
     }
     const startOnly = { ...SERVICE, command: 'pnpm dev', prod: { start: 'node dist' } }
-    expect(getDevEnvServiceCommand(built, 'prod')).toBe('pnpm build && pnpm start')
-    expect(getDevEnvServiceCommand(startOnly, 'prod')).toBe('node dist')
-    expect(getDevEnvServiceCommand(SERVICE, 'prod')).toBe(SERVICE.command)
-    expect(getDevEnvServiceCommand(built, undefined)).toBe('pnpm dev')
+    expect(getDevEnvServiceCommand(built, 'prod', 'darwin')).toBe('pnpm build && pnpm start')
+    expect(getDevEnvServiceCommand(startOnly, 'prod', 'darwin')).toBe('node dist')
+    expect(getDevEnvServiceCommand(SERVICE, 'prod', 'darwin')).toBe(SERVICE.command)
+    expect(getDevEnvServiceCommand(built, undefined, 'darwin')).toBe('pnpm dev')
+    expect(getDevEnvServiceCommand(built, 'prod', 'win32')).toBeNull()
+    expect(getDevEnvServiceCommand(startOnly, 'prod', 'win32')).toBe('node dist')
   })
 })
 

@@ -167,7 +167,7 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
         title={translate('devEnv.data.deleteTitle', 'Delete Dev Environment')}
         body={translate(
           'devEnv.data.deleteBody',
-          'Stops the services of {env} and deletes it. Worktrees and repos stay.'
+          'Stops the services of {env} and deletes it. Worktrees, repos and snapshot files stay.'
         ).replace('{env}', detail.name)}
         optionLabel={translate('devEnv.data.dropData', 'Also drop its data in the shared infra')}
         defaultOption={false}
