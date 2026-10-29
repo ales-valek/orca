@@ -56,4 +56,19 @@ export const DevEnvCreateParams = z
 
 export const DevEnvDeleteParams = z.object({ env: EnvSelector, dropData: z.boolean() })
 
+const SnapshotName = requiredString('Missing snapshot name')
+
+export const DevEnvSnapshotParams = z.object({ env: EnvSelector, name: SnapshotName })
+
+/** Restore and delete overwrite or drop data, so the caller confirms (UI dialog or `--yes`). */
+export const DevEnvConfirmedSnapshotParams = z.object({
+  env: EnvSelector,
+  name: SnapshotName,
+  confirm: z.literal(true, {
+    message: 'This replaces data and requires confirm: true (orca devenv restore --yes)'
+  })
+})
+
+export const DevEnvModeParams = z.object({ env: EnvSelector, mode: z.enum(['dev', 'prod']) })
+
 export const DevEnvInfraParams = z.object({ service: OptionalString })

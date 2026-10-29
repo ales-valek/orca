@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { getDevEnvServiceCommand } from '../../shared/dev-env/dev-env-expression'
 import type { DevEnv, DevEnvServiceDef, DevEnvTemplate } from '../../shared/dev-env/dev-env-types'
 import { DevEnvServices, orderDevEnvServices, type DevEnvTerminalPort } from './dev-env-services'
 
@@ -66,6 +67,21 @@ const ENV: DevEnv = {
   setup: {},
   createdAt: 1
 }
+
+describe('getDevEnvServiceCommand', () => {
+  it('runs the prod variant only in prod mode and keeps dev commands for services without one', () => {
+    const built = {
+      ...SERVICE,
+      command: 'pnpm dev',
+      prod: { build: 'pnpm build', start: 'pnpm start' }
+    }
+    const startOnly = { ...SERVICE, command: 'pnpm dev', prod: { start: 'node dist' } }
+    expect(getDevEnvServiceCommand(built, 'prod')).toBe('pnpm build && pnpm start')
+    expect(getDevEnvServiceCommand(startOnly, 'prod')).toBe('node dist')
+    expect(getDevEnvServiceCommand(SERVICE, 'prod')).toBe(SERVICE.command)
+    expect(getDevEnvServiceCommand(built, undefined)).toBe('pnpm dev')
+  })
+})
 
 describe('orderDevEnvServices', () => {
   it('orders services after their service dependencies and ignores infra names', () => {
