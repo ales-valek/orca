@@ -131,5 +131,7 @@ export function getDevEnvDependencyStateLabel(
       return translate('devEnv.deps.state.missing', 'provider deleted')
     case 'unbound':
       return translate('devEnv.deps.state.unbound', 'not bound')
+    case 'remote':
+      return translate('devEnv.deps.state.remote', 'remote')
   }
 }
