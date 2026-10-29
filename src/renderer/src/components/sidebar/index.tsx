@@ -47,6 +47,9 @@ const ForgetSshWorkspaceDialog = lazyWithRetry(
 const AgentDashboardSidebarHost = lazyWithRetry(() => import('./AgentDashboardSidebarHost'))
 const MissionCreateDialog = lazyWithRetry(() => import('./MissionCreateDialog'))
 const MissionFromHulyDialog = lazyWithRetry(() => import('./MissionFromHulyDialog'))
+const DevEnvWorktreeCreateModal = lazyWithRetry(
+  () => import('../dev-env/DevEnvWorktreeCreateModal')
+)
 
 const MIN_WIDTH = 220
 const MAX_WIDTH = 500
@@ -302,6 +305,7 @@ function Sidebar({
         {activeModal === 'forget-ssh-workspace' ? <ForgetSshWorkspaceDialog /> : null}
         {activeModal === 'mission-create' ? <MissionCreateDialog /> : null}
         {activeModal === 'mission-create-huly' ? <MissionFromHulyDialog /> : null}
+        {activeModal === 'dev-env-create-worktree' ? <DevEnvWorktreeCreateModal /> : null}
       </React.Suspense>
       {sidebarOpen ? (
         <WorkspaceKanbanDrawer

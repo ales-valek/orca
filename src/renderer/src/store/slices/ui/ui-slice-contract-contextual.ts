@@ -57,6 +57,7 @@ export type UISliceContextual = {
     | 'node-dist-mirror'
     | 'mission-create'
     | 'mission-create-huly'
+    | 'dev-env-create-worktree'
   modalData: Record<string, unknown>
   openModal: (modal: UISliceContextual['activeModal'], data?: Record<string, unknown>) => void
   closeModal: () => void
