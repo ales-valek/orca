@@ -15,14 +15,12 @@ import type {
 } from '../../../../shared/dev-env/dev-env-types'
 import { runDevEnvAction } from './dev-env-actions'
 import { getDevEnvDependencyStateLabel, type DevEnvTone } from './dev-env-labels'
-import { getDevEnvProviders } from './dev-env-providers'
+import { DEV_ENV_REMOTE_PREFIX, getDevEnvProviders } from './dev-env-providers'
 import { DevEnvConfirmDialog } from './DevEnvConfirmDialog'
 import { DevEnvSectionLabel } from './DevEnvInfraList'
 import { DevEnvStatusDot } from './DevEnvStatusDot'
 
 const NONE = '__none__'
-
-const REMOTE_PREFIX = 'remote:'
 
 const NO_TEMPLATES: readonly DevEnvTemplate[] = []
 const NO_TIERS: readonly DevEnvRemoteTier[] = []
@@ -118,8 +116,8 @@ export function DevEnvDependenciesTab({ detail }: { detail: DevEnvDetail }): Rea
     tier: DevEnvRemoteTier
   } | null>(null)
   const choose = (dependency: string, value: string): void => {
-    if (value.startsWith(REMOTE_PREFIX)) {
-      const tier = tiers.find((entry) => entry.id === value.slice(REMOTE_PREFIX.length))
+    if (value.startsWith(DEV_ENV_REMOTE_PREFIX)) {
+      const tier = tiers.find((entry) => entry.id === value.slice(DEV_ENV_REMOTE_PREFIX.length))
       if (tier?.danger) {
         setDangerBind({ dependency, tier })
       } else if (tier) {
@@ -153,7 +151,7 @@ export function DevEnvDependenciesTab({ detail }: { detail: DevEnvDetail }): Rea
           binding?.kind === 'local'
             ? binding.devEnvId
             : binding?.kind === 'remote'
-              ? `${REMOTE_PREFIX}${binding.tierId}`
+              ? `${DEV_ENV_REMOTE_PREFIX}${binding.tierId}`
               : undefined
         const remoteTiers = tiers.filter((tier) => tier.dependencies[dependency])
         return (
@@ -179,7 +177,7 @@ export function DevEnvDependenciesTab({ detail }: { detail: DevEnvDetail }): Rea
                   </SelectItem>
                 ))}
                 {remoteTiers.map((tier) => (
-                  <SelectItem key={tier.id} value={`${REMOTE_PREFIX}${tier.id}`}>
+                  <SelectItem key={tier.id} value={`${DEV_ENV_REMOTE_PREFIX}${tier.id}`}>
                     {tier.danger ? <DevEnvStatusDot tone="error" /> : null}
                     {translate('devEnv.deps.remote', 'Remote')} · {tier.name}
                   </SelectItem>
