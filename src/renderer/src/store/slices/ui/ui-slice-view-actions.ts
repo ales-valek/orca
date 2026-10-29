@@ -96,6 +96,17 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
         activeView: state.previousViewBeforeArtifacts,
         worktreeNavHistoryIndex: rewindHistoryIndexPastView(state, 'artifacts')
       })),
+    openDevEnvsPage: (envId) => {
+      if (envId) {
+        get().selectDevEnv(envId)
+      }
+      set((state) => ({
+        activeView: 'dev-envs',
+        previousViewBeforeDevEnvs:
+          state.activeView === 'dev-envs' ? state.previousViewBeforeDevEnvs : state.activeView
+      }))
+    },
+    closeDevEnvsPage: () => set((state) => ({ activeView: state.previousViewBeforeDevEnvs })),
     openMobilePage: () =>
       set((state) => ({
         activeView: 'mobile',

@@ -18,6 +18,7 @@ import { createStatsSlice } from '../slices/process-stats/stats'
 import { createMemorySlice } from '../slices/process-stats/memory'
 import { createWorkspaceSpaceSlice } from '../slices/workspace-cleanup/workspace-space'
 import { createMissionsSlice } from './missions'
+import { createDevEnvsSlice } from './dev-envs'
 import {
   createClaudeUsageSlice,
   createCodexUsageSlice,
@@ -74,6 +75,7 @@ export function createTestStore(
       (...a) => ({
         ...createRepoSlice(...a),
         ...createMissionsSlice(...a),
+        ...createDevEnvsSlice(...a),
         ...createSparsePresetsSlice(...a),
         ...createWorktreeSlice(...a),
         ...createTerminalSlice(...a, isClaudeAgent),

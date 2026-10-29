@@ -44,6 +44,12 @@ export function registerProjectCatalogIpcBridge(
   )
 
   unsubs.push(
+    window.api.devEnv?.onChanged?.(({ devEnvId }) => {
+      void useAppStore.getState().handleDevEnvChanged(devEnvId)
+    }) ?? (() => {})
+  )
+
+  unsubs.push(
     window.api.worktrees.onChanged(
       async (data: {
         repoId: string
