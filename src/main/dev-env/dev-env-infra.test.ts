@@ -174,6 +174,24 @@ describe('DevEnvInfra', () => {
     expect(calls.some((call) => call.args.includes('up'))).toBe(false)
   })
 
+  it('streams a dump to a file and a restore from a file through compose exec', async () => {
+    const seen: { args: string[]; opts: Parameters<DevEnvExec>[2] }[] = []
+    const exec: DevEnvExec = async (_program, args, opts) => {
+      seen.push({ args, opts })
+      return { code: 0, stdout: '', stderr: '', timedOut: false }
+    }
+    const fileInfra = createInfra(exec)
+    expect(
+      await fileInfra.execToFile('postgres', 'pg_dump k', '/s/postgres.dump', '/s/log')
+    ).toEqual({ ok: true, code: 0 })
+    expect(
+      await fileInfra.execFromFile('postgres', 'pg_restore -d k', '/s/postgres.dump', '/s/log')
+    ).toEqual({ ok: true, code: 0 })
+    expect(seen[0].args.slice(-6)).toEqual(['exec', '-T', 'postgres', 'sh', '-c', 'pg_dump k'])
+    expect(seen[0].opts).toMatchObject({ stdoutPath: '/s/postgres.dump', logPath: '/s/log' })
+    expect(seen[1].opts).toMatchObject({ stdinPath: '/s/postgres.dump', logPath: '/s/log' })
+  })
+
   it('rejects an infra name that is not configured', async () => {
     const { exec } = createFakeExec(() => ({ code: 0, stdout: '' }))
     expect(await createInfra(exec).ensure(['mongo'], join(dir, 'infra.log'))).toEqual({
@@ -214,6 +232,31 @@ describe('runDevEnvShellCommand', () => {
       )
       expect(result).toEqual({ ok: true, code: 0, timedOut: false })
       expect(readFileSync(logPath, 'utf8')).toContain('hello-dev-env')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('runDevEnvExec file redirection', () => {
+  it('writes stdout to a file and reads stdin from a file', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'orca-dev-env-redirect-'))
+    try {
+      const dump = join(dir, 'data.dump')
+      const copy = join(dir, 'copy.dump')
+      await runDevEnvExec('/bin/sh', ['-c', 'printf "rows"'], {
+        timeoutMs: 10_000,
+        logPath: join(dir, 'log'),
+        stdoutPath: dump
+      })
+      expect(readFileSync(dump, 'utf8')).toBe('rows')
+      await runDevEnvExec('/bin/sh', ['-c', 'cat'], {
+        timeoutMs: 10_000,
+        logPath: join(dir, 'log'),
+        stdinPath: dump,
+        stdoutPath: copy
+      })
+      expect(readFileSync(copy, 'utf8')).toBe('rows')
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
