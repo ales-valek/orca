@@ -47,9 +47,29 @@ export function isHulyAuthError(error: unknown): boolean {
   return AUTH_STATUS_CODES.some((code) => message.includes(code))
 }
 
+function isModuleNotFound(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    (error.code === 'ERR_MODULE_NOT_FOUND' || error.code === 'MODULE_NOT_FOUND')
+  )
+}
+
+async function importHulyClient() {
+  try {
+    // Loaded on first use: the client pulls a large dependency tree into main.
+    return await import('@hcengineering/api-client')
+  } catch (error) {
+    // Why: the headless orcad bundle leaves the client out (ORCAD_EXTERNAL_MODULES).
+    if (isModuleNotFound(error)) {
+      throw new Error('Huly is only available in the Orca desktop app, not in orca serve.')
+    }
+    throw error
+  }
+}
+
 export async function createHulyApi(info: HulyConnectionInfo, token: string): Promise<HulyApi> {
-  // Loaded on first use: the client pulls a large dependency tree into main.
-  const { connect } = await import('@hcengineering/api-client')
+  const { connect } = await importHulyClient()
   const client = await connect(info.serverUrl, {
     token,
     workspace: info.workspace,
