@@ -56,6 +56,23 @@ export const DEVENV_COMMAND_SPECS: CommandSpec[] = [
     usage: ' --yes [--reseed]',
     notes: ['Drops the environment databases and buckets; --yes confirms.']
   }),
+  {
+    path: ['devenv', 'mode'],
+    summary: 'Switch between dev commands and prod-build commands',
+    usage: 'orca devenv mode <env> dev|prod [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'env', 'mode'],
+    positionalArgs: ['env', 'mode'],
+    notes: [ENV_SELECTOR_NOTE, 'Stops the services; the next up runs the chosen commands.']
+  },
+  envCommand('snapshots', 'List the data snapshots of this environment'),
+  envCommand('snapshot', 'Save this environment data as a named snapshot', ['name'], {
+    usage: ' --name <name>',
+    notes: ['Names use lowercase letters, digits and dashes; an existing name is overwritten.']
+  }),
+  envCommand('restore', 'Restore this environment data from a snapshot', ['name', 'yes'], {
+    usage: ' --name <name> --yes',
+    notes: ['Stops the services, restores, then starts the ones that were up; --yes confirms.']
+  }),
   envCommand(
     'bind',
     'Pair a dependency with another local Dev Environment',

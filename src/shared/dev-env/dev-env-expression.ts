@@ -1,4 +1,5 @@
 import type { DevEnvContext, DevEnvValueSource } from './dev-env-context'
+import type { DevEnv, DevEnvServiceDef } from './dev-env-types'
 
 const EXPRESSION = /\$\{([A-Za-z0-9_.*-]+)\}/g
 
@@ -29,6 +30,17 @@ export function interpolateDevEnvValue(
     return { error: `Unresolved ${String(missing)}` }
   }
   return { value, sources: sources.length > 0 ? sources : ['literal'], secret }
+}
+
+/** Prod-build mode swaps in the service's prod variant; services without one keep their dev command. */
+export function getDevEnvServiceCommand(
+  service: Pick<DevEnvServiceDef, 'command' | 'prod'>,
+  mode: DevEnv['mode']
+): string {
+  if (mode !== 'prod' || !service.prod) {
+    return service.command
+  }
+  return service.prod.build ? `${service.prod.build} && ${service.prod.start}` : service.prod.start
 }
 
 /** Commands are typed into a visible terminal, so secrets stay in env files instead. */

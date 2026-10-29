@@ -2,8 +2,10 @@ import type {
   DevEnvDetail,
   DevEnvEnvFileView,
   DevEnvInfraState,
+  DevEnvSnapshot,
   DevEnvSummary
 } from '../shared/dev-env/dev-env-types'
+import { formatBytes } from '../shared/format-bytes'
 
 function formatRange(range: { first: number; last: number }): string {
   return `${range.first}–${range.last}`
@@ -87,4 +89,16 @@ export function formatDevEnvRun(result: { started: string[]; errors: string[] })
     result.started.length > 0 ? `started ${result.started.join(', ')}` : 'nothing to start'
   ]
   return [...lines, ...result.errors.map((error) => `warning: ${error}`)].join('\n')
+}
+
+export function formatDevEnvSnapshots(result: { snapshots: DevEnvSnapshot[] }): string {
+  if (result.snapshots.length === 0) {
+    return 'No snapshots.'
+  }
+  return result.snapshots
+    .map(
+      (snapshot) =>
+        `${snapshot.name}  ${new Date(snapshot.createdAt).toLocaleString()}  ${formatBytes(snapshot.sizeBytes)}  ${snapshot.services.join(', ')}`
+    )
+    .join('\n')
 }
