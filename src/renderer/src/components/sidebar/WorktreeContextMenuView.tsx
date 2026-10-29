@@ -36,6 +36,7 @@ import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 import { WorktreeStatusMenuItems } from './WorktreeStatusMenuItems'
 import { WorktreeContextMenuOverlays } from './WorktreeContextMenuOverlays'
+import { DevEnvWorktreeMenuItem } from '../dev-env/DevEnvWorktreeMenuItem'
 import {
   WORKTREE_CONTEXT_MENU_SCOPE_ATTR,
   getWorktreeParentPickerLabel,
@@ -191,6 +192,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
                   'Copy Worktree Name'
                 )}
               </DropdownMenuItem>
+              <DevEnvWorktreeMenuItem worktreeId={worktree.id} disabled={isDeleting} />
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleTogglePin} disabled={isDeleting}>
                 {worktree.isPinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}

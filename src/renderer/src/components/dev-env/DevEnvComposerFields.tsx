@@ -9,8 +9,12 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import type { DevEnvSummary, DevEnvTemplate } from '../../../../shared/dev-env/dev-env-types'
-import { getDevEnvProviders } from './dev-env-providers'
+import type {
+  DevEnvRemoteTier,
+  DevEnvSummary,
+  DevEnvTemplate
+} from '../../../../shared/dev-env/dev-env-types'
+import { DEV_ENV_REMOTE_PREFIX, getDevEnvProviders } from './dev-env-providers'
 import { selectDevEnvs } from './DevEnvStatusBadge'
 import { DevEnvTemplatePicker, useDevEnvTemplates } from './DevEnvTemplatePicker'
 
@@ -34,15 +38,20 @@ function getDefaultProvider(providers: readonly DevEnvSummary[]): string | undef
   return providers.find((provider) => provider.badge.up > 0)?.id
 }
 
-/** Template picker plus dependency pairing for a new standalone worktree. */
+/**
+ * Template picker plus dependency pairing for a standalone worktree. With `remoteTiers`, non-prod
+ * tiers are offered too; prod tiers need the typed env key, so they stay in the Dependencies tab.
+ */
 export function DevEnvComposerFields({
   repoId,
   value,
-  onChange
+  onChange,
+  remoteTiers
 }: {
   repoId: string | null
   value: DevEnvComposerValue
   onChange: (value: DevEnvComposerValue) => void
+  remoteTiers?: readonly DevEnvRemoteTier[]
 }): React.JSX.Element | null {
   const templates = useDevEnvTemplates()
   const envs = useAppStore(selectDevEnvs)
@@ -109,16 +118,28 @@ export function DevEnvComposerFields({
                         {translate('devEnv.deps.local', 'Local')} · {provider.name}
                       </SelectItem>
                     ))}
+                    {(remoteTiers ?? [])
+                      .filter((tier) => !tier.danger && tier.dependencies[dependency])
+                      .map((tier) => (
+                        <SelectItem key={tier.id} value={`${DEV_ENV_REMOTE_PREFIX}${tier.id}`}>
+                          {translate('devEnv.deps.remote', 'Remote')} · {tier.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
             )
           })}
           <p className="text-xs text-muted-foreground">
-            {translate(
-              'devEnv.composer.providersHint',
-              'Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists.'
-            )}
+            {remoteTiers
+              ? translate(
+                  'devEnv.composer.providersRemoteHint',
+                  'Local environments or remote tiers that provide the service. Prod tiers are bound in its Dependencies tab once it exists.'
+                )
+              : translate(
+                  'devEnv.composer.providersHint',
+                  'Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists.'
+                )}
           </p>
         </div>
       ) : null}
