@@ -93,8 +93,6 @@ export function makeFakeRuntime(store: FakeStore) {
     ),
     removeManagedWorktree: vi.fn(async (_selector: string, _options?: unknown) => ({})),
     teardownWorkspaceProcesses: vi.fn(async () => {}),
-    attachMissionOperations: vi.fn((_operations: unknown) => {}),
-    // Why: harness Missions have no Huly source, so write-back never reaches the connection.
-    getHulyConnection: vi.fn(() => ({}))
+    attachMissionOperations: vi.fn((_operations: unknown) => {})
   }
 }

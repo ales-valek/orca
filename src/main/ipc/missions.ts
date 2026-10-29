@@ -70,7 +70,7 @@ export function registerMissionHandlers(
 
   const hulyStatusWriteBack = new HulyStatusWriteBack({
     store,
-    connection: runtime.getHulyConnection(),
+    getConnection: () => runtime.getHulyConnection(),
     notifyChanged: () => notifyReposChanged(mainWindow)
   })
   const operations = new MissionOperations(store, runtime, () => notifyReposChanged(mainWindow), {
