@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import React from 'react'
 import { Copy, ExternalLink, RotateCw, ScrollText } from 'lucide-react'
 import { toast } from 'sonner'
@@ -8,7 +9,7 @@ import {
   type DevEnvServiceState
 } from '../../../../shared/dev-env/dev-env-types'
 import { openDevEnvUrl, revealDevEnvWorktree, runDevEnvAction } from './dev-env-actions'
-import { getDevEnvServiceTone, t } from './dev-env-labels'
+import { getDevEnvServiceTone } from './dev-env-labels'
 import { DevEnvStatusDot } from './DevEnvStatusDot'
 
 function getStatusText(service: DevEnvServiceState): string | null {
@@ -16,15 +17,15 @@ function getStatusText(service: DevEnvServiceState): string | null {
     case 'up':
       return null
     case 'starting':
-      return t('service.starting', 'starting… waiting for the port')
+      return translate('devEnv.service.starting', 'starting… waiting for the port')
     case 'crashed':
-      return `${t('service.crashed', 'crashed')}${service.exitCode != null ? ` · exit ${service.exitCode}` : ''}`
+      return `${translate('devEnv.service.crashed', 'crashed')}${service.exitCode != null ? ` · exit ${service.exitCode}` : ''}`
     case 'moved':
-      return t('service.moved', 'moved, restart needed')
+      return translate('devEnv.service.moved', 'moved, restart needed')
     case 'unbound':
-      return t('service.unbound', 'repo not in this mission')
+      return translate('devEnv.service.unbound', 'repo not in this mission')
     case 'stopped':
-      return t('service.stopped', 'stopped')
+      return translate('devEnv.service.stopped', 'stopped')
   }
 }
 
@@ -40,7 +41,7 @@ function ServiceRow({
   const worktreeId = detail.slotWorktrees[service.slot]?.worktreeId
   const statusText = getStatusText(service)
   const restart = (): void => {
-    void runDevEnvAction(t('service.restartFailed', 'Could not restart'), () =>
+    void runDevEnvAction(translate('devEnv.service.restartFailed', 'Could not restart'), () =>
       window.api.devEnv.restart({ env: detail.key, service: service.name })
     )
   }
@@ -73,7 +74,7 @@ function ServiceRow({
         <span className="flex justify-end gap-1">
           {service.status === 'unbound' ? (
             <Button variant="outline" size="xs" onClick={onOpenDependencies}>
-              {t('service.bind', 'Bind…')}
+              {translate('devEnv.service.bind', 'Bind…')}
             </Button>
           ) : null}
           {service.status === 'up' && service.url && worktreeId ? (
@@ -83,21 +84,21 @@ function ServiceRow({
               onClick={() => openDevEnvUrl(worktreeId, service.url ?? '')}
             >
               <ExternalLink />
-              {t('service.open', 'Open')}
+              {translate('devEnv.service.open', 'Open')}
             </Button>
           ) : null}
           {worktreeId && service.status !== 'unbound' ? (
             <Button variant="ghost" size="xs" onClick={() => revealDevEnvWorktree(worktreeId)}>
               <ScrollText />
-              {t('service.log', 'Log')}
+              {translate('devEnv.service.log', 'Log')}
             </Button>
           ) : null}
           {service.status !== 'unbound' ? (
             <Button variant="ghost" size="xs" onClick={restart}>
               <RotateCw />
               {service.status === 'stopped' || service.status === 'moved'
-                ? t('service.start', 'Start')
-                : t('service.restart', 'Restart')}
+                ? translate('devEnv.service.start', 'Start')
+                : translate('devEnv.service.restart', 'Restart')}
             </Button>
           ) : null}
         </span>
@@ -111,16 +112,16 @@ function CredentialsCard({ detail }: { detail: DevEnvDetail }): React.JSX.Elemen
     return null
   }
   const copyPassword = (label: string): void => {
-    void runDevEnvAction(t('credentials.copyFailed', 'Could not copy'), async () => {
+    void runDevEnvAction(translate('devEnv.credentials.copyFailed', 'Could not copy'), async () => {
       const password = await window.api.devEnv.revealCredential({ env: detail.key, label })
       await navigator.clipboard.writeText(password)
-      toast.success(t('credentials.copied', 'Password copied'))
+      toast.success(translate('devEnv.credentials.copied', 'Password copied'))
     })
   }
   return (
     <div className="m-4 rounded-xl border border-border bg-card p-3">
       <div className="mb-2 text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-        {t('credentials.title', 'Logins for clicking through')}
+        {translate('devEnv.credentials.title', 'Logins for clicking through')}
       </div>
       {detail.credentials.map((credential) => (
         <div key={credential.label} className="flex items-center gap-3 py-0.5 text-xs">
@@ -131,7 +132,7 @@ function CredentialsCard({ detail }: { detail: DevEnvDetail }): React.JSX.Elemen
           </span>
           <Button variant="ghost" size="xs" onClick={() => copyPassword(credential.label)}>
             <Copy />
-            {t('credentials.copy', 'Copy password')}
+            {translate('devEnv.credentials.copy', 'Copy password')}
           </Button>
         </div>
       ))}
@@ -151,10 +152,14 @@ export function DevEnvServicesTab({
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-border text-left text-xs text-muted-foreground">
-            <th className="px-4 py-1.5 font-medium">{t('service.name', 'Service')}</th>
-            <th className="px-2 py-1.5 font-medium">{t('service.worktree', 'Worktree')}</th>
-            <th className="px-2 py-1.5 font-medium">{t('service.port', 'Port')}</th>
-            <th className="px-2 py-1.5 font-medium">URL</th>
+            <th className="px-4 py-1.5 font-medium">
+              {translate('devEnv.service.name', 'Service')}
+            </th>
+            <th className="px-2 py-1.5 font-medium">
+              {translate('devEnv.service.worktree', 'Worktree')}
+            </th>
+            <th className="px-2 py-1.5 font-medium">{translate('devEnv.service.port', 'Port')}</th>
+            <th className="px-2 py-1.5 font-medium">{translate('devEnv.service.url', 'URL')}</th>
             <th />
           </tr>
         </thead>

@@ -1,9 +1,9 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { t } from '@/components/dev-env/dev-env-labels'
 import type {
   DevEnvEnvFile,
   DevEnvServiceDef,
@@ -22,21 +22,23 @@ function ServiceRow({
   onChange: (service: DevEnvServiceDef) => void
   onRemove: () => void
 }): React.JSX.Element {
-  const field = 'h-7 font-mono text-xs'
   return (
     <div className="grid grid-cols-[8rem_1fr_3.5rem_9rem_9rem_6rem_auto] items-center gap-1.5">
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         value={service.name}
         onChange={(e) => onChange({ ...service, name: e.target.value })}
       />
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         value={service.command}
         onChange={(e) => onChange({ ...service, command: e.target.value })}
       />
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         type="number"
         min={0}
         max={99}
@@ -44,19 +46,22 @@ function ServiceRow({
         onChange={(e) => onChange({ ...service, portOffset: Number(e.target.value) })}
       />
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         placeholder="admin.${devEnv.key}"
         value={service.host ?? ''}
         onChange={(e) => onChange({ ...service, host: e.target.value || undefined })}
       />
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         placeholder="postgres, api"
         value={service.dependsOn.join(', ')}
         onChange={(e) => onChange({ ...service, dependsOn: parseDevEnvList(e.target.value) })}
       />
       <Input
-        className={field}
+        variant="code"
+        density="compact"
         placeholder="/health"
         value={service.ready?.httpPath ?? ''}
         onChange={(e) =>
@@ -66,7 +71,7 @@ function ServiceRow({
       <Button
         variant="ghost"
         size="xs"
-        aria-label={t('settings.removeService', 'Remove service')}
+        aria-label={translate('devEnv.settings.removeService', 'Remove service')}
         onClick={onRemove}
       >
         <Trash2 />
@@ -91,13 +96,15 @@ function EnvFileEditor({
     <div className="space-y-1 rounded-md border border-border p-2">
       <div className="flex items-center gap-1.5">
         <Input
-          className="h-7 font-mono text-xs"
+          variant="code"
+          className="h-7"
           placeholder=".env"
           value={file.path}
           onChange={(e) => onChange({ ...file, path: e.target.value })}
         />
         <Input
-          className="h-7 font-mono text-xs"
+          variant="code"
+          className="h-7"
           placeholder=".env.example"
           value={file.base ?? ''}
           onChange={(e) => onChange({ ...file, base: e.target.value || undefined })}
@@ -105,14 +112,15 @@ function EnvFileEditor({
         <Button
           variant="ghost"
           size="xs"
-          aria-label={t('settings.removeFile', 'Remove file')}
+          aria-label={translate('devEnv.settings.removeFile', 'Remove file')}
           onClick={onRemove}
         >
           <Trash2 />
         </Button>
       </div>
       <Textarea
-        className="min-h-24 font-mono text-xs"
+        variant="code"
+        className="min-h-24"
         spellCheck={false}
         value={text}
         aria-invalid={error ? true : undefined}
@@ -142,9 +150,12 @@ export function DevEnvSlotEditor({
 }): React.JSX.Element {
   return (
     <div>
-      <div className={SECTION}>{t('settings.install', 'Install (one command per line)')}</div>
+      <div className={SECTION}>
+        {translate('devEnv.settings.install', 'Install (one command per line)')}
+      </div>
       <Textarea
-        className="min-h-12 font-mono text-xs"
+        variant="code"
+        className="min-h-12"
         spellCheck={false}
         defaultValue={slot.install.join('\n')}
         key={`${slot.name}:install`}
@@ -159,7 +170,10 @@ export function DevEnvSlotEditor({
         }
       />
       <div className={SECTION}>
-        {t('settings.services', 'Services: name, command, offset, host, depends on, ready path')}
+        {translate(
+          'devEnv.settings.services',
+          'Services: name, command, offset, host, depends on, ready path'
+        )}
       </div>
       <div className="space-y-1">
         {slot.services.map((service, index) => (
@@ -196,11 +210,14 @@ export function DevEnvSlotEditor({
           }
         >
           <Plus />
-          {t('settings.addService', 'Add service')}
+          {translate('devEnv.settings.addService', 'Add service')}
         </Button>
       </div>
       <div className={SECTION}>
-        {t('settings.envFiles', 'Env files: path, base file, then KEY = value lines')}
+        {translate(
+          'devEnv.settings.envFiles',
+          'Env files: path, base file, then KEY = value lines'
+        )}
       </div>
       <div className="space-y-2">
         {slot.envFiles.map((file, index) => (
@@ -226,7 +243,7 @@ export function DevEnvSlotEditor({
           }
         >
           <Plus />
-          {t('settings.addEnvFile', 'Add env file')}
+          {translate('devEnv.settings.addEnvFile', 'Add env file')}
         </Button>
       </div>
     </div>

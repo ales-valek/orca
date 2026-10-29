@@ -75,9 +75,14 @@ function makeMission(overrides: Partial<Mission> = {}): Mission {
   }
 }
 
+/** Test doubles that implement only what the code under test calls. */
+function fake<T>(value: unknown): T {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: callers pass every member the code under test reads.
+  return value as T
+}
+
 function meta(displayName: string): WorktreeMeta {
-  // SAFETY: the facade reads only displayName from worktree meta.
-  return { displayName } as WorktreeMeta
+  return fake<WorktreeMeta>({ displayName })
 }
 
 describe('DevEnvOperations', () => {
@@ -111,8 +116,7 @@ describe('DevEnvOperations', () => {
       [STANDALONE]: meta('fix/OMP-3011'),
       [REMOTE]: meta('remote')
     }
-    // SAFETY: the facade reads only connectionId from repos.
-    repos = { 'repo-remote': { id: 'repo-remote', connectionId: 'ssh-1' } as Repo }
+    repos = { 'repo-remote': fake<Repo>({ id: 'repo-remote', connectionId: 'ssh-1' }) }
     const store: DevEnvStore = {
       getDevEnvs: () => envs,
       getDevEnv: (id) => envs.find((env) => env.id === id) ?? null,
@@ -139,7 +143,7 @@ describe('DevEnvOperations', () => {
       getRepo: (id) => repos[id]
     }
     services = {
-      getStates: vi.fn(async () => [] as DevEnvServiceState[]),
+      getStates: vi.fn(async (): Promise<DevEnvServiceState[]> => []),
       markMoved: vi.fn(async () => {}),
       stop: vi.fn(async () => {}),
       start: vi.fn(async () => ({ started: [], errors: [] })),
@@ -168,18 +172,14 @@ describe('DevEnvOperations', () => {
       },
       notify: () => {},
       components: {
-        // SAFETY: the facade only calls the members stubbed here.
-        services: services as unknown as DevEnvServices,
-        // SAFETY: the facade only calls the members stubbed here.
-        pipeline: pipeline as unknown as DevEnvSetupPipeline,
-        // SAFETY: route publishing is not under test.
-        proxy: {
+        services: fake<DevEnvServices>(services),
+        pipeline: fake<DevEnvSetupPipeline>(pipeline),
+        proxy: fake<DevEnvHostProxy>({
           setRoutes: async () => ({ ok: true }),
           clearRoutes: () => {},
           close: async () => {}
-        } as unknown as DevEnvHostProxy,
-        // SAFETY: only getAll is read by the facade.
-        secrets: { getAll: () => secrets } as unknown as DevEnvSecretStore,
+        }),
+        secrets: fake<DevEnvSecretStore>({ getAll: () => secrets }),
         isPortFree: async () => true,
         worktreeExists: () => true
       }

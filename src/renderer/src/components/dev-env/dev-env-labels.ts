@@ -3,15 +3,12 @@ import {
   DEV_ENV_STEP_IDS,
   type DevEnv,
   type DevEnvBadge,
+  type DevEnvDetail,
   type DevEnvInfraState,
   type DevEnvServiceStatus,
   type DevEnvStepId,
   type DevEnvStepStatus
 } from '../../../../shared/dev-env/dev-env-types'
-
-export function t(key: string, fallback: string): string {
-  return translate(`devEnv.${key}`, fallback)
-}
 
 export type DevEnvTone = 'ok' | 'warn' | 'error' | 'muted' | 'info'
 
@@ -53,11 +50,11 @@ export function getDevEnvBadgeLabel(badge: DevEnvBadge): { text: string; tone: D
     case 'partial':
       return { text: `${badge.up}/${badge.total}`, tone: 'warn' }
     case 'failed':
-      return { text: t('badge.setup', 'setup'), tone: 'error' }
+      return { text: translate('devEnv.badge.setup', 'setup'), tone: 'error' }
     case 'setting-up':
-      return { text: t('badge.settingUp', 'setup…'), tone: 'info' }
+      return { text: translate('devEnv.badge.settingUp', 'setup…'), tone: 'info' }
     case 'stopped':
-      return { text: t('badge.stopped', 'stopped'), tone: 'muted' }
+      return { text: translate('devEnv.badge.stopped', 'stopped'), tone: 'muted' }
   }
 }
 
@@ -86,7 +83,7 @@ export function getDevEnvSetupRows(env: Pick<DevEnv, 'setup'>): DevEnvSetupRow[]
     const state = env.setup[step]
     return {
       step,
-      label: `${index + 1} · ${t(`step.${step}`, STEP_LABELS[step])}`,
+      label: `${index + 1} · ${translate(`devEnv.step.${step}`, STEP_LABELS[step])}`,
       status: state?.status ?? 'pending',
       ...(state?.detail ? { detail: state.detail } : {}),
       ...(state?.error ? { error: state.error } : {}),
@@ -120,4 +117,19 @@ export function formatDevEnvDuration(ms: number): string {
   return seconds < 60
     ? `${seconds} s`
     : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+export function getDevEnvDependencyStateLabel(
+  state: DevEnvDetail['dependencyStates'][string]
+): string {
+  switch (state) {
+    case 'up':
+      return translate('devEnv.deps.state.up', 'up')
+    case 'down':
+      return translate('devEnv.deps.state.down', 'down')
+    case 'missing':
+      return translate('devEnv.deps.state.missing', 'provider deleted')
+    case 'unbound':
+      return translate('devEnv.deps.state.unbound', 'not bound')
+  }
 }
