@@ -23135,7 +23135,7 @@
       "reseed": "Run the seed afterwards",
       "resetFailed": "Could not reset data",
       "deleteTitle": "Delete Dev Environment",
-      "deleteBody": "Stops the services of {env} and deletes it. Worktrees and repos stay.",
+      "deleteBody": "Stops the services of {env} and deletes it. Worktrees, repos and snapshot files stay.",
       "dropData": "Also drop its data in the shared infra",
       "deleteConfirm": "Delete",
       "deleteFailed": "Could not delete"

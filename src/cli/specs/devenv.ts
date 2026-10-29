@@ -73,6 +73,9 @@ export const DEVENV_COMMAND_SPECS: CommandSpec[] = [
     usage: ' --name <name> --yes',
     notes: ['Stops the services, restores, then starts the ones that were up; --yes confirms.']
   }),
+  envCommand('delete-snapshot', 'Delete a snapshot of this environment', ['name', 'yes'], {
+    usage: ' --name <name> --yes'
+  }),
   envCommand(
     'bind',
     'Pair a dependency with another local Dev Environment',

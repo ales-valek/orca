@@ -121,7 +121,11 @@ export function DevEnvSnapshots({ detail }: { detail: DevEnvDetail }): React.JSX
           const args = { env: detail.key, name: pending.snapshot.name, confirm: true as const }
           if (pending.kind === 'restore') {
             run(translate('devEnv.snapshots.restoreFailed', 'Could not restore the snapshot'), () =>
-              window.api.devEnv.restore(args)
+              window.api.devEnv.restore(args).then((result) => {
+                if (result.errors.length > 0) {
+                  throw new Error(result.errors.join('\n'))
+                }
+              })
             )
           } else {
             run(translate('devEnv.snapshots.deleteFailed', 'Could not delete the snapshot'), () =>

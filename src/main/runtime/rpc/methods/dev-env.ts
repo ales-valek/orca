@@ -149,8 +149,8 @@ export const DEV_ENV_METHODS = [
     permission: 'workspace',
     params: DevEnvConfirmedSnapshotParams,
     handler: async (params, context) => {
-      await ops(context).restoreSnapshot(envId(context, params.env), params.name)
-      return { restored: true }
+      const { errors } = await ops(context).restoreSnapshot(envId(context, params.env), params.name)
+      return { restored: true, errors }
     }
   }),
   defineMethod({

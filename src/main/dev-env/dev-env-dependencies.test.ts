@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { buildDevEnvContext } from '../../shared/dev-env/dev-env-context'
 import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
 import type { DevEnv, DevEnvTemplate } from '../../shared/dev-env/dev-env-types'
 import { getDevEnvDependencyStates, resolveDevEnvDependencies } from './dev-env-dependencies'
@@ -69,8 +70,39 @@ describe('remote tier dependencies', () => {
     )
     expect(resolved.get('admin-api')).toEqual({
       url: 'https://api.admin.staging.example',
+      urlSecret: false,
       exports: { API_KEY: { value: 'k-123', secret: true }, REGION: { value: 'eu', secret: false } }
     })
+  })
+
+  it('masks a tier url that embeds a secret', () => {
+    const tier = SETTINGS.devEnvRemoteTiers[0]
+    const withSecretUrl: DevEnvGlobalSettings = {
+      ...SETTINGS,
+      devEnvRemoteTiers: [
+        {
+          ...tier,
+          dependencies: { 'admin-api': { url: 'https://${secret.staging-key}@api', values: {} } }
+        }
+      ]
+    }
+    const dependencies = resolveDevEnvDependencies(
+      env({ kind: 'remote', tierId: 'staging' }),
+      TEMPLATE,
+      {
+        ...lookup,
+        getSettings: () => withSecretUrl
+      }
+    )
+    const context = buildDevEnvContext({
+      env: env({ kind: 'remote', tierId: 'staging' }),
+      template: TEMPLATE,
+      infra: [],
+      proxyPort: 80,
+      secrets: new Map(),
+      dependencies
+    })
+    expect(context.get('dep.admin-api.url')?.secret).toBe(true)
   })
 
   it('reports remote and missing tiers', async () => {

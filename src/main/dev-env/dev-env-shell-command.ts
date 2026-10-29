@@ -52,9 +52,11 @@ export const runDevEnvExec: DevEnvExec = async (program, args, opts) => {
   }
   mkdirSync(dirname(opts.logPath), { recursive: true })
   const fd = openSync(opts.logPath, 'a')
-  const stdoutFd = opts.stdoutPath ? openSync(opts.stdoutPath, 'w') : null
-  const stdinFd = opts.stdinPath ? openSync(opts.stdinPath, 'r') : null
+  let stdoutFd: number | null = null
+  let stdinFd: number | null = null
   try {
+    stdoutFd = opts.stdoutPath ? openSync(opts.stdoutPath, 'w') : null
+    stdinFd = opts.stdinPath ? openSync(opts.stdinPath, 'r') : null
     writeSync(fd, `$ ${[program, ...args].join(' ')}\n`)
     // Why: long installs must show progress in the log while they run, not only at the end.
     const result = await runProcess({
