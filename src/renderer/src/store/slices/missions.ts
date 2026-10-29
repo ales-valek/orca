@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import type { StateCreator } from 'zustand'
 import type {
   Mission,
@@ -29,6 +30,7 @@ export type MissionsSlice = {
     repoIds: string[]
     sessionAgent?: TuiAgent
     orchestratorRepoId?: string
+    devEnvTemplateId?: string
   }) => Promise<MissionCreateResult | null>
   renameMission: (missionId: string, name: string) => Promise<void>
   deleteMission: (
@@ -100,6 +102,10 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         const result = await window.api.missions.create(args)
         applyMemberResults(result.mission.id, result.memberResults)
         await get().fetchMissions()
+        if (result.devEnvError) {
+          toast.warning('Dev Environment was not created', { description: result.devEnvError })
+        }
+        void get().fetchDevEnvs()
         return result
       } catch (err) {
         console.error('Failed to create mission:', err)

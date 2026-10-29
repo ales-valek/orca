@@ -1,4 +1,5 @@
 import React, { useId, useMemo, useRef, useState } from 'react'
+import { DevEnvTemplatePicker } from '../dev-env/DevEnvTemplatePicker'
 import AgentCombobox from '@/components/agent/AgentCombobox'
 import {
   Dialog,
@@ -50,6 +51,7 @@ export default function MissionCreateDialog(): React.JSX.Element {
   const branchDirtyRef = useRef(false)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [orchestratorRepoId, setOrchestratorRepoId] = useState<string | null>(null)
+  const [devEnvTemplateId, setDevEnvTemplateId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [createFailed, setCreateFailed] = useState(false)
   const [memberResults, setMemberResults] = useState<MissionMemberResult[] | null>(null)
@@ -119,7 +121,8 @@ export default function MissionCreateDialog(): React.JSX.Element {
       branchName: effectiveBranch,
       repoIds: selectedIds,
       ...(sessionAgent ? { sessionAgent } : {}),
-      ...(effectiveOrchestratorRepoId ? { orchestratorRepoId: effectiveOrchestratorRepoId } : {})
+      ...(effectiveOrchestratorRepoId ? { orchestratorRepoId: effectiveOrchestratorRepoId } : {}),
+      ...(devEnvTemplateId ? { devEnvTemplateId } : {})
     })
     if (!result) {
       // Why: a rejected IPC (invalid args, no valid repos) resolves to null in
@@ -245,6 +248,11 @@ export default function MissionCreateDialog(): React.JSX.Element {
                   triggerClassName="h-8 w-full border-input text-xs"
                 />
               </div>
+              <DevEnvTemplatePicker
+                value={devEnvTemplateId}
+                onChange={setDevEnvTemplateId}
+                repoIds={selectedIds}
+              />
             </>
           )}
           {createFailed ? (
