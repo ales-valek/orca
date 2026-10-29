@@ -24,7 +24,8 @@ const DEPENDENCY_TONE: Record<DevEnvDetail['dependencyStates'][string], DevEnvTo
   up: 'ok',
   down: 'warn',
   unbound: 'muted',
-  missing: 'error'
+  missing: 'error',
+  remote: 'info'
 }
 
 function SlotRows({ detail }: { detail: DevEnvDetail }): React.JSX.Element | null {
@@ -105,7 +106,8 @@ export function DevEnvDependenciesTab({ detail }: { detail: DevEnvDetail }): Rea
       ) : null}
       {detail.requiredDependencies.map((dependency) => {
         const providers = getDevEnvProviders(envs, templates, dependency, detail.id)
-        const bound = detail.bindings[dependency]?.devEnvId
+        const binding = detail.bindings[dependency]
+        const bound = binding?.kind === 'local' ? binding.devEnvId : undefined
         return (
           <div key={dependency} className="flex items-center gap-3 px-2 py-1 text-[13px]">
             <DevEnvStatusDot

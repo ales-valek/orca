@@ -49,6 +49,7 @@ const TEMPLATE: DevEnvTemplate = {
 const SETTINGS: DevEnvGlobalSettings = {
   devEnvProxyPort: 80,
   devEnvTemplates: [TEMPLATE],
+  devEnvRemoteTiers: [],
   devEnvInfra: [
     {
       name: 'postgres',
