@@ -23299,7 +23299,15 @@
       "description": "Shared Docker infra, templates, env files, ports and secrets for missions and worktrees."
     },
     "nav": "Dev Environments",
-    "createFailed": "Dev Environment was not created"
+    "createFailed": "Dev Environment was not created",
+    "step": {
+      "ports": "Allocate ports",
+      "env": "Render env",
+      "install": "Install dependencies",
+      "infra": "Ensure shared infra",
+      "data": "Provision data",
+      "seed": "Seed"
+    }
   },
   "keybindings": {
     "title": {
