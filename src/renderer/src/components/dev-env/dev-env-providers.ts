@@ -20,3 +20,23 @@ export function getDevEnvProviders(
     )
   })
 }
+
+/** Select values for remote tiers; local providers are env ids, which never carry this prefix. */
+export const DEV_ENV_REMOTE_PREFIX = 'remote:'
+
+/** Local providers go to create; remote tiers are bound afterwards over the desktop-only channel. */
+export function splitDevEnvBindings(bindings: Record<string, string>): {
+  local: Record<string, string>
+  remote: { dependency: string; tierId: string }[]
+} {
+  const local: Record<string, string> = {}
+  const remote: { dependency: string; tierId: string }[] = []
+  for (const [dependency, value] of Object.entries(bindings)) {
+    if (value.startsWith(DEV_ENV_REMOTE_PREFIX)) {
+      remote.push({ dependency, tierId: value.slice(DEV_ENV_REMOTE_PREFIX.length) })
+    } else {
+      local[dependency] = value
+    }
+  }
+  return { local, remote }
+}

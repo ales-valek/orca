@@ -10,34 +10,58 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { useAppStore } from '@/store'
+import type { DevEnvRemoteTier } from '../../../../shared/dev-env/dev-env-types'
 import { runDevEnvAction } from './dev-env-actions'
+import { splitDevEnvBindings } from './dev-env-providers'
+import { DevEnvComposerFields, type DevEnvComposerValue } from './DevEnvComposerFields'
 import { DevEnvTemplatePicker } from './DevEnvTemplatePicker'
 
-/** Template pick for a mission that was created without a Dev Environment. */
+export type DevEnvCreateTarget =
+  | { kind: 'mission'; missionId: string; name: string; repoIds: readonly string[] }
+  | { kind: 'worktree'; worktreeId: string; name: string; repoId: string }
+
+const NO_TIERS: readonly DevEnvRemoteTier[] = []
+
+async function createDevEnv(target: DevEnvCreateTarget, value: DevEnvComposerValue): Promise<void> {
+  const api = window.api.devEnv
+  const template = value.templateId ?? ''
+  if (target.kind === 'mission') {
+    await api.create({ mission: `id:${target.missionId}`, template })
+    return
+  }
+  const { local, remote } = splitDevEnvBindings(value.bindings)
+  const env = await api.create({ worktree: `id:${target.worktreeId}`, template, bindings: local })
+  for (const binding of remote) {
+    await api.bindRemote({ env: env.key, dependency: binding.dependency, tierId: binding.tierId })
+  }
+  if (remote.length > 0) {
+    // Why: the first setup stops at env while remote dependencies are still unbound.
+    await api.setup({ env: env.key })
+  }
+}
+
+/** Template pick for a mission or worktree that has no Dev Environment yet. */
 export function DevEnvCreateDialog({
   open,
   onOpenChange,
-  missionId,
-  missionName,
-  repoIds
+  target
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  missionId: string
-  missionName: string
-  repoIds: readonly string[]
+  target: DevEnvCreateTarget
 }): React.JSX.Element {
-  const [templateId, setTemplateId] = useState<string | null>(null)
+  const [value, setValue] = useState<DevEnvComposerValue>({ templateId: null, bindings: {} })
   const [creating, setCreating] = useState(false)
+  const tiers = useAppStore((s) => s.settings?.devEnvRemoteTiers) ?? NO_TIERS
   const create = (): void => {
-    if (!templateId) {
+    if (!value.templateId) {
       return
     }
     setCreating(true)
     void runDevEnvAction(
       translate('devEnv.create.failed', 'Could not create the Dev Environment'),
       async () => {
-        await window.api.devEnv.create({ mission: `id:${missionId}`, template: templateId })
+        await createDevEnv(target, value)
         await useAppStore.getState().fetchDevEnvs()
         onOpenChange(false)
       }
@@ -52,16 +76,29 @@ export function DevEnvCreateDialog({
             {translate(
               'devEnv.create.description',
               'For {{name}}: env, dependencies, infra and data are set up right away.',
-              { name: missionName }
+              { name: target.name }
             )}
           </DialogDescription>
         </DialogHeader>
-        <DevEnvTemplatePicker value={templateId} onChange={setTemplateId} repoIds={repoIds} />
+        {target.kind === 'mission' ? (
+          <DevEnvTemplatePicker
+            value={value.templateId}
+            onChange={(templateId) => setValue({ templateId, bindings: {} })}
+            repoIds={target.repoIds}
+          />
+        ) : (
+          <DevEnvComposerFields
+            repoId={target.repoId}
+            value={value}
+            onChange={setValue}
+            remoteTiers={tiers}
+          />
+        )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {translate('devEnv.create.cancel', 'Cancel')}
           </Button>
-          <Button disabled={!templateId || creating} onClick={create}>
+          <Button disabled={!value.templateId || creating} onClick={create}>
             {translate('devEnv.create.confirm', 'Create')}
           </Button>
         </DialogFooter>
