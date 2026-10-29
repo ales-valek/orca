@@ -113,6 +113,25 @@ export abstract class DevEnvLifecycle extends DevEnvCore {
     return updated
   }
 
+  /** Desktop UI only: agents can read remote bindings but never set them. */
+  bindRemote(id: string, dependency: string, tierId: string, confirmation?: string): DevEnv {
+    const { env } = this.requireEnv(id)
+    const tier = this.deps.getSettings().devEnvRemoteTiers.find((entry) => entry.id === tierId)
+    if (!tier) {
+      throw new Error(`Unknown remote tier ${tierId}`)
+    }
+    if (tier.danger && confirmation !== env.key) {
+      throw new Error(`Type the environment key to bind it to ${tier.name}`)
+    }
+    const updated =
+      this.deps.store.updateDevEnv(id, {
+        bindings: { ...env.bindings, [dependency]: { kind: 'remote', tierId } }
+      }) ?? env
+    this.deps.notify(id)
+    this.startSetup(id, { steps: ['env'] })
+    return updated
+  }
+
   async pinSlot(id: string, slot: string, worktreeId: string | null): Promise<DevEnv> {
     const { env } = this.requireEnv(id)
     const slotPins = { ...env.slotPins }

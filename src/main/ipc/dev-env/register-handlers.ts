@@ -20,6 +20,12 @@ const RevealCredentialArgs = z.object({ env: Text, label: Text })
 const SecretSetArgs = z.object({ name: Text, value: Text })
 const SecretNameArgs = z.object({ name: Text })
 const ReadLogArgs = z.object({ env: Text.optional(), step: Text })
+const BindRemoteArgs = z.object({
+  env: Text,
+  dependency: Text,
+  tierId: Text,
+  confirmation: z.string().optional()
+})
 
 function isStepId(value: string): value is DevEnvStepId {
   return DEV_ENV_STEP_IDS.some((step) => step === value)
@@ -87,6 +93,15 @@ export function registerDevEnvHandlers(
     'devEnv:revealCredential': (raw) => {
       const args = RevealCredentialArgs.parse(raw)
       return devEnvs().revealCredentialPassword(devEnvs().resolveId(args.env), args.label)
+    },
+    'devEnv:bindRemote': (raw) => {
+      const args = BindRemoteArgs.parse(raw)
+      return devEnvs().bindRemote(
+        devEnvs().resolveId(args.env),
+        args.dependency,
+        args.tierId,
+        args.confirmation
+      )
     },
     'devEnv:secretsList': () => devEnvs().secrets.list(),
     'devEnv:secretSet': (raw) => {

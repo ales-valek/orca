@@ -43,8 +43,22 @@ export class DevEnvOperations extends DevEnvLifecycle {
         ? await this.services.getStates(env, template, settings.devEnvProxyPort)
         : [],
       setupRunning: this.pipeline.isRunning(env.id),
-      attachmentLabel: this.getAttachmentLabel(env)
+      attachmentLabel: this.getAttachmentLabel(env),
+      danger: Object.values(this.getRemoteTiers(env)).some((tier) => tier.danger)
     })
+  }
+
+  protected getRemoteTiers(env: DevEnv): DevEnvDetail['remoteTiers'] {
+    const tiers = this.deps.getSettings().devEnvRemoteTiers
+    const remote: DevEnvDetail['remoteTiers'] = {}
+    for (const [dependency, binding] of Object.entries(env.bindings)) {
+      const tier =
+        binding.kind === 'remote' ? tiers.find((entry) => entry.id === binding.tierId) : undefined
+      if (tier) {
+        remote[dependency] = { tierId: tier.id, name: tier.name, danger: tier.danger }
+      }
+    }
+    return remote
   }
 
   async show(id: string): Promise<DevEnvDetail> {
@@ -63,6 +77,7 @@ export class DevEnvOperations extends DevEnvLifecycle {
       secrets: this.secrets.getAll()
     }
     return buildDevEnvDetail({
+      remoteTiers: this.getRemoteTiers(env),
       summary: await this.summarize(env),
       template,
       services,
