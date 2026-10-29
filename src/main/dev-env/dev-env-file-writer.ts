@@ -1,5 +1,5 @@
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import {
   buildDevEnvContext,
   type DevEnvDependencyValues
@@ -17,9 +17,13 @@ export type DevEnvRenderedFile = {
   error?: string
 }
 
-/** `~/x` in a values file path means the user's home directory. */
-function expandHomePath(path: string): string {
-  return path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path
+/** `~/x` (or `~\\x`) means the user's home directory; other relative paths are not resolved. */
+function expandHomePath(path: string): string | null {
+  const expanded =
+    path === '~' || path.startsWith('~/') || path.startsWith('~\\')
+      ? join(homedir(), path.slice(1))
+      : path
+  return isAbsolute(expanded) ? expanded : null
 }
 
 /** Renders every env file of the bound slots in memory; writing is the caller's job. */
@@ -50,12 +54,14 @@ export async function renderDevEnvFiles(input: {
     for (const file of slot.envFiles) {
       const valuesPath = file.valuesFile ? expandHomePath(file.valuesFile) : null
       const valuesText = valuesPath ? await input.readFile(valuesPath) : null
-      if (valuesPath && valuesText === null) {
+      if (file.valuesFile && valuesText === null) {
         files.push({
           slot: slot.name,
           path: file.path,
           values: [],
-          error: `values file not found: ${valuesPath}`
+          error: valuesPath
+            ? `values file not found: ${valuesPath}`
+            : `values file must be an absolute path or start with ~: ${file.valuesFile}`
         })
         continue
       }

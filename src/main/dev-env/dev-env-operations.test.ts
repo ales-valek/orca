@@ -117,12 +117,14 @@ describe('DevEnvOperations', () => {
   let operations: DevEnvOperations
   let settings: DevEnvGlobalSettings
   let infraCalls: string[]
+  let restoreGate: Promise<void>
   let publishedRoutes: Map<string, unknown[]>
 
   beforeEach(() => {
     envs = []
     settings = SETTINGS
     infraCalls = []
+    restoreGate = Promise.resolve()
     publishedRoutes = new Map()
     missions = [makeMission()]
     worktreeMeta = {
@@ -208,6 +210,7 @@ describe('DevEnvOperations', () => {
             return { ok: true, code: 0 }
           },
           execFromFile: async (service: string) => {
+            await restoreGate
             infraCalls.push(`restore ${service}`)
             return { ok: true, code: 0 }
           }
@@ -437,6 +440,20 @@ describe('DevEnvOperations', () => {
     infraCalls = []
     await operations.restoreSnapshot(env.id, 'before-import')
     expect(infraCalls).toEqual(['stop', 'restore postgres', 'start eshop'])
+
+    let finishRestore = (): void => {}
+    services.start.mockClear()
+    restoreGate = new Promise<void>((resolve) => {
+      finishRestore = resolve
+    })
+    const restoring = operations.restoreSnapshot(env.id, 'before-import')
+    await vi.waitFor(() => expect(infraCalls.at(-1)).toBe('stop'))
+    await expect(operations.up(env.id)).rejects.toThrow('A restore of this environment is running')
+    operations.bind(env.id, 'admin-api', null)
+    expect(pipeline.run).toHaveBeenCalledTimes(1)
+    finishRestore()
+    await restoring
+    expect(pipeline.run).toHaveBeenCalledTimes(2)
 
     await operations.deleteSnapshot(env.id, 'before-import')
     expect((await operations.show(env.id)).snapshots).toEqual([])

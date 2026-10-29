@@ -17,7 +17,12 @@ export type DevEnvContext = ReadonlyMap<string, DevEnvContextValue>
 
 export type DevEnvExportValue = { value: string; secret: boolean }
 
-export type DevEnvDependencyValues = { url: string; exports: Record<string, DevEnvExportValue> }
+export type DevEnvDependencyValues = {
+  url: string
+  /** A remote tier url may embed `${secret.x}`. */
+  urlSecret?: boolean
+  exports: Record<string, DevEnvExportValue>
+}
 
 const ORCA_LOCALHOST_SUFFIX = '.orca.localhost'
 const LOOPBACK = '127.0.0.1'
@@ -85,7 +90,7 @@ export function buildDevEnvContext(input: {
     add(`secret.${name}`, value, 'secret', true)
   }
   for (const [name, dependency] of input.dependencies) {
-    add(`dep.${name}.url`, dependency.url, 'dependency')
+    add(`dep.${name}.url`, dependency.url, 'dependency', dependency.urlSecret === true)
     for (const [key, exported] of Object.entries(dependency.exports)) {
       add(`dep.${name}.${key}`, exported.value, 'dependency', exported.secret)
     }
