@@ -1,4 +1,5 @@
 import React from 'react'
+import { useDevEnvSidebarRefresh } from '../dev-env/DevEnvStatusBadge'
 import { BookOpen, CalendarClock, Container, EyeOff, Files, Search, Smartphone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store'
@@ -70,6 +71,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const artifactsActive = activeView === 'artifacts'
   const skillsActive = activeView === 'skills'
   const devEnvsActive = activeView === 'dev-envs'
+  useDevEnvSidebarRefresh()
   const mobileOnboardingBadge = useMobileSidebarOnboardingBadge(showMobileButton)
   const hideAutomationsButton = React.useCallback(() => {
     void updateSettings({ showAutomationsButton: false })
