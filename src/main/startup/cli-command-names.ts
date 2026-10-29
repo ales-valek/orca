@@ -46,6 +46,7 @@ export const CLI_COMMAND_NAMES = [
   'jira',
   'linear',
   'mission',
+  'devenv',
   'mouse',
   'network',
   'open',
