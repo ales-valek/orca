@@ -227,4 +227,16 @@ export abstract class DevEnvLifecycle extends DevEnvCore {
       }
     }
   }
+
+  /** After an Orca restart: follow moves that happened while closed, then serve hostnames again. */
+  async restore(): Promise<void> {
+    await this.reconcileMissions()
+    await this.reconcileWorktrees()
+    for (const env of this.deps.store.getDevEnvs()) {
+      const template = this.getTemplate(env)
+      if (!env.detached && template) {
+        await this.publishRoutes(env, template)
+      }
+    }
+  }
 }

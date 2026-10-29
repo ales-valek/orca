@@ -52,8 +52,9 @@ export const DEVENV_COMMAND_SPECS: CommandSpec[] = [
     usage: ' [--file <slot>/<path>]'
   }),
   envCommand('seed', 'Run the template seed command'),
-  envCommand('reset', 'Drop and recreate this environment data', ['reseed'], {
-    usage: ' [--reseed]'
+  envCommand('reset', 'Drop and recreate this environment data', ['reseed', 'yes'], {
+    usage: ' --yes [--reseed]',
+    notes: ['Drops the environment databases and buckets; --yes confirms.']
   }),
   envCommand(
     'bind',

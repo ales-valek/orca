@@ -43,6 +43,25 @@ export type DevEnvSetupDeps = {
 
 export type DevEnvSetupOptions = { steps?: DevEnvStepId[]; slots?: string[]; withSeed?: boolean }
 
+/** Union of two queued requests; a missing list means "all" and wins. */
+export function mergeDevEnvSetupOptions(
+  first: DevEnvSetupOptions,
+  second: DevEnvSetupOptions
+): DevEnvSetupOptions {
+  const merged: DevEnvSetupOptions = {}
+  if (first.steps && second.steps) {
+    const steps = new Set([...first.steps, ...second.steps])
+    merged.steps = DEV_ENV_STEP_IDS.filter((step) => steps.has(step))
+  }
+  if (first.slots && second.slots) {
+    merged.slots = [...new Set([...first.slots, ...second.slots])]
+  }
+  if (first.withSeed || second.withSeed) {
+    merged.withSeed = true
+  }
+  return merged
+}
+
 export type StepOutcome =
   | { status: 'done' | 'skipped'; detail?: string }
   | { status: 'failed'; error: string }

@@ -125,6 +125,9 @@ describe('DevEnvInfra', () => {
       join(dir, 'compose.json'),
       'up',
       '-d',
+      '--wait',
+      '--wait-timeout',
+      '300',
       '--no-recreate',
       'postgres'
     ])

@@ -1,4 +1,8 @@
 import { translate } from '@/i18n/i18n'
+import {
+  parseDevEnvTemplateJson,
+  serializeDevEnvTemplate
+} from '../../../../../shared/dev-env/dev-env-settings'
 import type {
   DevEnvEnvLine,
   DevEnvServiceDef,
@@ -108,4 +112,21 @@ export function parseDevEnvList(text: string): string[] {
     .split(/[\n,]/)
     .map((entry) => entry.trim())
     .filter(Boolean)
+}
+
+/** Validates the draft alone so a bad edit never drops the saved template from the list. */
+export function replaceDevEnvTemplate(
+  templates: readonly DevEnvTemplate[],
+  draft: DevEnvTemplate
+): { templates: DevEnvTemplate[] } | { error: string } {
+  const parsed = parseDevEnvTemplateJson(serializeDevEnvTemplate(draft))
+  if ('error' in parsed) {
+    return parsed
+  }
+  const exists = templates.some((template) => template.id === draft.id)
+  return {
+    templates: exists
+      ? templates.map((template) => (template.id === draft.id ? parsed.template : template))
+      : [...templates, parsed.template]
+  }
 }
