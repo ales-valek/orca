@@ -85,7 +85,7 @@ describe('settings navigation metadata', () => {
       'setup-guide',
       'general',
       'integrations',
-      'mobile'
+      'dev-envs'
     ])
   })
 
