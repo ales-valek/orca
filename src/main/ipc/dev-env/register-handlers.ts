@@ -60,6 +60,10 @@ export function registerDevEnvHandlers(
   runtime.attachDevEnvOperations(() => getOperations(store, runtime))
   const devEnvs = (): DevEnvOperations => runtime.getDevEnvOperations()
   setRemovedWorktreeListener(() => void devEnvs().reconcileWorktrees())
+  // Why: service terminals outlive Orca in the daemon; their hostnames must answer again without a click.
+  void Promise.resolve()
+    .then(() => devEnvs().restore())
+    .catch((error: unknown) => console.error('[dev-env] restore failed', error))
 
   for (const method of eraseRpcMethods(DEV_ENV_METHODS)) {
     const channel = `devEnv:${method.name.slice('devenv.'.length)}`

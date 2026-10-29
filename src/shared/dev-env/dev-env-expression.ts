@@ -30,3 +30,17 @@ export function interpolateDevEnvValue(
   }
   return { value, sources: sources.length > 0 ? sources : ['literal'], secret }
 }
+
+/** Commands are typed into a visible terminal, so secrets stay in env files instead. */
+export function renderDevEnvServiceCommand(
+  command: string,
+  context: DevEnvContext
+): { command: string } | { error: string } {
+  const result = interpolateDevEnvValue(command, context)
+  if ('error' in result) {
+    return result
+  }
+  return result.secret
+    ? { error: 'Service commands cannot use secrets; put them in an env file' }
+    : { command: result.value }
+}

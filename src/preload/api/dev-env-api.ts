@@ -21,7 +21,7 @@ export type DevEnvApi = {
   restart: (args: EnvArgs & { service: string }) => Promise<ServiceRunResult>
   env: (args: EnvArgs & { file?: string }) => Promise<{ files: DevEnvEnvFileView[] }>
   seed: (args: EnvArgs) => Promise<{ started: boolean }>
-  reset: (args: EnvArgs & { reseed?: boolean }) => Promise<{ started: boolean }>
+  reset: (args: EnvArgs & { reseed?: boolean; confirm: true }) => Promise<{ started: boolean }>
   bind: (args: EnvArgs & { dependency: string; provider: string | null }) => Promise<DevEnv>
   pinSlot: (args: EnvArgs & { slot: string; worktree: string | null }) => Promise<DevEnv>
   create: (args: {

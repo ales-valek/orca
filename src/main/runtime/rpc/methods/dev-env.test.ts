@@ -56,4 +56,10 @@ describe('devenv RPC', () => {
   it('runs devenv methods on the host', () => {
     expect(getHostOperationOwnership('devenv.show')).toBe('host')
   })
+
+  it('requires an explicit confirmation to reset data', () => {
+    const params = getMethod('devenv.reset').params
+    expect(params?.safeParse({ env: 'e' }).success).toBe(false)
+    expect(params?.safeParse({ env: 'e', confirm: true }).success).toBe(true)
+  })
 })
