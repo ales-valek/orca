@@ -4,20 +4,13 @@ import { scanPlatformListeningPorts } from '../ports/local-workspace-platform-po
 import type { RawListeningPort } from '../ports/local-workspace-port-scan-state'
 import { runDevEnvExec, type DevEnvExec } from './dev-env-shell-command'
 
-export function isPortFree(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const server = createServer()
-    server.once('error', () => resolve(false))
-    server.listen(port, '127.0.0.1', () => {
-      server.close(() => resolve(true))
-    })
-  })
-}
+export type DevEnvLoopback = '127.0.0.1' | '::1'
 
-/** Connect probe; binding instead would race a service that is about to listen. */
-export function isPortListening(port: number): Promise<boolean> {
+const LOOPBACKS: readonly DevEnvLoopback[] = ['127.0.0.1', '::1']
+
+function canConnect(port: number, host: DevEnvLoopback): Promise<boolean> {
   return new Promise((resolve) => {
-    const socket = connect(port, '127.0.0.1')
+    const socket = connect(port, host)
     socket.setTimeout(1000)
     socket.once('connect', () => {
       socket.destroy()
@@ -31,9 +24,49 @@ export function isPortListening(port: number): Promise<boolean> {
   })
 }
 
-export function probeHttpReady(url: string): Promise<boolean> {
+function canBind(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const request = http.get(url, { timeout: 2000 }, (response) => {
+    const server = createServer()
+    server.once('error', (error: NodeJS.ErrnoException) => {
+      // Why: a host without IPv6 cannot hold the port there either.
+      resolve(error.code === 'EAFNOSUPPORT' || error.code === 'EADDRNOTAVAIL')
+    })
+    server.listen({ port, host, exclusive: true }, () => {
+      server.close(() => resolve(true))
+    })
+  })
+}
+
+/** Connect probe on both loopbacks; binding instead would race a service that is about to listen. */
+export async function findListeningLoopback(port: number): Promise<DevEnvLoopback | null> {
+  for (const host of LOOPBACKS) {
+    if (await canConnect(port, host)) {
+      return host
+    }
+  }
+  return null
+}
+
+export async function isPortListening(port: number): Promise<boolean> {
+  return (await findListeningLoopback(port)) !== null
+}
+
+/** Free means nothing answers on either loopback and both wildcard binds succeed. */
+export async function isPortFree(port: number): Promise<boolean> {
+  // Why: on macOS a 127.0.0.1 bind succeeds even while Docker Desktop holds 0.0.0.0 or ::.
+  if (await isPortListening(port)) {
+    return false
+  }
+  return (await canBind(port, '0.0.0.0')) && (await canBind(port, '::'))
+}
+
+export async function probeHttpReady(port: number, path: string): Promise<boolean> {
+  const host = await findListeningLoopback(port)
+  if (!host) {
+    return false
+  }
+  return new Promise((resolve) => {
+    const request = http.get({ host, port, path, timeout: 2000 }, (response) => {
       response.resume()
       resolve((response.statusCode ?? 500) < 500)
     })

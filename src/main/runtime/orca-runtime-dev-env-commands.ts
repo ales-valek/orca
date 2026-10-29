@@ -1,11 +1,7 @@
+import { getDevEnvServiceShellCommand } from '../dev-env/dev-env-service-shell'
 import type { DevEnvTerminalPort } from '../dev-env/dev-env-services'
 import type { DevEnvOperations } from '../dev-env/dev-env-operations'
 import { OrcaRuntimeWithMissionOwnership } from './orca-runtime-mission-ownership'
-
-/** POSIX shells exit with the service, so a crash shows as an exited terminal with its code. */
-function getServiceShellCommand(command: string): string {
-  return process.platform === 'win32' ? command : `${command}; exit $?`
-}
 
 export abstract class OrcaRuntimeWithDevEnvCommands extends OrcaRuntimeWithMissionOwnership {
   private devEnvOperations: DevEnvOperations | null = null
@@ -32,7 +28,7 @@ export abstract class OrcaRuntimeWithDevEnvCommands extends OrcaRuntimeWithMissi
     return {
       create: async (worktreeId, opts) => {
         const result = await this.createTerminal(`id:${worktreeId}`, {
-          command: getServiceShellCommand(opts.command),
+          command: getDevEnvServiceShellCommand(opts.command, process.platform),
           title: opts.title,
           cwd: opts.cwd,
           focus: false,

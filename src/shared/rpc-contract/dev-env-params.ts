@@ -21,7 +21,14 @@ export const DevEnvRequiredServiceParams = z.object({
 
 export const DevEnvFileParams = z.object({ env: EnvSelector, file: OptionalString })
 
-export const DevEnvResetParams = z.object({ env: EnvSelector, reseed: z.boolean().optional() })
+/** Dropping data needs an explicit confirmation from the caller (UI dialog or `--yes`). */
+export const DevEnvResetParams = z.object({
+  env: EnvSelector,
+  reseed: z.boolean().optional(),
+  confirm: z.literal(true, {
+    message: 'Resetting data requires confirm: true (orca devenv reset --yes)'
+  })
+})
 
 /** Local providers only; remote tiers are bound from the desktop UI in a later delivery. */
 export const DevEnvBindParams = z.object({

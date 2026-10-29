@@ -69,12 +69,12 @@ describe('DevEnvHostProxy', () => {
     )
   })
 
-  async function startEchoServer(): Promise<number> {
+  async function startEchoServer(host = '127.0.0.1'): Promise<number> {
     const server = http.createServer((request, response) => {
       response.end(`${request.headers.host} ${request.url}`)
     })
     servers.push(server)
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    await new Promise<void>((resolve) => server.listen(0, host, resolve))
     return getServerPort(server)
   }
 
@@ -113,6 +113,18 @@ describe('DevEnvHostProxy', () => {
     expect(await get(port!, '1.eshop.kiosek.orca.localhost', '/menu?x=1')).toEqual({
       status: 200,
       body: '1.eshop.kiosek.orca.localhost /menu?x=1'
+    })
+  })
+
+  it('reaches a service that listens only on ::1', async () => {
+    const targetPort = await startEchoServer('::1')
+    proxy = new DevEnvHostProxy({ getPort: () => 0 })
+    await proxy.setRoutes('e1', [
+      { host: 'admin.kiosek', targetUrl: `http://127.0.0.1:${targetPort}` }
+    ])
+    expect(await get(proxy.getListenPort()!, 'admin.kiosek.orca.localhost', '/x')).toEqual({
+      status: 200,
+      body: 'admin.kiosek.orca.localhost /x'
     })
   })
 

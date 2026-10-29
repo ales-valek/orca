@@ -132,10 +132,11 @@ describe('DevEnvServices', () => {
     services = new DevEnvServices({
       terminals: port,
       probePort: async (p) => listening.has(p),
-      probeHttp: async (url) => httpOk.has(url),
+      probeHttp: async (port, path) => httpOk.has(`http://127.0.0.1:${port}${path}`),
       notify: () => {},
-      renderCommand: async (_env, _template, command) =>
-        command.replace('${self.admin-api.port}', '20110'),
+      renderCommand: async (_env, _template, command) => ({
+        command: command.replace('${self.admin-api.port}', '20110')
+      }),
       sleep: async () => {
         // Why: each wait tick brings the services up so dependency waits finish.
         for (const p of [20110, 20120, 20150]) {
@@ -157,6 +158,48 @@ describe('DevEnvServices', () => {
       ['Kiosek:eshop', 'w-eshop', '/m/eshop']
     ])
     expect(created[0].command).toBe('nx serve backend --port 20110')
+  })
+
+  it('names a foreign port holder and does not start that service', async () => {
+    const guarded = new DevEnvServices({
+      terminals: {
+        create: async (worktreeId, opts) => {
+          terminals.set(opts.title, { worktreeId, ...opts, alive: true, exitCode: null })
+          return { handle: opts.title }
+        },
+        isAlive: async () => ({ alive: false, exitCode: null }),
+        close: async () => {}
+      },
+      probePort: async () => false,
+      probeHttp: async () => false,
+      notify: () => {},
+      renderCommand: async (_env, _template, command) => ({ command }),
+      findPortHolder: async (port) => (port === 20150 ? 'pid 42 node' : null)
+    })
+    const result = await guarded.start(ENV, TEMPLATE, ['eshop'])
+    expect(result).toEqual({
+      started: [],
+      errors: ['eshop: port 20150 is held by pid 42 node. Orca did not start eshop.']
+    })
+    expect(terminals.size).toBe(0)
+  })
+
+  it('reports a command that cannot be rendered and does not start it', async () => {
+    const failing = new DevEnvServices({
+      terminals: {
+        create: async () => ({ handle: 'never' }),
+        isAlive: async () => ({ alive: false, exitCode: null }),
+        close: async () => {}
+      },
+      probePort: async () => false,
+      probeHttp: async () => false,
+      notify: () => {},
+      renderCommand: async () => ({ error: 'Unresolved ${dep.admin-api.url}' })
+    })
+    expect(await failing.start(ENV, TEMPLATE, ['eshop'])).toEqual({
+      started: [],
+      errors: ['eshop: Unresolved ${dep.admin-api.url}']
+    })
   })
 
   it('does not start a service whose terminal is alive', async () => {
@@ -217,7 +260,7 @@ describe('DevEnvServices', () => {
       probePort: async (p) => listening.has(p),
       probeHttp: async () => true,
       notify: () => {},
-      renderCommand: async (_env, _template, command) => command
+      renderCommand: async (_env, _template, command) => ({ command })
     })
     const states = await fresh.getStates(ENV, TEMPLATE, 80)
     expect(states.find((s) => s.name === 'eshop')?.status).toBe('up')
@@ -236,7 +279,7 @@ describe('DevEnvServices', () => {
       probePort: async () => false,
       probeHttp: async () => false,
       notify: () => {},
-      renderCommand: async (_env, _template, command) => command,
+      renderCommand: async (_env, _template, command) => ({ command }),
       sleep: async () => {},
       readyTimeoutMs: 0
     })
