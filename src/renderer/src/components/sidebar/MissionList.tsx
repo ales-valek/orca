@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { DevEnvStatusBadge } from '../dev-env/DevEnvStatusBadge'
 import { Milestone, MoreHorizontal, Plus, SquareTerminal } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
@@ -129,6 +130,7 @@ function MissionSection({
           >
             <SquareTerminal className="size-3.5 shrink-0" />
             <span className="truncate">{mission.name}</span>
+            <DevEnvStatusBadge missionId={mission.id} />
             <span className="shrink-0 text-[11px] text-muted-foreground/60">
               {mission.members.length === 1
                 ? translate('auto.components.sidebar.MissionList.83e2a3cc38', '1 project')
