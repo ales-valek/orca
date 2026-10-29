@@ -96,6 +96,7 @@ export const ROOT_HELP_TEXT_SECONDARY = [
   '  orca mission absorb <selector> --repo <selector> [--choose <file:line=taskRef>...] [--json]',
   '  orca mission rm <selector> [--keep-worktrees] [--json]',
   '  orca devenv list [--json]',
+  '  orca devenv create (--mission <selector> | --worktree <selector>) --template <template> [--bind <service>=<env>...] [--json]',
   '  orca devenv show <env> [--json]',
   '  orca devenv setup <env> [--step <step>] [--slot <slot>] [--seed] [--json]',
   '  orca devenv up|down <env> [--service <name>] [--json]',
