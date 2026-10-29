@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
 import { Container, Play, Square } from 'lucide-react'
 import { useAppStore } from '@/store'
@@ -5,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { runDevEnvAction } from './dev-env-actions'
-import { t } from './dev-env-labels'
 import { DevEnvDataTab } from './DevEnvDataTab'
 import { DevEnvDependenciesTab } from './DevEnvDependenciesTab'
 import { DevEnvEnvTab } from './DevEnvEnvTab'
@@ -41,13 +41,13 @@ function EmptyState(): React.JSX.Element {
     <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
       <Container className="size-6" />
       <p>
-        {t(
-          'page.empty',
+        {translate(
+          'devEnv.page.empty',
           'No Dev Environments yet. Add a template, then pick it when you create a mission or worktree.'
         )}
       </p>
       <Button variant="outline" size="sm" onClick={() => openSettingsPage()}>
-        {t('page.openSettings', 'Open settings')}
+        {translate('devEnv.page.openSettings', 'Open settings')}
       </Button>
     </div>
   )
@@ -67,13 +67,13 @@ function DevEnvDetailPane({ envId }: { envId: string }): React.JSX.Element | nul
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="truncate text-[15px] font-semibold">{detail.name}</h2>
             <Badge variant="secondary">{detail.templateName}</Badge>
-            <Badge variant="secondary" className="font-mono">
+            <Badge variant="secondary">
               {detail.portRange.first}–{detail.portRange.last}
             </Badge>
             {detail.detached ? <Badge variant="destructive">{detail.attachmentLabel}</Badge> : null}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {detail.attachmentLabel} · {t('page.key', 'key')}{' '}
+            {detail.attachmentLabel} · {translate('devEnv.page.key', 'key')}{' '}
             <span className="font-mono">{detail.key}</span>
           </p>
           {detail.hostnameError ? (
@@ -84,38 +84,48 @@ function DevEnvDetailPane({ envId }: { envId: string }): React.JSX.Element | nul
           variant="outline"
           size="sm"
           onClick={() =>
-            void runDevEnvAction(t('page.stopFailed', 'Could not stop services'), () =>
-              window.api.devEnv.down({ env })
+            void runDevEnvAction(
+              translate('devEnv.page.stopFailed', 'Could not stop services'),
+              () => window.api.devEnv.down({ env })
             )
           }
         >
           <Square className="size-4" />
-          {t('page.stopAll', 'Stop all')}
+          {translate('devEnv.page.stopAll', 'Stop all')}
         </Button>
         <Button
           size="sm"
           disabled={detail.detached === true}
           onClick={() =>
-            void runDevEnvAction(t('page.startFailed', 'Could not start services'), async () => {
-              const result = await window.api.devEnv.up({ env })
-              if (result.errors.length > 0) {
-                throw new Error(result.errors.join('\n'))
+            void runDevEnvAction(
+              translate('devEnv.page.startFailed', 'Could not start services'),
+              async () => {
+                const result = await window.api.devEnv.up({ env })
+                if (result.errors.length > 0) {
+                  throw new Error(result.errors.join('\n'))
+                }
               }
-            })
+            )
           }
         >
           <Play className="size-4" />
-          {t('page.startAll', 'Start all')}
+          {translate('devEnv.page.startAll', 'Start all')}
         </Button>
       </div>
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-        <TabsList variant="line" className="px-4">
-          <TabsTrigger value="services">{t('tab.services', 'Services')}</TabsTrigger>
-          <TabsTrigger value="env">{t('tab.env', 'Env')}</TabsTrigger>
-          <TabsTrigger value="setup">{t('tab.setup', 'Setup')}</TabsTrigger>
-          <TabsTrigger value="data">{t('tab.data', 'Data')}</TabsTrigger>
-          <TabsTrigger value="dependencies">{t('tab.dependencies', 'Dependencies')}</TabsTrigger>
-        </TabsList>
+        <div className="px-4">
+          <TabsList variant="line">
+            <TabsTrigger value="services">
+              {translate('devEnv.tab.services', 'Services')}
+            </TabsTrigger>
+            <TabsTrigger value="env">{translate('devEnv.tab.env', 'Env')}</TabsTrigger>
+            <TabsTrigger value="setup">{translate('devEnv.tab.setup', 'Setup')}</TabsTrigger>
+            <TabsTrigger value="data">{translate('devEnv.tab.data', 'Data')}</TabsTrigger>
+            <TabsTrigger value="dependencies">
+              {translate('devEnv.tab.dependencies', 'Dependencies')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
         <div className="scrollbar-sleek min-h-0 flex-1 overflow-auto">
           <TabsContent value="services">
             <DevEnvServicesTab detail={detail} onOpenDependencies={() => setTab('dependencies')} />

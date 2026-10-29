@@ -236,5 +236,82 @@
     "text": "This build does not support WebCodecs H.264 decoding.",
     "dynamic": false,
     "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "admin.${devEnv.key}",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "postgres, api",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "/health",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": ".env",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": ".env.example",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSecretsEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "maps-key",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "secret.operator-user",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "secret.operator-pass",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "admin-api, geo",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "npm run seed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/dev-env/dev-env-labels.ts",
+    "kind": "object-property:error",
+    "text": "bg-destructive",
+    "dynamic": false,
+    "count": 1
   }
 ]

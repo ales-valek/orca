@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
 import type { WorktreeCreationRequest } from '@/lib/pending-worktree-creation'
 import type { CreateWorktreeCallOptions } from '@/store/slices/worktrees/create/worktree-create-payload'
@@ -46,6 +47,8 @@ export function buildFlowCreateWorktreeOptions(
 /** The worktree exists either way; only the requested Dev Environment is missing. */
 export function warnIfDevEnvCreateFailed(error: string | undefined): void {
   if (error) {
-    toast.warning('Dev Environment was not created', { description: error })
+    toast.warning(translate('devEnv.createFailed', 'Dev Environment was not created'), {
+      description: error
+    })
   }
 }

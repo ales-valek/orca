@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import type {
   DevEnvEnvLine,
   DevEnvServiceDef,
@@ -87,7 +88,11 @@ export function parseDevEnvEnvLines(text: string): { lines: DevEnvEnvLine[] } | 
     }
     const match = ENV_LINE.exec(row)
     if (!match) {
-      return { error: `Line ${index + 1}: expected KEY = value` }
+      return {
+        error: translate('devEnv.settings.lineError', 'Line {{line}}: expected KEY = value', {
+          line: index + 1
+        })
+      }
     }
     lines.push({ key: match[1], value: match[2].trim() })
   }

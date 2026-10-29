@@ -34,8 +34,8 @@ describe('devenv RPC', () => {
     }
     const runtime = { getDevEnvOperations: () => operations }
     const method = getMethod('devenv.show')
-    // SAFETY: the handler only calls getDevEnvOperations().resolveId/show.
     const result = await method.handler(method.params?.parse({ env: 'kiosek' }), {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the handler only calls getDevEnvOperations().resolveId/show.
       runtime: runtime as never
     })
     expect(show).toHaveBeenCalledWith('e1')
