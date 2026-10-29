@@ -109,6 +109,17 @@ function EnvFileEditor({
           value={file.base ?? ''}
           onChange={(e) => onChange({ ...file, base: e.target.value || undefined })}
         />
+        <Input
+          variant="code"
+          className="h-7"
+          placeholder="~/secrets/repo/.env"
+          title={translate(
+            'devEnv.settings.valuesFileHelp',
+            'Personal values file outside the repos; read on every render and masked like secrets.'
+          )}
+          value={file.valuesFile ?? ''}
+          onChange={(e) => onChange({ ...file, valuesFile: e.target.value || undefined })}
+        />
         <Button
           variant="ghost"
           size="xs"
@@ -216,7 +227,7 @@ export function DevEnvSlotEditor({
       <div className={SECTION}>
         {translate(
           'devEnv.settings.envFiles',
-          'Env files: path, base file, then KEY = value lines'
+          'Env files: path, base file, personal values file, then KEY = value lines'
         )}
       </div>
       <div className="space-y-2">
