@@ -16,28 +16,28 @@
   {
     "filePath": "src/renderer/src/components/settings/appearance-search.ts",
     "kind": "object-property:keywords",
-    "text": "언어",
+    "text": "\uc5b8\uc5b4",
     "dynamic": false,
     "count": 1
   },
   {
     "filePath": "src/renderer/src/components/settings/appearance-search.ts",
     "kind": "object-property:keywords",
-    "text": "言語",
+    "text": "\u8a00\u8a9e",
     "dynamic": false,
     "count": 1
   },
   {
     "filePath": "src/renderer/src/components/settings/appearance-search.ts",
     "kind": "object-property:keywords",
-    "text": "語言",
+    "text": "\u8a9e\u8a00",
     "dynamic": false,
     "count": 1
   },
   {
     "filePath": "src/renderer/src/components/settings/appearance-search.ts",
     "kind": "object-property:keywords",
-    "text": "语言",
+    "text": "\u8bed\u8a00",
     "dynamic": false,
     "count": 1
   },
@@ -93,7 +93,7 @@
   {
     "filePath": "src/renderer/src/component-fixtures/component-fixture-explorer.tsx",
     "kind": "jsx-text",
-    "text": "fixtures · files named *.fixture.tsx under src/renderer/src",
+    "text": "fixtures \u00b7 files named *.fixture.tsx under src/renderer/src",
     "dynamic": false,
     "count": 1
   },
@@ -101,6 +101,83 @@
     "filePath": "src/renderer/src/components/settings/ChatFontFamilySetting.tsx",
     "kind": "jsx-text",
     "text": "fontFamily",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "admin.${devEnv.key}",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "postgres, api",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "/health",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": ".env",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": ".env.example",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSecretsEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "maps-key",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "secret.operator-user",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "secret.operator-pass",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "admin-api, geo",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvTemplateEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "npm run seed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/dev-env/dev-env-labels.ts",
+    "kind": "object-property:error",
+    "text": "bg-destructive",
     "dynamic": false,
     "count": 1
   }

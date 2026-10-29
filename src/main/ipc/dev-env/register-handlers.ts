@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises'
 import { app, ipcMain, type BrowserWindow } from 'electron'
+import { z } from 'zod'
 import { DEV_ENV_STEP_IDS, type DevEnvStepId } from '../../../shared/dev-env/dev-env-types'
 import { DevEnvOperations } from '../../dev-env/dev-env-operations'
 import type { Store } from '../../persistence'
@@ -13,13 +14,12 @@ const LOG_TAIL_BYTES = 200 * 1024
 let operations: DevEnvOperations | null = null
 let notifyWindow: BrowserWindow | null = null
 
-function getStringArg(args: unknown, key: string): string {
-  const value = typeof args === 'object' && args !== null ? Reflect.get(args, key) : undefined
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`Missing ${key}`)
-  }
-  return value
-}
+const Text = z.string().min(1)
+const RevealSecretArgs = z.object({ env: Text, slot: Text, path: Text, key: Text })
+const RevealCredentialArgs = z.object({ env: Text, label: Text })
+const SecretSetArgs = z.object({ name: Text, value: Text })
+const SecretNameArgs = z.object({ name: Text })
+const ReadLogArgs = z.object({ env: Text.optional(), step: Text })
 
 function isStepId(value: string): value is DevEnvStepId {
   return DEV_ENV_STEP_IDS.some((step) => step === value)
@@ -71,31 +71,34 @@ export function registerDevEnvHandlers(
 
   // Why: secrets and logs stay off RPC so neither the CLI nor paired clients can read them.
   const desktopOnly: Record<string, (args: unknown) => unknown> = {
-    'devEnv:revealSecret': (args) =>
-      devEnvs().revealSecretValue(
-        devEnvs().resolveId(getStringArg(args, 'env')),
-        getStringArg(args, 'slot'),
-        getStringArg(args, 'path'),
-        getStringArg(args, 'key')
-      ),
-    'devEnv:revealCredential': (args) =>
-      devEnvs().revealCredentialPassword(
-        devEnvs().resolveId(getStringArg(args, 'env')),
-        getStringArg(args, 'label')
-      ),
+    'devEnv:revealSecret': (raw) => {
+      const args = RevealSecretArgs.parse(raw)
+      return devEnvs().revealSecretValue(
+        devEnvs().resolveId(args.env),
+        args.slot,
+        args.path,
+        args.key
+      )
+    },
+    'devEnv:revealCredential': (raw) => {
+      const args = RevealCredentialArgs.parse(raw)
+      return devEnvs().revealCredentialPassword(devEnvs().resolveId(args.env), args.label)
+    },
     'devEnv:secretsList': () => devEnvs().secrets.list(),
-    'devEnv:secretSet': (args) =>
-      devEnvs().secrets.set(getStringArg(args, 'name'), getStringArg(args, 'value')),
-    'devEnv:secretDelete': (args) => devEnvs().secrets.delete(getStringArg(args, 'name')),
-    'devEnv:readLog': (args) => {
-      const step = getStringArg(args, 'step')
-      if (step === 'infra-shared') {
+    'devEnv:secretSet': (raw) => {
+      const args = SecretSetArgs.parse(raw)
+      devEnvs().secrets.set(args.name, args.value)
+    },
+    'devEnv:secretDelete': (raw) => devEnvs().secrets.delete(SecretNameArgs.parse(raw).name),
+    'devEnv:readLog': (raw) => {
+      const args = ReadLogArgs.parse(raw)
+      if (args.step === 'infra-shared') {
         return readLogTail(devEnvs().getInfraLogPath())
       }
-      if (!isStepId(step)) {
-        throw new Error(`Unknown step ${step}`)
+      if (!isStepId(args.step) || !args.env) {
+        throw new Error(`Unknown step ${args.step}`)
       }
-      return readLogTail(devEnvs().getLogPath(devEnvs().resolveId(getStringArg(args, 'env')), step))
+      return readLogTail(devEnvs().getLogPath(devEnvs().resolveId(args.env), args.step))
     }
   }
   for (const [channel, handler] of Object.entries(desktopOnly)) {

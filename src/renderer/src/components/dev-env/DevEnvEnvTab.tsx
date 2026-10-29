@@ -1,20 +1,20 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
 import { Eye, FileCode, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { DevEnvDetail, DevEnvEnvFileView } from '../../../../shared/dev-env/dev-env-types'
 import { openDevEnvFile, runDevEnvAction } from './dev-env-actions'
-import { t } from './dev-env-labels'
 import { DevEnvSectionLabel } from './DevEnvInfraList'
 
 type FileValue = DevEnvEnvFileView['values'][number]
 
 function getSourceLabel(value: FileValue, file: DevEnvEnvFileView): string {
   if (value.section === 'LOCAL') {
-    return t('env.local', 'LOCAL · manual')
+    return translate('devEnv.env.local', 'LOCAL · manual')
   }
   if (value.section === 'STATIC') {
-    return t('env.static', 'base file')
+    return translate('devEnv.env.static', 'base file')
   }
   return value.sources.join(' · ') || file.path
 }
@@ -42,20 +42,22 @@ function ValueCell({
           variant="ghost"
           size="xs"
           onClick={() =>
-            void runDevEnvAction(t('env.revealFailed', 'Could not reveal'), async () =>
-              setRevealed(
-                await window.api.devEnv.revealSecret({
-                  env: detail.key,
-                  slot: file.slot,
-                  path: file.path,
-                  key: value.key
-                })
-              )
+            void runDevEnvAction(
+              translate('devEnv.env.revealFailed', 'Could not reveal'),
+              async () =>
+                setRevealed(
+                  await window.api.devEnv.revealSecret({
+                    env: detail.key,
+                    slot: file.slot,
+                    path: file.path,
+                    key: value.key
+                  })
+                )
             )
           }
         >
           <Eye />
-          {t('env.reveal', 'Reveal')}
+          {translate('devEnv.env.reveal', 'Reveal')}
         </Button>
       ) : null}
     </span>
@@ -68,12 +70,15 @@ export function DevEnvEnvTab({ detail }: { detail: DevEnvDetail }): React.JSX.El
   const renderedAt = detail.setup.env?.finishedAt
   useEffect(() => {
     let cancelled = false
-    void runDevEnvAction(t('env.loadFailed', 'Could not read env files'), async () => {
-      const result = await window.api.devEnv.env({ env: detail.key })
-      if (!cancelled) {
-        setFiles(result.files)
+    void runDevEnvAction(
+      translate('devEnv.env.loadFailed', 'Could not read env files'),
+      async () => {
+        const result = await window.api.devEnv.env({ env: detail.key })
+        if (!cancelled) {
+          setFiles(result.files)
+        }
       }
-    })
+    )
     return () => {
       cancelled = true
     }
@@ -84,7 +89,7 @@ export function DevEnvEnvTab({ detail }: { detail: DevEnvDetail }): React.JSX.El
   if (!current) {
     return (
       <p className="p-4 text-sm text-muted-foreground">
-        {t('env.none', 'This template renders no env files.')}
+        {translate('devEnv.env.none', 'This template renders no env files.')}
       </p>
     )
   }
@@ -125,20 +130,20 @@ export function DevEnvEnvTab({ detail }: { detail: DevEnvDetail }): React.JSX.El
               onClick={() => openDevEnvFile(worktree.worktreeId, worktree.path, current.path)}
             >
               <FileCode />
-              {t('env.openInEditor', 'Open in editor')}
+              {translate('devEnv.env.openInEditor', 'Open in editor')}
             </Button>
           ) : null}
           <Button
             variant="outline"
             size="xs"
             onClick={() =>
-              void runDevEnvAction(t('env.renderFailed', 'Could not render'), () =>
+              void runDevEnvAction(translate('devEnv.env.renderFailed', 'Could not render'), () =>
                 window.api.devEnv.setup({ env: detail.key, step: 'env' })
               )
             }
           >
             <RefreshCw />
-            {t('env.rerender', 'Render again')}
+            {translate('devEnv.env.rerender', 'Render again')}
           </Button>
         </div>
         {current.error ? (
@@ -147,9 +152,11 @@ export function DevEnvEnvTab({ detail }: { detail: DevEnvDetail }): React.JSX.El
         <table className="w-full border-collapse font-mono text-xs">
           <thead>
             <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="px-4 py-1.5 font-medium">{t('env.key', 'Key')}</th>
-              <th className="px-2 py-1.5 font-medium">{t('env.value', 'Value')}</th>
-              <th className="px-4 py-1.5 font-medium">{t('env.source', 'Source')}</th>
+              <th className="px-4 py-1.5 font-medium">{translate('devEnv.env.key', 'Key')}</th>
+              <th className="px-2 py-1.5 font-medium">{translate('devEnv.env.value', 'Value')}</th>
+              <th className="px-4 py-1.5 font-medium">
+                {translate('devEnv.env.source', 'Source')}
+              </th>
             </tr>
           </thead>
           <tbody>

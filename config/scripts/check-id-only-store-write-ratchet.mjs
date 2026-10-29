@@ -21,6 +21,7 @@ const MEMBER =
 /** `Class.param` first parameters whose id has no host twin, with the reason. */
 export const NOT_HOST_TWINNED_PARAMS = new Map([
   ['AutomationPersistence.automationId', 'automation ids are minted UUIDs'],
+  ['DevEnvPersistence.id', 'dev env ids are minted UUIDs'],
   ['OrcadSourceExportPersistence.targetId', 'the id names the host itself'],
   ['RemoteLayoutSnapshotPersistence.environmentId', 'the id names the host itself'],
   ['SessionHostPartitionOperations.hostId', 'the id names the host itself'],

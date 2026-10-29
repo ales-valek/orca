@@ -26,7 +26,7 @@ export function interpolateDevEnvValue(
     return entry.value
   })
   if (missing !== null) {
-    return { error: `Unresolved ${missing}` }
+    return { error: `Unresolved ${String(missing)}` }
   }
   return { value, sources: sources.length > 0 ? sources : ['literal'], secret }
 }

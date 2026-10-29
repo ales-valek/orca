@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import React, { useState } from 'react'
 import { Copy, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { createBrowserUuid } from '@/lib/browser-uuid'
-import { t } from '@/components/dev-env/dev-env-labels'
 import {
   normalizeDevEnvSettings,
   parseDevEnvTemplateJson,
@@ -36,8 +36,8 @@ export function DevEnvSettingsPane(): React.JSX.Element {
     const normalized = normalizeDevEnvSettings({ devEnvTemplates: next }, 'darwin').devEnvTemplates
     if (normalized.length !== next.length) {
       toast.warning(
-        t(
-          'settings.invalidTemplate',
+        translate(
+          'devEnv.settings.invalidTemplate',
           'An invalid template was not saved (check names and duplicate service names).'
         )
       )
@@ -54,7 +54,7 @@ export function DevEnvSettingsPane(): React.JSX.Element {
     void file?.text().then((text) => {
       const result = parseDevEnvTemplateJson(text)
       if ('error' in result) {
-        toast.error(t('settings.importFailed', 'Could not import the template'), {
+        toast.error(translate('devEnv.settings.importFailed', 'Could not import the template'), {
           description: result.error
         })
         return
@@ -67,10 +67,13 @@ export function DevEnvSettingsPane(): React.JSX.Element {
   return (
     <div className="space-y-6">
       <section>
-        <div className={HEADING}>{t('settings.proxyPort', 'Hostname proxy port')}</div>
+        <div className={HEADING}>
+          {translate('devEnv.settings.proxyPort', 'Hostname proxy port')}
+        </div>
         <div className="flex items-center gap-2">
           <Input
-            className="h-8 w-28 font-mono text-xs"
+            variant="code"
+            className="h-8 w-28"
             type="number"
             min={1}
             max={65535}
@@ -84,23 +87,23 @@ export function DevEnvSettingsPane(): React.JSX.Element {
             }}
           />
           <span className="text-xs text-muted-foreground">
-            {t(
-              'settings.proxyHelp',
+            {translate(
+              'devEnv.settings.proxyHelp',
               'Service hostnames like admin.<env>.orca.localhost are served on this port. Applies after restarting Orca.'
             )}
           </span>
         </div>
       </section>
       <section>
-        <div className={HEADING}>{t('settings.infra', 'Shared infra')}</div>
+        <div className={HEADING}>{translate('devEnv.settings.infra', 'Shared infra')}</div>
         <DevEnvInfraEditor />
       </section>
       <section>
-        <div className={HEADING}>{t('settings.secrets', 'Secrets')}</div>
+        <div className={HEADING}>{translate('devEnv.settings.secrets', 'Secrets')}</div>
         <DevEnvSecretsEditor />
       </section>
       <section>
-        <div className={HEADING}>{t('settings.templates', 'Templates')}</div>
+        <div className={HEADING}>{translate('devEnv.settings.templates', 'Templates')}</div>
         <div className="flex gap-4">
           <div className="w-48 shrink-0 space-y-0.5">
             {templates.map((template) => (
@@ -122,16 +125,19 @@ export function DevEnvSettingsPane(): React.JSX.Element {
                 size="xs"
                 onClick={() =>
                   addTemplate(
-                    createDevEnvTemplate(newTemplateId(), t('settings.newTemplate', 'New template'))
+                    createDevEnvTemplate(
+                      newTemplateId(),
+                      translate('devEnv.settings.newTemplate', 'New template')
+                    )
                   )
                 }
               >
                 <Plus />
-                {t('settings.new', 'New')}
+                {translate('devEnv.settings.new', 'New')}
               </Button>
               <Button variant="outline" size="xs" asChild>
                 <label className="cursor-pointer">
-                  {t('settings.importJson', 'Import JSON')}
+                  {translate('devEnv.settings.importJson', 'Import JSON')}
                   <input
                     type="file"
                     accept="application/json,.json"
@@ -152,18 +158,20 @@ export function DevEnvSettingsPane(): React.JSX.Element {
                     addTemplate({ ...selected, id: newTemplateId(), name: `${selected.name} copy` })
                   }
                 >
-                  {t('settings.duplicate', 'Duplicate')}
+                  {translate('devEnv.settings.duplicate', 'Duplicate')}
                 </Button>
                 <Button
                   variant="ghost"
                   size="xs"
                   onClick={() => {
                     void navigator.clipboard.writeText(serializeDevEnvTemplate(selected))
-                    toast.success(t('settings.exported', 'Template JSON copied to the clipboard'))
+                    toast.success(
+                      translate('devEnv.settings.exported', 'Template JSON copied to the clipboard')
+                    )
                   }}
                 >
                   <Copy />
-                  {t('settings.exportJson', 'Export JSON')}
+                  {translate('devEnv.settings.exportJson', 'Export JSON')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -173,7 +181,7 @@ export function DevEnvSettingsPane(): React.JSX.Element {
                   }
                 >
                   <Trash2 />
-                  {t('settings.deleteTemplate', 'Delete')}
+                  {translate('devEnv.settings.deleteTemplate', 'Delete')}
                 </Button>
               </div>
               <DevEnvTemplateEditor
@@ -187,7 +195,10 @@ export function DevEnvSettingsPane(): React.JSX.Element {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {t('settings.noTemplates', 'No templates yet. Create one or import JSON.')}
+              {translate(
+                'devEnv.settings.noTemplates',
+                'No templates yet. Create one or import JSON.'
+              )}
             </p>
           )}
         </div>

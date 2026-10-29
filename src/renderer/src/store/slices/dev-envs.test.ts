@@ -3,14 +3,18 @@ import { create } from 'zustand'
 import type { DevEnvDetail, DevEnvSummary } from '../../../../shared/dev-env/dev-env-types'
 import { createDevEnvsSlice, type DevEnvsSlice } from './dev-envs'
 
-// SAFETY: the slice stores summaries and details without reading their fields.
-const SUMMARY = { id: 'e1', key: 'kiosek', name: 'Kiosek' } as DevEnvSummary
-// SAFETY: see SUMMARY.
-const DETAIL = { ...SUMMARY, services: [] } as unknown as DevEnvDetail
+/** Test doubles that implement only what the code under test calls. */
+function fake<T>(value: Partial<T>): T {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: callers pass every member the code under test reads.
+  return value as T
+}
+
+const SUMMARY = fake<DevEnvSummary>({ id: 'e1', key: 'kiosek', name: 'Kiosek' })
+const DETAIL = fake<DevEnvDetail>({ ...SUMMARY, services: [] })
 
 function createStore() {
-  // SAFETY: the slice only reads and writes its own keys.
   return create<DevEnvsSlice>()((set, get, api) =>
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the slice reads and writes only its own keys.
     createDevEnvsSlice(set as never, get as never, api as never)
   )
 }
