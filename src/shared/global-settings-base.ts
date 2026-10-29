@@ -14,6 +14,7 @@ import type { AgentPermissionGlobalSettings } from './tui-agent-permission-choic
 import type { TerminalColorOverrideGlobalSettings } from './terminal-color-overrides'
 import type { WindowMaterialSettings } from './window-material'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
+import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = ClaudeAgentViewSettings &
@@ -31,4 +32,5 @@ export type GlobalSettingsBase = ClaudeAgentViewSettings &
   PluginSystemSettings &
   TerminalColorOverrideGlobalSettings &
   WindowMaterialSettings &
-  HulyGlobalSettings
+  HulyGlobalSettings &
+  DevEnvGlobalSettings
