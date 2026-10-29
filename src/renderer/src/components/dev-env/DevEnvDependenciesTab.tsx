@@ -179,11 +179,8 @@ export function DevEnvDependenciesTab({ detail }: { detail: DevEnvDetail }): Rea
                   </SelectItem>
                 ))}
                 {remoteTiers.map((tier) => (
-                  <SelectItem
-                    key={tier.id}
-                    value={`${REMOTE_PREFIX}${tier.id}`}
-                    className={tier.danger ? 'text-destructive' : undefined}
-                  >
+                  <SelectItem key={tier.id} value={`${REMOTE_PREFIX}${tier.id}`}>
+                    {tier.danger ? <DevEnvStatusDot tone="error" /> : null}
                     {translate('devEnv.deps.remote', 'Remote')} · {tier.name}
                   </SelectItem>
                 ))}

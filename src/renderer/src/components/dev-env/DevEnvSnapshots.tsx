@@ -70,7 +70,9 @@ export function DevEnvSnapshots({ detail }: { detail: DevEnvDetail }): React.JSX
           placeholder={translate('devEnv.snapshots.namePlaceholder', 'before-import')}
           aria-label={translate('devEnv.snapshots.name', 'Snapshot name')}
           onChange={(event) => setName(event.target.value)}
-          className="h-8 max-w-56 font-mono"
+          variant="code"
+          density="compact"
+          className="max-w-56"
         />
         <Button
           variant="outline"
