@@ -115,6 +115,29 @@ export abstract class DevEnvCore {
     return this.pipeline.getLogPath(envId, step)
   }
 
+  /** Id, key or name (case-insensitive) to an env id. */
+  resolveId(selector: string): string {
+    const needle = selector.trim().toLowerCase()
+    const env = this.deps.store
+      .getDevEnvs()
+      .find(
+        (entry) =>
+          entry.id === selector || entry.key === needle || entry.name.toLowerCase() === needle
+      )
+    if (!env) {
+      throw new Error(`Unknown Dev Environment ${selector}`)
+    }
+    return env.id
+  }
+
+  getInfraNames(): string[] {
+    return this.deps.getSettings().devEnvInfra.map((service) => service.name)
+  }
+
+  getInfraLogPath(): string {
+    return join(this.deps.userDataDir, 'dev-envs', 'infra', 'infra.log')
+  }
+
   getTemplate(env: DevEnv): DevEnvTemplate | null {
     return (
       this.deps.getSettings().devEnvTemplates.find((entry) => entry.id === env.templateId) ?? null
