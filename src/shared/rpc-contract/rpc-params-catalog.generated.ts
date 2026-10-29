@@ -196,6 +196,19 @@ import {
   ConnectorWatch
 } from './connector-params'
 import {
+  DevEnvBindParams,
+  DevEnvCreateParams,
+  DevEnvDeleteParams,
+  DevEnvFileParams,
+  DevEnvInfraParams,
+  DevEnvPinSlotParams,
+  DevEnvRequiredServiceParams,
+  DevEnvResetParams,
+  DevEnvSelectorParams,
+  DevEnvServiceParams,
+  DevEnvSetupParams
+} from './dev-env-params'
+import {
   AttachParams as AttachParamsOfEmulatorParams,
   AxParams,
   ButtonParams,
@@ -993,6 +1006,23 @@ export const RPC_PARAMS_BY_METHOD = {
   'connector.watch': ConnectorWatch,
   'desktopBrowserBridge.attach': DesktopBrowserBridgeAttachParams,
   'desktopBrowserBridge.result': DesktopBrowserBridgeResultParams,
+  'devenv.bind': DevEnvBindParams,
+  'devenv.create': DevEnvCreateParams,
+  'devenv.delete': DevEnvDeleteParams,
+  'devenv.down': DevEnvServiceParams,
+  'devenv.env': DevEnvFileParams,
+  'devenv.infraDown': DevEnvInfraParams,
+  'devenv.infraStatus': null,
+  'devenv.infraUp': DevEnvInfraParams,
+  'devenv.list': null,
+  'devenv.pinSlot': DevEnvPinSlotParams,
+  'devenv.reset': DevEnvResetParams,
+  'devenv.restart': DevEnvRequiredServiceParams,
+  'devenv.seed': DevEnvSelectorParams,
+  'devenv.setup': DevEnvSetupParams,
+  'devenv.show': DevEnvSelectorParams,
+  'devenv.up': DevEnvServiceParams,
+  'devenv.url': DevEnvRequiredServiceParams,
   'diagnostics.memory': null,
   'emulator.attach': AttachParamsOfEmulatorParams,
   'emulator.availability': EmulatorAvailabilityParams,

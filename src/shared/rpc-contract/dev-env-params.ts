@@ -1,0 +1,52 @@
+import { z } from 'zod'
+import { OptionalString, requiredString } from './rpc-param-primitives'
+
+const EnvSelector = requiredString('Missing Dev Environment')
+
+export const DevEnvSelectorParams = z.object({ env: EnvSelector })
+
+export const DevEnvSetupParams = z.object({
+  env: EnvSelector,
+  step: z.enum(['ports', 'env', 'install', 'infra', 'data', 'seed']).optional(),
+  slot: OptionalString,
+  seed: z.boolean().optional()
+})
+
+export const DevEnvServiceParams = z.object({ env: EnvSelector, service: OptionalString })
+
+export const DevEnvRequiredServiceParams = z.object({
+  env: EnvSelector,
+  service: requiredString('Missing service')
+})
+
+export const DevEnvFileParams = z.object({ env: EnvSelector, file: OptionalString })
+
+export const DevEnvResetParams = z.object({ env: EnvSelector, reseed: z.boolean().optional() })
+
+/** Local providers only; remote tiers are bound from the desktop UI in a later delivery. */
+export const DevEnvBindParams = z.object({
+  env: EnvSelector,
+  dependency: requiredString('Missing dependency'),
+  provider: z.string().min(1).nullable()
+})
+
+export const DevEnvPinSlotParams = z.object({
+  env: EnvSelector,
+  slot: requiredString('Missing slot'),
+  worktree: z.string().min(1).nullable()
+})
+
+export const DevEnvCreateParams = z
+  .object({
+    mission: OptionalString,
+    worktree: OptionalString,
+    template: requiredString('Missing Dev Environment template'),
+    bindings: z.record(z.string(), z.string()).optional()
+  })
+  .refine((params) => Boolean(params.mission) !== Boolean(params.worktree), {
+    message: 'Pass exactly one of mission or worktree'
+  })
+
+export const DevEnvDeleteParams = z.object({ env: EnvSelector, dropData: z.boolean() })
+
+export const DevEnvInfraParams = z.object({ service: OptionalString })

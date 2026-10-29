@@ -9,15 +9,20 @@ function getServiceShellCommand(command: string): string {
 
 export abstract class OrcaRuntimeWithDevEnvCommands extends OrcaRuntimeWithMissionOwnership {
   private devEnvOperations: DevEnvOperations | null = null
+  private devEnvOperationsFactory: (() => DevEnvOperations) | null = null
 
-  attachDevEnvOperations(operations: DevEnvOperations): void {
-    this.devEnvOperations = operations
+  /** Built on first use so attaching a window never touches app paths or binds the proxy. */
+  attachDevEnvOperations(factory: () => DevEnvOperations): void {
+    this.devEnvOperationsFactory = factory
   }
 
   getDevEnvOperations(): DevEnvOperations {
     if (!this.devEnvOperations) {
-      // Why: environments own terminals and a hostname proxy that only the desktop app runs.
-      throw new Error('Dev Environments are only available in the Orca desktop app')
+      if (!this.devEnvOperationsFactory) {
+        // Why: environments own terminals and a hostname proxy that only the desktop app runs.
+        throw new Error('Dev Environments are only available in the Orca desktop app')
+      }
+      this.devEnvOperations = this.devEnvOperationsFactory()
     }
     return this.devEnvOperations
   }
