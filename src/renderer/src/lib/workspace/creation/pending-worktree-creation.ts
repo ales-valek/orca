@@ -142,6 +142,8 @@ export type WorktreeCreationRequest = {
   suppressTerminalFocusOnCompletion?: boolean
   /** "None" in the composer: when setup runs, open only its tab instead of an extra shell. */
   setupOnly?: boolean
+  /** Dev Environment created with the worktree on the host. */
+  devEnv?: { templateId: string; bindings?: Record<string, string> }
 }
 
 export type PendingVmEnvironmentCheck = {

@@ -58,11 +58,13 @@ export type QuickCreationRequestInput = {
   quickTelemetry: AgentStartedTelemetry | null
   suppressTerminalFocusOnCompletion: boolean
   setupOnly: boolean
+  devEnv?: WorktreeCreationRequest['devEnv']
 }
 
 export type QuickSubmitOptions = {
   onLegacyPreparationFailure?: (error: unknown) => void
   setupOnly?: boolean
+  devEnv?: WorktreeCreationRequest['devEnv']
   launchChoice?: AgentLaunchChoice
   launchInputs?: WorktreeCreationRequest['launchInputs']
   legacyLaunchInputs?: WorktreeCreationRequest['legacyLaunchInputs']
@@ -133,6 +135,7 @@ export function buildQuickCreationRequest(
     promptDelivery: input.promptDelivery,
     quickTelemetry: input.quickTelemetry,
     ...(input.suppressTerminalFocusOnCompletion ? { suppressTerminalFocusOnCompletion: true } : {}),
-    ...(input.agent === null ? { setupOnly: input.setupOnly } : {})
+    ...(input.agent === null ? { setupOnly: input.setupOnly } : {}),
+    ...(input.devEnv ? { devEnv: input.devEnv } : {})
   }
 }

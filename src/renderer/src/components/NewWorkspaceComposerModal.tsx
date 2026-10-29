@@ -11,6 +11,7 @@ import type {
 import { DirectWorkItemSetupDialog } from './new-workspace/DirectWorkItemSetupDialog'
 import { agentChoicePending } from '@/lib/host-chat-program'
 import type { AgentLaunchSurface } from '@/lib/agent-session/launch/routing/agent-session-launch-plan'
+import { DevEnvComposerFields, type DevEnvComposerValue } from './dev-env/DevEnvComposerFields'
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store/index'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
@@ -227,6 +228,7 @@ function QuickTabBody({
     [observation.contextKey]
   )
 
+  const [devEnv, setDevEnv] = useState<DevEnvComposerValue>({ templateId: null, bindings: {} })
   const handleCreate = useCallback(async (): Promise<void> => {
     if (createDisabled) {
       return
@@ -270,7 +272,10 @@ function QuickTabBody({
         pickerDraft,
         quickAgentPick.entry,
         launchSelection.choice?.executionHostId
-      )
+      ),
+      ...(devEnv.templateId
+        ? { devEnv: { templateId: devEnv.templateId, bindings: devEnv.bindings } }
+        : {})
     })
   }, [
     createDisabled,
@@ -281,7 +286,8 @@ function QuickTabBody({
     quickAgentPick,
     isSubmissionCancelled,
     modalData,
-    cardProps
+    cardProps,
+    devEnv
   ])
   // Layer Add Project without replacing the composer. Retain it for close animation and clone/scan cancellation; folder/non-Git navigation still tears down the modal.
   const [addProjectOpen, setAddProjectOpen] = useState(false)
@@ -411,6 +417,11 @@ function QuickTabBody({
         onAddProjectOverride={handleOpenAddProject}
         onNestedDialogOpenChange={setSetLocationOpen}
       />
+      {cardProps.selectedRepoIsGit ? (
+        <div className="px-2">
+          <DevEnvComposerFields repoId={cardProps.repoId} value={devEnv} onChange={setDevEnv} />
+        </div>
+      ) : null}
       <AgentSettingsDialog
         open={agentSettingsOpen}
         onOpenChange={setAgentSettingsOpen}

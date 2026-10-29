@@ -11,6 +11,10 @@ import {
 import { getProvisionedRootCreateOptions } from '@/lib/provisioned-root-create-options'
 import { releaseVmCreateCheckout } from '@/lib/vm-create-hidden-checkouts'
 import {
+  buildFlowCreateWorktreeOptions,
+  warnIfDevEnvCreateFailed
+} from '@/lib/workspace/creation/worktree-creation-call-options'
+import {
   formatWorkspaceCreateError,
   getWorkspaceCreateErrorToastMessage
 } from '@/lib/workspace-create-error-format'
@@ -62,64 +66,40 @@ export async function executeWorktreeCreation(
     const provisionedRoot = getProvisionedRootCreateOptions(preparedRequest)
     const backendStartup =
       provisionedRoot || structuredLaunch ? undefined : resolveBackendDraftStartup(preparedRequest)
-    result = await useAppStore
-      .getState()
-      .createWorktree(
-        preparedRequest.repoId,
-        preparedRequest.name,
-        preparedRequest.baseBranch,
-        preparedRequest.setupDecision,
-        preparedRequest.sparseCheckout,
-        preparedRequest.telemetrySource,
-        preparedRequest.displayName,
-        preparedRequest.linkedIssue,
-        preparedRequest.linkedPR,
-        preparedRequest.pushTarget,
-        preparedRequest.agent ?? undefined,
-        preparedRequest.linkedLinearIssue,
-        preparedRequest.branchNameOverride,
-        preparedRequest.workspaceStatus,
-        preparedRequest.linkedGitLabMR,
-        preparedRequest.linkedGitLabIssue,
+    result = await useAppStore.getState().createWorktree(
+      preparedRequest.repoId,
+      preparedRequest.name,
+      preparedRequest.baseBranch,
+      preparedRequest.setupDecision,
+      preparedRequest.sparseCheckout,
+      preparedRequest.telemetrySource,
+      preparedRequest.displayName,
+      preparedRequest.linkedIssue,
+      preparedRequest.linkedPR,
+      preparedRequest.pushTarget,
+      preparedRequest.agent ?? undefined,
+      preparedRequest.linkedLinearIssue,
+      preparedRequest.branchNameOverride,
+      preparedRequest.workspaceStatus,
+      preparedRequest.linkedGitLabMR,
+      preparedRequest.linkedGitLabIssue,
+      backendStartup,
+      preparedRequest.pendingFirstAgentMessageRename,
+      creationId,
+      preparedRequest.linkedLinearIssueWorkspaceId,
+      preparedRequest.linkedLinearIssueOrganizationUrlKey,
+      preparedRequest.linkedBitbucketPR,
+      preparedRequest.linkedAzureDevOpsPR,
+      preparedRequest.linkedGiteaPR,
+      preparedRequest.compareBaseRef,
+      buildFlowCreateWorktreeOptions(preparedRequest, {
+        creationHostId,
+        hostAgentLaunch,
+        structuredLaunch,
         backendStartup,
-        preparedRequest.pendingFirstAgentMessageRename,
-        creationId,
-        preparedRequest.linkedLinearIssueWorkspaceId,
-        preparedRequest.linkedLinearIssueOrganizationUrlKey,
-        preparedRequest.linkedBitbucketPR,
-        preparedRequest.linkedAzureDevOpsPR,
-        preparedRequest.linkedGiteaPR,
-        preparedRequest.compareBaseRef,
-        {
-          ...setupCreateArgs(preparedRequest),
-          ...(preparedRequest.branchIntent ? { branchIntent: preparedRequest.branchIntent } : {}),
-          ...(hostAgentLaunch ? { hostAgentLaunch } : {}),
-          ...worktreeCreationAgentLaunchOptions(preparedRequest),
-          executionHostId: creationHostId,
-          ...(preparedRequest.nameWasGenerated ? { nameWasGenerated: true } : {}),
-          ...(preparedRequest.displayNameKind
-            ? { displayNameKind: preparedRequest.displayNameKind }
-            : {}),
-          ...(preparedRequest.linkedWorkItem !== undefined
-            ? { linkedWorkItem: preparedRequest.linkedWorkItem }
-            : {}),
-          ...(preparedRequest.linkedTaskSourceContext !== undefined
-            ? { linkedTaskSourceContext: preparedRequest.linkedTaskSourceContext }
-            : {}),
-          // Why: the remote host must own task-draft startup so its initial terminal is the agent, not an idle fallback shell.
-          ...(!structuredLaunch &&
-          !backendStartup &&
-          preparedRequest.agent &&
-          preparedRequest.launchDraftPrompt
-            ? { startupDraft: preparedRequest.launchDraftPrompt }
-            : {}),
-          ...(provisionedRoot ? { provisionedRoot } : {}),
-          ...(preparedRequest.parentWorktreeId
-            ? { parentWorktreeId: preparedRequest.parentWorktreeId }
-            : {}),
-          ...(preparedRequest.note ? { note: preparedRequest.note } : {})
-        }
-      )
+        provisionedRoot
+      })
+    )
   } catch (error) {
     // Missing entry means mid-flight user cancellation; stop silently instead of reporting dismissed work as failure.
     if (!useAppStore.getState().pendingWorktreeCreations[creationId]) {
@@ -143,6 +123,7 @@ export async function executeWorktreeCreation(
   }
 
   const worktree = result.worktree
+  warnIfDevEnvCreateFailed(result.devEnvError)
   // Why: cancellation can race a successful backend adoption; clean up again after it settles so an adopted workspace cannot outlive its destroyed VM.
   if (!useAppStore.getState().pendingWorktreeCreations[creationId]) {
     if (preparedRequest.ephemeralVmRuntimeId) {

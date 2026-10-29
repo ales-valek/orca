@@ -21,6 +21,7 @@ export type MissionsApi = {
     repoIds: string[]
     sessionAgent?: TuiAgent
     orchestratorRepoId?: string
+    devEnvTemplateId?: string
   }) => Promise<MissionCreateResult>
   update: (args: {
     missionId: string

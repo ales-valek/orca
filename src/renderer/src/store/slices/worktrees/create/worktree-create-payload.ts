@@ -37,6 +37,7 @@ export type CreateWorktreeCallOptions = {
   /** Hash of the confirmed setup content; see CreateWorktreeArgs. */
   approvedSetupHash?: string
   approvedSetupHashes?: string[]
+  devEnv?: CreateWorktreeArgs['devEnv']
   /** True only when `name` came from the creature-name generator; gates host-side retirement. */
   nameWasGenerated?: boolean
   displayNameKind?: CreateWorktreeArgs['displayNameKind']
@@ -94,6 +95,7 @@ function sharedCreateFields(
     setupDecision: request.setupDecision,
     ...(options ? pickApprovedSetupHashes(options) : {}),
     ...(options?.setupOnly !== undefined ? { setupOnly: options.setupOnly } : {}),
+    ...(options?.devEnv ? { devEnv: options.devEnv } : {}),
     sparseCheckout: request.sparseCheckout,
     ...(request.displayName ? { displayName: request.displayName } : {}),
     ...((request.displayNameKind ?? options?.displayNameKind)
