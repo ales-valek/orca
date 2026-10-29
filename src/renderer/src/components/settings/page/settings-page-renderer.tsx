@@ -19,6 +19,7 @@ import {
   renderAutomationsSettingsSection,
   renderGeneralSettingsSection,
   renderIntegrationsSettingsSection,
+  renderDevEnvSettingsSection,
   renderMobileSettingsSection,
   renderOrcaAccountSettingsSection,
   renderSetupGuideSettingsSection,
@@ -142,6 +143,7 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
                   {renderSetupGuideSettingsSection(context)}
                   {renderGeneralSettingsSection(context)}
                   {renderIntegrationsSettingsSection(context)}
+                  {renderDevEnvSettingsSection(context)}
                   {renderMobileSettingsSection(context)}
                   {renderAutomationsSettingsSection(context)}
                   {renderArtifactsSettingsSection(context)}

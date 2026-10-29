@@ -3,6 +3,7 @@ import { ArtifactsSettingsPane } from '../artifacts/ArtifactsSettingsPane'
 import { AutomationsSettingsPane } from '../automations/AutomationsSettingsPane'
 import { GeneralPane } from '../general/GeneralPane'
 import { IntegrationsPane } from '../integrations/IntegrationsPane'
+import { DevEnvSettingsPane } from '../dev-env/DevEnvSettingsPane'
 import { MobileSettingsPane } from '../mobile/MobileSettingsPane'
 import { OrcaAccountSettingsPane } from '../accounts/orca/OrcaAccountSettingsPane'
 import { SettingsSetupGuidePane } from '../setup-guide/SettingsSetupGuidePane'
@@ -93,6 +94,28 @@ export function renderIntegrationsSettingsSection(
       bodyClassName="rounded-none border-0 bg-transparent p-0 shadow-none"
     >
       {view.isSectionMounted('integrations') ? <IntegrationsPane /> : null}
+    </SettingsSection>
+  )
+}
+
+export function renderDevEnvSettingsSection(
+  context: SettingsRenderContext
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  if (!model.showDesktopOnlySettings) {
+    return null
+  }
+  return (
+    <SettingsSection
+      id="dev-envs"
+      title={translate('devEnv.settings.title', 'Dev Environments')}
+      description={translate(
+        'devEnv.settings.description',
+        'Shared infra, templates and secrets for running missions and worktrees.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('dev-envs')}
+    >
+      {view.isSectionMounted('dev-envs') ? <DevEnvSettingsPane /> : null}
     </SettingsSection>
   )
 }
