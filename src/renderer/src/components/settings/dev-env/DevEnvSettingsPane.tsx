@@ -22,7 +22,7 @@ import {
 import type { DevEnvTemplate } from '../../../../../shared/dev-env/dev-env-types'
 import { selectDevEnvs } from '@/components/dev-env/DevEnvStatusBadge'
 import { createDevEnvTemplate, replaceDevEnvTemplate } from './dev-env-template-edit'
-import { DevEnvInfraEditor } from './DevEnvInfraEditor'
+import { DevEnvJsonSettingEditor } from './DevEnvJsonSettingEditor'
 import { DevEnvSecretsEditor } from './DevEnvSecretsEditor'
 import { DevEnvTemplateEditor } from './DevEnvTemplateEditor'
 
@@ -107,7 +107,27 @@ export function DevEnvSettingsPane(): React.JSX.Element {
       </section>
       <section>
         <div className={HEADING}>{translate('devEnv.settings.infra', 'Shared infra')}</div>
-        <DevEnvInfraEditor />
+        <DevEnvJsonSettingEditor
+          field="devEnvInfra"
+          help={translate(
+            'devEnv.infra.help',
+            'Each service: name, image or build, ports [{name, host, container}], environment, volumes, healthcheck, resource {create, drop, dump, restore}. Resource commands run inside the container for each environment and must be safe to run twice; dump writes the data to stdout and restore reads it from stdin.'
+          )}
+          saveLabel={translate('devEnv.infra.save', 'Save infra')}
+          importLabel={translate('devEnv.infra.import', 'Import infra JSON')}
+        />
+      </section>
+      <section>
+        <div className={HEADING}>{translate('devEnv.settings.remoteTiers', 'Remote tiers')}</div>
+        <DevEnvJsonSettingEditor
+          field="devEnvRemoteTiers"
+          help={translate(
+            'devEnv.tiers.help',
+            'Each tier: id, name, danger (true for prod), dependencies {<service>: {url, values {<export>: value}}}. Values may use ${secret.<name>} and stay masked. Tiers are bound only from this desktop app; a danger tier asks for the environment key.'
+          )}
+          saveLabel={translate('devEnv.tiers.save', 'Save tiers')}
+          importLabel={translate('devEnv.tiers.import', 'Import tiers JSON')}
+        />
       </section>
       <section>
         <div className={HEADING}>{translate('devEnv.settings.secrets', 'Secrets')}</div>
