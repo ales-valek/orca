@@ -132,6 +132,9 @@ function normalizeEnvFile(value: unknown): DevEnvEnvFile | null {
   if (isNonEmptyString(value.base)) {
     file.base = value.base
   }
+  if (isNonEmptyString(value.valuesFile)) {
+    file.valuesFile = value.valuesFile
+  }
   return file
 }
 

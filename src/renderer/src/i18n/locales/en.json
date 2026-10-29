@@ -23296,7 +23296,8 @@
       "deleteTitle": "Delete template {{name}}?",
       "deleteBody": "{{count}} Dev Environment(s) use it and will show \"Template no longer exists\" until you delete them.",
       "cancel": "Cancel",
-      "deleteConfirm": "Delete template"
+      "deleteConfirm": "Delete template",
+      "valuesFileHelp": "Personal values file outside the repos; read on every render and masked like secrets."
     },
     "search": {
       "title": "Dev Environments",

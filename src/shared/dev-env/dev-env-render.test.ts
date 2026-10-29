@@ -253,6 +253,26 @@ describe('dev env file rendering', () => {
     expect(result).toEqual({ error: 'API: Unresolved ${dep.admin-api.url}' })
   })
 
+  it('adds values from a personal values file as masked SECRET entries, template lines win', () => {
+    const result = renderOrThrow({
+      ...INPUT,
+      valuesText:
+        'PORT=1\nMAPS_KEY=from-file\nJWT_PRIVATE_KEY="-----BEGIN\nabc\n-----END"\nSMS_STRATEGY=email\n'
+    })
+    const byKey = (key: string) => result.values.find((value) => value.key === key)
+    expect(byKey('PORT')).toMatchObject({ value: '20150', section: 'DYNAMIC' })
+    expect(byKey('MAPS_KEY')).toMatchObject({ value: 's3cr3t', section: 'SECRET' })
+    expect(byKey('SMS_STRATEGY')).toEqual({
+      key: 'SMS_STRATEGY',
+      value: 'email',
+      section: 'SECRET',
+      sources: ['secret'],
+      secret: true
+    })
+    expect(byKey('JWT_PRIVATE_KEY')?.value).toBe('-----BEGIN\nabc\n-----END')
+    expect(result.text).toContain('JWT_PRIVATE_KEY="-----BEGIN\nabc\n-----END"')
+  })
+
   it('quotes values with whitespace or hashes', () => {
     const context = buildContext({ secrets: new Map([['maps-key', 'a b#c']]) })
     expect(renderOrThrow({ ...INPUT, context }).text).toContain('MAPS_KEY="a b#c"')
