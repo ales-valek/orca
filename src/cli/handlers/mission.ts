@@ -108,7 +108,8 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
         name: getOptionalStringFlag(flags, 'name'),
         branch: getOptionalStringFlag(flags, 'branch'),
         agent: getOptionalStringFlag(flags, 'agent'),
-        orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo')
+        orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo'),
+        devEnvTemplate: getOptionalStringFlag(flags, 'devenv-template')
       })
       printResult(result, json, formatMissionHulyCreate)
       return
@@ -121,7 +122,8 @@ export const MISSION_HANDLERS: Record<string, CommandHandler> = {
       repos: getRequiredRepoSelectors(flags),
       branch: getOptionalStringFlag(flags, 'branch'),
       agent: getOptionalStringFlag(flags, 'agent'),
-      orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo')
+      orchestratorRepo: getOptionalStringFlag(flags, 'orchestrator-repo'),
+      devEnvTemplate: getOptionalStringFlag(flags, 'devenv-template')
     })
     printResult(result, json, formatMissionMutation)
   },
