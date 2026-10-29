@@ -36,6 +36,7 @@ import type { GithubWorkItemApi } from './api/github-work-item-api'
 import type { GitLabApi } from './api/gitlab-api'
 import type { BitbucketApi, HostedReviewApi } from './api/hosted-review-api'
 import type { HulyApi } from './api/huly-api'
+import type { DevEnvApi } from './api/dev-env-api'
 import type { JiraApi } from './api/jira-api'
 import type { LinearApi } from './api/linear-api'
 import type { LspApi } from './api/lsp-api'
@@ -101,6 +102,7 @@ export type PreloadApi = {
   linear: LinearApi
   jira: JiraApi
   huly: HulyApi
+  devEnv: DevEnvApi
   starNag: StarNagApi
   telemetryTrack: TelemetryApi['telemetryTrack']
   telemetrySetOptIn: TelemetryApi['telemetrySetOptIn']
