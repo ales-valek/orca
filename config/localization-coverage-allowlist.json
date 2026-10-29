@@ -180,5 +180,12 @@
     "text": "bg-destructive",
     "dynamic": false,
     "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "~/secrets/repo/.env",
+    "dynamic": false,
+    "count": 1
   }
 ]
