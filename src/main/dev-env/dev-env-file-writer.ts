@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import {
   buildDevEnvContext,
@@ -14,6 +15,11 @@ export type DevEnvRenderedFile = {
   /** Full file text including secrets; never send it to a renderer or CLI. */
   text?: string
   error?: string
+}
+
+/** `~/x` in a values file path means the user's home directory. */
+function expandHomePath(path: string): string {
+  return path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path
 }
 
 /** Renders every env file of the bound slots in memory; writing is the caller's job. */
@@ -42,7 +48,19 @@ export async function renderDevEnvFiles(input: {
       continue
     }
     for (const file of slot.envFiles) {
+      const valuesPath = file.valuesFile ? expandHomePath(file.valuesFile) : null
+      const valuesText = valuesPath ? await input.readFile(valuesPath) : null
+      if (valuesPath && valuesText === null) {
+        files.push({
+          slot: slot.name,
+          path: file.path,
+          values: [],
+          error: `values file not found: ${valuesPath}`
+        })
+        continue
+      }
       const result = renderDevEnvFile({
+        valuesText,
         file,
         baseText: file.base ? await input.readFile(join(worktree.path, file.base)) : null,
         currentText: await input.readFile(join(worktree.path, file.path)),

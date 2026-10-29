@@ -16,7 +16,13 @@ export type DevEnvInfraService = {
 
 export type DevEnvEnvLine = { key: string; value: string }
 
-export type DevEnvEnvFile = { path: string; base?: string; lines: DevEnvEnvLine[] }
+export type DevEnvEnvFile = {
+  path: string
+  base?: string
+  /** Personal values file outside the repos (`~` allowed), read at render time as secrets. */
+  valuesFile?: string
+  lines: DevEnvEnvLine[]
+}
 
 export type DevEnvServiceDef = {
   name: string

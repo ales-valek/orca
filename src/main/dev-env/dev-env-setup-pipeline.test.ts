@@ -249,6 +249,29 @@ describe('DevEnvSetupPipeline', () => {
     })
   })
 
+  it('reads personal values files and fails naming a missing one', async () => {
+    const valuesPath = join(root, 'personal.env')
+    writeFileSync(valuesPath, 'API_PARTNER_SECRET=abc\n')
+    const withValues = (valuesFile: string): DevEnvTemplate => ({
+      ...TEMPLATE,
+      slots: [
+        { ...TEMPLATE.slots[0], envFiles: [{ ...TEMPLATE.slots[0].envFiles[0], valuesFile }] }
+      ]
+    })
+    deps.getSettings = () => ({ ...SETTINGS, devEnvTemplates: [withValues(valuesPath)] })
+    await new DevEnvSetupPipeline(deps).run('e1', { steps: ['env'] })
+    expect(readFileSync(join(root, 'eshop/.env'), 'utf8')).toContain('API_PARTNER_SECRET=abc')
+    deps.getSettings = () => ({
+      ...SETTINGS,
+      devEnvTemplates: [withValues(join(root, 'missing.env'))]
+    })
+    await new DevEnvSetupPipeline(deps).run('e1', { steps: ['env'] })
+    expect(env.setup.env).toMatchObject({
+      status: 'failed',
+      error: `eshop/.env: values file not found: ${join(root, 'missing.env')}`
+    })
+  })
+
   it('writes a log per step', async () => {
     const pipeline = new DevEnvSetupPipeline(deps)
     await pipeline.run('e1', { steps: ['env'] })
