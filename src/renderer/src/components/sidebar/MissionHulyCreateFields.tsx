@@ -1,4 +1,5 @@
 import React, { useId } from 'react'
+import { DevEnvTemplatePicker } from '../dev-env/DevEnvTemplatePicker'
 import AgentCombobox from '@/components/agent/AgentCombobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +24,8 @@ export function MissionHulyCreateFields(props: {
   agents: AgentCatalogEntry[]
   agent: TuiAgent | null
   onAgentChange: (agent: TuiAgent | null) => void
+  devEnvTemplateId: string | null
+  onDevEnvTemplateChange: (templateId: string | null) => void
 }): React.JSX.Element {
   const nameId = useId()
   const branchId = useId()
@@ -80,6 +83,11 @@ export function MissionHulyCreateFields(props: {
           triggerClassName="h-8 w-full border-input text-xs"
         />
       </div>
+      <DevEnvTemplatePicker
+        value={props.devEnvTemplateId}
+        onChange={props.onDevEnvTemplateChange}
+        repoIds={[...props.memberRepoIds]}
+      />
     </div>
   )
 }

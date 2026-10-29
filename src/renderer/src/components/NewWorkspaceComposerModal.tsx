@@ -1,6 +1,7 @@
 import { DirectWorkItemSetupDialog } from './new-workspace/DirectWorkItemSetupDialog'
 import type { DirectWorkItemSetupRequest } from '@/lib/direct-work-item-setup'
 import { agentChoicePending } from '@/lib/host-chat-program'
+import { DevEnvComposerFields, type DevEnvComposerValue } from './dev-env/DevEnvComposerFields'
 import type { AgentLaunchSurface } from '@/lib/agent-session-launch-plan'
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
@@ -227,6 +228,8 @@ function QuickTabBody({
     []
   )
 
+  const [devEnv, setDevEnv] = useState<DevEnvComposerValue>({ templateId: null, bindings: {} })
+
   const handleQuickSetupOnlySelect = useCallback(() => {
     setQuickAgentOverride(null)
     setQuickSelectionCleared(true)
@@ -238,9 +241,12 @@ function QuickTabBody({
     }
     await submitQuick(quickAgent, {
       setupOnly: quickSetupOnly,
-      launchChoice: launchSelection.choice
+      launchChoice: launchSelection.choice,
+      ...(devEnv.templateId
+        ? { devEnv: { templateId: devEnv.templateId, bindings: devEnv.bindings } }
+        : {})
     })
-  }, [createDisabled, quickAgent, launchSelection.choice, quickSetupOnly, submitQuick])
+  }, [createDisabled, quickAgent, launchSelection.choice, quickSetupOnly, submitQuick, devEnv])
   // Layer Add Project without replacing the composer. Retain it for close animation and clone/scan cancellation; folder/non-Git navigation still tears down the modal.
   const [addProjectOpen, setAddProjectOpen] = useState(false)
   const [addProjectMounted, setAddProjectMounted] = useState(false)
@@ -363,6 +369,11 @@ function QuickTabBody({
         onAddProjectOverride={handleOpenAddProject}
         onNestedDialogOpenChange={setSetLocationOpen}
       />
+      {cardProps.selectedRepoIsGit ? (
+        <div className="px-2">
+          <DevEnvComposerFields repoId={cardProps.repoId} value={devEnv} onChange={setDevEnv} />
+        </div>
+      ) : null}
       <AgentSettingsDialog open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       {addProjectMounted ? (
         <Suspense fallback={null}>

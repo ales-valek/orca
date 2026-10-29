@@ -77,6 +77,7 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
   const [name, setName] = useState<string | null>(null)
   const [branch, setBranch] = useState<string | null>(null)
   const [orchestratorRepoId, setOrchestratorRepoId] = useState<string | null>(null)
+  const [devEnvTemplateId, setDevEnvTemplateId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
@@ -171,6 +172,7 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
         branch: effectiveBranch,
         ...(sessionAgent ? { agent: sessionAgent } : {}),
         ...(effectiveOrchestrator ? { orchestratorRepo: `id:${effectiveOrchestrator}` } : {}),
+        ...(devEnvTemplateId ? { devEnvTemplate: devEnvTemplateId } : {}),
         ...(Object.keys(picks.repoOverrides).length > 0
           ? { repoOverrides: picks.repoOverrides }
           : {}),
@@ -259,6 +261,8 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
               agents={visibleAgents}
               agent={sessionAgent}
               onAgentChange={setSessionAgent}
+              devEnvTemplateId={devEnvTemplateId}
+              onDevEnvTemplateChange={setDevEnvTemplateId}
             />
           ) : null}
           {createError ? (
