@@ -1,7 +1,8 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect } from 'react'
 import { useAppStore } from '@/store'
 import type { DevEnvSummary } from '../../../../shared/dev-env/dev-env-types'
-import { getDevEnvBadgeLabel, t } from './dev-env-labels'
+import { getDevEnvBadgeLabel } from './dev-env-labels'
 import { DevEnvStatusDot } from './DevEnvStatusDot'
 
 const SIDEBAR_POLL_MS = 10_000
@@ -69,7 +70,7 @@ export function DevEnvStatusBadge({
   return (
     <button
       type="button"
-      title={t('badge.title', 'Dev Environment {name}').replace('{name}', env.name)}
+      title={translate('devEnv.badge.title', 'Dev Environment {name}').replace('{name}', env.name)}
       onClick={(event) => {
         event.stopPropagation()
         openDevEnvsPage(env.id)

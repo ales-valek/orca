@@ -1,3 +1,4 @@
+import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
 import type { StateCreator } from 'zustand'
 import type {
@@ -103,7 +104,9 @@ export const createMissionsSlice: StateCreator<AppState, [], [], MissionsSlice> 
         applyMemberResults(result.mission.id, result.memberResults)
         await get().fetchMissions()
         if (result.devEnvError) {
-          toast.warning('Dev Environment was not created', { description: result.devEnvError })
+          toast.warning(translate('devEnv.createFailed', 'Dev Environment was not created'), {
+            description: result.devEnvError
+          })
         }
         void get().fetchDevEnvs()
         return result

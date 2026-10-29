@@ -1,9 +1,9 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppStore } from '@/store'
-import { t } from '@/components/dev-env/dev-env-labels'
 import { normalizeDevEnvSettings } from '../../../../../shared/dev-env/dev-env-settings'
 import type { DevEnvInfraService } from '../../../../../shared/dev-env/dev-env-types'
 
@@ -32,7 +32,7 @@ export function DevEnvInfraEditor(): React.JSX.Element {
       return
     }
     if (!Array.isArray(parsed)) {
-      setError(t('infra.notArray', 'Expected a JSON array of services'))
+      setError(translate('devEnv.infra.notArray', 'Expected a JSON array of services'))
       return
     }
     const services = normalizeDevEnvSettings({ devEnvInfra: parsed }, 'darwin').devEnvInfra
@@ -40,7 +40,7 @@ export function DevEnvInfraEditor(): React.JSX.Element {
     void updateSettings({ devEnvInfra: services })
     if (services.length !== parsed.length) {
       toast.warning(
-        t('infra.dropped', '{count} invalid service(s) were not saved').replace(
+        translate('devEnv.infra.dropped', '{count} invalid service(s) were not saved').replace(
           '{count}',
           String(parsed.length - services.length)
         )
@@ -59,13 +59,14 @@ export function DevEnvInfraEditor(): React.JSX.Element {
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        {t(
-          'infra.help',
+        {translate(
+          'devEnv.infra.help',
           'Each service: name, image or build, ports [{name, host, container}], environment, volumes, healthcheck, resource {create, drop}. Resource commands run inside the container for each environment and must be safe to run twice.'
         )}
       </p>
       <Textarea
-        className="min-h-64 font-mono text-xs"
+        variant="code"
+        className="min-h-64"
         spellCheck={false}
         value={text}
         aria-invalid={error ? true : undefined}
@@ -74,11 +75,11 @@ export function DevEnvInfraEditor(): React.JSX.Element {
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
       <div className="flex gap-2">
         <Button size="sm" onClick={save}>
-          {t('infra.save', 'Save infra')}
+          {translate('devEnv.infra.save', 'Save infra')}
         </Button>
         <Button size="sm" variant="outline" asChild>
           <label className="cursor-pointer">
-            {t('infra.import', 'Import infra JSON')}
+            {translate('devEnv.infra.import', 'Import infra JSON')}
             <input
               type="file"
               accept="application/json,.json"

@@ -1,10 +1,11 @@
+import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
 import { RotateCw, ScrollText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { DevEnvDetail, DevEnvStepId } from '../../../../shared/dev-env/dev-env-types'
 import { runDevEnvAction } from './dev-env-actions'
-import { formatDevEnvDuration, getDevEnvSetupRows, getDevEnvStepTone, t } from './dev-env-labels'
+import { formatDevEnvDuration, getDevEnvSetupRows, getDevEnvStepTone } from './dev-env-labels'
 import { DevEnvStatusDot } from './DevEnvStatusDot'
 
 function StepLog({
@@ -27,18 +28,21 @@ function StepLog({
       })
     }
     load()
+    if (!running) {
+      return () => {
+        cancelled = true
+      }
+    }
     // Why: a running step streams into its log file; keep the drawer current.
-    const timer = running ? setInterval(load, 1500) : null
+    const timer = setInterval(load, 1500)
     return () => {
       cancelled = true
-      if (timer) {
-        clearInterval(timer)
-      }
+      clearInterval(timer)
     }
   }, [env, step, running])
   return (
     <pre className="scrollbar-sleek max-h-64 overflow-auto bg-muted/40 px-4 py-2 font-mono text-xs whitespace-pre-wrap">
-      {text || t('setup.emptyLog', 'No output yet.')}
+      {text || translate('devEnv.setup.emptyLog', 'No output yet.')}
     </pre>
   )
 }
@@ -47,7 +51,7 @@ export function DevEnvSetupTab({ detail }: { detail: DevEnvDetail }): React.JSX.
   const [openLog, setOpenLog] = useState<DevEnvStepId | null>(null)
   const rows = getDevEnvSetupRows(detail)
   const run = (step?: DevEnvStepId): void => {
-    void runDevEnvAction(t('setup.runFailed', 'Could not start setup'), () =>
+    void runDevEnvAction(translate('devEnv.setup.runFailed', 'Could not start setup'), () =>
       window.api.devEnv.setup({ env: detail.key, ...(step ? { step } : {}) })
     )
   }
@@ -55,11 +59,11 @@ export function DevEnvSetupTab({ detail }: { detail: DevEnvDetail }): React.JSX.
     <div className="p-4">
       <div className="mb-3 flex items-center">
         <span className="flex-1 text-sm font-semibold">
-          {t('setup.title', 'Setup')} · {detail.name}
+          {translate('devEnv.setup.title', 'Setup')} · {detail.name}
         </span>
         <Button variant="outline" size="sm" disabled={detail.setupRunning} onClick={() => run()}>
           <RotateCw className="size-4" />
-          {t('setup.runAll', 'Run full setup again')}
+          {translate('devEnv.setup.runAll', 'Run full setup again')}
         </Button>
       </div>
       <div className="rounded-xl border border-border">
@@ -84,7 +88,7 @@ export function DevEnvSetupTab({ detail }: { detail: DevEnvDetail }): React.JSX.
                 onClick={() => setOpenLog(openLog === row.step ? null : row.step)}
               >
                 <ScrollText />
-                {t('setup.log', 'Log')}
+                {translate('devEnv.setup.log', 'Log')}
               </Button>
               <Button
                 variant="ghost"
@@ -93,7 +97,7 @@ export function DevEnvSetupTab({ detail }: { detail: DevEnvDetail }): React.JSX.
                 onClick={() => run(row.step)}
               >
                 <RotateCw />
-                {t('setup.rerun', 'Re-run')}
+                {translate('devEnv.setup.rerun', 'Re-run')}
               </Button>
             </div>
             {row.error ? (
