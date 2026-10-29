@@ -8,6 +8,7 @@ import type { WorktreeDeletionPreferences } from './worktree-deletion-preference
 import type { AgentPermissionGlobalSettings } from './tui-agent-permission-choice'
 import type { OrchestrationHeartbeatSettings } from './orchestration-heartbeat'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
+import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = ClaudeAgentViewSettings &
@@ -19,4 +20,5 @@ export type GlobalSettingsBase = ClaudeAgentViewSettings &
   BrowserLinkOpeningSettings &
   OrchestrationHeartbeatSettings &
   EditorChromeSettings &
-  HulyGlobalSettings
+  HulyGlobalSettings &
+  DevEnvGlobalSettings

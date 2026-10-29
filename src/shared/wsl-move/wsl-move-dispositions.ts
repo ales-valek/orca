@@ -48,6 +48,10 @@ export const PERSISTED_STATE_DISPOSITIONS = {
   }),
   sparsePresetsByRepo: moveDisposition(8),
   missions: notApplicableDisposition(62, 'Desktop-local; Missions refuse WSL and SSH repos.'),
+  devEnvs: notApplicableDisposition(
+    69,
+    'Desktop-local; Dev Environments refuse WSL and SSH repos.'
+  ),
   retiredWorktreeNamesByRepo: moveDisposition(9),
   retiredWorktreeNamesByNamespace: moveDisposition(10, {
     note: 'Local repos do write `local:<probe path>` keys; recompute for the Linux probe path, never string-map.'

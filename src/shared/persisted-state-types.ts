@@ -1,4 +1,5 @@
 import type { ExecutionHostId } from './execution-host'
+import type { DevEnv } from './dev-env/dev-env-types'
 import type {
   RemovedSshTargetTombstone,
   SshPtyConsumerRecovery,
@@ -64,6 +65,7 @@ export type PersistedState = {
   projectGroups: ProjectGroup[]
   folderWorkspaces: FolderWorkspace[]
   missions: Mission[]
+  devEnvs: DevEnv[]
   /** Keep folder review notes top-level: older normalizers strip nested fields but round-trip unknown top-level keys.
    * Write-only projection: load hydrates FolderWorkspace.diffComments and deletes this key from Store state;
    * only buildStateToSave produces it. Never read Store.state.folderWorkspaceDiffComments outside load. */
