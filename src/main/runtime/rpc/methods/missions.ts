@@ -43,7 +43,8 @@ export const MISSION_METHODS = [
         repos: params.repos,
         ...(params.branch ? { branch: params.branch.trim() } : {}),
         ...(isTuiAgent(params.agent) ? { agent: params.agent } : {}),
-        ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {})
+        ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {}),
+        ...(params.devEnvTemplate ? { devEnvTemplate: params.devEnvTemplate } : {})
       })
   }),
   defineMethod({
@@ -58,6 +59,7 @@ export const MISSION_METHODS = [
         ...(params.branch ? { branch: params.branch.trim() } : {}),
         ...(isTuiAgent(params.agent) ? { agent: params.agent } : {}),
         ...(params.orchestratorRepo ? { orchestratorRepo: params.orchestratorRepo } : {}),
+        ...(params.devEnvTemplate ? { devEnvTemplate: params.devEnvTemplate } : {}),
         ...(params.repoOverrides ? { repoOverrides: params.repoOverrides } : {}),
         ...(params.orderOverrides ? { orderOverrides: params.orderOverrides } : {})
       })

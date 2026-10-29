@@ -116,3 +116,42 @@ export type DevEnvInfraState = {
   status: 'missing' | 'running' | 'stopped' | 'unhealthy'
   ports: number[]
 }
+
+export type DevEnvBadge = {
+  envId: string
+  state: 'setting-up' | 'running' | 'partial' | 'failed' | 'stopped'
+  up: number
+  total: number
+}
+
+export type DevEnvSummary = DevEnv & {
+  templateName: string
+  badge: DevEnvBadge
+  portRange: { first: number; last: number }
+  attachmentLabel: string
+}
+
+export type DevEnvDetail = DevEnvSummary & {
+  services: DevEnvServiceState[]
+  requiredDependencies: string[]
+  dependencyStates: Record<string, 'up' | 'down' | 'unbound' | 'missing'>
+  /** Passwords are always masked; the desktop UI reveals them over IPC only. */
+  credentials: { label: string; user: string; password: string }[]
+  hostnameError?: string
+  setupRunning: boolean
+}
+
+export type DevEnvEnvFileView = {
+  slot: string
+  path: string
+  values: {
+    key: string
+    value: string
+    section: 'STATIC' | 'SECRET' | 'DYNAMIC' | 'LOCAL'
+    sources: string[]
+    secret: boolean
+  }[]
+  error?: string
+}
+
+export const DEV_ENV_MASK = '••••••'
