@@ -1,3 +1,4 @@
+import { createMissionDevEnv } from '../dev-env/dev-env-mission-create'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   Mission,
@@ -21,7 +22,7 @@ import {
 } from '../missions/mission-runtime-records'
 import { findMissionTaskIdByRef, getMissionTaskDisplayRef } from '../missions/mission-task-refs'
 import { InvalidArgumentError } from './rpc/core'
-import { OrcaRuntimeWithMissionOwnership } from './orca-runtime-mission-ownership'
+import { OrcaRuntimeWithDevEnvCommands } from './orca-runtime-dev-env-commands'
 
 export type RuntimeMissionCreateInput = {
   name: string
@@ -29,9 +30,10 @@ export type RuntimeMissionCreateInput = {
   branch?: string
   agent?: TuiAgent
   orchestratorRepo?: string
+  devEnvTemplate?: string
 }
 
-export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMissionOwnership {
+export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithDevEnvCommands {
   private missionOperations: MissionOperations | null = null
 
   /** The desktop window owns Mission IPC; RPC reuses its instance for shared locks and UI refresh. */
@@ -114,10 +116,16 @@ export abstract class OrcaRuntimeWithMissionCommands extends OrcaRuntimeWithMiss
         ? { orchestratorRepoId: (await this.resolveRepoSelector(input.orchestratorRepo)).id }
         : {})
     })
+    const devEnvError = await createMissionDevEnv(
+      () => this.getDevEnvOperations(),
+      result.mission.id,
+      input.devEnvTemplate
+    )
     return {
       mission: toRuntimeMissionRecord(this.requireStore(), result.mission),
       memberResults: result.memberResults,
-      ...(result.orchestratorResult ? { orchestratorResult: result.orchestratorResult } : {})
+      ...(result.orchestratorResult ? { orchestratorResult: result.orchestratorResult } : {}),
+      ...(devEnvError ? { devEnvError } : {})
     }
   }
 

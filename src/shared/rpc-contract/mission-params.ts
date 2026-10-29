@@ -33,7 +33,8 @@ export const MissionCreateParams = z.object({
     (value) => value === undefined || isTuiAgent(value),
     'Unknown agent'
   ),
-  orchestratorRepo: OptionalString
+  orchestratorRepo: OptionalString,
+  devEnvTemplate: OptionalString
 })
 
 export const MissionAddReposParams = z.object({
@@ -80,6 +81,7 @@ export const MissionCreateFromHulyParams = z.object({
   branch: MissionCreateParams.shape.branch,
   agent: MissionCreateParams.shape.agent,
   orchestratorRepo: OptionalString,
+  devEnvTemplate: OptionalString,
   repoOverrides: HulyRepoOverrides,
   orderOverrides: HulyOrderOverrides
 })
