@@ -297,9 +297,12 @@ export default function MissionList(): React.JSX.Element {
         <DevEnvCreateDialog
           open
           onOpenChange={(open) => !open && setCreatingDevEnv(null)}
-          missionId={creatingDevEnv.id}
-          missionName={creatingDevEnv.name}
-          repoIds={creatingDevEnv.members.map((member) => member.repoId)}
+          target={{
+            kind: 'mission',
+            missionId: creatingDevEnv.id,
+            name: creatingDevEnv.name,
+            repoIds: creatingDevEnv.members.map((member) => member.repoId)
+          }}
         />
       ) : null}
     </div>

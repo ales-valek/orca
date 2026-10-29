@@ -23094,7 +23094,8 @@
   "devEnv": {
     "composer": {
       "dependencies": "Dependencies",
-      "providersHint": "Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists."
+      "providersHint": "Local environments that provide the service. Bind dev, staging or prod in its Dependencies tab once it exists.",
+      "providersRemoteHint": "Local environments or remote tiers that provide the service. Prod tiers are bound in its Dependencies tab once it exists."
     },
     "deps": {
       "notBound": "Not bound",
