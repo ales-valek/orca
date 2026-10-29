@@ -2,6 +2,7 @@ import type {
   DevEnvDetail,
   DevEnvEnvFileView,
   DevEnvInfraState,
+  DevEnvSnapshot,
   DevEnvSummary
 } from '../../shared/dev-env/dev-env-types'
 import {
@@ -9,7 +10,8 @@ import {
   formatDevEnvInfra,
   formatDevEnvList,
   formatDevEnvRun,
-  formatDevEnvShow
+  formatDevEnvShow,
+  formatDevEnvSnapshots
 } from '../devenv-format'
 import type { CommandHandler } from '../dispatch'
 import { getOptionalStringFlag, getRepeatedStringFlag, getRequiredStringFlag } from '../flags'
@@ -92,6 +94,41 @@ export const DEVENV_HANDLERS: Record<string, CommandHandler> = {
       confirm: true
     })
     printResult(result, json, () => 'Data dropped; provisioning started.')
+  },
+  'devenv mode': async ({ flags, client, json }) => {
+    const mode = getRequiredStringFlag(flags, 'mode')
+    if (mode !== 'dev' && mode !== 'prod') {
+      throw new RuntimeClientError('invalid_argument', 'Expected mode dev or prod')
+    }
+    const result = await client.call<{ mode: string }>('devenv.mode', { env: env(flags), mode })
+    printResult(result, json, () => `Services stopped; the next up runs ${mode} commands.`)
+  },
+  'devenv snapshots': async ({ flags, client, json }) => {
+    const result = await client.call<{ snapshots: DevEnvSnapshot[] }>('devenv.snapshots', {
+      env: env(flags)
+    })
+    printResult(result, json, formatDevEnvSnapshots)
+  },
+  'devenv snapshot': async ({ flags, client, json }) => {
+    const result = await client.call<DevEnvSnapshot>('devenv.snapshot', {
+      env: env(flags),
+      name: getRequiredStringFlag(flags, 'name')
+    })
+    printResult(result, json, (snapshot) => `Saved snapshot ${snapshot.name}.`)
+  },
+  'devenv restore': async ({ flags, client, json }) => {
+    if (flags.get('yes') !== true) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Restoring replaces this environment data; pass --yes to confirm'
+      )
+    }
+    const result = await client.call<{ restored: boolean }>('devenv.restore', {
+      env: env(flags),
+      name: getRequiredStringFlag(flags, 'name'),
+      confirm: true
+    })
+    printResult(result, json, () => 'Restored; services that were up are starting again.')
   },
   'devenv bind': async ({ flags, client, json }) => {
     const provider = getRequiredStringFlag(flags, 'provider')

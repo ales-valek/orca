@@ -1,15 +1,18 @@
 import {
   DevEnvBindParams,
+  DevEnvConfirmedSnapshotParams,
   DevEnvCreateParams,
   DevEnvDeleteParams,
   DevEnvFileParams,
   DevEnvInfraParams,
+  DevEnvModeParams,
   DevEnvPinSlotParams,
   DevEnvRequiredServiceParams,
   DevEnvResetParams,
   DevEnvSelectorParams,
   DevEnvServiceParams,
-  DevEnvSetupParams
+  DevEnvSetupParams,
+  DevEnvSnapshotParams
 } from '../../../../shared/rpc-contract/dev-env-params'
 import { defineMethod, type RpcContext } from '../core'
 
@@ -115,6 +118,48 @@ export const DEV_ENV_METHODS = [
     handler: async (params, context) => {
       await ops(context).reset(envId(context, params.env), { reseed: params.reseed === true })
       return { started: true }
+    }
+  }),
+  defineMethod({
+    name: 'devenv.mode',
+    permission: 'workspace',
+    params: DevEnvModeParams,
+    handler: async (params, context) => {
+      await ops(context).setMode(envId(context, params.env), params.mode)
+      return { mode: params.mode }
+    }
+  }),
+  defineMethod({
+    name: 'devenv.snapshots',
+    permission: 'workspace',
+    params: DevEnvSelectorParams,
+    handler: async (params, context) => ({
+      snapshots: ops(context).listSnapshots(envId(context, params.env))
+    })
+  }),
+  defineMethod({
+    name: 'devenv.snapshot',
+    permission: 'workspace',
+    params: DevEnvSnapshotParams,
+    handler: async (params, context) =>
+      ops(context).snapshot(envId(context, params.env), params.name)
+  }),
+  defineMethod({
+    name: 'devenv.restore',
+    permission: 'workspace',
+    params: DevEnvConfirmedSnapshotParams,
+    handler: async (params, context) => {
+      await ops(context).restoreSnapshot(envId(context, params.env), params.name)
+      return { restored: true }
+    }
+  }),
+  defineMethod({
+    name: 'devenv.deleteSnapshot',
+    permission: 'workspace',
+    params: DevEnvConfirmedSnapshotParams,
+    handler: async (params, context) => {
+      ops(context).deleteSnapshot(envId(context, params.env), params.name)
+      return { deleted: true }
     }
   }),
   defineMethod({
