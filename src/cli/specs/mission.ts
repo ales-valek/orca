@@ -34,7 +34,7 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
     path: ['mission', 'create'],
     summary: 'Create a Mission root with one worktree per repo on a shared branch',
     usage:
-      'orca mission create (--name <name> --repo <selector> [--repo <selector>...] | --from-huly <milestone> [--project <key>] [--name <name>]) [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--json]',
+      'orca mission create (--name <name> --repo <selector> [--repo <selector>...] | --from-huly <milestone> [--project <key>] [--name <name>]) [--branch <branch>] [--agent <agent>] [--orchestrator-repo <selector>] [--devenv-template <template>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'name',
@@ -43,7 +43,8 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
       'agent',
       'orchestrator-repo',
       'from-huly',
-      'project'
+      'project',
+      'devenv-template'
     ],
     repeatableFlags: ['repo'],
     notes: [
@@ -52,6 +53,7 @@ export const MISSION_COMMAND_SPECS: CommandSpec[] = [
       '--agent picks the agent auto-launched when the Mission session first opens.',
       '--orchestrator-repo checks out the Mission branch of a non-member repo in the root; the Mission session runs there.',
       '--from-huly takes a Huly milestone id or exact label instead of --repo: each mapped component becomes a member repo, each issue a task layer, and MISSION.md is written to the root. It fails and lists unmapped issues or blockedBy cycles.',
+      '--devenv-template creates a Dev Environment from that template (id or name) for the new Mission.',
       '--project is the Huly project key; it defaults to the only configured or workspace project. --name and --branch default to the milestone label.',
       SETUP_HOOK_NOTE
     ],
