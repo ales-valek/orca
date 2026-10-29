@@ -105,9 +105,11 @@ describe('DevEnvOperations', () => {
     cancel: ReturnType<typeof vi.fn>
   }
   let operations: DevEnvOperations
+  let publishedRoutes: Map<string, unknown[]>
 
   beforeEach(() => {
     envs = []
+    publishedRoutes = new Map()
     missions = [makeMission()]
     worktreeMeta = {
       [ESHOP_MEMBER]: meta('mission/kiosek'),
@@ -175,7 +177,10 @@ describe('DevEnvOperations', () => {
         services: fake<DevEnvServices>(services),
         pipeline: fake<DevEnvSetupPipeline>(pipeline),
         proxy: fake<DevEnvHostProxy>({
-          setRoutes: async () => ({ ok: true }),
+          setRoutes: async (ownerId: string, routes: unknown[]) => {
+            publishedRoutes.set(ownerId, routes)
+            return { ok: true }
+          },
           clearRoutes: () => {},
           close: async () => {}
         }),
@@ -293,5 +298,54 @@ describe('DevEnvOperations', () => {
         slots: ['eshop']
       })
     )
+  })
+
+  it('queues requests without slots while setup runs and merges them', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    let finish: () => void = () => {}
+    pipeline.isRunning.mockReturnValue(false)
+    pipeline.run.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        })
+    )
+    operations.startSetup(env.id, { steps: ['install'] })
+    pipeline.isRunning.mockReturnValue(true)
+    operations.startSetup(env.id, { steps: ['env'] })
+    operations.startSetup(env.id, { steps: ['seed'], withSeed: true })
+    pipeline.isRunning.mockReturnValue(false)
+    finish()
+    await vi.waitFor(() =>
+      expect(pipeline.run).toHaveBeenLastCalledWith(env.id, {
+        steps: ['env', 'seed'],
+        withSeed: true
+      })
+    )
+  })
+
+  it('creates an env for a worktree that has no meta, labelled by its folder name', async () => {
+    const mainCheckout = composeWorktreeId('repo-admin', '/repos/admin')
+    const env = await operations.createForWorktree(mainCheckout, 't1')
+    expect(env.slotWorktrees.admin).toEqual({
+      worktreeId: mainCheckout,
+      path: '/repos/admin',
+      label: 'admin · admin'
+    })
+  })
+
+  it('restores hostname routes and reconciles after an Orca restart', async () => {
+    const kept = await operations.createForMission('m1', 't1')
+    const orphan = {
+      ...kept,
+      id: 'e-orphan',
+      key: 'gone',
+      attachment: { kind: 'mission' as const, missionId: 'm-gone' }
+    }
+    envs.push(orphan)
+    publishedRoutes.clear()
+    await operations.restore()
+    expect([...publishedRoutes.keys()]).toEqual([kept.id])
+    expect(envs.find((env) => env.id === 'e-orphan')?.detached).toBe(true)
   })
 })

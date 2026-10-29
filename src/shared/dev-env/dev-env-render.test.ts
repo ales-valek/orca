@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildDevEnvContext, getDevEnvServiceHost, getDevEnvServiceUrl } from './dev-env-context'
-import { interpolateDevEnvValue } from './dev-env-expression'
+import { interpolateDevEnvValue, renderDevEnvServiceCommand } from './dev-env-expression'
 import { parseRenderedDevEnvFile, renderDevEnvFile } from './dev-env-file-render'
 import { chooseDevEnvPortSlot, getDevEnvPort, getDevEnvPortRange } from './dev-env-ports'
 import type { DevEnvInfraService, DevEnvServiceDef, DevEnvTemplate } from './dev-env-types'
@@ -268,5 +268,25 @@ describe('dev env file rendering', () => {
       ['DEBUG', 'LOCAL']
     ])
     expect(parsed.find((v) => v.key === 'MAPS_KEY')?.secret).toBe(true)
+  })
+})
+
+describe('renderDevEnvServiceCommand', () => {
+  it('fills ports into a service command', () => {
+    expect(renderDevEnvServiceCommand('vite --port ${self.eshop.port}', buildContext())).toEqual({
+      command: 'vite --port 20150'
+    })
+  })
+
+  it('refuses secrets so they never reach terminal scrollback or shell history', () => {
+    expect(renderDevEnvServiceCommand('run --key ${secret.maps-key}', buildContext())).toEqual({
+      error: 'Service commands cannot use secrets; put them in an env file'
+    })
+  })
+
+  it('names an unresolved expression', () => {
+    expect(renderDevEnvServiceCommand('run ${dep.admin-api.url}', buildContext())).toEqual({
+      error: 'Unresolved ${dep.admin-api.url}'
+    })
   })
 })

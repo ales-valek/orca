@@ -2,6 +2,7 @@ import http, { type IncomingMessage, type Server, type ServerResponse } from 'no
 import type { Duplex } from 'node:stream'
 import { URL } from 'node:url'
 import { forwardProxyRequest, forwardProxyUpgrade } from '../localhost-proxy-forwarding'
+import { findListeningLoopback, type DevEnvLoopback } from './dev-env-port-owner'
 
 const ORCA_LOCALHOST_SUFFIX = '.orca.localhost'
 
@@ -45,7 +46,16 @@ export class DevEnvHostProxy {
   private listenPort: number | null = null
   private readonly owners = new Map<string, Map<string, string>>()
 
-  constructor(private readonly deps: { getPort: () => number }) {}
+  private readonly findLoopback: (port: number) => Promise<DevEnvLoopback | null>
+
+  constructor(
+    private readonly deps: {
+      getPort: () => number
+      findLoopback?: (port: number) => Promise<DevEnvLoopback | null>
+    }
+  ) {
+    this.findLoopback = deps.findLoopback ?? findListeningLoopback
+  }
 
   getListenPort(): number | null {
     return this.listenPort
@@ -112,6 +122,15 @@ export class DevEnvHostProxy {
     })
   }
 
+  /** Dev servers often bind only ::1 (Node resolves localhost there first); route to whichever answers. */
+  private async resolveTarget(target: string): Promise<URL> {
+    const url = new URL(target)
+    if ((await this.findLoopback(Number(url.port))) === '::1') {
+      url.hostname = '[::1]'
+    }
+    return url
+  }
+
   private handleRequest(request: IncomingMessage, response: ServerResponse): void {
     const host = String(request.headers.host ?? '')
     const target = matchDevEnvHostRoute(this.getRoutes(), host)
@@ -120,7 +139,9 @@ export class DevEnvHostProxy {
       response.end('No Dev Environment serves this host.')
       return
     }
-    forwardProxyRequest(request, response, new URL(target), { label: host, preserveHost: true })
+    void this.resolveTarget(target).then((url) =>
+      forwardProxyRequest(request, response, url, { label: host, preserveHost: true })
+    )
   }
 
   private handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void {
@@ -129,6 +150,8 @@ export class DevEnvHostProxy {
       socket.destroy()
       return
     }
-    forwardProxyUpgrade(request, socket, head, new URL(target), { preserveHost: true })
+    void this.resolveTarget(target).then((url) =>
+      forwardProxyUpgrade(request, socket, head, url, { preserveHost: true })
+    )
   }
 }

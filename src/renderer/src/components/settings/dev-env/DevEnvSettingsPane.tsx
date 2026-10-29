@@ -3,17 +3,25 @@ import React, { useState } from 'react'
 import { Copy, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import {
-  normalizeDevEnvSettings,
   parseDevEnvTemplateJson,
   serializeDevEnvTemplate
 } from '../../../../../shared/dev-env/dev-env-settings'
 import type { DevEnvTemplate } from '../../../../../shared/dev-env/dev-env-types'
-import { createDevEnvTemplate } from './dev-env-template-edit'
+import { selectDevEnvs } from '@/components/dev-env/DevEnvStatusBadge'
+import { createDevEnvTemplate, replaceDevEnvTemplate } from './dev-env-template-edit'
 import { DevEnvInfraEditor } from './DevEnvInfraEditor'
 import { DevEnvSecretsEditor } from './DevEnvSecretsEditor'
 import { DevEnvTemplateEditor } from './DevEnvTemplateEditor'
@@ -32,21 +40,24 @@ export function DevEnvSettingsPane(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = templates.find((template) => template.id === selectedId) ?? templates[0]
 
-  const saveTemplates = (next: DevEnvTemplate[]): void => {
-    const normalized = normalizeDevEnvSettings({ devEnvTemplates: next }, 'darwin').devEnvTemplates
-    if (normalized.length !== next.length) {
-      toast.warning(
-        translate(
-          'devEnv.settings.invalidTemplate',
-          'An invalid template was not saved (check names and duplicate service names).'
-        )
-      )
+  const envs = useAppStore(selectDevEnvs)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  /** Writes one template; an invalid draft is refused and the saved list stays as it was. */
+  const saveTemplate = (template: DevEnvTemplate): boolean => {
+    const result = replaceDevEnvTemplate(templates, template)
+    if ('error' in result) {
+      toast.error(translate('devEnv.settings.invalidTemplate', 'The template was not saved'), {
+        description: result.error
+      })
+      return false
     }
-    void updateSettings({ devEnvTemplates: normalized })
+    void updateSettings({ devEnvTemplates: result.templates })
+    return true
   }
   const addTemplate = (template: DevEnvTemplate): void => {
-    saveTemplates([...templates, template])
-    setSelectedId(template.id)
+    if (saveTemplate(template)) {
+      setSelectedId(template.id)
+    }
   }
   const importTemplate = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0]
@@ -173,25 +184,48 @@ export function DevEnvSettingsPane(): React.JSX.Element {
                   <Copy />
                   {translate('devEnv.settings.exportJson', 'Export JSON')}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() =>
-                    saveTemplates(templates.filter((template) => template.id !== selected.id))
-                  }
-                >
+                <Button variant="ghost" size="xs" onClick={() => setDeleteOpen(true)}>
                   <Trash2 />
                   {translate('devEnv.settings.deleteTemplate', 'Delete')}
                 </Button>
               </div>
-              <DevEnvTemplateEditor
-                template={selected}
-                onSave={(next) =>
-                  saveTemplates(
-                    templates.map((template) => (template.id === next.id ? next : template))
-                  )
-                }
-              />
+              <DevEnvTemplateEditor template={selected} onSave={saveTemplate} />
+              <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {translate('devEnv.settings.deleteTitle', 'Delete template {{name}}?', {
+                        name: selected.name
+                      })}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {translate(
+                        'devEnv.settings.deleteBody',
+                        '{{count}} Dev Environment(s) use it and will show "Template no longer exists" until you delete them.',
+                        { count: envs.filter((env) => env.templateId === selected.id).length }
+                      )}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                      {translate('devEnv.settings.cancel', 'Cancel')}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setDeleteOpen(false)
+                        void updateSettings({
+                          devEnvTemplates: templates.filter(
+                            (template) => template.id !== selected.id
+                          )
+                        })
+                      }}
+                    >
+                      {translate('devEnv.settings.deleteConfirm', 'Delete template')}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">

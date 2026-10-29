@@ -67,6 +67,14 @@ function normalizeStep(value: unknown): DevEnvStepState | null {
   if (typeof value.finishedAt === 'number') {
     step.finishedAt = value.finishedAt
   }
+  // Why: nothing resumes a step after a restart; leaving it "running" would block every re-run.
+  if (step.status === 'running') {
+    return {
+      ...step,
+      status: 'failed',
+      error: 'Interrupted: Orca quit while this step was running'
+    }
+  }
   return step
 }
 

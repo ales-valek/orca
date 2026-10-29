@@ -23,9 +23,15 @@ type DevEnvServicesDeps = {
   terminals: DevEnvTerminalPort
   /** True when something listens on the port. */
   probePort: (port: number) => Promise<boolean>
-  probeHttp: (url: string) => Promise<boolean>
+  probeHttp: (port: number, path: string) => Promise<boolean>
   notify: (envId: string) => void
-  renderCommand: (env: DevEnv, template: DevEnvTemplate, command: string) => Promise<string>
+  renderCommand: (
+    env: DevEnv,
+    template: DevEnvTemplate,
+    command: string
+  ) => Promise<{ command: string } | { error: string }>
+  /** Who holds a port this service needs, or null when it is free. */
+  findPortHolder?: (port: number) => Promise<string | null>
   sleep?: (ms: number) => Promise<void>
   readyTimeoutMs?: number
 }
@@ -130,7 +136,7 @@ export class DevEnvServices {
     const port = getDevEnvPort(env.portSlot, entry.service.portOffset)
     let ready = await this.deps.probePort(port)
     if (ready && entry.service.ready?.httpPath) {
-      ready = await this.deps.probeHttp(`http://127.0.0.1:${port}${entry.service.ready.httpPath}`)
+      ready = await this.deps.probeHttp(port, entry.service.ready.httpPath)
     }
     return { status: ready ? 'up' : 'starting', handle }
   }
@@ -219,8 +225,19 @@ export class DevEnvServices {
           errors.push(`${name}: ${dependency} was not up in time`)
         }
       }
+      const port = getDevEnvPort(env.portSlot, entry.service.portOffset)
+      const holder = await this.deps.findPortHolder?.(port)
+      if (holder) {
+        errors.push(`${name}: port ${port} is held by ${holder}. Orca did not start ${name}.`)
+        continue
+      }
+      const rendered = await this.deps.renderCommand(env, template, entry.service.command)
+      if ('error' in rendered) {
+        errors.push(`${name}: ${rendered.error}`)
+        continue
+      }
       const { handle } = await this.deps.terminals.create(worktree.worktreeId, {
-        command: await this.deps.renderCommand(env, template, entry.service.command),
+        command: rendered.command,
         title: `${env.name}:${name}`,
         cwd: worktree.path
       })

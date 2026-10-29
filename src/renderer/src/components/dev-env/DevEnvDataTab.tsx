@@ -155,7 +155,7 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
         confirmLabel={translate('devEnv.data.reset', 'Reset data')}
         onConfirm={(reseed) =>
           void runDevEnvAction(translate('devEnv.data.resetFailed', 'Could not reset data'), () =>
-            window.api.devEnv.reset({ env: detail.key, reseed })
+            window.api.devEnv.reset({ env: detail.key, reseed, confirm: true })
           )
         }
       />

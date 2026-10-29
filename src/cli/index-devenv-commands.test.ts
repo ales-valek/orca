@@ -152,4 +152,21 @@ describe('orca devenv commands', () => {
       expect.objectContaining({ devEnvTemplate: 'OrderMage' })
     )
   })
+
+  it('refuses to reset data without --yes', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await main(['devenv', 'reset', 'kiosek'], '/tmp')
+    expect(callMock).not.toHaveBeenCalledWith('devenv.reset', expect.anything())
+  })
+
+  it('resets data with --yes and passes the confirmation on', async () => {
+    queueFixtures(callMock, okFixture('req_1', { started: true }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    await main(['devenv', 'reset', 'kiosek', '--yes'], '/tmp')
+    expect(callMock).toHaveBeenCalledWith('devenv.reset', {
+      env: 'kiosek',
+      reseed: false,
+      confirm: true
+    })
+  })
 })
