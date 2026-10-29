@@ -24,6 +24,7 @@ import type { SshRemoteControlSettings } from './ssh-remote-control-settings'
 import type { AgentWorkspaceTrustSettings } from './agent-launch/permissions/agent-workspace-trust-decision'
 import type { KeybindingGlobalSettings } from './keybindings/global-settings'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
+import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AntigravityChatAuthSettings &
@@ -51,4 +52,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   NestedWorkerDepthSettings &
   AgentWorkspaceTrustSettings &
   KeybindingGlobalSettings &
-  HulyGlobalSettings
+  HulyGlobalSettings &
+  DevEnvGlobalSettings

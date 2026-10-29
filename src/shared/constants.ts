@@ -134,6 +134,7 @@ export function getDefaultPersistedState(homedir: string): PersistedState {
     projectGroups: [],
     folderWorkspaces: [],
     missions: [],
+    devEnvs: [],
     sparsePresetsByRepo: {},
     retiredWorktreeNamesByRepo: {},
     retiredWorktreeNamesByNamespace: {},

@@ -7,6 +7,7 @@ import { normalizeOrcadMigrationEvictedReceipts } from '../../../shared/orcad-mi
 import { normalizeOrcadMigrationImportReceipts } from '../../../shared/orcad-migration/orcad-migration-manifest-validation'
 import { normalizeOrcadMigrationStagedCatalogs } from '../../../shared/orcad-migration/orcad-migration-staged-catalog-validation'
 import { normalizeMissions } from '../../../shared/missions'
+import { normalizeDevEnvs } from '../../../shared/dev-env/dev-env-records'
 import { normalizeWorkspaceLineageByChildKey } from '../applying-settings/ui-interaction-merge'
 import { dropInferredParentsOverFolderParents } from './folder-parent-lineage-persistence'
 import { normalizeCrossStoreLineageByChildKey } from '../../../shared/worktree/cross-store-lineage-records'
@@ -67,6 +68,7 @@ export function normalizeLoadedProfileState(
     projects: projectCatalog.projects,
     projectHostSetups: projectCatalog.projectHostSetups,
     missions: normalizedMissions,
+    devEnvs: normalizeDevEnvs(parsed.devEnvs),
     folderWorkspaces: normalizeFolderWorkspaces(
       parsed.folderWorkspaces,
       normalizedProjectGroups,

@@ -1,4 +1,4 @@
-export type IntegrationCredentialService = 'Linear' | 'Jira' | 'Bitbucket' | 'Huly'
+export type IntegrationCredentialService = 'Linear' | 'Jira' | 'Bitbucket' | 'Huly' | 'DevEnv'
 
 export function credentialDecryptionMessage(service: IntegrationCredentialService): string {
   return `Could not decrypt saved ${service} credential. Approve Keychain access or reconnect ${service}.`
