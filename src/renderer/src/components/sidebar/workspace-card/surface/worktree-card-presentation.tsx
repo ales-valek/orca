@@ -9,6 +9,7 @@ import {
   WorktreeCardMetaDetailsHover
 } from '../details/worktree-card-details-items'
 import type { WorktreeCardController } from '../controller/use-worktree-card-controller'
+import { DevEnvStatusBadge } from '../dev-env/DevEnvStatusBadge'
 
 function getVisibleContextLabel(
   projectLabel: string | undefined,
@@ -153,7 +154,10 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
       detailsAndPortsContent
     )
   const titleRowIndicators = showTitleRowIndicators ? (
-    <div className="ml-auto flex shrink-0 items-center gap-1 pr-1.5">{detailsAndPorts}</div>
+    <div className="ml-auto flex shrink-0 items-center gap-1 pr-1.5">
+      <DevEnvStatusBadge worktreeId={worktree.id} />
+      {detailsAndPorts}
+    </div>
   ) : null
   const hasSecondaryCardContent =
     hasMetaRow || !!remoteBranchConflict || showInlineAgentList || showLineageChildChip
