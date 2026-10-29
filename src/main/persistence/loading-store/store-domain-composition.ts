@@ -23,6 +23,7 @@ import { RemoteLayoutSnapshotPersistence } from '../../remote-layout-snapshot/re
 import { HostRepoCatalogSnapshotPersistence } from '../../host-repo-catalog-snapshot/host-repo-catalog-snapshot-persistence'
 import { SparsePresetPersistence } from './sparse-preset-persistence'
 import { MissionPersistence } from './mission-persistence'
+import { DevEnvPersistence } from './dev-env-persistence'
 import { MissionSlotPersistence } from './mission-slot-persistence'
 import { PtyBindingPersistenceOperations } from './pty-binding-persistence'
 import { LayoutCommandPersistence } from '../terminal-topology/layout-command-persistence'
@@ -42,6 +43,7 @@ export type StoreDomainOperations = WriteSchedulingOperations &
   HostRepoCatalogSnapshotPersistence &
   SparsePresetPersistence &
   MissionPersistence &
+  DevEnvPersistence &
   MissionSlotPersistence &
   AutomationPersistence &
   MetadataLineageOperations &
@@ -83,6 +85,7 @@ export type StoreDomains = {
   hostRepoCatalogSnapshots: HostRepoCatalogSnapshotPersistence
   sparsePresets: SparsePresetPersistence
   missions: MissionPersistence
+  devEnvs: DevEnvPersistence
   missionSlots: MissionSlotPersistence
   ptyBindings: PtyBindingPersistenceOperations
   layoutCommands: LayoutCommandPersistence
@@ -104,6 +107,7 @@ export const STORE_DOMAIN_OPERATION_CLASSES = [
   HostRepoCatalogSnapshotPersistence,
   SparsePresetPersistence,
   MissionPersistence,
+  DevEnvPersistence,
   MissionSlotPersistence,
   AutomationPersistence,
   MetadataLineageOperations,
@@ -158,6 +162,7 @@ export function createStoreDomains(runtime: StoreRuntimeState): StoreDomains {
   const remoteLayoutSnapshots = new RemoteLayoutSnapshotPersistence(runtime, scheduling)
   const sparsePresets = new SparsePresetPersistence(runtime, scheduling)
   const missions = new MissionPersistence(runtime, scheduling)
+  const devEnvs = new DevEnvPersistence(runtime, scheduling)
   const missionSlots = new MissionSlotPersistence(runtime, scheduling)
   const ptyBindings = new PtyBindingPersistenceOperations(runtime, sessions)
   const sshProfiles = new SshProfileOperations(runtime, scheduling, repos)
@@ -192,6 +197,7 @@ export function createStoreDomains(runtime: StoreRuntimeState): StoreDomains {
     hostRepoCatalogSnapshots: new HostRepoCatalogSnapshotPersistence(runtime, scheduling),
     sparsePresets,
     missions,
+    devEnvs,
     missionSlots,
     ptyBindings,
     layoutCommands: new LayoutCommandPersistence(
