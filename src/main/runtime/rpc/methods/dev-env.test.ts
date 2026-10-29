@@ -88,4 +88,28 @@ describe('devenv RPC', () => {
     )
     expect(createForWorktree).toHaveBeenCalledWith('repo::/w', 't', { geo: 'e1' })
   })
+
+  it('never binds a remote tier over RPC', async () => {
+    const runtime = {
+      getDevEnvOperations: () => ({
+        resolveId: (selector: string) => {
+          if (selector === 'prod') {
+            throw new Error('Unknown Dev Environment prod')
+          }
+          return selector
+        },
+        bind: vi.fn()
+      })
+    }
+    const method = getMethod('devenv.bind')
+    await expect(
+      method.handler(
+        method.params?.parse({ env: 'e1', dependency: 'admin-api', provider: 'prod' }),
+        {
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the handler only calls the members stubbed here.
+          runtime: runtime as never
+        }
+      )
+    ).rejects.toThrow('Unknown Dev Environment prod')
+  })
 })
