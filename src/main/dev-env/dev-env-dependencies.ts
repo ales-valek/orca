@@ -10,12 +10,13 @@ import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings
 import { getRequiredDevEnvDependencies } from '../../shared/dev-env/dev-env-slot-binding'
 import type {
   DevEnv,
+  DevEnvRemoteTier,
   DevEnvServiceDef,
   DevEnvServiceState,
   DevEnvTemplate
 } from '../../shared/dev-env/dev-env-types'
 
-export type DevEnvDependencyState = 'up' | 'down' | 'unbound' | 'missing'
+export type DevEnvDependencyState = 'up' | 'down' | 'unbound' | 'missing' | 'remote'
 
 type DependencyLookup = {
   getDevEnv: (id: string) => DevEnv | null
@@ -47,6 +48,50 @@ function findProviderService(
   return null
 }
 
+/** The tier a remote binding points at, when it still defines this dependency. */
+export function findRemoteTier(
+  env: DevEnv,
+  dependency: string,
+  lookup: DependencyLookup
+): DevEnvRemoteTier | null {
+  const binding = env.bindings[dependency]
+  if (binding?.kind !== 'remote') {
+    return null
+  }
+  const tier = lookup.getSettings().devEnvRemoteTiers.find((entry) => entry.id === binding.tierId)
+  return tier?.dependencies[dependency] ? tier : null
+}
+
+/** Tier values are expressions over global secrets only; one that fails to resolve is left out. */
+function resolveRemoteDependency(
+  env: DevEnv,
+  dependency: string,
+  lookup: DependencyLookup
+): DevEnvDependencyValues | null {
+  const target = findRemoteTier(env, dependency, lookup)?.dependencies[dependency]
+  if (!target) {
+    return null
+  }
+  const context = new Map(
+    [...lookup.secrets].map(([name, value]) => [
+      `secret.${name}`,
+      { value, source: 'secret' as const, secret: true }
+    ])
+  )
+  const url = interpolateDevEnvValue(target.url, context)
+  if ('error' in url) {
+    return null
+  }
+  const exports: Record<string, DevEnvExportValue> = {}
+  for (const [key, expression] of Object.entries(target.values)) {
+    const value = interpolateDevEnvValue(expression, context)
+    if (!('error' in value)) {
+      exports[key] = { value: value.value, secret: value.secret }
+    }
+  }
+  return { url: url.value, exports }
+}
+
 /** Values of locally paired providers; an unbound or vanished provider resolves nothing. */
 export function resolveDevEnvDependencies(
   env: DevEnv,
@@ -56,6 +101,11 @@ export function resolveDevEnvDependencies(
   const settings = lookup.getSettings()
   const resolved = new Map<string, DevEnvDependencyValues>()
   for (const dependency of getRequiredDevEnvDependencies(template, env.slotWorktrees)) {
+    const remote = resolveRemoteDependency(env, dependency, lookup)
+    if (remote) {
+      resolved.set(dependency, remote)
+      continue
+    }
     const found = findProviderService(env, dependency, lookup)
     if (!found) {
       continue
@@ -95,6 +145,10 @@ export async function getDevEnvDependencyStates(
   for (const dependency of getRequiredDevEnvDependencies(template, env.slotWorktrees)) {
     if (!env.bindings[dependency]) {
       states[dependency] = 'unbound'
+      continue
+    }
+    if (env.bindings[dependency]?.kind === 'remote') {
+      states[dependency] = findRemoteTier(env, dependency, lookup) ? 'remote' : 'missing'
       continue
     }
     const found = findProviderService(env, dependency, lookup)
