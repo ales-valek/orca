@@ -1,5 +1,7 @@
 import {
+  DEV_ENV_NAME_PATTERN,
   DEV_ENV_STEP_IDS,
+  type DevEnvSnapshot,
   type DevEnv,
   type DevEnvAttachment,
   type DevEnvBinding,
@@ -78,6 +80,22 @@ function normalizeStep(value: unknown): DevEnvStepState | null {
   return step
 }
 
+function normalizeSnapshot(value: unknown): DevEnvSnapshot | null {
+  if (
+    !isRecord(value) ||
+    typeof value.name !== 'string' ||
+    !DEV_ENV_NAME_PATTERN.test(value.name) ||
+    typeof value.createdAt !== 'number' ||
+    typeof value.sizeBytes !== 'number'
+  ) {
+    return null
+  }
+  const services = Array.isArray(value.services)
+    ? value.services.filter((entry): entry is string => typeof entry === 'string')
+    : []
+  return { name: value.name, createdAt: value.createdAt, sizeBytes: value.sizeBytes, services }
+}
+
 function normalizeDevEnv(value: unknown): DevEnv | null {
   if (
     !isRecord(value) ||
@@ -114,6 +132,8 @@ function normalizeDevEnv(value: unknown): DevEnv | null {
     for (const [dependency, entry] of Object.entries(value.bindings)) {
       if (isRecord(entry) && entry.kind === 'local' && isNonEmptyString(entry.devEnvId)) {
         bindings[dependency] = { kind: 'local', devEnvId: entry.devEnvId }
+      } else if (isRecord(entry) && entry.kind === 'remote' && isNonEmptyString(entry.tierId)) {
+        bindings[dependency] = { kind: 'remote', tierId: entry.tierId }
       }
     }
   }
@@ -141,6 +161,15 @@ function normalizeDevEnv(value: unknown): DevEnv | null {
   }
   if (value.detached === true) {
     env.detached = true
+  }
+  if (value.mode === 'prod' || value.mode === 'dev') {
+    env.mode = value.mode
+  }
+  if (Array.isArray(value.snapshots)) {
+    env.snapshots = value.snapshots.flatMap((entry) => {
+      const snapshot = normalizeSnapshot(entry)
+      return snapshot ? [snapshot] : []
+    })
   }
   return env
 }
