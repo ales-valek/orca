@@ -11,7 +11,14 @@ export type DevEnvInfraService = {
   volumes: string[]
   healthcheck?: { test: string[]; intervalSec?: number; retries?: number }
   /** Shell run inside the container; may use ${devEnv.key} and ${devEnv.slot}. */
-  resource?: { create: string; drop: string }
+  resource?: {
+    create: string
+    drop: string
+    /** Writes this environment's data to stdout, for snapshots. */
+    dump?: string
+    /** Reads data written by `dump` from stdin. */
+    restore?: string
+  }
 }
 
 export type DevEnvEnvLine = { key: string; value: string }
@@ -35,6 +42,8 @@ export type DevEnvServiceDef = {
   ready?: { httpPath?: string }
   /** Keys a paired environment reads as ${dep.<service>.<key>}. */
   exports?: Record<string, string>
+  /** Prod-build mode runs `build && start` (or `start`) instead of `command`. */
+  prod?: { build?: string; start: string }
 }
 
 export type DevEnvTemplateSlot = {
@@ -81,7 +90,25 @@ export type DevEnvStepState = {
   finishedAt?: number
 }
 
-export type DevEnvBinding = { kind: 'local'; devEnvId: string }
+export type DevEnvBinding = { kind: 'local'; devEnvId: string } | { kind: 'remote'; tierId: string }
+
+/** A deployed tier a dependency can point at; values may use ${secret.<name>}. */
+export type DevEnvRemoteTier = {
+  id: string
+  name: string
+  /** Prod: binding needs the env key typed and the env shows a red badge. */
+  danger: boolean
+  dependencies: Record<string, { url: string; values: Record<string, string> }>
+}
+
+export type DevEnvSnapshot = {
+  name: string
+  createdAt: number
+  sizeBytes: number
+  services: string[]
+}
+
+export const DEV_ENV_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,62}$/
 
 export type DevEnvSlotWorktree = { worktreeId: string; path: string; label: string }
 
@@ -102,6 +129,8 @@ export type DevEnv = {
   bindings: Record<string, DevEnvBinding>
   setup: Partial<Record<DevEnvStepId, DevEnvStepState>>
   createdAt: number
+  mode?: 'dev' | 'prod'
+  snapshots?: DevEnvSnapshot[]
 }
 
 export type DevEnvServiceStatus = 'stopped' | 'starting' | 'up' | 'crashed' | 'moved' | 'unbound'
@@ -128,6 +157,8 @@ export type DevEnvBadge = {
   state: 'setting-up' | 'running' | 'partial' | 'failed' | 'stopped'
   up: number
   total: number
+  /** Bound to a danger (prod) tier. */
+  danger?: boolean
 }
 
 export type DevEnvSummary = DevEnv & {
@@ -140,7 +171,11 @@ export type DevEnvSummary = DevEnv & {
 export type DevEnvDetail = DevEnvSummary & {
   services: DevEnvServiceState[]
   requiredDependencies: string[]
-  dependencyStates: Record<string, 'up' | 'down' | 'unbound' | 'missing'>
+  dependencyStates: Record<string, 'up' | 'down' | 'unbound' | 'missing' | 'remote'>
+  mode: 'dev' | 'prod'
+  snapshots: DevEnvSnapshot[]
+  /** Remote-bound dependencies with their tier. */
+  remoteTiers: Record<string, { tierId: string; name: string; danger: boolean }>
   /** Passwords are always masked; the desktop UI reveals them over IPC only. */
   credentials: { label: string; user: string; password: string }[]
   hostnameError?: string

@@ -29,14 +29,38 @@ describe('normalizeDevEnvs', () => {
     ).toEqual([])
   })
 
-  it('drops a binding whose kind is not local', () => {
+  it('keeps local and remote bindings and drops malformed ones', () => {
     const [env] = normalizeDevEnvs([
       {
         ...ENV,
-        bindings: { a: { kind: 'remote', tier: 'prod' }, b: { kind: 'local', devEnvId: 'e3' } }
+        bindings: {
+          a: { kind: 'remote', tier: 'prod' },
+          b: { kind: 'local', devEnvId: 'e3' },
+          c: { kind: 'remote', tierId: 'staging' }
+        }
       }
     ])
-    expect(env.bindings).toEqual({ b: { kind: 'local', devEnvId: 'e3' } })
+    expect(env.bindings).toEqual({
+      b: { kind: 'local', devEnvId: 'e3' },
+      c: { kind: 'remote', tierId: 'staging' }
+    })
+  })
+
+  it('keeps the mode and well-formed snapshots', () => {
+    const [env] = normalizeDevEnvs([
+      {
+        ...ENV,
+        mode: 'prod',
+        snapshots: [
+          { name: 'wave2', createdAt: 5, sizeBytes: 10, services: ['postgres'] },
+          { name: '../x', createdAt: 5, sizeBytes: 10, services: [] }
+        ]
+      }
+    ])
+    expect(env.mode).toBe('prod')
+    expect(env.snapshots).toEqual([
+      { name: 'wave2', createdAt: 5, sizeBytes: 10, services: ['postgres'] }
+    ])
   })
 
   it('drops a record whose port slot is outside 1..99', () => {

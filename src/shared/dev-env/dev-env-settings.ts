@@ -4,6 +4,7 @@ import type {
   DevEnvEnvLine,
   DevEnvInfraPort,
   DevEnvInfraService,
+  DevEnvRemoteTier,
   DevEnvServiceDef,
   DevEnvTemplate,
   DevEnvTemplateSlot
@@ -11,6 +12,7 @@ import type {
 
 export type DevEnvGlobalSettings = {
   devEnvInfra: DevEnvInfraService[]
+  devEnvRemoteTiers: DevEnvRemoteTier[]
   devEnvTemplates: DevEnvTemplate[]
   /** Fixed port of the Dev Environments hostname proxy. */
   devEnvProxyPort: number
@@ -114,6 +116,10 @@ function normalizeInfraService(value: unknown): DevEnvInfraService | null {
     typeof value.resource.drop === 'string'
   ) {
     service.resource = { create: value.resource.create, drop: value.resource.drop }
+    if (typeof value.resource.dump === 'string' && typeof value.resource.restore === 'string') {
+      service.resource.dump = value.resource.dump
+      service.resource.restore = value.resource.restore
+    }
   }
   return service
 }
@@ -162,6 +168,11 @@ function normalizeService(value: unknown): DevEnvServiceDef | null {
   if (isRecord(value.exports)) {
     service.exports = getStringRecord(value.exports)
   }
+  if (isRecord(value.prod) && isNonEmptyString(value.prod.start)) {
+    service.prod = isNonEmptyString(value.prod.build)
+      ? { build: value.prod.build, start: value.prod.start }
+      : { start: value.prod.start }
+  }
   return service
 }
 
@@ -209,6 +220,21 @@ function normalizeTemplate(value: unknown): DevEnvTemplate | null {
   return template
 }
 
+function normalizeRemoteTier(value: unknown): DevEnvRemoteTier | null {
+  if (!isRecord(value) || !isNonEmptyString(value.id) || !isNonEmptyString(value.name)) {
+    return null
+  }
+  const dependencies: DevEnvRemoteTier['dependencies'] = {}
+  if (isRecord(value.dependencies)) {
+    for (const [name, entry] of Object.entries(value.dependencies)) {
+      if (isRecord(entry) && isNonEmptyString(entry.url)) {
+        dependencies[name] = { url: entry.url, values: getStringRecord(entry.values) }
+      }
+    }
+  }
+  return { id: value.id, name: value.name, danger: value.danger === true, dependencies }
+}
+
 function getDuplicateServiceName(template: DevEnvTemplate): string | null {
   const seen = new Set<string>()
   for (const slot of template.slots) {
@@ -239,6 +265,7 @@ export function normalizeDevEnvSettings(
   const settings = isRecord(value) ? value : {}
   return {
     devEnvInfra: mapValid(settings.devEnvInfra, normalizeInfraService),
+    devEnvRemoteTiers: mapValid(settings.devEnvRemoteTiers, normalizeRemoteTier),
     devEnvTemplates: normalizeTemplates(settings.devEnvTemplates),
     devEnvProxyPort: normalizeProxyPort(settings.devEnvProxyPort, platform)
   }
@@ -250,6 +277,9 @@ export function normalizeDevEnvSettingsUpdate(
   const normalized: Partial<DevEnvGlobalSettings> = {}
   if ('devEnvInfra' in updates) {
     normalized.devEnvInfra = mapValid(updates.devEnvInfra, normalizeInfraService)
+  }
+  if ('devEnvRemoteTiers' in updates) {
+    normalized.devEnvRemoteTiers = mapValid(updates.devEnvRemoteTiers, normalizeRemoteTier)
   }
   if ('devEnvTemplates' in updates) {
     normalized.devEnvTemplates = normalizeTemplates(updates.devEnvTemplates)

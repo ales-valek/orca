@@ -81,6 +81,7 @@ export function buildDevEnvDetail(input: {
   credentials: DevEnvDetail['credentials']
   hostnameError?: string
   setupRunning: boolean
+  remoteTiers?: DevEnvDetail['remoteTiers']
 }): DevEnvDetail {
   return {
     ...input.summary,
@@ -91,7 +92,10 @@ export function buildDevEnvDetail(input: {
     dependencyStates: input.dependencyStates,
     credentials: input.credentials,
     ...(input.hostnameError ? { hostnameError: input.hostnameError } : {}),
-    setupRunning: input.setupRunning
+    setupRunning: input.setupRunning,
+    mode: input.summary.mode ?? 'dev',
+    snapshots: input.summary.snapshots ?? [],
+    remoteTiers: input.remoteTiers ?? {}
   }
 }
 
