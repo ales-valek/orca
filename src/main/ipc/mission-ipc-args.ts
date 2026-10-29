@@ -14,7 +14,8 @@ export const MissionCreateArgs = z.object({
     .optional(),
   repoIds: z.array(z.string().min(1)).min(1),
   sessionAgent: z.string().refine(isTuiAgent).optional(),
-  orchestratorRepoId: z.string().min(1).optional()
+  orchestratorRepoId: z.string().min(1).optional(),
+  devEnvTemplateId: z.string().min(1).optional()
 })
 
 export const MissionUpdateArgs = z.object({

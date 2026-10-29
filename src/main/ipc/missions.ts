@@ -1,3 +1,4 @@
+import { createMissionDevEnv } from '../dev-env/dev-env-mission-create'
 import { ipcMain, type BrowserWindow } from 'electron'
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
@@ -59,6 +60,14 @@ const MISSION_CHANNELS = [
   'missions:pushStack'
 ] as const
 
+async function reconcileDevEnvMissions(runtime: OrcaRuntimeService): Promise<void> {
+  try {
+    await runtime.getDevEnvOperations().reconcileMissions()
+  } catch {
+    // Dev Environments are not attached yet, or reconcile failed; the next change retries.
+  }
+}
+
 export function registerMissionHandlers(
   mainWindow: BrowserWindow,
   store: Store,
@@ -73,7 +82,12 @@ export function registerMissionHandlers(
     getConnection: () => runtime.getHulyConnection(),
     notifyChanged: () => notifyReposChanged(mainWindow)
   })
-  const operations = new MissionOperations(store, runtime, () => notifyReposChanged(mainWindow), {
+  const notifyMissionsChanged = (): void => {
+    notifyReposChanged(mainWindow)
+    // Why: previews come and go with task layers; environments follow them.
+    void reconcileDevEnvMissions(runtime)
+  }
+  const operations = new MissionOperations(store, runtime, notifyMissionsChanged, {
     onMissionEvent: (event) => hulyStatusWriteBack.handle(event),
     isWorktreeAgentWorking: (worktreeId) => runtime.isWorktreeAgentWorking(worktreeId),
     notifyStacksChanged: (missionId) => {
@@ -92,10 +106,16 @@ export function registerMissionHandlers(
 
   ipcMain.handle(
     'missions:create',
-    async (_event, rawArgs: unknown): Promise<MissionCreateResult> =>
-      operations.create(
-        parseMissionIpcArgs(MissionCreateArgs, rawArgs, 'invalid_mission_create_args')
+    async (_event, rawArgs: unknown): Promise<MissionCreateResult> => {
+      const args = parseMissionIpcArgs(MissionCreateArgs, rawArgs, 'invalid_mission_create_args')
+      const result = await operations.create(args)
+      const devEnvError = await createMissionDevEnv(
+        () => runtime.getDevEnvOperations(),
+        result.mission.id,
+        args.devEnvTemplateId
       )
+      return devEnvError ? { ...result, devEnvError } : result
+    }
   )
   ipcMain.handle('missions:update', (_event, rawArgs: unknown): Mission | null => {
     const args = parseMissionIpcArgs(MissionUpdateArgs, rawArgs, 'invalid_mission_update_args')
