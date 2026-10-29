@@ -48,7 +48,7 @@ export function DevEnvConfirmDialog({
             placeholder={typedKey}
             aria-label={translate('devEnv.confirm.typeKey', 'Type the environment key')}
             onChange={(event) => setTyped(event.target.value)}
-            className="font-mono"
+            variant="code"
           />
         ) : null}
         <DialogFooter>
