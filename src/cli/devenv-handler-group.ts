@@ -19,6 +19,7 @@ export const DEVENV_HANDLER_GROUP: HandlerGroup = {
     'devenv snapshots',
     'devenv snapshot',
     'devenv restore',
+    'devenv delete-snapshot',
     'devenv mode'
   ],
   load: async () => (await import('./handlers/devenv.js')).DEVENV_HANDLERS

@@ -232,11 +232,14 @@ export class DevEnvServices {
         errors.push(`${name}: port ${port} is held by ${holder}. Orca did not start ${name}.`)
         continue
       }
-      const rendered = await this.deps.renderCommand(
-        env,
-        template,
-        getDevEnvServiceCommand(entry.service, env.mode)
-      )
+      const command = getDevEnvServiceCommand(entry.service, env.mode, process.platform)
+      if (command === null) {
+        errors.push(
+          `${name}: on Windows, put the prod build and start into one prod start command for your shell`
+        )
+        continue
+      }
+      const rendered = await this.deps.renderCommand(env, template, command)
       if ('error' in rendered) {
         errors.push(`${name}: ${rendered.error}`)
         continue

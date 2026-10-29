@@ -89,7 +89,7 @@ function resolveRemoteDependency(
       exports[key] = { value: value.value, secret: value.secret }
     }
   }
-  return { url: url.value, exports }
+  return { url: url.value, urlSecret: url.secret, exports }
 }
 
 /** Values of locally paired providers; an unbound or vanished provider resolves nothing. */

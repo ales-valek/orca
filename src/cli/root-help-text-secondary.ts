@@ -108,6 +108,7 @@ export const ROOT_HELP_TEXT_SECONDARY = [
   '  orca devenv snapshots <env> [--json]',
   '  orca devenv snapshot <env> --name <name> [--json]',
   '  orca devenv restore <env> --name <name> --yes [--json]',
+  '  orca devenv delete-snapshot <env> --name <name> --yes [--json]',
   '  orca devenv bind <env> --dependency <service> --provider <env>|none [--json]',
   '  orca devenv infra status|up|down [--service <name>] [--json]',
   '',

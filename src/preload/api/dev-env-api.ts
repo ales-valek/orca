@@ -27,7 +27,9 @@ export type DevEnvApi = {
   mode: (args: EnvArgs & { mode: 'dev' | 'prod' }) => Promise<{ mode: string }>
   snapshots: (args: EnvArgs) => Promise<{ snapshots: DevEnvSnapshot[] }>
   snapshot: (args: EnvArgs & { name: string }) => Promise<DevEnvSnapshot>
-  restore: (args: EnvArgs & { name: string; confirm: true }) => Promise<{ restored: boolean }>
+  restore: (
+    args: EnvArgs & { name: string; confirm: true }
+  ) => Promise<{ restored: boolean; errors: string[] }>
   deleteSnapshot: (args: EnvArgs & { name: string; confirm: true }) => Promise<{ deleted: boolean }>
   pinSlot: (args: EnvArgs & { slot: string; worktree: string | null }) => Promise<DevEnv>
   create: (args: {

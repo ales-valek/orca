@@ -79,8 +79,11 @@ function normalizeInfraPort(value: unknown): DevEnvInfraPort | null {
   return { name: value.name, host: value.host, container: value.container }
 }
 
+// Why: the name becomes a compose service and a snapshot file name.
+const INFRA_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
+
 function normalizeInfraService(value: unknown): DevEnvInfraService | null {
-  if (!isRecord(value) || !isNonEmptyString(value.name)) {
+  if (!isRecord(value) || !isNonEmptyString(value.name) || !INFRA_NAME_PATTERN.test(value.name)) {
     return null
   }
   const service: DevEnvInfraService = {

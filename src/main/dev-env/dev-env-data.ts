@@ -8,7 +8,7 @@ type DevEnvDataInput = {
   logPath: string
 }
 
-function fillDevEnvValues(command: string, env: Pick<DevEnv, 'key' | 'portSlot'>): string {
+export function fillDevEnvValues(command: string, env: Pick<DevEnv, 'key' | 'portSlot'>): string {
   return command
     .split('${devEnv.key}')
     .join(env.key)
