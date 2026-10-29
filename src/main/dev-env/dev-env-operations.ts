@@ -133,6 +133,7 @@ export class DevEnvOperations extends DevEnvSnapshotCommands {
     if (env.detached) {
       throw new Error(`${env.name} is detached; its worktrees are gone`)
     }
+    this.assertDataIdle(id)
     await this.publishRoutes(env, template)
     return this.services.start(env, template, names && names.length > 0 ? names : 'all')
   }
@@ -144,12 +145,14 @@ export class DevEnvOperations extends DevEnvSnapshotCommands {
 
   async restart(id: string, name: string): Promise<{ started: string[]; errors: string[] }> {
     const { env, template } = this.requireEnv(id)
+    this.assertDataIdle(id)
     return this.services.restart(env, template, name)
   }
 
   /** Running services keep their old command, so they stop first and start again on the next up. */
   async setMode(id: string, mode: 'dev' | 'prod'): Promise<void> {
     this.requireEnv(id)
+    this.assertDataIdle(id)
     await this.services.stop(id, 'all')
     this.deps.store.updateDevEnv(id, { mode })
     this.deps.notify(id)

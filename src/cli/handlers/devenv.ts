@@ -123,12 +123,31 @@ export const DEVENV_HANDLERS: Record<string, CommandHandler> = {
         'Restoring replaces this environment data; pass --yes to confirm'
       )
     }
-    const result = await client.call<{ restored: boolean }>('devenv.restore', {
+    const result = await client.call<{ restored: boolean; errors?: string[] }>('devenv.restore', {
       env: env(flags),
       name: getRequiredStringFlag(flags, 'name'),
       confirm: true
     })
-    printResult(result, json, () => 'Restored; services that were up are starting again.')
+    printResult(result, json, (value) =>
+      [
+        'Restored; services that were up are starting again.',
+        ...(value.errors ?? []).map((e) => `warning: ${e}`)
+      ].join('\n')
+    )
+  },
+  'devenv delete-snapshot': async ({ flags, client, json }) => {
+    if (flags.get('yes') !== true) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Deleting removes the snapshot files; pass --yes to confirm'
+      )
+    }
+    const result = await client.call<{ deleted: boolean }>('devenv.deleteSnapshot', {
+      env: env(flags),
+      name: getRequiredStringFlag(flags, 'name'),
+      confirm: true
+    })
+    printResult(result, json, () => 'Snapshot deleted.')
   },
   'devenv bind': async ({ flags, client, json }) => {
     const provider = getRequiredStringFlag(flags, 'provider')

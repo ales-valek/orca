@@ -120,6 +120,9 @@ export abstract class DevEnvLifecycle extends DevEnvCore {
     if (!tier) {
       throw new Error(`Unknown remote tier ${tierId}`)
     }
+    if (!tier.dependencies[dependency]) {
+      throw new Error(`${tier.name} does not provide ${dependency}`)
+    }
     if (tier.danger && confirmation !== env.key) {
       throw new Error(`Type the environment key to bind it to ${tier.name}`)
     }
@@ -189,7 +192,11 @@ export abstract class DevEnvLifecycle extends DevEnvCore {
     this.deps.store.deleteDevEnv(id)
     this.services.forget(id)
     this.hostnameErrors.delete(id)
-    rmSync(join(this.deps.userDataDir, 'dev-envs', 'envs', id), { recursive: true, force: true })
+    // Why: snapshots outlive the record, per the spec; only logs and state go.
+    rmSync(join(this.deps.userDataDir, 'dev-envs', 'envs', id, 'logs'), {
+      recursive: true,
+      force: true
+    })
     this.deps.notify(id)
   }
 
