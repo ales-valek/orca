@@ -116,6 +116,7 @@ vi.mock('../ipc/pty/provider/registry', () => ({ getLocalPtyProvider: vi.fn() })
 vi.mock('../ipc/pty/register-handlers', () => ({ registerPtyHandlers: registerPtyHandlersMock }))
 
 vi.mock('../ipc/ssh/ssh', () => ({ registerSshHandlers: registerSshHandlersMock }))
+vi.mock('../ipc/dev-env/register-handlers', () => ({ registerDevEnvHandlers: vi.fn() }))
 vi.mock('../ipc/pty/pty-management', () => ({
   registerDaemonManagementHandlers: registerDaemonManagementHandlersMock
 }))

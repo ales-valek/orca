@@ -76,6 +76,7 @@ import { AGENT_LAUNCH_METHODS } from './agent-launch/agent-launch'
 import { CONNECTOR_METHODS } from './connectors/connector'
 import { MISSION_METHODS } from './missions'
 import { HULY_METHODS } from './huly'
+import { DEV_ENV_METHODS } from './dev-env'
 import {
   LAYOUT_APPLY_METHODS,
   LAYOUT_VIEW_REPORT_METHODS,
@@ -141,6 +142,7 @@ export const ALL_RPC_METHODS = [
   ...LINEAR_AGENT_ACCESS_METHODS,
   ...JIRA_METHODS,
   ...HULY_METHODS,
+  ...DEV_ENV_METHODS,
   ...SSH_METHODS,
   ...MANAGED_SERVER_METHODS,
   ...RECIPE_VM_WAKE_METHODS,
