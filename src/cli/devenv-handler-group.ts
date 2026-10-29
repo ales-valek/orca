@@ -14,7 +14,8 @@ export const DEVENV_HANDLER_GROUP: HandlerGroup = {
     'devenv seed',
     'devenv reset',
     'devenv bind',
-    'devenv infra'
+    'devenv infra',
+    'devenv create'
   ],
   load: async () => (await import('./handlers/devenv.js')).DEVENV_HANDLERS
 }

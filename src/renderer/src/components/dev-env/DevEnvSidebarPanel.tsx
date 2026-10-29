@@ -53,7 +53,10 @@ function CreateForWorktree({ worktreeId }: { worktreeId: string }): React.JSX.El
           void runDevEnvAction(
             translate('devEnv.panel.createFailed', 'Could not create the Dev Environment'),
             async () => {
-              await window.api.devEnv.create({ worktree: worktreeId, template: templateId ?? '' })
+              await window.api.devEnv.create({
+                worktree: `id:${worktreeId}`,
+                template: templateId ?? ''
+              })
               await useAppStore.getState().fetchDevEnvs()
             }
           )

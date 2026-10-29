@@ -139,10 +139,20 @@ export const DEV_ENV_METHODS = [
     name: 'devenv.create',
     permission: 'workspace',
     params: DevEnvCreateParams,
-    handler: async (params, context) =>
-      params.mission
-        ? ops(context).createForMission(params.mission, params.template)
-        : ops(context).createForWorktree(params.worktree ?? '', params.template, params.bindings)
+    handler: async (params, context) => {
+      if (params.mission) {
+        const { mission } = await context.runtime.showMission(params.mission)
+        return ops(context).createForMission(mission.id, params.template)
+      }
+      const worktree = await context.runtime.showManagedWorktree(params.worktree ?? '')
+      const bindings = Object.fromEntries(
+        Object.entries(params.bindings ?? {}).map(([dependency, provider]) => [
+          dependency,
+          ops(context).resolveId(provider)
+        ])
+      )
+      return ops(context).createForWorktree(worktree.id, params.template, bindings)
+    }
   }),
   defineMethod({
     name: 'devenv.delete',

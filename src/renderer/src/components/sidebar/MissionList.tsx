@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { DevEnvStatusBadge } from '../dev-env/DevEnvStatusBadge'
+import { DevEnvCreateDialog } from '../dev-env/DevEnvCreateDialog'
+import { DevEnvStatusBadge, selectDevEnvs } from '../dev-env/DevEnvStatusBadge'
 import { Milestone, MoreHorizontal, Plus, SquareTerminal } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
@@ -29,14 +30,22 @@ function MissionSection({
   onRename,
   onDelete,
   onAddProjects,
-  onRefreshFromHuly
+  onRefreshFromHuly,
+  onCreateDevEnv
 }: {
   mission: Mission
   onRename: (mission: Mission) => void
   onDelete: (mission: Mission) => void
   onAddProjects: (mission: Mission) => void
   onRefreshFromHuly: (mission: Mission) => void
+  onCreateDevEnv: (mission: Mission) => void
 }): React.JSX.Element {
+  const hasDevEnv = useAppStore((s) =>
+    selectDevEnvs(s).some(
+      (env) => env.attachment.kind === 'mission' && env.attachment.missionId === mission.id
+    )
+  )
+  const hasDevEnvTemplates = useAppStore((s) => (s.settings?.devEnvTemplates.length ?? 0) > 0)
   const collapsedGroups = useAppStore((s) => s.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((s) => s.toggleCollapsedGroup)
   const sessionWorkspace = useAppStore(
@@ -107,6 +116,11 @@ function MissionSection({
         {mission.source?.provider === 'huly' ? (
           <DropdownMenuItem onSelect={() => onRefreshFromHuly(mission)}>
             {translate('auto.components.sidebar.MissionList.refreshFromHuly', 'Refresh from Huly')}
+          </DropdownMenuItem>
+        ) : null}
+        {!hasDevEnv && hasDevEnvTemplates ? (
+          <DropdownMenuItem onSelect={() => onCreateDevEnv(mission)}>
+            {translate('devEnv.create.menuItem', 'Create Dev Environment…')}
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
@@ -188,6 +202,7 @@ export default function MissionList(): React.JSX.Element {
   const [deleting, setDeleting] = useState<Mission | null>(null)
   const [addingTo, setAddingTo] = useState<Mission | null>(null)
   const [refreshing, setRefreshing] = useState<Mission | null>(null)
+  const [creatingDevEnv, setCreatingDevEnv] = useState<Mission | null>(null)
   const hulyConnected = useHulyConnected()
   const newFromHulyLabel = translate(
     'auto.components.sidebar.MissionList.newFromHuly',
@@ -236,6 +251,7 @@ export default function MissionList(): React.JSX.Element {
             onDelete={setDeleting}
             onAddProjects={setAddingTo}
             onRefreshFromHuly={setRefreshing}
+            onCreateDevEnv={setCreatingDevEnv}
           />
         ))}
         {hulyConnected ? (
@@ -277,6 +293,15 @@ export default function MissionList(): React.JSX.Element {
         mission={refreshing}
         onOpenChange={(open) => !open && setRefreshing(null)}
       />
+      {creatingDevEnv ? (
+        <DevEnvCreateDialog
+          open
+          onOpenChange={(open) => !open && setCreatingDevEnv(null)}
+          missionId={creatingDevEnv.id}
+          missionName={creatingDevEnv.name}
+          repoIds={creatingDevEnv.members.map((member) => member.repoId)}
+        />
+      ) : null}
     </div>
   )
 }

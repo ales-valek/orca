@@ -169,4 +169,42 @@ describe('orca devenv commands', () => {
       confirm: true
     })
   })
+
+  it('creates an environment for an existing mission', async () => {
+    queueFixtures(callMock, okFixture('req_1', { id: 'e1', key: 'kiosek', name: 'Kiosek' }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    await main(['devenv', 'create', '--mission', 'Kiosek', '--template', 'OrderMage full'], '/tmp')
+    expect(callMock).toHaveBeenCalledWith('devenv.create', {
+      mission: 'Kiosek',
+      worktree: undefined,
+      template: 'OrderMage full',
+      bindings: undefined
+    })
+  })
+
+  it('creates a worktree environment with dependency bindings', async () => {
+    queueFixtures(callMock, okFixture('req_1', { id: 'e2', key: 'fix', name: 'fix' }))
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    await main(
+      [
+        'devenv',
+        'create',
+        '--worktree',
+        'branch:fix/x',
+        '--template',
+        't',
+        '--bind',
+        'admin-api=kiosek',
+        '--bind',
+        'geo=kiosek'
+      ],
+      '/tmp'
+    )
+    expect(callMock).toHaveBeenCalledWith('devenv.create', {
+      mission: undefined,
+      worktree: 'branch:fix/x',
+      template: 't',
+      bindings: { 'admin-api': 'kiosek', geo: 'kiosek' }
+    })
+  })
 })
