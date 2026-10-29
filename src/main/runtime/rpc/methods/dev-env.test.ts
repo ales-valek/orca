@@ -62,4 +62,30 @@ describe('devenv RPC', () => {
     expect(params?.safeParse({ env: 'e' }).success).toBe(false)
     expect(params?.safeParse({ env: 'e', confirm: true }).success).toBe(true)
   })
+
+  it('resolves mission and worktree selectors before creating', async () => {
+    const createForMission = vi.fn(async () => ({ id: 'e1' }))
+    const createForWorktree = vi.fn(async () => ({ id: 'e2' }))
+    const runtime = {
+      getDevEnvOperations: () => ({
+        createForMission,
+        createForWorktree,
+        resolveId: (selector: string) => selector
+      }),
+      showMission: async () => ({ mission: { id: 'mission-1' } }),
+      showManagedWorktree: async () => ({ id: 'repo::/w' })
+    }
+    const method = getMethod('devenv.create')
+    await method.handler(method.params?.parse({ mission: 'Kiosek', template: 'OrderMage full' }), {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the handler only calls the members stubbed here.
+      runtime: runtime as never
+    })
+    expect(createForMission).toHaveBeenCalledWith('mission-1', 'OrderMage full')
+    await method.handler(
+      method.params?.parse({ worktree: 'branch:fix/x', template: 't', bindings: { geo: 'e1' } }),
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the handler only calls the members stubbed here.
+      { runtime: runtime as never }
+    )
+    expect(createForWorktree).toHaveBeenCalledWith('repo::/w', 't', { geo: 'e1' })
+  })
 })
