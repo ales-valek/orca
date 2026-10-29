@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store'
 import type { DevEnvDetail, DevEnvInfraService } from '../../../../shared/dev-env/dev-env-types'
 import { runDevEnvAction } from './dev-env-actions'
+import { DevEnvSnapshots } from './DevEnvSnapshots'
 
 const NO_INFRA: readonly DevEnvInfraService[] = []
 
@@ -121,6 +122,7 @@ export function DevEnvDataTab({ detail }: { detail: DevEnvDetail }): React.JSX.E
           </Button>
         </div>
       </div>
+      <DevEnvSnapshots detail={detail} />
       <div className="flex items-center gap-3 rounded-xl border border-border p-3 text-[13px]">
         <span className="flex-1 text-muted-foreground">
           {detail.detached

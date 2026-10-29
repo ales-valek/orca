@@ -261,6 +261,20 @@
   {
     "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
     "kind": "jsx-attribute:placeholder",
+    "text": "pnpm build",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "pnpm start",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/dev-env/DevEnvSlotEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
     "text": ".env",
     "dynamic": false,
     "count": 1

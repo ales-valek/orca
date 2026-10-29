@@ -25,6 +25,12 @@ describe('getDevEnvBadgeLabel', () => {
       tone: 'muted'
     })
   })
+
+  it('marks an environment bound to a danger tier as prod in red', () => {
+    expect(
+      getDevEnvBadgeLabel({ envId: 'e', up: 1, total: 2, state: 'partial', danger: true })
+    ).toEqual({ text: 'prod · 1/2', tone: 'error' })
+  })
 })
 
 describe('getDevEnvSetupRows', () => {
