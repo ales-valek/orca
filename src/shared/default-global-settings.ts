@@ -229,6 +229,7 @@ export function buildDefaultSettings(args: {
     defaultLinearTeamSelection: null,
     hulyProjects: {},
     devEnvInfra: [],
+    devEnvRemoteTiers: [],
     devEnvTemplates: [],
     // Why: shared defaults also build in the renderer, where `process` may be absent.
     devEnvProxyPort: getDefaultDevEnvProxyPort(globalThis.process?.platform ?? 'darwin'),

@@ -27,6 +27,7 @@ const TEMPLATE: DevEnvTemplate = {
       services: [
         {
           name: 'eshop',
+          prod: { build: 'npm run build', start: 'npm start' },
           command: 'npm run dev',
           portOffset: 50,
           host: '*.eshop.${devEnv.key}',
@@ -54,6 +55,7 @@ describe('dev env settings', () => {
   it('fills defaults for missing settings', () => {
     expect(normalizeDevEnvSettings(undefined, 'linux')).toEqual({
       devEnvInfra: [],
+      devEnvRemoteTiers: [],
       devEnvTemplates: [],
       devEnvProxyPort: 8080
     })
@@ -176,6 +178,64 @@ describe('dev env settings', () => {
   it('reports a JSON value that is not a template', () => {
     expect(parseDevEnvTemplateJson('{"name":"x"}')).toEqual({
       error: 'Not a Dev Environment template'
+    })
+  })
+
+  it('keeps valid remote tiers and drops invalid ones', () => {
+    const settings = normalizeDevEnvSettings(
+      {
+        devEnvRemoteTiers: [
+          {
+            id: 'staging',
+            name: 'Staging',
+            danger: false,
+            dependencies: {
+              'admin-api': {
+                url: 'https://api.staging',
+                values: { API_KEY: '${secret.staging-key}' }
+              },
+              broken: { values: {} }
+            }
+          },
+          { id: 'prod', name: 'Prod', danger: true, dependencies: {} },
+          { name: 'no id' }
+        ]
+      },
+      'darwin'
+    )
+    expect(settings.devEnvRemoteTiers).toEqual([
+      {
+        id: 'staging',
+        name: 'Staging',
+        danger: false,
+        dependencies: {
+          'admin-api': { url: 'https://api.staging', values: { API_KEY: '${secret.staging-key}' } }
+        }
+      },
+      { id: 'prod', name: 'Prod', danger: true, dependencies: {} }
+    ])
+  })
+
+  it('keeps infra dump and restore commands', () => {
+    const [service] = normalizeDevEnvSettings(
+      {
+        devEnvInfra: [
+          {
+            name: 'postgres',
+            ports: [],
+            environment: {},
+            volumes: [],
+            resource: { create: 'c', drop: 'd', dump: 'pg_dump', restore: 'pg_restore' }
+          }
+        ]
+      },
+      'darwin'
+    ).devEnvInfra
+    expect(service.resource).toEqual({
+      create: 'c',
+      drop: 'd',
+      dump: 'pg_dump',
+      restore: 'pg_restore'
     })
   })
 })

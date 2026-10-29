@@ -31,7 +31,7 @@ function findProviderService(
   lookup: DependencyLookup
 ): ProviderService | null {
   const binding = env.bindings[dependency]
-  const provider = binding ? lookup.getDevEnv(binding.devEnvId) : null
+  const provider = binding?.kind === 'local' ? lookup.getDevEnv(binding.devEnvId) : null
   const template = provider
     ? lookup.getSettings().devEnvTemplates.find((entry) => entry.id === provider.templateId)
     : undefined
