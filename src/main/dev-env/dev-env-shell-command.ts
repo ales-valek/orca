@@ -22,6 +22,9 @@ export type DevEnvExec = (
   }
 ) => Promise<DevEnvExecResult>
 
+/** Installs and seeds can take a while on a cold cache. */
+export const DEV_ENV_COMMAND_TIMEOUT_MS = 30 * 60_000
+
 const CAPTURE_LIMIT_BYTES = 2 * 1024 * 1024
 
 export const runDevEnvExec: DevEnvExec = async (program, args, opts) => {

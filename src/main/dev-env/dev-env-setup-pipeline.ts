@@ -1,27 +1,27 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import {
-  buildDevEnvContext,
-  type DevEnvDependencyValues
-} from '../../shared/dev-env/dev-env-context'
-import { renderDevEnvFile, type RenderedEnvValue } from '../../shared/dev-env/dev-env-file-render'
+import type { DevEnvDependencyValues } from '../../shared/dev-env/dev-env-context'
+import { getReferencedDevEnvInfra } from '../../shared/dev-env/dev-env-infra-references'
 import { getDevEnvPortRange } from '../../shared/dev-env/dev-env-ports'
 import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
 import {
   DEV_ENV_STEP_IDS,
   type DevEnv,
-  type DevEnvInfraService,
   type DevEnvStepId,
   type DevEnvStepState,
   type DevEnvTemplate,
   type DevEnvTemplateSlot
 } from '../../shared/dev-env/dev-env-types'
 import { provisionDevEnvData } from './dev-env-data'
+import { runDevEnvSeedStep } from './dev-env-seed-step'
+import { renderDevEnvFiles, type DevEnvRenderedFile } from './dev-env-file-writer'
 import type { DevEnvInfra } from './dev-env-infra'
 import type { DevEnvSecretStore } from './dev-env-secret-store'
-import { runDevEnvShellCommand, type DevEnvExec } from './dev-env-shell-command'
-
-const INSTALL_TIMEOUT_MS = 30 * 60_000
+import {
+  DEV_ENV_COMMAND_TIMEOUT_MS,
+  runDevEnvShellCommand,
+  type DevEnvExec
+} from './dev-env-shell-command'
 
 export type DevEnvSetupDeps = {
   store: {
@@ -43,20 +43,11 @@ export type DevEnvSetupDeps = {
 
 export type DevEnvSetupOptions = { steps?: DevEnvStepId[]; slots?: string[]; withSeed?: boolean }
 
-export type DevEnvRenderedFile = {
-  slot: string
-  path: string
-  values: RenderedEnvValue[]
-  /** Full file text including secrets; never send it to a renderer or CLI. */
-  text?: string
-  error?: string
-}
-
-type StepOutcome =
+export type StepOutcome =
   | { status: 'done' | 'skipped'; detail?: string }
   | { status: 'failed'; error: string }
 
-type StepRun = {
+export type StepRun = {
   env: DevEnv
   template: DevEnvTemplate
   settings: DevEnvGlobalSettings
@@ -64,20 +55,6 @@ type StepRun = {
   log: (line: string) => void
   logPath: string
   signal: AbortSignal
-}
-
-/** Infra the template uses through `dependsOn` or `${infra.<name>…}`, in settings order. */
-export function getReferencedDevEnvInfra(
-  template: DevEnvTemplate,
-  infra: DevEnvInfraService[]
-): DevEnvInfraService[] {
-  const text = JSON.stringify(template)
-  const dependsOn = new Set(
-    template.slots.flatMap((slot) => slot.services.flatMap((s) => s.dependsOn))
-  )
-  return infra.filter(
-    (service) => dependsOn.has(service.name) || text.includes(`\${infra.${service.name}.`)
-  )
 }
 
 export class DevEnvSetupPipeline {
@@ -182,46 +159,16 @@ export class DevEnvSetupPipeline {
       case 'data':
         return this.dataStep(run)
       case 'seed':
-        return this.seedStep(run)
+        return runDevEnvSeedStep(run, this.deps.exec)
     }
   }
 
-  async renderEnvFiles(
+  renderEnvFiles(
     env: DevEnv,
     template: DevEnvTemplate,
     slots?: string[]
   ): Promise<DevEnvRenderedFile[]> {
-    const settings = this.deps.getSettings()
-    const context = buildDevEnvContext({
-      env,
-      template,
-      infra: settings.devEnvInfra,
-      proxyPort: settings.devEnvProxyPort,
-      secrets: this.deps.secrets.getAll(),
-      dependencies: await this.deps.resolveDependencies(env)
-    })
-    const files: DevEnvRenderedFile[] = []
-    for (const slot of template.slots) {
-      const worktree = env.slotWorktrees[slot.name]
-      if (!worktree || (slots && !slots.includes(slot.name))) {
-        continue
-      }
-      for (const file of slot.envFiles) {
-        const result = renderDevEnvFile({
-          file,
-          baseText: file.base ? await this.deps.readFile(join(worktree.path, file.base)) : null,
-          currentText: await this.deps.readFile(join(worktree.path, file.path)),
-          context,
-          envLabel: env.key
-        })
-        files.push(
-          'error' in result
-            ? { slot: slot.name, path: file.path, values: [], error: result.error }
-            : { slot: slot.name, path: file.path, values: result.values, text: result.text }
-        )
-      }
-    }
-    return files
+    return renderDevEnvFiles({ ...this.deps, env, template, slots })
   }
 
   private async renderEnvStep(run: StepRun): Promise<StepOutcome> {
@@ -274,7 +221,12 @@ export class DevEnvSetupPipeline {
       for (const command of slot.install) {
         const result = await runDevEnvShellCommand(
           command,
-          { cwd: path, logPath: run.logPath, timeoutMs: INSTALL_TIMEOUT_MS, signal: run.signal },
+          {
+            cwd: path,
+            logPath: run.logPath,
+            timeoutMs: DEV_ENV_COMMAND_TIMEOUT_MS,
+            signal: run.signal
+          },
           this.deps.exec
         )
         if (run.signal.aborted) {
@@ -332,32 +284,5 @@ export class DevEnvSetupPipeline {
       status: 'done',
       detail: result.created.length > 0 ? result.created.join(', ') : 'no resources'
     }
-  }
-
-  private async seedStep(run: StepRun): Promise<StepOutcome> {
-    const seed = run.template.seed
-    if (!seed) {
-      return { status: 'skipped', detail: 'no seed in template' }
-    }
-    if (!run.options.withSeed && !seed.enabledByDefault) {
-      return { status: 'skipped', detail: 'off in template' }
-    }
-    const worktree = run.env.slotWorktrees[seed.slot]
-    if (!worktree) {
-      return { status: 'failed', error: `Seed slot "${seed.slot}" has no worktree` }
-    }
-    const result = await runDevEnvShellCommand(
-      seed.command,
-      {
-        cwd: worktree.path,
-        logPath: run.logPath,
-        timeoutMs: INSTALL_TIMEOUT_MS,
-        signal: run.signal
-      },
-      this.deps.exec
-    )
-    return result.ok
-      ? { status: 'done', detail: seed.command }
-      : { status: 'failed', error: `"${seed.command}" failed (exit ${String(result.code)})` }
   }
 }
