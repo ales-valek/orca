@@ -3,6 +3,7 @@ import type {
   DevEnvDetail,
   DevEnvEnvFileView,
   DevEnvInfraState,
+  DevEnvSnapshot,
   DevEnvStepId,
   DevEnvSummary
 } from '../../shared/dev-env/dev-env-types'
@@ -23,6 +24,11 @@ export type DevEnvApi = {
   seed: (args: EnvArgs) => Promise<{ started: boolean }>
   reset: (args: EnvArgs & { reseed?: boolean; confirm: true }) => Promise<{ started: boolean }>
   bind: (args: EnvArgs & { dependency: string; provider: string | null }) => Promise<DevEnv>
+  mode: (args: EnvArgs & { mode: 'dev' | 'prod' }) => Promise<{ mode: string }>
+  snapshots: (args: EnvArgs) => Promise<{ snapshots: DevEnvSnapshot[] }>
+  snapshot: (args: EnvArgs & { name: string }) => Promise<DevEnvSnapshot>
+  restore: (args: EnvArgs & { name: string; confirm: true }) => Promise<{ restored: boolean }>
+  deleteSnapshot: (args: EnvArgs & { name: string; confirm: true }) => Promise<{ deleted: boolean }>
   pinSlot: (args: EnvArgs & { slot: string; worktree: string | null }) => Promise<DevEnv>
   create: (args: {
     mission?: string
