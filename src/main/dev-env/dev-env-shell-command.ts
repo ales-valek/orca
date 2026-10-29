@@ -18,6 +18,10 @@ export type DevEnvExec = (
     timeoutMs: number
     /** Output streams into this file instead of being captured. */
     logPath?: string
+    /** With logPath: stdout goes here instead of the log (snapshot dumps). */
+    stdoutPath?: string
+    /** With logPath: stdin is read from this file (snapshot restores). */
+    stdinPath?: string
     signal?: AbortSignal
   }
 ) => Promise<DevEnvExecResult>
@@ -48,6 +52,8 @@ export const runDevEnvExec: DevEnvExec = async (program, args, opts) => {
   }
   mkdirSync(dirname(opts.logPath), { recursive: true })
   const fd = openSync(opts.logPath, 'a')
+  const stdoutFd = opts.stdoutPath ? openSync(opts.stdoutPath, 'w') : null
+  const stdinFd = opts.stdinPath ? openSync(opts.stdinPath, 'r') : null
   try {
     writeSync(fd, `$ ${[program, ...args].join(' ')}\n`)
     // Why: long installs must show progress in the log while they run, not only at the end.
@@ -58,12 +64,18 @@ export const runDevEnvExec: DevEnvExec = async (program, args, opts) => {
       env,
       timeoutMs: opts.timeoutMs,
       signal: opts.signal,
-      stdio: ['ignore', fd, fd]
+      stdio: [stdinFd ?? 'ignore', stdoutFd ?? fd, fd]
     })
     writeSync(fd, `[exit ${result.timedOut ? 'timeout' : String(result.code)}]\n`)
     return { code: result.code, stdout: '', stderr: '', timedOut: result.timedOut }
   } finally {
     closeSync(fd)
+    if (stdoutFd !== null) {
+      closeSync(stdoutFd)
+    }
+    if (stdinFd !== null) {
+      closeSync(stdinFd)
+    }
   }
 }
 

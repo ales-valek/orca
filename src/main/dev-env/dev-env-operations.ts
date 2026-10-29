@@ -6,7 +6,7 @@ import type {
   DevEnvSummary
 } from '../../shared/dev-env/dev-env-types'
 import { getDevEnvDependencyStates } from './dev-env-dependencies'
-import { DevEnvLifecycle } from './dev-env-lifecycle'
+import { DevEnvSnapshotCommands } from './dev-env-snapshot-commands'
 import {
   buildDevEnvDetail,
   buildDevEnvSummary,
@@ -17,7 +17,7 @@ import {
 export type { DevEnvOperationsDeps, DevEnvStore } from './dev-env-core'
 
 /** Dev Environments facade shared by desktop IPC and runtime RPC. */
-export class DevEnvOperations extends DevEnvLifecycle {
+export class DevEnvOperations extends DevEnvSnapshotCommands {
   async list(): Promise<DevEnvSummary[]> {
     return Promise.all(this.deps.store.getDevEnvs().map((env) => this.summarize(env)))
   }
@@ -145,6 +145,14 @@ export class DevEnvOperations extends DevEnvLifecycle {
   async restart(id: string, name: string): Promise<{ started: string[]; errors: string[] }> {
     const { env, template } = this.requireEnv(id)
     return this.services.restart(env, template, name)
+  }
+
+  /** Running services keep their old command, so they stop first and start again on the next up. */
+  async setMode(id: string, mode: 'dev' | 'prod'): Promise<void> {
+    this.requireEnv(id)
+    await this.services.stop(id, 'all')
+    this.deps.store.updateDevEnv(id, { mode })
+    this.deps.notify(id)
   }
 
   async close(): Promise<void> {

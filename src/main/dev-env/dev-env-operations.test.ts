@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
 import {
@@ -11,6 +12,7 @@ import type { Repo } from '../../shared/repo-types'
 import { composeWorktreeId } from '../../shared/worktree/id'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import type { DevEnvHostProxy } from './dev-env-host-proxy'
+import type { DevEnvInfra } from './dev-env-infra'
 import { DevEnvOperations, type DevEnvStore } from './dev-env-operations'
 import type { DevEnvServices } from './dev-env-services'
 import type { DevEnvSecretStore } from './dev-env-secret-store'
@@ -113,10 +115,14 @@ describe('DevEnvOperations', () => {
     cancel: ReturnType<typeof vi.fn>
   }
   let operations: DevEnvOperations
+  let settings: DevEnvGlobalSettings
+  let infraCalls: string[]
   let publishedRoutes: Map<string, unknown[]>
 
   beforeEach(() => {
     envs = []
+    settings = SETTINGS
+    infraCalls = []
     publishedRoutes = new Map()
     missions = [makeMission()]
     worktreeMeta = {
@@ -173,7 +179,7 @@ describe('DevEnvOperations', () => {
     ])
     operations = new DevEnvOperations({
       store,
-      getSettings: () => SETTINGS,
+      getSettings: () => settings,
       userDataDir: '/tmp/orca-test',
       terminals: {
         create: async () => ({ handle: 'h' }),
@@ -194,7 +200,18 @@ describe('DevEnvOperations', () => {
         }),
         secrets: fake<DevEnvSecretStore>({ getAll: () => secrets }),
         isPortFree: async () => true,
-        worktreeExists: () => true
+        worktreeExists: () => true,
+        infra: fake<DevEnvInfra>({
+          execToFile: async (service: string, _shell: string, path: string) => {
+            infraCalls.push(`dump ${service}`)
+            writeFileSync(path, 'rows')
+            return { ok: true, code: 0 }
+          },
+          execFromFile: async (service: string) => {
+            infraCalls.push(`restore ${service}`)
+            return { ok: true, code: 0 }
+          }
+        })
       }
     })
   })
@@ -374,5 +391,61 @@ describe('DevEnvOperations', () => {
     expect(detail.badge.danger).toBe(true)
     expect(detail.remoteTiers['admin-api']).toEqual({ tierId: 'prod', name: 'Prod', danger: true })
     expect(detail.dependencyStates['admin-api']).toBe('remote')
+  })
+
+  it('snapshots dumpable infra, and restores with services stopped then the up ones restarted', async () => {
+    settings = {
+      ...SETTINGS,
+      devEnvInfra: [
+        {
+          name: 'postgres',
+          ports: [],
+          environment: {},
+          volumes: [],
+          resource: { create: 'c', drop: 'd', dump: 'pg_dump', restore: 'pg_restore' }
+        }
+      ],
+      devEnvTemplates: [
+        {
+          ...TEMPLATE,
+          slots: TEMPLATE.slots.map((slot) => ({
+            ...slot,
+            services: slot.services.map((service) => ({ ...service, dependsOn: ['postgres'] }))
+          }))
+        }
+      ]
+    }
+    const env = await operations.createForWorktree(STANDALONE, 't1')
+    await expect(operations.snapshot(env.id, '../x')).rejects.toThrow('Snapshot name')
+    const snapshot = await operations.snapshot(env.id, 'before-import')
+    expect(snapshot).toMatchObject({ name: 'before-import', sizeBytes: 4, services: ['postgres'] })
+    expect((await operations.show(env.id)).snapshots.map((entry) => entry.name)).toEqual([
+      'before-import'
+    ])
+
+    services.getStates.mockResolvedValue([
+      { name: 'eshop', status: 'up' },
+      { name: 'admin-api', status: 'stopped' }
+    ])
+    services.stop.mockImplementation(async () => {
+      infraCalls.push('stop')
+    })
+    services.start.mockImplementation(async (_env, _template, names) => {
+      infraCalls.push(`start ${String(names)}`)
+      return { started: [], errors: [] }
+    })
+    infraCalls = []
+    await operations.restoreSnapshot(env.id, 'before-import')
+    expect(infraCalls).toEqual(['stop', 'restore postgres', 'start eshop'])
+
+    await operations.deleteSnapshot(env.id, 'before-import')
+    expect((await operations.show(env.id)).snapshots).toEqual([])
+  })
+
+  it('stops the services before switching to prod-build mode', async () => {
+    const env = await operations.createForWorktree(STANDALONE, 't1')
+    await operations.setMode(env.id, 'prod')
+    expect(services.stop).toHaveBeenCalledWith(env.id, 'all')
+    expect((await operations.show(env.id)).mode).toBe('prod')
   })
 })

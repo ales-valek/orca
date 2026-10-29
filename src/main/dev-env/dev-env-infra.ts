@@ -14,6 +14,8 @@ const COMPOSE_STATUS_TIMEOUT_MS = 30_000
 // Why: the first `up` may pull several images.
 const COMPOSE_UP_TIMEOUT_MS = 15 * 60_000
 const COMPOSE_EXEC_TIMEOUT_MS = 5 * 60_000
+// Why: dumps of a large database stream for a while.
+const DUMP_TIMEOUT_MS = 30 * 60_000
 
 function isNamedVolume(source: string): boolean {
   return source.length > 0 && !/[/\\.~$]/.test(source[0]) && !source.includes('/')
@@ -245,18 +247,41 @@ export class DevEnvInfra {
     return result.code === 0
   }
 
-  async exec(
+  exec(
     service: string,
     shell: string,
     logPath: string
   ): Promise<{ ok: boolean; code: number | null }> {
+    return this.runInService(service, shell, { timeoutMs: COMPOSE_EXEC_TIMEOUT_MS, logPath })
+  }
+
+  execToFile(
+    service: string,
+    shell: string,
+    stdoutPath: string,
+    logPath: string
+  ): Promise<{ ok: boolean; code: number | null }> {
+    return this.runInService(service, shell, { timeoutMs: DUMP_TIMEOUT_MS, logPath, stdoutPath })
+  }
+
+  execFromFile(
+    service: string,
+    shell: string,
+    stdinPath: string,
+    logPath: string
+  ): Promise<{ ok: boolean; code: number | null }> {
+    return this.runInService(service, shell, { timeoutMs: DUMP_TIMEOUT_MS, logPath, stdinPath })
+  }
+
+  private async runInService(
+    service: string,
+    shell: string,
+    opts: Parameters<DevEnvExec>[2]
+  ): Promise<{ ok: boolean; code: number | null }> {
     const result = await this.runExec(
       'docker',
       [...this.composeArgs(), 'exec', '-T', service, 'sh', '-c', shell],
-      {
-        timeoutMs: COMPOSE_EXEC_TIMEOUT_MS,
-        logPath
-      }
+      opts
     )
     return { ok: result.code === 0 && !result.timedOut, code: result.code }
   }

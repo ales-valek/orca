@@ -1,4 +1,5 @@
 import { getDevEnvServiceUrl } from '../../shared/dev-env/dev-env-context'
+import { getDevEnvServiceCommand } from '../../shared/dev-env/dev-env-expression'
 import { getDevEnvPort } from '../../shared/dev-env/dev-env-ports'
 import type {
   DevEnv,
@@ -231,7 +232,11 @@ export class DevEnvServices {
         errors.push(`${name}: port ${port} is held by ${holder}. Orca did not start ${name}.`)
         continue
       }
-      const rendered = await this.deps.renderCommand(env, template, entry.service.command)
+      const rendered = await this.deps.renderCommand(
+        env,
+        template,
+        getDevEnvServiceCommand(entry.service, env.mode)
+      )
       if ('error' in rendered) {
         errors.push(`${name}: ${rendered.error}`)
         continue
