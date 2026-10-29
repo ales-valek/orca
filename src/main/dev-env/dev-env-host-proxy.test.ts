@@ -1,6 +1,11 @@
 import http from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DevEnvHostProxy, matchDevEnvHostRoute } from './dev-env-host-proxy'
+import {
+  DevEnvHostProxy,
+  getDevEnvProxyListenHost,
+  isLoopbackAddress,
+  matchDevEnvHostRoute
+} from './dev-env-host-proxy'
 
 describe('matchDevEnvHostRoute', () => {
   const routes = new Map([
@@ -46,6 +51,23 @@ describe('matchDevEnvHostRoute', () => {
   it('returns null for unknown hosts and other suffixes', () => {
     expect(matchDevEnvHostRoute(routes, 'nope.orca.localhost')).toBeNull()
     expect(matchDevEnvHostRoute(routes, 'admin.kiosek.localhost')).toBeNull()
+  })
+})
+
+describe('proxy listen address', () => {
+  it('binds the wildcard only where macOS refuses a privileged port on loopback', () => {
+    expect(getDevEnvProxyListenHost(80, 'darwin')).toBe('::')
+    expect(getDevEnvProxyListenHost(8080, 'darwin')).toBe('127.0.0.1')
+    expect(getDevEnvProxyListenHost(80, 'win32')).toBe('127.0.0.1')
+  })
+
+  it('accepts only loopback peers', () => {
+    expect(isLoopbackAddress('127.0.0.1')).toBe(true)
+    expect(isLoopbackAddress('::1')).toBe(true)
+    expect(isLoopbackAddress('::ffff:127.0.0.1')).toBe(true)
+    expect(isLoopbackAddress('192.168.1.20')).toBe(false)
+    expect(isLoopbackAddress('::ffff:10.0.0.2')).toBe(false)
+    expect(isLoopbackAddress(undefined)).toBe(false)
   })
 })
 
