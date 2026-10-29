@@ -24098,7 +24098,11 @@
       "credentials": "Logins to show (context keys)",
       "title": "Dev Environments",
       "description": "Shared infra, templates and secrets for running missions and worktrees.",
-      "lineError": "Line {{line}}: expected KEY = value"
+      "lineError": "Line {{line}}: expected KEY = value",
+      "deleteTitle": "Delete template {{name}}?",
+      "deleteBody": "{{count}} Dev Environment(s) use it and will show \"Template no longer exists\" until you delete them.",
+      "cancel": "Cancel",
+      "deleteConfirm": "Delete template"
     },
     "search": {
       "title": "Dev Environments",
@@ -24113,6 +24117,14 @@
       "infra": "Ensure shared infra",
       "data": "Provision data",
       "seed": "Seed"
+    },
+    "create": {
+      "failed": "Could not create the Dev Environment",
+      "title": "Create Dev Environment",
+      "description": "For {{name}}: env, dependencies, infra and data are set up right away.",
+      "cancel": "Cancel",
+      "confirm": "Create",
+      "menuItem": "Create Dev Environment…"
     }
   },
   "keybindings": {
