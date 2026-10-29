@@ -70,6 +70,8 @@ export function renderDevEnvFile(input: {
   currentText: string | null
   context: DevEnvContext
   envLabel: string
+  /** Personal values kept outside the repos; masked like secrets, template lines win. */
+  valuesText?: string | null
 }): { text: string; values: RenderedEnvValue[] } | { error: string } {
   const managed: RenderedEnvValue[] = []
   for (const line of input.file.lines) {
@@ -87,10 +89,18 @@ export function renderDevEnvFile(input: {
     })
   }
   const managedKeys = new Set(managed.map((value) => value.key))
-  const staticEntries = parseEnvEntries(input.baseText ?? '').filter(
+  const personalEntries = parseEnvEntries(input.valuesText ?? '').filter(
     (entry) => !managedKeys.has(entry.key)
   )
-  const definedKeys = new Set([...managedKeys, ...staticEntries.map((entry) => entry.key)])
+  const personalKeys = new Set(personalEntries.map((entry) => entry.key))
+  const staticEntries = parseEnvEntries(input.baseText ?? '').filter(
+    (entry) => !managedKeys.has(entry.key) && !personalKeys.has(entry.key)
+  )
+  const definedKeys = new Set([
+    ...managedKeys,
+    ...personalKeys,
+    ...staticEntries.map((entry) => entry.key)
+  ])
   const localText = getLocalSectionText(input.currentText, definedKeys)
   const secretValues = managed.filter((value) => value.section === 'SECRET')
   const dynamicValues = managed.filter((value) => value.section === 'DYNAMIC')
@@ -102,6 +112,7 @@ export function renderDevEnvFile(input: {
     `# --- STATIC (${input.file.base ? `from ${input.file.base}` : 'no base file'}) ---\n`,
     staticEntries.map((entry) => `${entry.key}=${entry.rawValue}\n`).join(''),
     '# --- SECRET (Orca Dev Environments, do not edit) ---\n',
+    personalEntries.map((entry) => `${entry.key}=${entry.rawValue}\n`).join(''),
     formatManaged(secretValues),
     `# --- DYNAMIC (${input.envLabel}, do not edit) ---\n`,
     formatManaged(dynamicValues),
@@ -116,6 +127,13 @@ export function renderDevEnvFile(input: {
     sources: ['literal'],
     secret: false
   }))
+  const personalValues: RenderedEnvValue[] = personalEntries.map((entry) => ({
+    key: entry.key,
+    value: unquoteEnvValue(entry.rawValue),
+    section: 'SECRET',
+    sources: ['secret'],
+    secret: true
+  }))
   const localValues: RenderedEnvValue[] = parseEnvEntries(localText).map((entry) => ({
     key: entry.key,
     value: unquoteEnvValue(entry.rawValue),
@@ -123,7 +141,10 @@ export function renderDevEnvFile(input: {
     sources: ['literal'],
     secret: false
   }))
-  return { text, values: [...staticValues, ...secretValues, ...dynamicValues, ...localValues] }
+  return {
+    text,
+    values: [...staticValues, ...personalValues, ...secretValues, ...dynamicValues, ...localValues]
+  }
 }
 
 /** Values of a rendered file by section; sources cannot be recovered from text. */

@@ -20,6 +20,7 @@ const TEMPLATE: DevEnvTemplate = {
         {
           path: '.env',
           base: '.env.example',
+          valuesFile: '~/.config/ordermage-mission/secrets/eshop/.env',
           lines: [{ key: 'PORT', value: '${self.eshop.port}' }]
         }
       ],
