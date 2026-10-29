@@ -117,6 +117,8 @@ export type WorktreeCreationRequest = {
   suppressTerminalFocusOnCompletion?: boolean
   /** "None" in the composer: when setup runs, open only its tab instead of an extra shell. */
   setupOnly?: boolean
+  /** Dev Environment created with the worktree on the host. */
+  devEnv?: { templateId: string; bindings?: Record<string, string> }
 }
 
 /** Session-only creation status drives sidebar/panel and vanishes on reload; completed worktrees reconcile normally. request owns display fields and retry intent so they cannot drift. */
