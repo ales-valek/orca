@@ -240,6 +240,30 @@ describe('dev env file rendering', () => {
     })
   })
 
+  it('lets a LOCAL line override a managed key and keeps an overridden secret masked', () => {
+    const first = renderOrThrow({ ...INPUT, valuesText: 'API_SECRET=from-file\n' })
+    const edited = `${first.text}NAME=mine\nPORT=4000\nAPI_SECRET=mine\n`
+    const second = renderOrThrow({
+      ...INPUT,
+      valuesText: 'API_SECRET=from-file\n',
+      currentText: edited
+    })
+    for (const key of ['NAME', 'PORT', 'API_SECRET']) {
+      expect(second.values.filter((v) => v.key === key)).toHaveLength(1)
+    }
+    expect(second.values.find((v) => v.key === 'PORT')).toMatchObject({
+      value: '4000',
+      section: 'LOCAL'
+    })
+    expect(second.values.find((v) => v.key === 'API_SECRET')).toMatchObject({
+      value: 'mine',
+      section: 'LOCAL',
+      secret: true
+    })
+    expect(second.text).not.toContain('PORT=20150')
+    expect(second.text).not.toContain('API_SECRET=from-file')
+  })
+
   it('adopts unknown keys of a pre-existing hand-written file into LOCAL', () => {
     const result = renderOrThrow({ ...INPUT, currentText: 'MY_KEY=1\nPORT=1\n' })
     expect(result.values.filter((v) => v.section === 'LOCAL').map((v) => v.key)).toEqual(['MY_KEY'])
