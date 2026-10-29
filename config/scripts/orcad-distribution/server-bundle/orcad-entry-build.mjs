@@ -38,7 +38,14 @@ export function orcadChildOutputFilename(entryPoint) {
   return basename(entryPoint).replace(/\.ts$/, '.js')
 }
 
-export const ORCAD_EXTERNAL_MODULES = ['electron', 'node-pty', '@parcel/watcher', 'fsevents']
+// Huly is desktop-only: its client adds ~1.2 MB and tiptap regexes that break the ASCII guard below.
+export const ORCAD_EXTERNAL_MODULES = [
+  'electron',
+  'node-pty',
+  '@parcel/watcher',
+  'fsevents',
+  '@hcengineering/*'
+]
 
 // Bundled ESM resolves from the deployed bundle, like CommonJS __filename.
 export const ORCAD_COMMONJS_MODULE_OPTIONS = {
