@@ -103,7 +103,11 @@ function setup(args: { statusWriteBack: boolean; mission?: Mission }) {
   }
   const connection = new HulyConnection({ createApi, store: MEMORY_STORE })
   const notifyChanged = vi.fn()
-  const writeBack = new HulyStatusWriteBack({ store, connection, notifyChanged })
+  const writeBack = new HulyStatusWriteBack({
+    store,
+    getConnection: () => connection,
+    notifyChanged
+  })
   return { api, createApi, store, slotErrors, writeBack, notifyChanged }
 }
 

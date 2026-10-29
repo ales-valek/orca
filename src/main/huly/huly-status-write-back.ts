@@ -22,7 +22,8 @@ type HulyStatusWriteBackStore = {
 
 type HulyStatusWriteBackDeps = {
   store: HulyStatusWriteBackStore
-  connection: Pick<HulyConnection, 'getStatus' | 'withApi'>
+  // Why: resolved per event so a connection swapped in after Missions are wired is the one used.
+  getConnection: () => Pick<HulyConnection, 'getStatus' | 'withApi'>
   /** Task warnings changed, so the Mission UI should reload. */
   notifyChanged?: () => void
 }
@@ -78,7 +79,7 @@ export class HulyStatusWriteBack {
 
   // Why: one Huly workspace is connected at a time; never move a same-named issue in another one.
   private getConnectionMismatch(source: MissionSource): { warning: string } | null {
-    const status = this.deps.connection.getStatus()
+    const status = this.deps.getConnection().getStatus()
     if (!status.connected) {
       return null
     }
@@ -96,7 +97,7 @@ export class HulyStatusWriteBack {
     task: LinkedTask
   ): Promise<{ written: boolean } | { warning: string }> {
     try {
-      return await this.deps.connection.withApi(async (api) => {
+      return await this.deps.getConnection().withApi(async (api) => {
         const target = resolveStatusTransition(
           rule,
           await api.getIssueStatus(project, task.externalRef)
