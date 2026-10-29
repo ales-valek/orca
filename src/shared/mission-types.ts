@@ -133,6 +133,8 @@ export type MissionCreateResult = {
   mission: Mission
   memberResults: MissionMemberResult[]
   orchestratorResult?: MissionMemberResult
+  /** Set when the Dev Environment picked at create could not be created. */
+  devEnvError?: string
 }
 
 export type MissionDeleteResult = {
@@ -199,6 +201,7 @@ export type RuntimeMissionMutationResult = {
   mission: RuntimeMissionRecord
   memberResults: MissionMemberResult[]
   orchestratorResult?: MissionMemberResult
+  devEnvError?: string
 }
 
 /** Member, layer and brief failures are warnings: the Mission exists either way. */

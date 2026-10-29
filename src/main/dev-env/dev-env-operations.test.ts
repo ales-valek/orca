@@ -1,0 +1,297 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
+import {
+  DEV_ENV_MASK,
+  type DevEnv,
+  type DevEnvServiceState,
+  type DevEnvTemplate
+} from '../../shared/dev-env/dev-env-types'
+import type { Mission } from '../../shared/mission-types'
+import type { Repo } from '../../shared/repo-types'
+import { composeWorktreeId } from '../../shared/worktree/id'
+import type { WorktreeMeta } from '../../shared/worktree/meta-types'
+import type { DevEnvHostProxy } from './dev-env-host-proxy'
+import { DevEnvOperations, type DevEnvStore } from './dev-env-operations'
+import type { DevEnvServices } from './dev-env-services'
+import type { DevEnvSecretStore } from './dev-env-secret-store'
+import type { DevEnvSetupPipeline } from './dev-env-setup-pipeline'
+
+const ESHOP_MEMBER = composeWorktreeId('repo-eshop', '/m/eshop')
+const ESHOP_PREVIEW = composeWorktreeId('repo-eshop', '/m/eshop--preview')
+const ADMIN_MEMBER = composeWorktreeId('repo-admin', '/m/admin')
+const STANDALONE = composeWorktreeId('repo-eshop', '/w/eshop-fix')
+const REMOTE = composeWorktreeId('repo-remote', '/r/x')
+
+const TEMPLATE: DevEnvTemplate = {
+  id: 't1',
+  name: 'OrderMage',
+  dependencies: [],
+  credentials: [{ label: 'Operator', userKey: 'secret.op-user', passwordKey: 'secret.op-pass' }],
+  slots: [
+    {
+      name: 'eshop',
+      repoId: 'repo-eshop',
+      install: [],
+      envFiles: [],
+      services: [{ name: 'eshop', command: 'dev', portOffset: 50, dependsOn: ['admin-api'] }]
+    },
+    {
+      name: 'admin',
+      repoId: 'repo-admin',
+      install: [],
+      envFiles: [],
+      services: [
+        {
+          name: 'admin-api',
+          command: 'api',
+          portOffset: 10,
+          dependsOn: [],
+          exports: { JWT: '${secret.jwt}' }
+        }
+      ]
+    }
+  ]
+}
+
+const SETTINGS: DevEnvGlobalSettings = {
+  devEnvInfra: [],
+  devEnvTemplates: [TEMPLATE],
+  devEnvProxyPort: 80
+}
+
+function makeMission(overrides: Partial<Mission> = {}): Mission {
+  return {
+    id: 'm1',
+    name: 'Kiosek',
+    branchName: 'mission/kiosek',
+    members: [
+      { repoId: 'repo-eshop', worktreeId: ESHOP_MEMBER, addedAt: 1 },
+      { repoId: 'repo-admin', worktreeId: ADMIN_MEMBER, addedAt: 1 }
+    ],
+    tabOrder: 0,
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides
+  }
+}
+
+function meta(displayName: string): WorktreeMeta {
+  // SAFETY: the facade reads only displayName from worktree meta.
+  return { displayName } as WorktreeMeta
+}
+
+describe('DevEnvOperations', () => {
+  let envs: DevEnv[]
+  let missions: Mission[]
+  let worktreeMeta: Record<string, WorktreeMeta>
+  let repos: Record<string, Repo>
+  let services: {
+    getStates: ReturnType<typeof vi.fn>
+    markMoved: ReturnType<typeof vi.fn>
+    stop: ReturnType<typeof vi.fn>
+    start: ReturnType<typeof vi.fn>
+    forget: ReturnType<typeof vi.fn>
+  }
+  let pipeline: {
+    run: ReturnType<typeof vi.fn>
+    isRunning: ReturnType<typeof vi.fn>
+    renderEnvFiles: ReturnType<typeof vi.fn>
+    getLogPath: ReturnType<typeof vi.fn>
+    cancel: ReturnType<typeof vi.fn>
+  }
+  let operations: DevEnvOperations
+
+  beforeEach(() => {
+    envs = []
+    missions = [makeMission()]
+    worktreeMeta = {
+      [ESHOP_MEMBER]: meta('mission/kiosek'),
+      [ESHOP_PREVIEW]: meta('mission-preview/kiosek'),
+      [ADMIN_MEMBER]: meta('mission/kiosek'),
+      [STANDALONE]: meta('fix/OMP-3011'),
+      [REMOTE]: meta('remote')
+    }
+    // SAFETY: the facade reads only connectionId from repos.
+    repos = { 'repo-remote': { id: 'repo-remote', connectionId: 'ssh-1' } as Repo }
+    const store: DevEnvStore = {
+      getDevEnvs: () => envs,
+      getDevEnv: (id) => envs.find((env) => env.id === id) ?? null,
+      createDevEnv: (env) => {
+        envs.push(env)
+        return env
+      },
+      updateDevEnv: (id, updates) => {
+        const index = envs.findIndex((env) => env.id === id)
+        if (index === -1) {
+          return null
+        }
+        envs[index] = { ...envs[index], ...updates }
+        return envs[index]
+      },
+      deleteDevEnv: (id) => {
+        const before = envs.length
+        envs = envs.filter((env) => env.id !== id)
+        return envs.length !== before
+      },
+      getMission: (id) => missions.find((mission) => mission.id === id) ?? null,
+      getMissions: () => missions,
+      getWorktreeMeta: (id) => worktreeMeta[id],
+      getRepo: (id) => repos[id]
+    }
+    services = {
+      getStates: vi.fn(async () => [] as DevEnvServiceState[]),
+      markMoved: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
+      start: vi.fn(async () => ({ started: [], errors: [] })),
+      forget: vi.fn()
+    }
+    pipeline = {
+      run: vi.fn(async () => {}),
+      isRunning: vi.fn(() => false),
+      renderEnvFiles: vi.fn(async () => []),
+      getLogPath: vi.fn(() => '/tmp/log'),
+      cancel: vi.fn()
+    }
+    const secrets = new Map([
+      ['op-user', 'operator@stand.local'],
+      ['op-pass', 'hunter2'],
+      ['jwt', 'jwt-secret']
+    ])
+    operations = new DevEnvOperations({
+      store,
+      getSettings: () => SETTINGS,
+      userDataDir: '/tmp/orca-test',
+      terminals: {
+        create: async () => ({ handle: 'h' }),
+        isAlive: async () => ({ alive: false, exitCode: null }),
+        close: async () => {}
+      },
+      notify: () => {},
+      components: {
+        // SAFETY: the facade only calls the members stubbed here.
+        services: services as unknown as DevEnvServices,
+        // SAFETY: the facade only calls the members stubbed here.
+        pipeline: pipeline as unknown as DevEnvSetupPipeline,
+        // SAFETY: route publishing is not under test.
+        proxy: {
+          setRoutes: async () => ({ ok: true }),
+          clearRoutes: () => {},
+          close: async () => {}
+        } as unknown as DevEnvHostProxy,
+        // SAFETY: only getAll is read by the facade.
+        secrets: { getAll: () => secrets } as unknown as DevEnvSecretStore,
+        isPortFree: async () => true,
+        worktreeExists: () => true
+      }
+    })
+  })
+
+  it('creates a mission env bound to member worktrees, with a port slot and setup started', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    expect(env).toMatchObject({
+      key: 'kiosek',
+      portSlot: 1,
+      attachment: { kind: 'mission', missionId: 'm1' }
+    })
+    expect(env.slotWorktrees.eshop?.worktreeId).toBe(ESHOP_MEMBER)
+    expect(pipeline.run).toHaveBeenCalledWith(env.id, {})
+  })
+
+  it('refuses a second env for the same mission', async () => {
+    await operations.createForMission('m1', 't1')
+    await expect(operations.createForMission('m1', 't1')).rejects.toThrow(
+      'Kiosek already has a Dev Environment'
+    )
+  })
+
+  it('refuses a remote repo worktree', async () => {
+    await expect(operations.createForWorktree(REMOTE, 't1')).rejects.toThrow(
+      'Dev Environments support local repos only'
+    )
+  })
+
+  it('moves a slot when its preview appears, stops its services and re-runs env+install for that slot', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    pipeline.run.mockClear()
+    missions = [makeMission({ previews: [{ repoId: 'repo-eshop', worktreeId: ESHOP_PREVIEW }] })]
+    await operations.reconcileMissions()
+    expect(services.markMoved).toHaveBeenCalledWith(
+      expect.objectContaining({ id: env.id }),
+      TEMPLATE,
+      ['eshop']
+    )
+    expect(pipeline.run).toHaveBeenCalledWith(env.id, {
+      steps: ['env', 'install'],
+      slots: ['eshop']
+    })
+    expect(envs[0].slotWorktrees.eshop?.worktreeId).toBe(ESHOP_PREVIEW)
+  })
+
+  it('detaches the env when its mission is deleted and keeps the record', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    missions = []
+    await operations.reconcileMissions()
+    expect(envs).toHaveLength(1)
+    expect(envs[0].detached).toBe(true)
+    expect(services.stop).toHaveBeenCalledWith(env.id, 'all')
+    expect((await operations.list())[0].attachmentLabel).toBe('Mission deleted')
+  })
+
+  it('reports a stopped paired provider as down and a deleted one as missing', async () => {
+    const provider = await operations.createForMission('m1', 't1')
+    const fix = await operations.createForWorktree(STANDALONE, 't1', { 'admin-api': provider.id })
+    services.getStates.mockImplementation(async (env: DevEnv) =>
+      env.id === provider.id
+        ? [{ name: 'admin-api', slot: 'admin', status: 'stopped', port: 20110, url: null }]
+        : []
+    )
+    expect((await operations.show(fix.id)).dependencyStates['admin-api']).toBe('down')
+    envs = envs.filter((env) => env.id !== provider.id)
+    expect((await operations.show(fix.id)).dependencyStates['admin-api']).toBe('missing')
+  })
+
+  it('never returns unmasked secrets from show or getEnvFiles', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    pipeline.renderEnvFiles.mockResolvedValue([
+      {
+        slot: 'admin',
+        path: '.env',
+        text: 'JWT=jwt-secret',
+        values: [
+          { key: 'JWT', value: 'jwt-secret', section: 'SECRET', sources: ['secret'], secret: true }
+        ]
+      }
+    ])
+    const detail = await operations.show(env.id)
+    expect(detail.credentials).toEqual([
+      { label: 'Operator', user: 'operator@stand.local', password: DEV_ENV_MASK }
+    ])
+    const files = await operations.getEnvFiles(env.id)
+    expect(JSON.stringify(files)).not.toContain('jwt-secret')
+    expect(files[0].values[0].value).toBe(DEV_ENV_MASK)
+    expect(operations.revealCredentialPassword(env.id, 'Operator')).toBe('hunter2')
+  })
+
+  it('queues moved slots while setup is running and runs them afterwards', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    let finish: () => void = () => {}
+    pipeline.isRunning.mockReturnValue(true)
+    operations.startSetup(env.id, { steps: ['env', 'install'], slots: ['eshop'] })
+    expect(pipeline.run).toHaveBeenCalledTimes(1)
+    pipeline.isRunning.mockReturnValue(false)
+    pipeline.run.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        })
+    )
+    operations.startSetup(env.id, {})
+    finish()
+    await vi.waitFor(() =>
+      expect(pipeline.run).toHaveBeenLastCalledWith(env.id, {
+        steps: ['env', 'install'],
+        slots: ['eshop']
+      })
+    )
+  })
+})

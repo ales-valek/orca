@@ -6,6 +6,13 @@ import { recordWorkspaceCleanupRemovalSnapshotPrune } from '../cleanup/workspace
 import { pruneWorkspaceCleanupScanSnapshot } from '../cleanup/workspace-cleanup-scan-snapshot'
 import { pruneWorkspaceSpaceAnalysisSnapshot } from '../space-analysis/workspace-space-analysis-snapshot'
 
+let removedWorktreeListener: ((worktreeId: string) => void) | null = null
+
+/** Dev Environments detach from a removed worktree; one listener per app, set by the window. */
+export function setRemovedWorktreeListener(listener: ((worktreeId: string) => void) | null): void {
+  removedWorktreeListener = listener
+}
+
 /** Drop host-blind process state only when no same-ID workspace survives on another host. */
 export function dropRemovedWorktreeProcessState(worktreeId: string): void {
   advertisedUrlWatcher.forgetWorktree(worktreeId)
@@ -19,6 +26,7 @@ export function dropRemovedWorktreeProcessState(worktreeId: string): void {
       `[pty:history] Failed to delete history dir: ${err instanceof Error ? err.message : String(err)}`
     )
   }
+  removedWorktreeListener?.(worktreeId)
 }
 
 /** Removed workspaces must never resurrect from the persisted cleanup/space scan snapshots. */

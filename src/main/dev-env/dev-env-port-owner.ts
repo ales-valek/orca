@@ -1,4 +1,5 @@
-import { createServer } from 'node:net'
+import http from 'node:http'
+import { connect, createServer } from 'node:net'
 import { scanPlatformListeningPorts } from '../ports/local-workspace-platform-port-scanner'
 import type { RawListeningPort } from '../ports/local-workspace-port-scan-state'
 import { runDevEnvExec, type DevEnvExec } from './dev-env-shell-command'
@@ -10,6 +11,37 @@ export function isPortFree(port: number): Promise<boolean> {
     server.listen(port, '127.0.0.1', () => {
       server.close(() => resolve(true))
     })
+  })
+}
+
+/** Connect probe; binding instead would race a service that is about to listen. */
+export function isPortListening(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = connect(port, '127.0.0.1')
+    socket.setTimeout(1000)
+    socket.once('connect', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once('timeout', () => {
+      socket.destroy()
+      resolve(false)
+    })
+    socket.once('error', () => resolve(false))
+  })
+}
+
+export function probeHttpReady(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const request = http.get(url, { timeout: 2000 }, (response) => {
+      response.resume()
+      resolve((response.statusCode ?? 500) < 500)
+    })
+    request.once('timeout', () => {
+      request.destroy()
+      resolve(false)
+    })
+    request.once('error', () => resolve(false))
   })
 }
 
