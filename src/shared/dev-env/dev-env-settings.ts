@@ -19,7 +19,7 @@ export type DevEnvGlobalSettings = {
 }
 
 export function getDefaultDevEnvProxyPort(platform: NodeJS.Platform): number {
-  // Why: unprivileged processes can bind :80 on macOS and Windows but not on Linux.
+  // Why: unprivileged processes can bind :80 on macOS (wildcard only) and Windows but not on Linux.
   return platform === 'linux' ? 8080 : 80
 }
 

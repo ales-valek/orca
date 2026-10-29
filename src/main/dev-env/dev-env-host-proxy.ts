@@ -34,6 +34,19 @@ export function matchDevEnvHostRoute(
   return best?.target ?? null
 }
 
+/**
+ * macOS lets unprivileged apps bind ports below 1024 only on the wildcard address, so the proxy
+ * listens there and drops every peer that is not this machine.
+ */
+export function getDevEnvProxyListenHost(port: number, platform: NodeJS.Platform): string {
+  return platform === 'darwin' && port > 0 && port < 1024 ? '::' : '127.0.0.1'
+}
+
+export function isLoopbackAddress(address: string | undefined): boolean {
+  const ipv4 = address?.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address
+  return ipv4 === '::1' || Boolean(ipv4?.startsWith('127.'))
+}
+
 function getErrorCode(error: unknown): string {
   return typeof error === 'object' && error !== null && 'code' in error
     ? String(error.code)
@@ -110,9 +123,14 @@ export class DevEnvHostProxy {
   private listen(port: number): Promise<void> {
     const server = http.createServer((request, response) => this.handleRequest(request, response))
     server.on('upgrade', (request, socket, head) => this.handleUpgrade(request, socket, head))
+    server.on('connection', (socket) => {
+      if (!isLoopbackAddress(socket.remoteAddress)) {
+        socket.destroy()
+      }
+    })
     return new Promise((resolve, reject) => {
       server.once('error', reject)
-      server.listen(port, '127.0.0.1', () => {
+      server.listen(port, getDevEnvProxyListenHost(port, process.platform), () => {
         server.off('error', reject)
         const address = server.address()
         this.listenPort = address && typeof address !== 'string' ? address.port : port
