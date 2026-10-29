@@ -66,6 +66,22 @@ export const DEVENV_COMMAND_SPECS: CommandSpec[] = [
     }
   ),
   {
+    path: ['devenv', 'create'],
+    summary: 'Create a Dev Environment for an existing mission or worktree from a template',
+    usage:
+      'orca devenv create (--mission <selector> | --worktree <selector>) --template <id|name> [--bind <service>=<env>...] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'mission', 'worktree', 'template', 'bind'],
+    repeatableFlags: ['bind'],
+    notes: [
+      'Setup starts right away; follow it with `orca devenv show <env>`.',
+      '--bind pairs a dependency with another local environment (worktree environments only).'
+    ],
+    examples: [
+      'orca devenv create --mission Kiosek --template "OrderMage full"',
+      'orca devenv create --worktree branch:fix/OMP-3011 --template "Eshop only" --bind admin-api=kiosek'
+    ]
+  },
+  {
     path: ['devenv', 'infra'],
     summary: 'Show, start or stop the shared Docker infra',
     usage: 'orca devenv infra status|up|down [--service <name>] [--json]',

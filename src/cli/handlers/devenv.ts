@@ -12,7 +12,7 @@ import {
   formatDevEnvShow
 } from '../devenv-format'
 import type { CommandHandler } from '../dispatch'
-import { getOptionalStringFlag, getRequiredStringFlag } from '../flags'
+import { getOptionalStringFlag, getRepeatedStringFlag, getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
 import { RuntimeClientError } from '../runtime/types'
 
@@ -101,6 +101,35 @@ export const DEVENV_HANDLERS: Record<string, CommandHandler> = {
       provider: provider === 'none' ? null : provider
     })
     printResult(result, json, () => 'Bound; env files are being rendered again.')
+  },
+  'devenv create': async ({ flags, client, json }) => {
+    const mission = getOptionalStringFlag(flags, 'mission')
+    const worktree = getOptionalStringFlag(flags, 'worktree')
+    if (Boolean(mission) === Boolean(worktree)) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Pass exactly one of --mission or --worktree'
+      )
+    }
+    const binds = getRepeatedStringFlag(flags, 'bind')
+    const bindings: Record<string, string> = {}
+    for (const bind of binds) {
+      const split = bind.indexOf('=')
+      if (split < 1 || split === bind.length - 1) {
+        throw new RuntimeClientError(
+          'invalid_argument',
+          `Invalid --bind "${bind}"; expected <service>=<env>`
+        )
+      }
+      bindings[bind.slice(0, split)] = bind.slice(split + 1)
+    }
+    const result = await client.call<{ id: string; key: string; name: string }>('devenv.create', {
+      mission,
+      worktree,
+      template: getRequiredStringFlag(flags, 'template'),
+      bindings: binds.length > 0 ? bindings : undefined
+    })
+    printResult(result, json, (env) => `Created ${env.name} (${env.key}); setup is running.`)
   },
   'devenv infra': async ({ flags, client, json }) => {
     const action = getRequiredStringFlag(flags, 'action')
