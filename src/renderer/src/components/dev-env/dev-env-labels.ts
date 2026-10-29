@@ -44,6 +44,13 @@ export function getDevEnvInfraTone(status: DevEnvInfraState['status']): DevEnvTo
 }
 
 export function getDevEnvBadgeLabel(badge: DevEnvBadge): { text: string; tone: DevEnvTone } {
+  const label = getDevEnvStateLabel(badge)
+  return badge.danger
+    ? { text: `${translate('devEnv.badge.prod', 'prod')} · ${label.text}`, tone: 'error' }
+    : label
+}
+
+function getDevEnvStateLabel(badge: DevEnvBadge): { text: string; tone: DevEnvTone } {
   switch (badge.state) {
     case 'running':
       return { text: `${badge.up}/${badge.total}`, tone: 'ok' }

@@ -5,21 +5,32 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppStore } from '@/store'
 import { normalizeDevEnvSettings } from '../../../../../shared/dev-env/dev-env-settings'
-import type { DevEnvInfraService } from '../../../../../shared/dev-env/dev-env-types'
 
-const NO_INFRA: readonly DevEnvInfraService[] = []
+type JsonListField = 'devEnvInfra' | 'devEnvRemoteTiers'
 
-function formatInfra(services: readonly DevEnvInfraService[]): string {
-  return `${JSON.stringify(services, null, 2)}\n`
+const NO_ENTRIES: readonly unknown[] = []
+
+function formatEntries(entries: readonly unknown[]): string {
+  return `${JSON.stringify(entries, null, 2)}\n`
 }
 
-/** Compose-like services as JSON; the shared normalizer is the validator, so dropped entries are reported. */
-export function DevEnvInfraEditor(): React.JSX.Element {
-  const infra = useAppStore((s) => s.settings?.devEnvInfra) ?? NO_INFRA
+/** A settings list edited as JSON; the shared normalizer is the validator, so dropped entries are reported. */
+export function DevEnvJsonSettingEditor({
+  field,
+  help,
+  saveLabel,
+  importLabel
+}: {
+  field: JsonListField
+  help: string
+  saveLabel: string
+  importLabel: string
+}): React.JSX.Element {
+  const entries = useAppStore((s) => s.settings?.[field]) ?? NO_ENTRIES
   const updateSettings = useAppStore((s) => s.updateSettings)
-  const [text, setText] = useState(() => formatInfra(infra))
+  const [text, setText] = useState(() => formatEntries(entries))
   const [error, setError] = useState<string | null>(null)
-  useEffect(() => setText(formatInfra(infra)), [infra])
+  useEffect(() => setText(formatEntries(entries)), [entries])
 
   const save = (): void => {
     let parsed: unknown
@@ -32,17 +43,23 @@ export function DevEnvInfraEditor(): React.JSX.Element {
       return
     }
     if (!Array.isArray(parsed)) {
-      setError(translate('devEnv.infra.notArray', 'Expected a JSON array of services'))
+      setError(translate('devEnv.json.notArray', 'Expected a JSON array'))
       return
     }
-    const services = normalizeDevEnvSettings({ devEnvInfra: parsed }, 'darwin').devEnvInfra
+    const normalized = normalizeDevEnvSettings({ [field]: parsed }, 'darwin')
+    const saved =
+      field === 'devEnvInfra' ? normalized.devEnvInfra.length : normalized.devEnvRemoteTiers.length
     setError(null)
-    void updateSettings({ devEnvInfra: services })
-    if (services.length !== parsed.length) {
+    void updateSettings(
+      field === 'devEnvInfra'
+        ? { devEnvInfra: normalized.devEnvInfra }
+        : { devEnvRemoteTiers: normalized.devEnvRemoteTiers }
+    )
+    if (saved !== parsed.length) {
       toast.warning(
-        translate('devEnv.infra.dropped', '{count} invalid service(s) were not saved').replace(
+        translate('devEnv.json.dropped', '{count} invalid entries were not saved').replace(
           '{count}',
-          String(parsed.length - services.length)
+          String(parsed.length - saved)
         )
       )
     }
@@ -58,12 +75,7 @@ export function DevEnvInfraEditor(): React.JSX.Element {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        {translate(
-          'devEnv.infra.help',
-          'Each service: name, image or build, ports [{name, host, container}], environment, volumes, healthcheck, resource {create, drop}. Resource commands run inside the container for each environment and must be safe to run twice.'
-        )}
-      </p>
+      <p className="text-xs text-muted-foreground">{help}</p>
       <Textarea
         variant="code"
         className="min-h-64"
@@ -75,11 +87,11 @@ export function DevEnvInfraEditor(): React.JSX.Element {
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
       <div className="flex gap-2">
         <Button size="sm" onClick={save}>
-          {translate('devEnv.infra.save', 'Save infra')}
+          {saveLabel}
         </Button>
         <Button size="sm" variant="outline" asChild>
           <label className="cursor-pointer">
-            {translate('devEnv.infra.import', 'Import infra JSON')}
+            {importLabel}
             <input
               type="file"
               accept="application/json,.json"

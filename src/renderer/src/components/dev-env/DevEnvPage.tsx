@@ -5,6 +5,7 @@ import { useAppStore } from '@/store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { runDevEnvAction } from './dev-env-actions'
 import { DevEnvDataTab } from './DevEnvDataTab'
 import { DevEnvDependenciesTab } from './DevEnvDependenciesTab'
@@ -71,6 +72,9 @@ function DevEnvDetailPane({ envId }: { envId: string }): React.JSX.Element | nul
               {detail.portRange.first}–{detail.portRange.last}
             </Badge>
             {detail.detached ? <Badge variant="destructive">{detail.attachmentLabel}</Badge> : null}
+            {detail.badge.danger ? (
+              <Badge variant="destructive">{translate('devEnv.badge.prod', 'prod')}</Badge>
+            ) : null}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {detail.attachmentLabel} · {translate('devEnv.page.key', 'key')}{' '}
@@ -80,6 +84,32 @@ function DevEnvDetailPane({ envId }: { envId: string }): React.JSX.Element | nul
             <p className="mt-1 text-xs text-destructive">{detail.hostnameError}</p>
           ) : null}
         </div>
+        <ToggleGroup
+          type="single"
+          variant="segmented"
+          size="xs"
+          value={detail.mode}
+          aria-label={translate('devEnv.page.mode', 'Run mode')}
+          onValueChange={(mode) => {
+            if (mode === 'dev' || mode === 'prod') {
+              void runDevEnvAction(
+                translate('devEnv.page.modeFailed', 'Could not switch the run mode'),
+                () => window.api.devEnv.mode({ env, mode })
+              )
+            }
+          }}
+        >
+          <ToggleGroupItem value="dev">{translate('devEnv.page.modeDev', 'Dev')}</ToggleGroupItem>
+          <ToggleGroupItem
+            value="prod"
+            title={translate(
+              'devEnv.page.modeProdHint',
+              'Runs each service’s prod build and start commands; switching stops the services.'
+            )}
+          >
+            {translate('devEnv.page.modeProd', 'Prod build')}
+          </ToggleGroupItem>
+        </ToggleGroup>
         <Button
           variant="outline"
           size="sm"
