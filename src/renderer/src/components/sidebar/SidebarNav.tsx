@@ -1,6 +1,15 @@
 import React from 'react'
 import { useDevEnvSidebarRefresh } from '../dev-env/DevEnvStatusBadge'
-import { BookOpen, CalendarClock, Container, EyeOff, Files, Search, Smartphone } from 'lucide-react'
+import {
+  BookOpen,
+  CalendarClock,
+  Container,
+  EyeOff,
+  Files,
+  Search,
+  Smartphone,
+  Wrench
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
@@ -59,6 +68,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const openArtifactsPage = useAppStore((s) => s.openArtifactsPage)
   const openSkillsPage = useAppStore((s) => s.openSkillsPage)
   const openDevEnvsPage = useAppStore((s) => s.openDevEnvsPage)
+  const openDevToolsPage = useAppStore((s) => s.openDevToolsPage)
   const openModal = useAppStore((s) => s.openModal)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const activeView = useAppStore((s) => s.activeView)
@@ -72,6 +82,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const artifactsActive = activeView === 'artifacts'
   const skillsActive = activeView === 'skills'
   const devEnvsActive = activeView === 'dev-envs'
+  const devToolsActive = activeView === 'dev-tools'
   useDevEnvSidebarRefresh()
   const mobileOnboardingBadge = useMobileSidebarOnboardingBadge(showMobileButton)
   const hideAutomationsButton = React.useCallback(() => {
@@ -226,6 +237,26 @@ const SidebarNav = React.memo(function SidebarNav() {
           strokeWidth={devEnvsActive ? 2.25 : 1.75}
         />
         <span className="flex-1">{translate('devEnv.nav', 'Dev Environments')}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => openDevToolsPage()}
+        aria-current={devToolsActive ? 'page' : undefined}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+          devToolsActive
+            ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+            : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+        )}
+      >
+        <Wrench
+          className={cn(
+            'size-4 shrink-0',
+            !devToolsActive && 'text-worktree-sidebar-foreground/30'
+          )}
+          strokeWidth={devToolsActive ? 2.25 : 1.75}
+        />
+        <span className="flex-1">{translate('devTools.nav', 'Tools')}</span>
       </button>
       {showAgentDashboardButton ? (
         <React.Suspense fallback={null}>

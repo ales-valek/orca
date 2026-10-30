@@ -138,3 +138,4 @@ export type TopLevelView =
   | 'artifacts'
   | 'mobile'
   | 'dev-envs'
+  | 'dev-tools'
