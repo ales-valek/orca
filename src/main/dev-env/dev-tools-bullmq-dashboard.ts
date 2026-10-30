@@ -34,6 +34,7 @@ const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath('/')
 const board = createBullBoard({ queues: [], serverAdapter })
 const adapters = new Map()
+const queues = new Map()
 
 async function findQueueKeys() {
   const found = new Map()
@@ -43,7 +44,8 @@ async function findQueueKeys() {
     cursor = next
     for (const key of keys) {
       const match = META_KEY.exec(key)
-      if (match) {
+      // BullMQ keeps its meta as a hash; an app's cache key ending in :meta is not a queue.
+      if (match && (adapters.has(key) || (await redis.type(key)) === 'hash')) {
         found.set(key, { prefix: match[1], queue: match[2] })
       }
     }
@@ -55,7 +57,9 @@ async function rescan() {
   const found = await findQueueKeys()
   for (const [key, { prefix, queue }] of found) {
     if (!adapters.has(key)) {
-      const instance = new Queue(queue, { prefix, connection })
+      // A shared client: one Redis connection for every queue, which close() leaves open.
+      const instance = new Queue(queue, { prefix, connection: redis })
+      queues.set(key, instance)
       // One unique name per prefix, grouped by environment in the board's queue tree.
       adapters.set(key, new BullMQAdapter(instance, { prefix: prefix + ':', delimiter: ':' }))
     }
@@ -63,13 +67,16 @@ async function rescan() {
   for (const key of [...adapters.keys()]) {
     if (!found.has(key)) {
       adapters.delete(key)
+      void queues.get(key)?.close()
+      queues.delete(key)
     }
   }
   const sorted = [...adapters.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, adapter]) => adapter)
   board.replaceQueues(sorted)
 }
 
-await rescan()
+// Why: a failed first scan (e.g. a wrong password) must not crash-loop the container; the board says so.
+await rescan().catch((error) => console.error('[bullmq-dashboard] first scan failed', error.message))
 setInterval(() => rescan().catch((error) => console.error('[bullmq-dashboard] rescan failed', error.message)), RESCAN_MS)
 const app = express()
 // The board can retry and clean jobs; only pages served from this machine's loopback may drive it.
