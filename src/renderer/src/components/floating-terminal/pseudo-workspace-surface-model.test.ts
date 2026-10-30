@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
-import { resolveFloatingWorkspaceSurfaceModel } from './floating-workspace-surface-model'
+import { resolvePseudoWorkspaceSurfaceModel } from './pseudo-workspace-surface-model'
 
 const FLOATING = FLOATING_TERMINAL_WORKTREE_ID
 
@@ -33,7 +33,7 @@ function makeState(overrides: {
   layout?: TabGroupLayoutNode
   focusedGroupId?: string
   terminalTabs?: TerminalTab[]
-}): Parameters<typeof resolveFloatingWorkspaceSurfaceModel>[0] {
+}): Parameters<typeof resolvePseudoWorkspaceSurfaceModel>[0] {
   const unifiedTabsByWorktree: Record<string, Tab[]> = {}
   const groupsByWorktree: Record<string, TabGroup[]> = {}
   const layoutByWorktree: Record<string, TabGroupLayoutNode> = {}
@@ -75,14 +75,14 @@ function makeState(overrides: {
   }
 }
 
-describe('resolveFloatingWorkspaceSurfaceModel', () => {
+describe('resolvePseudoWorkspaceSurfaceModel', () => {
   it('is empty until the first tab exists', () => {
-    expect(resolveFloatingWorkspaceSurfaceModel(makeState({}))).toEqual({ kind: 'empty' })
+    expect(resolvePseudoWorkspaceSurfaceModel(makeState({}))).toEqual({ kind: 'empty' })
   })
 
   it('is empty when tabs exist but no layout does (defensive: creation writes both)', () => {
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({ tabs: [makeTab('t1', 'group-1')], groups: [makeGroup('group-1')] })
       )
     ).toEqual({ kind: 'empty' })
@@ -103,8 +103,8 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
       layoutByWorktree: { [DEV_TOOLS_WORKTREE_ID]: LEAF },
       tabsByWorktree: { [DEV_TOOLS_WORKTREE_ID]: state.tabsByWorktree[FLOATING] ?? [] }
     }
-    expect(resolveFloatingWorkspaceSurfaceModel(moved)).toEqual({ kind: 'empty' })
-    expect(resolveFloatingWorkspaceSurfaceModel(moved, DEV_TOOLS_WORKTREE_ID)).toMatchObject({
+    expect(resolvePseudoWorkspaceSurfaceModel(moved)).toEqual({ kind: 'empty' })
+    expect(resolvePseudoWorkspaceSurfaceModel(moved, DEV_TOOLS_WORKTREE_ID)).toMatchObject({
       kind: 'workspace',
       focusedGroupId: 'group-1'
     })
@@ -112,7 +112,7 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
 
   it('mounts the workspace with the stored focused group', () => {
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({
           tabs: [makeTab('t1', 'group-1')],
           groups: [makeGroup('group-1'), makeGroup('group-2')],
@@ -131,7 +131,7 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
       second: { type: 'leaf', groupId: 'group-2' }
     }
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({
           tabs: [makeTab('t1', 'group-1')],
           groups: [
@@ -147,7 +147,7 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
 
   it('shows the empty state when every unified tab has lost its backing entity', () => {
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({
           tabs: [makeTab('t1', 'group-1')],
           groups: [makeGroup('group-1', { activeTabId: 't1', tabOrder: ['t1'] })],
@@ -160,7 +160,7 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
 
   it('falls back from a stale focused id to the group with an active tab', () => {
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({
           tabs: [makeTab('t1', 'group-2')],
           groups: [makeGroup('group-1'), makeGroup('group-2', { activeTabId: 't1' })],
@@ -173,7 +173,7 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
 
   it('falls back to the first group when none records an active tab', () => {
     expect(
-      resolveFloatingWorkspaceSurfaceModel(
+      resolvePseudoWorkspaceSurfaceModel(
         makeState({
           tabs: [makeTab('t1', 'group-1')],
           groups: [makeGroup('group-1'), makeGroup('group-2')],
