@@ -3,7 +3,7 @@ import type { AppState } from '../types'
 import type { Tab } from '../../../../shared/tab-types'
 import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
 import { WORKTREE_REFRESH_CONCURRENCY } from './worktrees'
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import { makeDetectedResult, qualifyDetectedResult } from './worktrees-detected-listing-fixtures'
 import { purgeHydratedWorktrees } from './worktrees/listing/hydrated-worktree-purge'
@@ -497,7 +497,8 @@ describe('fetchAllWorktrees hydration-time purge (design §4.4)', () => {
         ]
       },
       browserTabsByWorktree: {
-        [FLOATING_TERMINAL_WORKTREE_ID]: [{ id: 'floating-browser', url: 'https://orca.test' }]
+        [FLOATING_TERMINAL_WORKTREE_ID]: [{ id: 'floating-browser', url: 'https://orca.test' }],
+        [DEV_TOOLS_WORKTREE_ID]: [{ id: 'tool-browser', url: 'http://127.0.0.1:19180/' }]
       },
       activeBrowserTabIdByWorktree: {
         [FLOATING_TERMINAL_WORKTREE_ID]: 'floating-browser'
@@ -558,6 +559,7 @@ describe('fetchAllWorktrees hydration-time purge (design §4.4)', () => {
     expect(store.getState().browserTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID]).toEqual([
       { id: 'floating-browser', url: 'https://orca.test' }
     ])
+    expect(store.getState().browserTabsByWorktree[DEV_TOOLS_WORKTREE_ID]).toHaveLength(1)
     expect(store.getState().openFiles).toEqual([floatingFile])
     expect(store.getState().activeFileIdByWorktree[FLOATING_TERMINAL_WORKTREE_ID]).toBe(
       'floating-file'
