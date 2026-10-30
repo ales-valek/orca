@@ -129,6 +129,8 @@ export class DevEnvInfra {
       buildCompose?: (services: DevEnvInfraService[]) => string
       /** Stateless tools let compose recreate changed containers; infra keeps its containers as they are. */
       recreateChanged?: boolean
+      /** Names the log in start errors. */
+      logName?: string
     }
   ) {
     this.runExec = deps.exec ?? runDevEnvExec
@@ -233,7 +235,7 @@ export class DevEnvInfra {
       ? { ok: true, started: toStart }
       : {
           ok: false,
-          error: `docker compose up failed (exit ${String(result.code)}); see the infra log`
+          error: `docker compose up failed (exit ${String(result.code)}); see the ${this.deps.logName ?? 'infra'} log`
         }
   }
 

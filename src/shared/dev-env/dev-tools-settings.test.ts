@@ -35,6 +35,14 @@ describe('normalizeDevTool', () => {
     expect(normalizeDevTool({ ...MAIL, path: '/play' })).toEqual({ ...MAIL, path: '/play' })
   })
 
+  it('keeps a chosen infra port and refuses infra service names that are not valid', () => {
+    expect(normalizeDevTool({ ...ADMINER, infraPortName: 'db' })).toEqual({
+      ...ADMINER,
+      infraPortName: 'db'
+    })
+    expect(normalizeDevTool({ ...ADMINER, infraService: 'bad name!' })).toBeNull()
+  })
+
   it('keeps the first tool of a duplicated name', () => {
     expect(normalizeDevTools([ADMINER, { ...ADMINER, label: 'Again' }])).toEqual([ADMINER])
   })

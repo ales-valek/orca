@@ -1,4 +1,8 @@
 /** Shape checks for persisted Dev Environments settings, which arrive as unknown JSON. */
+
+// Why: the name becomes a compose service and a snapshot file name.
+export const INFRA_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
