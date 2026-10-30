@@ -42,10 +42,27 @@ const QUEUES: DevContainerTool = {
   port: 19182,
   infraService: 'redis'
 }
+const MINIO: DevEnvInfraService = {
+  name: 'minio',
+  ports: [
+    { name: 'api', host: 19001, container: 9001 },
+    { name: 'console', host: 19002, container: 9002 }
+  ],
+  environment: { MINIO_ROOT_USER: 'user', MINIO_ROOT_PASSWORD: 'secret' },
+  volumes: []
+}
+const FILES: DevContainerTool = {
+  kind: 's3-browser',
+  name: 'files',
+  label: 'Soubory',
+  port: 19183,
+  infraService: 'minio',
+  infraPortName: 'api'
+}
 
 function compose(tools: DevContainerTool[]) {
   return JSON.parse(
-    buildDevToolsComposeJson(tools, [POSTGRES, REDIS], '/data/tools/bullmq-dashboard')
+    buildDevToolsComposeJson(tools, [POSTGRES, REDIS, MINIO], '/data/tools/bullmq-dashboard')
   )
 }
 
@@ -80,6 +97,17 @@ describe('dev tools compose', () => {
       REDIS_HOST: 'redis',
       REDIS_PORT: '6379',
       REDIS_PASSWORD: 'pw'
+    })
+  })
+
+  it('browses MinIO through its S3 API with the infra root credentials', () => {
+    const service = compose([FILES]).services.files
+    expect(service.ports).toEqual(['127.0.0.1:19183:8080'])
+    expect(service.environment).toMatchObject({
+      ENDPOINT: 'minio:9001',
+      ACCESS_KEY_ID: 'user',
+      SECRET_ACCESS_KEY: 'secret',
+      USE_SSL: 'false'
     })
   })
 

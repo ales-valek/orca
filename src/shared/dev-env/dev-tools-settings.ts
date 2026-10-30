@@ -11,7 +11,8 @@ import type { DevContainerToolKind, DevTool } from './dev-tools-types'
 const CONTAINER_KINDS: readonly DevContainerToolKind[] = [
   'adminer',
   'redisinsight',
-  'bullmq-dashboard'
+  'bullmq-dashboard',
+  's3-browser'
 ]
 
 function isContainerKind(value: unknown): value is DevContainerToolKind {

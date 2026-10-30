@@ -9,7 +9,8 @@ export const DEV_ENV_INFRA_NETWORK = `${DEV_ENV_COMPOSE_PROJECT}_default`
 const CONTAINER_PORT: Record<DevContainerToolKind, number> = {
   adminer: 8080,
   redisinsight: 5540,
-  'bullmq-dashboard': 3000
+  'bullmq-dashboard': 3000,
+  's3-browser': 8080
 }
 
 const BULLMQ_DASHBOARD_PACKAGES = '@bull-board/express @bull-board/api express bullmq ioredis'
@@ -90,6 +91,18 @@ function getToolService(
           '-c',
           `[ -d node_modules/@bull-board/express ] || npm install --no-audit --no-fund --prefix /app ${BULLMQ_DASHBOARD_PACKAGES}; exec node src/server.mjs`
         ]
+      }
+    case 's3-browser':
+      // Why: MinIO dropped its web console in 2025-05; s3manager browses buckets over the S3 API.
+      return {
+        ...base,
+        image: 'cloudlena/s3manager',
+        environment: {
+          ENDPOINT: `${tool.infraService}:${getContainerPort(infraService, tool.infraPortName)}`,
+          ACCESS_KEY_ID: infraService?.environment.MINIO_ROOT_USER ?? '',
+          SECRET_ACCESS_KEY: infraService?.environment.MINIO_ROOT_PASSWORD ?? '',
+          USE_SSL: 'false'
+        }
       }
   }
 }
