@@ -7,6 +7,9 @@ export function isFloatingWorkspaceId(worktreeId: string | null | undefined): bo
   return worktreeId === FLOATING_TERMINAL_WORKTREE_ID
 }
 
+/** Workspaces with no repo/worktree row; hydration keeps their tabs and layouts. */
+export const PSEUDO_WORKSPACE_IDS = [FLOATING_TERMINAL_WORKTREE_ID, DEV_TOOLS_WORKTREE_ID] as const
+
 /** Workspaces with no repo/worktree row (floating panel, Tools page); never purged as stale. */
 export function isPseudoWorkspaceId(worktreeId: string | null | undefined): boolean {
   return worktreeId === FLOATING_TERMINAL_WORKTREE_ID || worktreeId === DEV_TOOLS_WORKTREE_ID
