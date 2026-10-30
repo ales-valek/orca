@@ -124,6 +124,9 @@ export class DevEnvInfra {
       getServices: () => DevEnvInfraService[]
       isPortFree?: (port: number) => Promise<boolean>
       describePortHolder?: (port: number) => Promise<string>
+      /** Dev tools reuse this class under their own compose project and file. */
+      project?: string
+      buildCompose?: (services: DevEnvInfraService[]) => string
     }
   ) {
     this.runExec = deps.exec ?? runDevEnvExec
@@ -135,8 +138,9 @@ export class DevEnvInfra {
   private composeArgs(): string[] {
     mkdirSync(this.deps.dir, { recursive: true })
     const file = join(this.deps.dir, 'compose.json')
-    writeFileSync(file, buildDevEnvComposeJson(this.deps.getServices()))
-    return ['compose', '-p', DEV_ENV_COMPOSE_PROJECT, '-f', file]
+    const buildCompose = this.deps.buildCompose ?? buildDevEnvComposeJson
+    writeFileSync(file, buildCompose(this.deps.getServices()))
+    return ['compose', '-p', this.deps.project ?? DEV_ENV_COMPOSE_PROJECT, '-f', file]
   }
 
   async getStatus(): Promise<DevEnvInfraState[] | { error: string }> {
