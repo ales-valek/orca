@@ -17,21 +17,21 @@ type FloatingWorkspaceSurfaceState = Pick<
   | 'openFiles'
 >
 
-/** Resolve emptiness and layout together; empty workspaces lack the layout required to mount the shared group tree. */
+/**
+ * Resolve emptiness and layout together; empty workspaces lack the layout required to mount the shared group tree.
+ * `worktreeId` picks another pseudo-workspace, such as the Tools page.
+ */
 export function resolveFloatingWorkspaceSurfaceModel(
-  state: FloatingWorkspaceSurfaceState
+  state: FloatingWorkspaceSurfaceState,
+  worktreeId: string = FLOATING_TERMINAL_WORKTREE_ID
 ): FloatingWorkspaceSurfaceModel {
-  const tabs = state.unifiedTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID]
-  const layout = state.layoutByWorktree[FLOATING_TERMINAL_WORKTREE_ID]
+  const tabs = state.unifiedTabsByWorktree[worktreeId]
+  const layout = state.layoutByWorktree[worktreeId]
   if (!tabs || tabs.length === 0 || !layout) {
     return { kind: 'empty' }
   }
-  const terminalIds = new Set(
-    (state.tabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? []).map((tab) => tab.id)
-  )
-  const browserIds = new Set(
-    (state.browserTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? []).map((tab) => tab.id)
-  )
+  const terminalIds = new Set((state.tabsByWorktree[worktreeId] ?? []).map((tab) => tab.id))
+  const browserIds = new Set((state.browserTabsByWorktree[worktreeId] ?? []).map((tab) => tab.id))
   const fileIds = new Set(state.openFiles.map((file) => file.id))
   const hasVisibleTab = tabs.some((tab) => {
     if (tab.contentType === 'terminal') {
@@ -48,8 +48,8 @@ export function resolveFloatingWorkspaceSurfaceModel(
   if (!hasVisibleTab) {
     return { kind: 'empty' }
   }
-  const groups = state.groupsByWorktree[FLOATING_TERMINAL_WORKTREE_ID] ?? []
-  const storedFocusId = state.activeGroupIdByWorktree[FLOATING_TERMINAL_WORKTREE_ID]
+  const groups = state.groupsByWorktree[worktreeId] ?? []
+  const storedFocusId = state.activeGroupIdByWorktree[worktreeId]
   const focusedGroupId =
     (storedFocusId && groups.some((group) => group.id === storedFocusId) ? storedFocusId : null) ??
     groups.find((group) => group.activeTabId != null)?.id ??
