@@ -10,7 +10,7 @@ import { useAppStore } from '@/store'
 import { DEV_TOOLS_WORKTREE_ID } from '../../../../shared/constants'
 import type { DevToolView } from '../../../../shared/dev-env/dev-tools-types'
 import { runDevEnvAction } from '../dev-env/dev-env-actions'
-import { resolveFloatingWorkspaceSurfaceModel } from '../floating-terminal/floating-workspace-surface-model'
+import { resolvePseudoWorkspaceSurfaceModel } from '../floating-terminal/pseudo-workspace-surface-model'
 import { DevToolCard } from './DevToolCard'
 import { openDevToolTab } from './dev-tools-tabs'
 
@@ -66,7 +66,7 @@ export default function DevToolsPage(): React.JSX.Element {
   const isActive = useAppStore((s) => s.activeView === 'dev-tools')
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const surface = useAppStore(
-    useShallow((s) => resolveFloatingWorkspaceSurfaceModel(s, DEV_TOOLS_WORKTREE_ID))
+    useShallow((s) => resolvePseudoWorkspaceSurfaceModel(s, DEV_TOOLS_WORKTREE_ID))
   )
   const { views, refresh } = useDevToolViews(isActive)
   const [busy, setBusy] = useState<string | null>(null)
