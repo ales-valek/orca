@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Tab, TabGroup } from '../../../../shared/tab-types'
 import type * as AgentStatusModule from '@/lib/agent-status'
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { createTabsSliceMockApi } from './tabs-slice-test-harness'
 import { createTestStore, makeTabGroup, makeUnifiedTab, makeWorktree } from './store-test-helpers'
 
@@ -63,6 +63,43 @@ describe('TabsSlice', () => {
       })
 
       expect(store.getState().unifiedTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID]).toHaveLength(1)
+    })
+
+    it('keeps the Tools page tab layout across a restart', () => {
+      const tab = {
+        id: 'tool-db',
+        entityId: 'tool-db',
+        groupId: 'tools-group-1',
+        worktreeId: DEV_TOOLS_WORKTREE_ID,
+        contentType: 'browser' as const,
+        label: 'Databáze',
+        customLabel: 'DB kiosek',
+        color: null,
+        sortOrder: 0,
+        createdAt: 1
+      }
+      store.getState().hydrateTabsSession({
+        activeRepoId: null,
+        activeWorktreeId: null,
+        activeTabId: null,
+        tabsByWorktree: {},
+        terminalLayoutsByTabId: {},
+        unifiedTabs: { [DEV_TOOLS_WORKTREE_ID]: [tab] },
+        tabGroups: {
+          [DEV_TOOLS_WORKTREE_ID]: [
+            {
+              id: 'tools-group-1',
+              worktreeId: DEV_TOOLS_WORKTREE_ID,
+              activeTabId: 'tool-db',
+              tabOrder: ['tool-db']
+            }
+          ]
+        }
+      })
+
+      const state = store.getState()
+      expect(state.unifiedTabsByWorktree[DEV_TOOLS_WORKTREE_ID]?.[0]?.customLabel).toBe('DB kiosek')
+      expect(state.groupsByWorktree[DEV_TOOLS_WORKTREE_ID]?.[0]?.id).toBe('tools-group-1')
     })
 
     it('hydrates from unified format', () => {
