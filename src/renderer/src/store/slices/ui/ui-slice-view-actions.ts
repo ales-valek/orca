@@ -107,6 +107,13 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
       }))
     },
     closeDevEnvsPage: () => set((state) => ({ activeView: state.previousViewBeforeDevEnvs })),
+    openDevToolsPage: () =>
+      set((state) => ({
+        activeView: 'dev-tools',
+        previousViewBeforeDevTools:
+          state.activeView === 'dev-tools' ? state.previousViewBeforeDevTools : state.activeView
+      })),
+    closeDevToolsPage: () => set((state) => ({ activeView: state.previousViewBeforeDevTools })),
     openMobilePage: () =>
       set((state) => ({
         activeView: 'mobile',
