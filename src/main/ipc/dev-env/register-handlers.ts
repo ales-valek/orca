@@ -1,4 +1,3 @@
-import { readFile, stat } from 'node:fs/promises'
 import { app, ipcMain, type BrowserWindow } from 'electron'
 import { z } from 'zod'
 import { DEV_ENV_STEP_IDS, type DevEnvStepId } from '../../../shared/dev-env/dev-env-types'
@@ -7,9 +6,9 @@ import type { Store } from '../../persistence'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { eraseRpcMethods } from '../../runtime/rpc/core'
 import { DEV_ENV_METHODS } from '../../runtime/rpc/methods/dev-env'
+import { readDevEnvLogTail } from './dev-env-log-tail'
+import { registerDevToolsHandlers } from './register-dev-tools-handlers'
 import { setRemovedWorktreeListener } from '../../worktree-removal-process-cleanup'
-
-const LOG_TAIL_BYTES = 200 * 1024
 
 let operations: DevEnvOperations | null = null
 let notifyWindow: BrowserWindow | null = null
@@ -29,16 +28,6 @@ const BindRemoteArgs = z.object({
 
 function isStepId(value: string): value is DevEnvStepId {
   return DEV_ENV_STEP_IDS.some((step) => step === value)
-}
-
-async function readLogTail(path: string): Promise<string> {
-  try {
-    const { size } = await stat(path)
-    const text = await readFile(path, 'utf8')
-    return size > LOG_TAIL_BYTES ? text.slice(-LOG_TAIL_BYTES) : text
-  } catch {
-    return ''
-  }
 }
 
 /** One DevEnvOperations per app: it owns the hostname proxy port and the service terminals. */
@@ -65,6 +54,7 @@ export function registerDevEnvHandlers(
   notifyWindow = mainWindow
   runtime.attachDevEnvOperations(() => getOperations(store, runtime))
   const devEnvs = (): DevEnvOperations => runtime.getDevEnvOperations()
+  registerDevToolsHandlers(store, devEnvs)
   setRemovedWorktreeListener(() => void devEnvs().reconcileWorktrees())
   // Why: service terminals outlive Orca in the daemon; their hostnames must answer again without a click.
   void Promise.resolve()
@@ -112,12 +102,12 @@ export function registerDevEnvHandlers(
     'devEnv:readLog': (raw) => {
       const args = ReadLogArgs.parse(raw)
       if (args.step === 'infra-shared') {
-        return readLogTail(devEnvs().getInfraLogPath())
+        return readDevEnvLogTail(devEnvs().getInfraLogPath())
       }
       if (!isStepId(args.step) || !args.env) {
         throw new Error(`Unknown step ${args.step}`)
       }
-      return readLogTail(devEnvs().getLogPath(devEnvs().resolveId(args.env), args.step))
+      return readDevEnvLogTail(devEnvs().getLogPath(devEnvs().resolveId(args.env), args.step))
     }
   }
   for (const [channel, handler] of Object.entries(desktopOnly)) {
