@@ -6,6 +6,7 @@ import RightSidebar from '../components/right-sidebar'
 import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/RecoverableRenderErrorBoundary'
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
+import { DevToolsPageHost } from '../components/dev-tools/DevToolsPageHost'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
 import { TitlebarLeftControls, WorkspaceSidebarToggle } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
@@ -25,6 +26,7 @@ const ArtifactsPage = lazy(() => import('../components/artifacts/ArtifactsPage')
 const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
 const DevEnvPage = lazy(() => import('../components/dev-env/DevEnvPage'))
+const DevToolsPage = lazy(() => import('../components/dev-tools/DevToolsPage'))
 const Terminal = lazy(() => import('../components/Terminal'))
 
 type WorktreeSidebarScrollRefs = {
@@ -282,6 +284,23 @@ export function AppWorkspaceShell(props: {
                       </Suspense>
                     </TerminalWorkbenchContainer>
                   ) : null}
+                  <DevToolsPageHost isActive={layout.activeView === 'dev-tools'}>
+                    <Suspense fallback={null}>
+                      {/* Why: a fixed reset key; resetting on view changes would remount and reload tool tabs. */}
+                      <RecoverableRenderErrorBoundary
+                        boundaryId="dev-tools.page"
+                        surface="page"
+                        resetKey="dev-tools"
+                        title={translate('devTools.error.title', 'The Tools page hit an error.')}
+                        description={translate(
+                          'devTools.error.description',
+                          'Retry the page or navigate to another Orca surface.'
+                        )}
+                      >
+                        <DevToolsPage />
+                      </RecoverableRenderErrorBoundary>
+                    </Suspense>
+                  </DevToolsPageHost>
                   <Suspense fallback={null}>
                     <RecoverableRenderErrorBoundary
                       boundaryId={`page.${layout.activeView}`}

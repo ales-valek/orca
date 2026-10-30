@@ -123,6 +123,7 @@ export type UiViewHistory =
   | 'artifacts'
   | 'mobile'
   | 'dev-envs'
+  | 'dev-tools'
 
 export type UISliceCore = {
   sidebarOpen: boolean
@@ -164,6 +165,7 @@ export type UISliceCore = {
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
   previousViewBeforeDevEnvs: Exclude<UiViewHistory, 'dev-envs'>
+  previousViewBeforeDevTools: Exclude<UiViewHistory, 'dev-tools'>
   setActiveView: (view: UISliceCore['activeView']) => void
   taskPageData: TaskPageData
   taskResumeState: TaskResumeState | undefined
@@ -207,6 +209,8 @@ export type UISliceCore = {
   closeArtifactsPage: () => void
   openDevEnvsPage: (envId?: string) => void
   closeDevEnvsPage: () => void
+  openDevToolsPage: () => void
+  closeDevToolsPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void
