@@ -1,12 +1,9 @@
-import {
-  DEV_TOOLS_WORKTREE_ID,
-  FLOATING_TERMINAL_WORKTREE_ID
-} from '../../../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../../../shared/workspace-scope'
 import type { BrowserSlice, BrowserSliceGet, BrowserSliceSet } from '../browser-slice-contract'
 import { addAdditionalValidWorkspaceKeys } from '@/lib/workspace/persistence/workspace-session-hydration-keys'
 import { buildValidWorktreeIdsForSessionHydration } from '../../../../../../shared/worktree/degraded-repo-worktree-validity'
 import { destroyWorkspaceWebviews } from '../cleanup/browser-webview-cleanup'
+import { PSEUDO_WORKSPACE_IDS } from '../../../../../shared/floating-workspace-worktree'
 import { projectHydratedBrowserSession } from './browser-hydration-state'
 import { ensureBrowserClientHostsForRestoredPages } from '@/runtime/browser/client-hosting/restored-client-hosted-browser-host-attach'
 
@@ -27,8 +24,9 @@ export function createBrowserHydrationActions(
         currentState,
         Object.keys(persistedTabsByWorktree)
       )
-      validWorktreeIdsForCleanup.add(FLOATING_TERMINAL_WORKTREE_ID)
-      validWorktreeIdsForCleanup.add(DEV_TOOLS_WORKTREE_ID)
+      for (const id of PSEUDO_WORKSPACE_IDS) {
+        validWorktreeIdsForCleanup.add(id)
+      }
       for (const workspace of selectFolderWorkspaces(currentState)) {
         validWorktreeIdsForCleanup.add(folderWorkspaceKey(workspace.id))
       }
@@ -52,8 +50,9 @@ export function createBrowserHydrationActions(
           s,
           Object.keys(persistedTabsByWorktree)
         )
-        validWorktreeIds.add(FLOATING_TERMINAL_WORKTREE_ID)
-        validWorktreeIds.add(DEV_TOOLS_WORKTREE_ID)
+        for (const id of PSEUDO_WORKSPACE_IDS) {
+          validWorktreeIds.add(id)
+        }
         for (const workspace of selectFolderWorkspaces(s)) {
           validWorktreeIds.add(folderWorkspaceKey(workspace.id))
         }
