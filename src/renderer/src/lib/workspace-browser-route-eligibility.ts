@@ -1,6 +1,6 @@
 import type { AppState } from '@/store/types'
 import { parseExecutionHostId } from '../../../shared/execution-host'
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
+import { isPseudoWorkspaceId } from '../../../shared/floating-workspace-worktree'
 import { BROWSER_SCREENCAST_RUNTIME_CAPABILITY } from '../../../shared/protocol-version'
 import {
   getWorkspaceClientCreationActionPolicy,
@@ -19,7 +19,7 @@ export function isExpectedRuntimeBrowserRoute(
   expectedRuntimeEnvironmentId: string,
   allowClientBrowserFallback = false
 ): boolean {
-  if (availability.state !== 'enabled' || workspaceId === FLOATING_TERMINAL_WORKTREE_ID || !route) {
+  if (availability.state !== 'enabled' || isPseudoWorkspaceId(workspaceId) || !route) {
     return false
   }
   const expectedEnvironmentId = expectedRuntimeEnvironmentId.trim()
@@ -53,7 +53,7 @@ export function isSshDeploymentClientBrowserRoute(
   if (
     availability.state !== 'enabled' ||
     availability.provider !== 'local-client' ||
-    workspaceId === FLOATING_TERMINAL_WORKTREE_ID ||
+    isPseudoWorkspaceId(workspaceId) ||
     !route
   ) {
     return false
@@ -107,7 +107,7 @@ export function isExpectedSshBrowserRoute(
   expectedSshConnectionId: string,
   allowClientBrowserFallback = false
 ): boolean {
-  if (availability.state !== 'enabled' || workspaceId === FLOATING_TERMINAL_WORKTREE_ID || !route) {
+  if (availability.state !== 'enabled' || isPseudoWorkspaceId(workspaceId) || !route) {
     return false
   }
   const expectedTargetId = expectedSshConnectionId.trim()

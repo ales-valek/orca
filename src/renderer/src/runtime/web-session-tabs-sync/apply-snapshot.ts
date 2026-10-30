@@ -1,4 +1,4 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
 import type { RuntimeMobileSessionTabsResult } from '../../../../shared/runtime-types'
 import { LOCAL_STRUCTURED_SESSION_OWNER } from '../local-structured-session-owner'
@@ -34,7 +34,8 @@ export function applyWebSessionTabsSnapshotWithContext(
     environmentId === LOCAL_STRUCTURED_SESSION_OWNER && options?.contentScope === 'agent-session'
   if (
     suppressE2eWebRuntimeBrowserSnapshot(rawSnapshot) ||
-    (rawSnapshot.worktree === FLOATING_TERMINAL_WORKTREE_ID && !isLocalChatInventory)
+    (rawSnapshot.worktree === FLOATING_TERMINAL_WORKTREE_ID && !isLocalChatInventory) ||
+    rawSnapshot.worktree === DEV_TOOLS_WORKTREE_ID
   ) {
     return state
   }

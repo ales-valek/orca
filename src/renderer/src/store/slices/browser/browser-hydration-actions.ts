@@ -1,4 +1,7 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../../shared/constants'
+import {
+  DEV_TOOLS_WORKTREE_ID,
+  FLOATING_TERMINAL_WORKTREE_ID
+} from '../../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../../shared/workspace-scope'
 import type { BrowserSlice, BrowserSliceGet, BrowserSliceSet } from './browser-slice-contract'
 import { addAdditionalValidWorkspaceKeys } from '@/lib/workspace-session-hydration-keys'
@@ -25,6 +28,7 @@ export function createBrowserHydrationActions(
         Object.keys(persistedTabsByWorktree)
       )
       validWorktreeIdsForCleanup.add(FLOATING_TERMINAL_WORKTREE_ID)
+      validWorktreeIdsForCleanup.add(DEV_TOOLS_WORKTREE_ID)
       for (const workspace of selectFolderWorkspaces(currentState)) {
         validWorktreeIdsForCleanup.add(folderWorkspaceKey(workspace.id))
       }
@@ -49,6 +53,7 @@ export function createBrowserHydrationActions(
           Object.keys(persistedTabsByWorktree)
         )
         validWorktreeIds.add(FLOATING_TERMINAL_WORKTREE_ID)
+        validWorktreeIds.add(DEV_TOOLS_WORKTREE_ID)
         for (const workspace of selectFolderWorkspaces(s)) {
           validWorktreeIds.add(folderWorkspaceKey(workspace.id))
         }
