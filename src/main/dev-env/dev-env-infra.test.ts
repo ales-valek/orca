@@ -192,6 +192,23 @@ describe('DevEnvInfra', () => {
     expect(seen[1].opts).toMatchObject({ stdinPath: '/s/postgres.dump', logPath: '/s/log' })
   })
 
+  it('runs compose under another project when asked', async () => {
+    const seen: string[][] = []
+    const exec: DevEnvExec = async (_program, args) => {
+      seen.push(args)
+      return { code: 0, stdout: '', stderr: '', timedOut: false }
+    }
+    const tools = new DevEnvInfra({
+      dir,
+      exec,
+      project: 'orca-dev-tools',
+      buildCompose: () => '{}',
+      getServices: () => [POSTGRES]
+    })
+    await tools.stop('postgres', join(dir, 'log'))
+    expect(seen[0].slice(0, 3)).toEqual(['compose', '-p', 'orca-dev-tools'])
+  })
+
   it('rejects an infra name that is not configured', async () => {
     const { exec } = createFakeExec(() => ({ code: 0, stdout: '' }))
     expect(await createInfra(exec).ensure(['mongo'], join(dir, 'infra.log'))).toEqual({
