@@ -1,5 +1,5 @@
 /** Tools Orca runs itself in the `orca-dev-tools` compose project, joined to the infra network. */
-export type DevContainerToolKind = 'adminer' | 'redisinsight' | 'bullmq-dashboard'
+export type DevContainerToolKind = 'adminer' | 'redisinsight' | 'bullmq-dashboard' | 's3-browser'
 
 export type DevContainerTool = {
   kind: DevContainerToolKind
