@@ -1,6 +1,9 @@
 /** BullMQ keeps one `<prefix>:<queue>:meta` hash per queue; prefixes differ per environment. */
 export const BULLMQ_META_KEY_PATTERN = /^(.+):([^:]+):meta$/
 
+/** Requests must name the loopback host; a rebinding page arrives with its own host name. */
+export const LOCAL_HOST_HEADER_PATTERN = /^(127\.0\.0\.1|localhost)(:\d+)?$/
+
 export function parseBullmqMetaKey(key: string): { prefix: string; queue: string } | null {
   const match = BULLMQ_META_KEY_PATTERN.exec(key)
   return match ? { prefix: match[1] ?? '', queue: match[2] ?? '' } : null
@@ -19,6 +22,7 @@ import { Queue } from 'bullmq'
 import IORedis from 'ioredis'
 
 const META_KEY = new RegExp(${JSON.stringify(BULLMQ_META_KEY_PATTERN.source)})
+const LOCAL_HOST = new RegExp(${JSON.stringify(LOCAL_HOST_HEADER_PATTERN.source)})
 const RESCAN_MS = 30_000
 const connection = {
   host: process.env.REDIS_HOST,
@@ -68,6 +72,14 @@ async function rescan() {
 await rescan()
 setInterval(() => rescan().catch((error) => console.error('[bullmq-dashboard] rescan failed', error.message)), RESCAN_MS)
 const app = express()
+// The board can retry and clean jobs; only pages served from this machine's loopback may drive it.
+app.use((request, response, next) => {
+  if (LOCAL_HOST.test(request.headers.host || '')) {
+    next()
+  } else {
+    response.status(403).end()
+  }
+})
 app.use('/', serverAdapter.getRouter())
 app.listen(Number(process.env.PORT || 3000), () => console.log('[bullmq-dashboard] ready'))
 `
