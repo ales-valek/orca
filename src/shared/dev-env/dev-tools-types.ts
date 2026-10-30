@@ -9,6 +9,8 @@ export type DevContainerTool = {
   port: number
   /** Infra service the tool connects to; credentials come from its definition. */
   infraService: string
+  /** Port of that service to use when it has several; the first port otherwise. */
+  infraPortName?: string
 }
 
 /** An existing infra web UI, opened at the host port named `portName`. */

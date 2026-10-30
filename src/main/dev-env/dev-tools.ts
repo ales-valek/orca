@@ -50,6 +50,7 @@ export class DevTools {
         project: DEV_TOOLS_COMPOSE_PROJECT,
         // Why: a changed port or infra password must reach the container on the next start.
         recreateChanged: true,
+        logName: 'Tools',
         getServices: () => toDevToolComposeServices(this.getContainerTools()),
         buildCompose: () =>
           buildDevToolsComposeJson(
@@ -75,7 +76,7 @@ export class DevTools {
   private getContainerUrl(tool: DevContainerTool, service: DevEnvInfraService): string {
     const url = `http://127.0.0.1:${tool.port}`
     return tool.kind === 'adminer'
-      ? `${url}/?pgsql=${tool.infraService}&username=${getInfraPostgresUser(service)}`
+      ? `${url}/?${new URLSearchParams({ pgsql: tool.infraService, username: getInfraPostgresUser(service) }).toString()}`
       : url
   }
 
@@ -106,6 +107,13 @@ export class DevTools {
       }
     }
     const infraState = infraStates.find((entry) => entry.name === tool.infraService)
+    if (infraState?.status === 'unhealthy') {
+      return {
+        ...base,
+        state: 'infra-stopped',
+        detail: `Infra service ${tool.infraService} is unhealthy`
+      }
+    }
     if (infraState?.status !== 'running') {
       return { ...base, state: 'infra-stopped' }
     }
@@ -194,7 +202,10 @@ export class DevTools {
   }
 
   async stop(name: string): Promise<void> {
-    await this.tools.stop(name, this.getLogPath())
+    if (!(await this.tools.stop(name, this.getLogPath()))) {
+      const label = this.deps.getSettings().devEnvTools.find((tool) => tool.name === name)?.label
+      throw new Error(`Could not stop ${label ?? name}; see the Tools log`)
+    }
   }
 
   async restart(name: string): Promise<{ url: string } | { error: string }> {
