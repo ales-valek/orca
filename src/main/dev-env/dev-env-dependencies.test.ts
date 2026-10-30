@@ -24,6 +24,7 @@ const SETTINGS: DevEnvGlobalSettings = {
   devEnvInfra: [],
   devEnvTemplates: [TEMPLATE],
   devEnvProxyPort: 80,
+  devEnvTools: [],
   devEnvRemoteTiers: [
     {
       id: 'staging',

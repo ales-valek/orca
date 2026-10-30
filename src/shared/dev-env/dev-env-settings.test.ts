@@ -57,6 +57,7 @@ describe('dev env settings', () => {
       devEnvInfra: [],
       devEnvRemoteTiers: [],
       devEnvTemplates: [],
+      devEnvTools: [],
       devEnvProxyPort: 8080
     })
   })

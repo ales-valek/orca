@@ -48,6 +48,7 @@ const TEMPLATE: DevEnvTemplate = {
 
 const SETTINGS: DevEnvGlobalSettings = {
   devEnvProxyPort: 80,
+  devEnvTools: [],
   devEnvTemplates: [TEMPLATE],
   devEnvRemoteTiers: [],
   devEnvInfra: [

@@ -66,7 +66,8 @@ const SETTINGS: DevEnvGlobalSettings = {
     }
   ],
   devEnvTemplates: [TEMPLATE],
-  devEnvProxyPort: 80
+  devEnvProxyPort: 80,
+  devEnvTools: []
 }
 
 function makeMission(overrides: Partial<Mission> = {}): Mission {
