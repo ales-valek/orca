@@ -64,6 +64,8 @@ export const ORPHAN_WORKTREE_ID = '__orphan__'
 
 // Why: synthetic local workspace; persistence pruning must classify it without the repo catalog.
 export const FLOATING_TERMINAL_WORKTREE_ID = 'global-floating-terminal'
+/** Browser tabs of the Tools page; like the floating workspace, no repo or worktree backs it. */
+export const DEV_TOOLS_WORKTREE_ID = 'global-dev-tools'
 
 export { DEFAULT_REPO_BADGE_COLOR, REPO_COLORS } from './repo-badge-color'
 

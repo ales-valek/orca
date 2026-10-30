@@ -1,4 +1,4 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { useAppStore } from '../../store'
 import { armFloatingPanelReclaimIntent } from '@/lib/floating-workspace-focus-reclaim'
 import { isFloatingWorkspacePanelFocused } from '@/lib/floating-workspace-terminal-actions'
@@ -19,6 +19,10 @@ export function captureWorkspaceEmptiedReaction(
         armFloatingPanelReclaimIntent()
       }
     }
+  }
+  if (worktreeId === DEV_TOOLS_WORKTREE_ID) {
+    // Why: the Tools page shows its cards when the last tool tab closes; there is no worktree to leave.
+    return () => {}
   }
   return () => leaveWorktreeIfEmpty(worktreeId)
 }

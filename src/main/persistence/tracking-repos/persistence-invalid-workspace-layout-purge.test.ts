@@ -80,6 +80,13 @@ describe('main drops the layout of workspaces the catalog no longer validates', 
   })
 
   describe('at load', () => {
+        workspaceSession: sessionWith(
+          KEPT,
+          DELETED,
+          folderKey,
+          FLOATING_TERMINAL_WORKTREE_ID,
+          DEV_TOOLS_WORKTREE_ID
+        ),
     it("keeps a paired host's workspaces, whose catalog lives on that host", () => {
       writeDataFile({
         schemaVersion: 1,
@@ -109,6 +116,20 @@ describe('main drops the layout of workspaces the catalog no longer validates', 
       })
       return createStore()
     }
+
+    it('keeps the Tools page workspace through an authoritative scan', () => {
+      writeDataFile({
+        schemaVersion: 1,
+        repos: [makeRepo({ id: REPO, path: '/work/kept' })],
+        worktreeMeta: {},
+        workspaceSession: sessionWith(KEPT, DEV_TOOLS_WORKTREE_ID)
+      })
+      const store = createStore()
+
+      dropWorkspacesTheListingInvalidates(store, listing([KEPT]))
+
+      expect(storedKeys(store)).toEqual([KEPT, DEV_TOOLS_WORKTREE_ID].sort())
+    })
 
     it('keeps every workspace when a create or remove landed after the scan began', () => {
       const store = seededStore()

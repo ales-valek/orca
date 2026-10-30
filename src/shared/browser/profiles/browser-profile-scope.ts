@@ -1,6 +1,6 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../constants'
 import { getRepoIdFromWorktreeId } from '../../worktree/id'
 import { parseWorkspaceKey } from '../../workspace-scope'
+import { isPseudoWorkspaceId } from './floating-workspace-worktree'
 
 /** Which browser profile new tabs in a workspace use: the shared Default, or one Orca manages per repo or per workspace. */
 export type BrowserProfileScope = 'shared' | 'repo' | 'worktree'
@@ -11,7 +11,7 @@ export function getManagedBrowserProfileOwner(
   scope: BrowserProfileScope | undefined,
   worktreeId: string
 ): ManagedBrowserProfileOwner | null {
-  if ((scope !== 'repo' && scope !== 'worktree') || worktreeId === FLOATING_TERMINAL_WORKTREE_ID) {
+  if ((scope !== 'repo' && scope !== 'worktree') || isPseudoWorkspaceId(worktreeId)) {
     return null
   }
   // Why: a standalone folder workspace belongs to no repo, so it owns its profile under either scope.
