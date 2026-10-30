@@ -11,6 +11,7 @@ import { rmSync, mkdtempSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
+  DEV_TOOLS_WORKTREE_ID,
   FLOATING_TERMINAL_WORKTREE_ID,
   getDefaultWorkspaceSession
 } from '../../../shared/constants'
@@ -121,14 +122,20 @@ describe('main drops the layout of workspaces the catalog no longer validates', 
           makeRepo({ id: SSH_REPO, path: '/home/me/app', connectionId: 'target-1' })
         ],
         worktreeMeta: {},
-        workspaceSession: sessionWith(KEPT, DELETED, folderKey, FLOATING_TERMINAL_WORKTREE_ID),
+        workspaceSession: sessionWith(
+          KEPT,
+          DELETED,
+          folderKey,
+          FLOATING_TERMINAL_WORKTREE_ID,
+          DEV_TOOLS_WORKTREE_ID
+        ),
         workspaceSessionsByHostId: { [SSH_HOST]: sessionWith(SSH_WORKTREE) }
       })
 
       const store = createStore()
 
       expect(storedKeys(store)).toEqual(
-        [KEPT, DELETED, folderKey, FLOATING_TERMINAL_WORKTREE_ID].sort()
+        [KEPT, DELETED, folderKey, FLOATING_TERMINAL_WORKTREE_ID, DEV_TOOLS_WORKTREE_ID].sort()
       )
       expect(storedKeys(store, SSH_HOST)).toEqual([SSH_WORKTREE])
     })
@@ -162,6 +169,20 @@ describe('main drops the layout of workspaces the catalog no longer validates', 
       })
       return createStore()
     }
+
+    it('keeps the Tools page workspace through an authoritative scan', () => {
+      writeDataFile({
+        schemaVersion: 1,
+        repos: [makeRepo({ id: REPO, path: '/work/kept' })],
+        worktreeMeta: {},
+        workspaceSession: sessionWith(KEPT, DEV_TOOLS_WORKTREE_ID)
+      })
+      const store = createStore()
+
+      dropWorkspacesTheListingInvalidates(store, listing([KEPT]))
+
+      expect(storedKeys(store)).toEqual([KEPT, DEV_TOOLS_WORKTREE_ID].sort())
+    })
 
     it("drops the workspace an authoritative scan no longer finds, and the window's frames lose it", async () => {
       const store = seededStore()

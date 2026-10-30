@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import type { BrowserPage } from '../../../../shared/browser-workspace-types'
-import '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID } from '../../../../shared/constants'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
 import {
   RemoteBrowserPageSession,
@@ -168,5 +168,32 @@ describe('hydrateBrowserSession remote page handle seeding', () => {
     )
     expect(callRpc.mock.calls.at(-1)?.[2]).toMatchObject({ url: 'https://example.com/saved' })
     expect(resolved).toBe('remote-page-2')
+  })
+})
+
+describe('hydrateBrowserSession Tools page tabs', () => {
+  it('restores Tools page browser tabs without a repo worktree', () => {
+    const store = createTestStore()
+
+    store.getState().hydrateBrowserSession({
+      activeRepoId: null,
+      activeWorktreeId: null,
+      activeTabId: null,
+      tabsByWorktree: {},
+      terminalLayoutsByTabId: {},
+      browserTabsByWorktree: {
+        [DEV_TOOLS_WORKTREE_ID]: [
+          makeBrowserTab({
+            id: 'tool-adminer',
+            worktreeId: DEV_TOOLS_WORKTREE_ID,
+            url: 'http://127.0.0.1:19180/'
+          })
+        ]
+      },
+      activeBrowserTabIdByWorktree: { [DEV_TOOLS_WORKTREE_ID]: 'tool-adminer' },
+      activeTabTypeByWorktree: { [DEV_TOOLS_WORKTREE_ID]: 'browser' }
+    })
+
+    expect(store.getState().browserTabsByWorktree[DEV_TOOLS_WORKTREE_ID]).toHaveLength(1)
   })
 })

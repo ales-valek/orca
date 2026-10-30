@@ -1,6 +1,6 @@
 // Main and renderer must share workspace validity or load will resurrect layouts one side discarded.
 
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
+import { isPseudoWorkspaceId } from '../../../shared/floating-workspace-worktree'
 import { parseExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import type { WorkspaceSessionState } from '../../../shared/workspace-session/workspace-session-state-types'
@@ -37,10 +37,7 @@ function invalidWorkspaceKeys(
   inScope: (key: string) => boolean
 ): string[] {
   const persisted = [...collectPersistedWorktreeIdsForSessionHydration(session)].filter(
-    (key) =>
-      inScope(key) &&
-      key !== FLOATING_TERMINAL_WORKTREE_ID &&
-      parseWorkspaceKey(key)?.type !== 'folder'
+    (key) => inScope(key) && !isPseudoWorkspaceId(key) && parseWorkspaceKey(key)?.type !== 'folder'
   )
   const valid = buildValidWorktreeIdsForSessionHydration(catalog, persisted)
   return persisted.filter((key) => !valid.has(key))

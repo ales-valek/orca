@@ -1,4 +1,4 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from './constants'
+import { isPseudoWorkspaceId } from './floating-workspace-worktree'
 import { getRepoIdFromWorktreeId } from './worktree/id'
 import { parseWorkspaceKey } from './workspace-scope'
 
@@ -11,7 +11,7 @@ export function getManagedBrowserProfileOwner(
   scope: BrowserProfileScope | undefined,
   worktreeId: string
 ): ManagedBrowserProfileOwner | null {
-  if ((scope !== 'repo' && scope !== 'worktree') || worktreeId === FLOATING_TERMINAL_WORKTREE_ID) {
+  if ((scope !== 'repo' && scope !== 'worktree') || isPseudoWorkspaceId(worktreeId)) {
     return null
   }
   // Why: a standalone folder workspace belongs to no repo, so it owns its profile under either scope.

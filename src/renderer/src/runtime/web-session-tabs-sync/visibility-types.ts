@@ -1,6 +1,6 @@
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { isPseudoWorkspaceId } from '../../../../shared/floating-workspace-worktree'
 
 /** The floating terminal is local-only and never belongs to a host mirror. */
 export function isHostMirroredWorktree(worktreeId: string): boolean {
-  return worktreeId !== FLOATING_TERMINAL_WORKTREE_ID
+  return !isPseudoWorkspaceId(worktreeId)
 }
