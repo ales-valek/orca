@@ -52,7 +52,8 @@ async function rescan() {
   for (const [key, { prefix, queue }] of found) {
     if (!adapters.has(key)) {
       const instance = new Queue(queue, { prefix, connection })
-      adapters.set(key, new BullMQAdapter(instance, { displayName: prefix + ' › ' + queue }))
+      // One unique name per prefix, grouped by environment in the board's queue tree.
+      adapters.set(key, new BullMQAdapter(instance, { prefix: prefix + ':', delimiter: ':' }))
     }
   }
   for (const key of [...adapters.keys()]) {
