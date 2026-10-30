@@ -15,6 +15,11 @@ export function isPseudoWorkspaceId(worktreeId: string | null | undefined): bool
   return worktreeId === FLOATING_TERMINAL_WORKTREE_ID || worktreeId === DEV_TOOLS_WORKTREE_ID
 }
 
+/** The Tools page hosts only tool browser tabs; it never creates terminals, files or agents. */
+export function isBrowserOnlyWorkspace(worktreeId: string | null | undefined): boolean {
+  return worktreeId === DEV_TOOLS_WORKTREE_ID
+}
+
 /** Accepts the bare sentinel or the `id:` selector the runtime resolves targets with. */
 export function isFloatingWorkspaceSelector(selector: string | null | undefined): boolean {
   return (
