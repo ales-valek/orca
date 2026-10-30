@@ -526,6 +526,26 @@ describe('TabBar context menu wiring', () => {
     expect(menuLabels[3]).toContain('New Browser Tab')
   })
 
+  it('offers only new browser tabs on the Tools page', async () => {
+    const element = await renderTabBar({
+      worktreeId: 'global-dev-tools',
+      tabs: [],
+      onNewFileTab: () => {},
+      onOpenFileTab: () => {},
+      onNewSimulatorTab: () => {},
+      onNewTerminalWithShell: () => {},
+      onOpenEntry: async () => {}
+    })
+
+    const menuLabels = findChildrenByType(element, 'DropdownMenuItem').map((item) =>
+      extractText(item.props.children)
+    )
+
+    expect(menuLabels).toHaveLength(1)
+    expect(menuLabels[0]).toContain('New Browser Tab')
+    expect(findChildrenByType(element, 'ProjectedAgentMenuItems')).toHaveLength(0)
+  })
+
   it('omits impossible paired-web actions while keeping terminal and markdown', async () => {
     vi.stubGlobal('__ORCA_WEB_CLIENT__', true)
     const element = await renderTabBar({

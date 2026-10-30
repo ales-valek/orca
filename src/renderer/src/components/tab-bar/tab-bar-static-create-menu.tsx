@@ -14,6 +14,7 @@ import type { TabBarProps } from './tab-bar-props'
 import { resolveWindowsShellLaunchTarget } from './windows-shell-launch'
 
 export function TabBarStaticCreateMenu({
+  browserOnly = false,
   terminalOnly,
   mobileEmulatorEnabled,
   managedBrowserCreationEnabled,
@@ -32,6 +33,8 @@ export function TabBarStaticCreateMenu({
   queueNewActiveTerminalFocusAfterNewTabMenuClose
 }: {
   props: TabBarProps
+  /** Only new browser tabs, for the Tools page. */
+  browserOnly?: boolean
   terminalOnly: boolean
   mobileEmulatorEnabled: boolean
   managedBrowserCreationEnabled: boolean
@@ -178,6 +181,9 @@ export function TabBarStaticCreateMenu({
       <MobileEmulatorTabIntroCallout />
     ) : null
 
+  if (browserOnly) {
+    return newBrowserMenuItem
+  }
   return newTabMenuOrder === 'markdown-first' ? (
     <>
       {newMarkdownMenuItem}
