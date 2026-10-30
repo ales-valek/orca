@@ -22,6 +22,9 @@ describe('BullMQ dashboard', () => {
   it('ships a server script that parses and uses the same key pattern', () => {
     const source = getBullmqDashboardSource()
     expect(source).toContain(BULLMQ_META_KEY_PATTERN.source)
+    // Why: bull-board keys queues by name; same-named queues of two environments would overwrite each other.
+    expect(source).toContain("prefix: prefix + ':'")
+    expect(source).toContain("delimiter: ':'")
     const dir = mkdtempSync(join(tmpdir(), 'orca-bullmq-'))
     try {
       const file = join(dir, 'server.mjs')
