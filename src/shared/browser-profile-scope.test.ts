@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getManagedBrowserProfileOwner } from './browser-profile-scope'
-import { FLOATING_TERMINAL_WORKTREE_ID } from './constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from './constants'
 
 describe('getManagedBrowserProfileOwner', () => {
   it('names the owner whose removal deletes the profile', () => {
@@ -18,6 +18,7 @@ describe('getManagedBrowserProfileOwner', () => {
       id: 'folder:f-1'
     })
     expect(getManagedBrowserProfileOwner('repo', FLOATING_TERMINAL_WORKTREE_ID)).toBeNull()
+    expect(getManagedBrowserProfileOwner('worktree', DEV_TOOLS_WORKTREE_ID)).toBeNull()
     expect(getManagedBrowserProfileOwner('shared', 'repo-1::/work/a')).toBeNull()
     expect(getManagedBrowserProfileOwner(undefined, 'repo-1::/work/a')).toBeNull()
   })
