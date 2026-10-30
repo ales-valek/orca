@@ -127,6 +127,8 @@ export class DevEnvInfra {
       /** Dev tools reuse this class under their own compose project and file. */
       project?: string
       buildCompose?: (services: DevEnvInfraService[]) => string
+      /** Stateless tools let compose recreate changed containers; infra keeps its containers as they are. */
+      recreateChanged?: boolean
     }
   ) {
     this.runExec = deps.exec ?? runDevEnvExec
@@ -219,7 +221,7 @@ export class DevEnvInfra {
         '--wait',
         '--wait-timeout',
         '300',
-        '--no-recreate',
+        ...(this.deps.recreateChanged ? [] : ['--no-recreate']),
         ...toStart
       ],
       {

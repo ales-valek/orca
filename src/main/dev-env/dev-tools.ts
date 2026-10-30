@@ -48,6 +48,8 @@ export class DevTools {
         dir: deps.dir,
         exec: deps.exec,
         project: DEV_TOOLS_COMPOSE_PROJECT,
+        // Why: a changed port or infra password must reach the container on the next start.
+        recreateChanged: true,
         getServices: () => toDevToolComposeServices(this.getContainerTools()),
         buildCompose: () =>
           buildDevToolsComposeJson(
