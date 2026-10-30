@@ -24186,7 +24186,28 @@
     "error": {
       "title": "The Tools page hit an error.",
       "description": "Retry the page or navigate to another Orca surface."
-    }
+    },
+    "state": {
+      "running": "Running",
+      "starting": "Starting…",
+      "notStarted": "Starts when opened",
+      "infraStopped": "Infra stopped",
+      "unavailable": "Unavailable"
+    },
+    "startInfra": "Start infra",
+    "open": "Open",
+    "restart": "Restart",
+    "stop": "Stop",
+    "log": "Log",
+    "logTitle": "Tools log",
+    "emptyLog": "No output yet.",
+    "openFailed": "Could not open the tool",
+    "restartFailed": "Could not restart the tool",
+    "stopFailed": "Could not stop the tool",
+    "startInfraFailed": "Could not start infra",
+    "empty": "No tools yet. Add them in Settings → Dev Environments → Tools.",
+    "openSettings": "Open settings",
+    "noTabs": "Open a tool from a card above."
   },
   "keybindings": {
     "title": {
