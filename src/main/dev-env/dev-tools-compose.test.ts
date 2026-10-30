@@ -83,6 +83,17 @@ describe('dev tools compose', () => {
     })
   })
 
+  it('connects to the chosen infra port when the service has several', () => {
+    const multi = {
+      ...REDIS,
+      ports: [{ name: 'metrics', host: 19099, container: 9121 }, ...REDIS.ports]
+    }
+    const doc = JSON.parse(
+      buildDevToolsComposeJson([{ ...INSIGHT, infraPortName: 'redis' }], [POSTGRES, multi], '/s')
+    )
+    expect(doc.services.redis.environment.RI_REDIS_PORT).toBe('6379')
+  })
+
   it('reads credentials from the infra definition with safe fallbacks', () => {
     expect(getInfraRedisPassword(REDIS)).toBe('pw')
     expect(getInfraRedisPassword({ ...REDIS, command: ['redis-server'] })).toBeNull()

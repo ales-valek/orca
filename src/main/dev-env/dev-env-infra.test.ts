@@ -149,6 +149,17 @@ describe('DevEnvInfra', () => {
     expect(up?.args).not.toContain('--no-recreate')
   })
 
+  it('names its own log in a start error', async () => {
+    const { exec } = createFakeExec((call) =>
+      call.args.includes('up') ? { code: 1, stdout: '' } : { code: 0, stdout: '' }
+    )
+    const tools = new DevEnvInfra({ dir, exec, logName: 'Tools', getServices: () => [POSTGRES] })
+    expect(await tools.ensure(['postgres'], join(dir, 'tools.log'))).toEqual({
+      ok: false,
+      error: 'docker compose up failed (exit 1); see the Tools log'
+    })
+  })
+
   it('does not call up when everything is already running', async () => {
     const { exec, calls } = createFakeExec((call) =>
       isComposePs(call)
