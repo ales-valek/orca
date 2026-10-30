@@ -135,6 +135,20 @@ describe('DevEnvInfra', () => {
     expect(JSON.parse(readFileSync(join(dir, 'compose.json'), 'utf8')).services.redis).toBeDefined()
   })
 
+  it('lets compose recreate containers whose config changed when asked', async () => {
+    const { exec, calls } = createFakeExec(() => ({ code: 0, stdout: '' }))
+    const tools = new DevEnvInfra({
+      dir,
+      exec,
+      recreateChanged: true,
+      getServices: () => [POSTGRES]
+    })
+    await tools.ensure(['postgres'], join(dir, 'tools.log'))
+    const up = calls.find((call) => call.args.includes('up'))
+    expect(up?.args).toContain('postgres')
+    expect(up?.args).not.toContain('--no-recreate')
+  })
+
   it('does not call up when everything is already running', async () => {
     const { exec, calls } = createFakeExec((call) =>
       isComposePs(call)
