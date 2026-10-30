@@ -2,11 +2,11 @@ import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
 import type { AppState } from '@/store/types'
 
-export type FloatingWorkspaceSurfaceModel =
+export type PseudoWorkspaceSurfaceModel =
   | { kind: 'empty' }
   | { kind: 'workspace'; layout: TabGroupLayoutNode; focusedGroupId: string }
 
-type FloatingWorkspaceSurfaceState = Pick<
+type PseudoWorkspaceSurfaceState = Pick<
   AppState,
   | 'unifiedTabsByWorktree'
   | 'groupsByWorktree'
@@ -21,10 +21,10 @@ type FloatingWorkspaceSurfaceState = Pick<
  * Resolve emptiness and layout together; empty workspaces lack the layout required to mount the shared group tree.
  * `worktreeId` picks another pseudo-workspace, such as the Tools page.
  */
-export function resolveFloatingWorkspaceSurfaceModel(
-  state: FloatingWorkspaceSurfaceState,
+export function resolvePseudoWorkspaceSurfaceModel(
+  state: PseudoWorkspaceSurfaceState,
   worktreeId: string = FLOATING_TERMINAL_WORKTREE_ID
-): FloatingWorkspaceSurfaceModel {
+): PseudoWorkspaceSurfaceModel {
   const tabs = state.unifiedTabsByWorktree[worktreeId]
   const layout = state.layoutByWorktree[worktreeId]
   if (!tabs || tabs.length === 0 || !layout) {

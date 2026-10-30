@@ -6,7 +6,7 @@ import { useTabGroupWorkspaceModel } from '@/components/tab-group/useTabGroupWor
 import { resolveGroupTabFromVisibleId } from '@/components/tab-group/tab-group-visible-id'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { getHiddenClusterTabIds } from '../../../../shared/tab-types'
-import { resolveFloatingWorkspaceSurfaceModel } from './floating-workspace-surface-model'
+import { resolvePseudoWorkspaceSurfaceModel } from './pseudo-workspace-surface-model'
 
 const EMPTY_TERMINAL_TABS: readonly TerminalTab[] = []
 
@@ -17,7 +17,7 @@ const EMPTY_TERMINAL_TABS: readonly TerminalTab[] = []
  * shared tree; only the shell's one titlebar strip needs a focused-group projection.
  */
 export function useFloatingWorkspaceChromeModel() {
-  const surface = useAppStore(useShallow(resolveFloatingWorkspaceSurfaceModel))
+  const surface = useAppStore(useShallow(resolvePseudoWorkspaceSurfaceModel))
   const focusedGroupId = surface.kind === 'workspace' ? surface.focusedGroupId : ''
   const model = useTabGroupWorkspaceModel({
     groupId: focusedGroupId,
