@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import { resolveFloatingWorkspaceSurfaceModel } from './floating-workspace-surface-model'
@@ -86,6 +86,28 @@ describe('resolveFloatingWorkspaceSurfaceModel', () => {
         makeState({ tabs: [makeTab('t1', 'group-1')], groups: [makeGroup('group-1')] })
       )
     ).toEqual({ kind: 'empty' })
+  })
+
+  it('resolves another pseudo-workspace when asked, here the Tools page', () => {
+    const state = makeState({
+      tabs: [makeTab('t1', 'group-1')],
+      groups: [makeGroup('group-1')],
+      layout: LEAF
+    })
+    const moved = {
+      ...state,
+      unifiedTabsByWorktree: {
+        [DEV_TOOLS_WORKTREE_ID]: state.unifiedTabsByWorktree[FLOATING] ?? []
+      },
+      groupsByWorktree: { [DEV_TOOLS_WORKTREE_ID]: state.groupsByWorktree[FLOATING] ?? [] },
+      layoutByWorktree: { [DEV_TOOLS_WORKTREE_ID]: LEAF },
+      tabsByWorktree: { [DEV_TOOLS_WORKTREE_ID]: state.tabsByWorktree[FLOATING] ?? [] }
+    }
+    expect(resolveFloatingWorkspaceSurfaceModel(moved)).toEqual({ kind: 'empty' })
+    expect(resolveFloatingWorkspaceSurfaceModel(moved, DEV_TOOLS_WORKTREE_ID)).toMatchObject({
+      kind: 'workspace',
+      focusedGroupId: 'group-1'
+    })
   })
 
   it('mounts the workspace with the stored focused group', () => {
