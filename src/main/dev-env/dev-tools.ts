@@ -9,6 +9,7 @@ import {
   type DevToolView
 } from '../../shared/dev-env/dev-tools-types'
 import { DevEnvInfra } from './dev-env-infra'
+import { probeHttpReady } from './dev-env-port-owner'
 import type { DevEnvExec } from './dev-env-shell-command'
 import { getBullmqDashboardSource } from './dev-tools-bullmq-dashboard'
 import {
@@ -19,6 +20,10 @@ import {
 } from './dev-tools-compose'
 
 type ToolsProject = Pick<DevEnvInfra, 'getStatus' | 'ensure' | 'stop'>
+
+// Why: the BullMQ dashboard installs its packages on first start, which takes a while.
+const DEFAULT_READY_TIMEOUT_MS = 180_000
+const READY_POLL_MS = 1000
 
 /** Data tools for the Tools page: container tools in their own compose project, links to infra UIs. */
 export class DevTools {
@@ -32,6 +37,9 @@ export class DevTools {
       infra: Pick<DevEnvInfra, 'getStatus'>
       exec?: DevEnvExec
       tools?: ToolsProject
+      probeHttp?: (port: number, path: string) => Promise<boolean>
+      sleep?: (ms: number) => Promise<void>
+      readyTimeoutMs?: number
     }
   ) {
     this.tools =
@@ -153,9 +161,33 @@ export class DevTools {
     this.starting.add(name)
     try {
       const result = await this.tools.ensure([name], this.getLogPath())
-      return result.ok ? { url: view.url } : { error: result.error }
+      if (!result.ok) {
+        return { error: result.error }
+      }
+      // Why: compose reports a container as up before the tool inside listens; an early tab shows an error page.
+      return (await this.waitUntilAnswering(tool.port))
+        ? { url: view.url }
+        : {
+            error: `${tool.label} did not answer on port ${tool.port}; see the Tools log`
+          }
     } finally {
       this.starting.delete(name)
+    }
+  }
+
+  private async waitUntilAnswering(port: number): Promise<boolean> {
+    const probe = this.deps.probeHttp ?? probeHttpReady
+    const sleep =
+      this.deps.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
+    const deadline = Date.now() + (this.deps.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS)
+    for (;;) {
+      if (await probe(port, '/')) {
+        return true
+      }
+      if (Date.now() >= deadline) {
+        return false
+      }
+      await sleep(READY_POLL_MS)
     }
   }
 
