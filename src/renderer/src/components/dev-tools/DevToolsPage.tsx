@@ -16,15 +16,19 @@ import { openDevToolTab } from './dev-tools-tabs'
 
 const POLL_MS = 3000
 const NO_ACTIVITY_TERMINAL_PORTALS: [] = []
-const NO_TOOLS: readonly DevToolView[] = []
 
 function useDevToolViews(isActive: boolean): {
-  views: readonly DevToolView[]
+  views: readonly DevToolView[] | null
   refresh: () => Promise<void>
 } {
-  const [views, setViews] = useState<readonly DevToolView[]>(NO_TOOLS)
+  // Why: null until the first answer, so the page does not flash its empty state.
+  const [views, setViews] = useState<readonly DevToolView[] | null>(null)
   const refresh = useCallback(async () => {
-    setViews(await window.api.devTools.list())
+    try {
+      setViews(await window.api.devTools.list())
+    } catch (error) {
+      console.error('[dev-tools] listing tools failed', error)
+    }
   }, [])
   useEffect(() => {
     if (!isActive) {
@@ -81,7 +85,7 @@ export default function DevToolsPage(): React.JSX.Element {
       if ('error' in result) {
         throw new Error(result.error)
       }
-      openDevToolTab(view, result.url)
+      openDevToolTab(view, result.url, { reload: view.state !== 'running' })
     })
   const restart = (view: DevToolView): void =>
     act(view.name, translate('devTools.restartFailed', 'Could not restart the tool'), async () => {
@@ -89,6 +93,7 @@ export default function DevToolsPage(): React.JSX.Element {
       if ('error' in result) {
         throw new Error(result.error)
       }
+      openDevToolTab(view, result.url, { reload: true })
     })
   const stop = (view: DevToolView): void =>
     act(view.name, translate('devTools.stopFailed', 'Could not stop the tool'), () =>
@@ -106,7 +111,7 @@ export default function DevToolsPage(): React.JSX.Element {
     <div className="flex h-full min-h-0 flex-1 flex-col bg-background">
       <div className="border-b border-border px-4 py-3">
         <h1 className="text-[15px] font-semibold">{translate('devTools.title', 'Tools')}</h1>
-        {views.length === 0 ? (
+        {views === null ? null : views.length === 0 ? (
           <div className="flex items-center gap-3 py-2 text-sm text-muted-foreground">
             <Wrench className="size-4" />
             <span className="flex-1">
