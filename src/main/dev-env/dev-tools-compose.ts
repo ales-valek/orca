@@ -34,8 +34,12 @@ export function toDevToolComposeServices(tools: DevContainerTool[]): DevEnvInfra
   }))
 }
 
-function getContainerPort(service: DevEnvInfraService | undefined): string {
-  return String(service?.ports[0]?.container ?? '')
+function getContainerPort(
+  service: DevEnvInfraService | undefined,
+  portName: string | undefined
+): string {
+  const port = service?.ports.find((entry) => entry.name === portName) ?? service?.ports[0]
+  return String(port?.container ?? '')
 }
 
 function getToolService(
@@ -62,7 +66,7 @@ function getToolService(
         image: 'redis/redisinsight',
         environment: {
           RI_REDIS_HOST: tool.infraService,
-          RI_REDIS_PORT: getContainerPort(infraService),
+          RI_REDIS_PORT: getContainerPort(infraService, tool.infraPortName),
           RI_REDIS_PASSWORD: password,
           RI_REDIS_ALIAS: 'Orca infra'
         },
@@ -75,7 +79,7 @@ function getToolService(
         working_dir: '/app',
         environment: {
           REDIS_HOST: tool.infraService,
-          REDIS_PORT: getContainerPort(infraService),
+          REDIS_PORT: getContainerPort(infraService, tool.infraPortName),
           REDIS_PASSWORD: password,
           PORT: String(CONTAINER_PORT['bullmq-dashboard'])
         },

@@ -77,12 +77,14 @@ describe('DevTools', () => {
     ensureResult = { ok: true, started: [] }
     scriptExistedAtEnsure = false
     probeAnswers = [true]
+    stopResult = true
     probed = []
   })
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
   let probeAnswers: boolean[]
+  let stopResult: boolean
   let probed: number[]
 
   function create(): DevTools {
@@ -103,7 +105,7 @@ describe('DevTools', () => {
           scriptExistedAtEnsure = existsSync(join(dir, 'bullmq-dashboard', 'server.mjs'))
           return ensureResult
         },
-        stop: async () => true
+        stop: async () => stopResult
       }
     })
   }
@@ -161,6 +163,31 @@ describe('DevTools', () => {
     probeAnswers = []
     const result = await create().open('redis')
     expect(result).toEqual({ error: expect.stringContaining('did not answer on port 19181') })
+  })
+
+  it('encodes the Adminer login link', async () => {
+    const original = SETTINGS.devEnvInfra[0]
+    SETTINGS.devEnvInfra[0] = { ...original, environment: { POSTGRES_USER: 'a&b' } }
+    try {
+      expect((await view('db'))?.url).toBe('http://127.0.0.1:19180/?pgsql=postgres&username=a%26b')
+    } finally {
+      SETTINGS.devEnvInfra[0] = original
+    }
+  })
+
+  it('says when the infra service is unhealthy rather than stopped', async () => {
+    infraStates = [{ name: 'postgres', status: 'unhealthy', ports: [19032] }]
+    expect(await view('db')).toMatchObject({
+      state: 'infra-stopped',
+      detail: 'Infra service postgres is unhealthy'
+    })
+  })
+
+  it('reports a failed stop and does not restart after it', async () => {
+    stopResult = false
+    await expect(create().stop('db')).rejects.toThrow('Could not stop Databáze')
+    await expect(create().restart('db')).rejects.toThrow('Could not stop Databáze')
+    expect(ensured).toEqual([])
   })
 
   it('passes a start error such as a held port through unchanged', async () => {
