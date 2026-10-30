@@ -76,12 +76,23 @@ describe('DevTools', () => {
     ensured = []
     ensureResult = { ok: true, started: [] }
     scriptExistedAtEnsure = false
+    probeAnswers = [true]
+    probed = []
   })
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
+  let probeAnswers: boolean[]
+  let probed: number[]
+
   function create(): DevTools {
     return new DevTools({
+      readyTimeoutMs: 50,
+      sleep: async () => {},
+      probeHttp: async (port: number) => {
+        probed.push(port)
+        return probeAnswers.shift() ?? false
+      },
       dir,
       getSettings: () => SETTINGS,
       infra: fake<DevEnvInfra>({ getStatus: async () => infraStates }),
@@ -138,6 +149,18 @@ describe('DevTools', () => {
     expect(await create().open('queues')).toEqual({ url: 'http://127.0.0.1:19182' })
     expect(ensured).toEqual([['queues']])
     expect(scriptExistedAtEnsure).toBe(true)
+  })
+
+  it('opens a started tool only once it answers over HTTP', async () => {
+    probeAnswers = [false, false, true]
+    expect(await create().open('redis')).toEqual({ url: 'http://127.0.0.1:19181' })
+    expect(probed).toEqual([19181, 19181, 19181])
+  })
+
+  it('reports a started tool that never answers', async () => {
+    probeAnswers = []
+    const result = await create().open('redis')
+    expect(result).toEqual({ error: expect.stringContaining('did not answer on port 19181') })
   })
 
   it('passes a start error such as a held port through unchanged', async () => {
