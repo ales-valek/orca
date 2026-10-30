@@ -24174,6 +24174,14 @@
       "seed": "Seed"
     }
   },
+  "devTools": {
+    "settings": {
+      "title": "Tools",
+      "help": "Data tools on the Tools page. Container tool: {kind: adminer | redisinsight | bullmq-dashboard, name, label, port (1024–65535 on 127.0.0.1), infraService}. Link to an infra UI: {kind: link, name, label, infraService, portName, path?}. Passwords come from the infra definition.",
+      "save": "Save tools",
+      "import": "Import tools JSON"
+    }
+  },
   "keybindings": {
     "title": {
       "worktreeQuickOpen": "Go to File",

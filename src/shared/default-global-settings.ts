@@ -244,6 +244,7 @@ export function buildDefaultSettings(args: {
     defaultLinearTeamSelection: null,
     hulyProjects: {},
     devEnvInfra: [],
+    devEnvTools: [],
     devEnvRemoteTiers: [],
     devEnvTemplates: [],
     // Why: shared defaults also build in the renderer, where `process` may be absent.

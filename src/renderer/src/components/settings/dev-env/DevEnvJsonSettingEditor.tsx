@@ -4,9 +4,35 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppStore } from '@/store'
-import { normalizeDevEnvSettings } from '../../../../../shared/dev-env/dev-env-settings'
+import {
+  normalizeDevEnvSettings,
+  type DevEnvGlobalSettings
+} from '../../../../../shared/dev-env/dev-env-settings'
 
-type JsonListField = 'devEnvInfra' | 'devEnvRemoteTiers'
+type JsonListField = 'devEnvInfra' | 'devEnvRemoteTiers' | 'devEnvTools'
+
+function getListUpdate(
+  normalized: DevEnvGlobalSettings,
+  field: JsonListField
+): { update: Partial<DevEnvGlobalSettings>; saved: number } {
+  switch (field) {
+    case 'devEnvInfra':
+      return {
+        update: { devEnvInfra: normalized.devEnvInfra },
+        saved: normalized.devEnvInfra.length
+      }
+    case 'devEnvRemoteTiers':
+      return {
+        update: { devEnvRemoteTiers: normalized.devEnvRemoteTiers },
+        saved: normalized.devEnvRemoteTiers.length
+      }
+    case 'devEnvTools':
+      return {
+        update: { devEnvTools: normalized.devEnvTools },
+        saved: normalized.devEnvTools.length
+      }
+  }
+}
 
 const NO_ENTRIES: readonly unknown[] = []
 
@@ -47,14 +73,9 @@ export function DevEnvJsonSettingEditor({
       return
     }
     const normalized = normalizeDevEnvSettings({ [field]: parsed }, 'darwin')
-    const saved =
-      field === 'devEnvInfra' ? normalized.devEnvInfra.length : normalized.devEnvRemoteTiers.length
+    const { update, saved } = getListUpdate(normalized, field)
     setError(null)
-    void updateSettings(
-      field === 'devEnvInfra'
-        ? { devEnvInfra: normalized.devEnvInfra }
-        : { devEnvRemoteTiers: normalized.devEnvRemoteTiers }
-    )
+    void updateSettings(update)
     if (saved !== parsed.length) {
       toast.warning(
         translate('devEnv.json.dropped', '{count} invalid entries were not saved').replace(
