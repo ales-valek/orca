@@ -130,6 +130,18 @@ export function DevEnvSettingsPane(): React.JSX.Element {
         />
       </section>
       <section>
+        <div className={HEADING}>{translate('devTools.settings.title', 'Tools')}</div>
+        <DevEnvJsonSettingEditor
+          field="devEnvTools"
+          help={translate(
+            'devTools.settings.help',
+            'Data tools on the Tools page. Container tool: {kind: adminer | redisinsight | bullmq-dashboard, name, label, port (1024–65535 on 127.0.0.1), infraService}. Link to an infra UI: {kind: link, name, label, infraService, portName, path?}. Passwords come from the infra definition.'
+          )}
+          saveLabel={translate('devTools.settings.save', 'Save tools')}
+          importLabel={translate('devTools.settings.import', 'Import tools JSON')}
+        />
+      </section>
+      <section>
         <div className={HEADING}>{translate('devEnv.settings.secrets', 'Secrets')}</div>
         <DevEnvSecretsEditor />
       </section>
