@@ -24,6 +24,7 @@ import type { TabBarCreateMenuController } from './use-tab-bar-create-menu-contr
 import type { TabBarItemProjection } from './use-tab-bar-item-projection'
 import type { TabBarItemActions } from './use-tab-bar-item-actions'
 import { renderTabBarItems } from './tab-bar-item-surface'
+import { isBrowserOnlyWorkspace } from '../../../../shared/floating-workspace-worktree'
 import { TabBarStaticCreateMenu } from './tab-bar-static-create-menu'
 import ClientHostedBrowserTabRows from './ClientHostedBrowserTabRows'
 import type { ClientHostedBrowserRow } from '../../../../shared/client-hosted-browser-rows'
@@ -67,6 +68,7 @@ export function renderTabBarSurface(
     onOpenEntry,
     tabStripChrome = 'default'
   } = props
+  const browserOnly = isBrowserOnlyWorkspace(worktreeId)
   const {
     resolvedGroupId,
     mobileEmulatorEnabled,
@@ -273,7 +275,7 @@ export function renderTabBarSurface(
             advanceAgentSessionsTourPastNewTab()
           }}
         >
-          {!terminalOnly && onOpenEntry ? (
+          {!terminalOnly && !browserOnly && onOpenEntry ? (
             <>
               <TabBarAgentPickerEntry
                 inventory={agentPickerInventory}
@@ -300,6 +302,7 @@ export function renderTabBarSurface(
             <TabBarStaticCreateMenu
               props={props}
               groupId={resolvedGroupId}
+              browserOnly={browserOnly}
               terminalOnly={terminalOnly}
               mobileEmulatorEnabled={mobileEmulatorEnabled}
               managedBrowserCreationEnabled={managedBrowserCreationEnabled}

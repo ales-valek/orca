@@ -17,6 +17,7 @@ import { resolveWindowsShellLaunchTarget } from './windows-shell-launch'
 
 export function TabBarStaticCreateMenu({
   groupId,
+  browserOnly = false,
   terminalOnly,
   mobileEmulatorEnabled,
   managedBrowserCreationEnabled,
@@ -36,6 +37,8 @@ export function TabBarStaticCreateMenu({
 }: {
   props: TabBarProps
   groupId: string
+  /** Only new browser tabs, for the Tools page. */
+  browserOnly?: boolean
   terminalOnly: boolean
   mobileEmulatorEnabled: boolean
   managedBrowserCreationEnabled: boolean
@@ -192,6 +195,9 @@ export function TabBarStaticCreateMenu({
       <MobileEmulatorTabIntroCallout />
     ) : null
 
+  if (browserOnly) {
+    return newBrowserMenuItem
+  }
   return newTabMenuOrder === 'markdown-first' ? (
     <>
       {newMarkdownMenuItem}
