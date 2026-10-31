@@ -178,6 +178,19 @@ describe('test catalog', () => {
     })
   })
 
+  it('keeps the error message when a long stack trace follows it', async () => {
+    const stack = Array.from({ length: 200 }, (_, i) => `    at frame${i} (/repo/file.ts:${i}:1)`)
+    const { catalogs } = createCatalogs({
+      code: 1,
+      stdout: '',
+      stderr: ['Error: Missing required environment variable ADMIN_USER_EMAIL.', ...stack].join(
+        '\n'
+      )
+    })
+    const catalog = await catalogs.get(input)
+    expect(catalog.error).toMatch(/^Error: Missing required environment variable ADMIN_USER_EMAIL/)
+  })
+
   it('reads the list after other output the config prints', async () => {
     const { catalogs } = createCatalogs({
       code: 0,

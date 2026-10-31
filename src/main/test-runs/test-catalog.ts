@@ -23,6 +23,12 @@ type CatalogSpawnSpec = {
 
 const LIST_TIMEOUT_MS = 120_000
 const ERROR_TAIL = 2048
+
+// Why from the first error line: a config that throws prints its message above a long stack.
+function getErrorText(stderr: string): string {
+  const start = stderr.search(/^\S*Error\b/m)
+  return start >= 0 ? stderr.slice(start, start + ERROR_TAIL) : stderr.slice(-ERROR_TAIL)
+}
 const SERIAL_PATTERN =
   /describe\.serial\s*\(|describe\.configure\(\s*\{[^}]*mode\s*:\s*['"]serial['"]/
 
@@ -199,7 +205,7 @@ export class TestCatalogs {
     }
     // Why keep the entries: one spec that fails to load still leaves the rest listed.
     if (result.code !== 0) {
-      error = result.stderr.slice(-ERROR_TAIL) || error || 'Listing the tests failed.'
+      error = getErrorText(result.stderr) || error || 'Listing the tests failed.'
     }
     const serial = findSerialFiles(
       input.repoRoot,
