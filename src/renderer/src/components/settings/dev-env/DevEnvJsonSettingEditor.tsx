@@ -10,6 +10,11 @@ import {
 } from '../../../../../shared/dev-env/dev-env-settings'
 
 type JsonListField = 'devEnvInfra' | 'devEnvRemoteTiers' | 'devEnvTools'
+type JsonSettingField = JsonListField | 'devEnvTestRuns'
+
+function isListField(field: JsonSettingField): field is JsonListField {
+  return field !== 'devEnvTestRuns'
+}
 
 function getListUpdate(
   normalized: DevEnvGlobalSettings,
@@ -36,7 +41,7 @@ function getListUpdate(
 
 const NO_ENTRIES: readonly unknown[] = []
 
-function formatEntries(entries: readonly unknown[]): string {
+function formatEntries(entries: unknown): string {
   return `${JSON.stringify(entries, null, 2)}\n`
 }
 
@@ -47,7 +52,7 @@ export function DevEnvJsonSettingEditor({
   saveLabel,
   importLabel
 }: {
-  field: JsonListField
+  field: JsonSettingField
   help: string
   saveLabel: string
   importLabel: string
@@ -68,11 +73,23 @@ export function DevEnvJsonSettingEditor({
       )
       return
     }
+    const normalized = normalizeDevEnvSettings({ [field]: parsed }, 'darwin')
+    if (!isListField(field)) {
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        setError(translate('devEnv.json.notObject', 'Expected a JSON object'))
+        return
+      }
+      setError(null)
+      void updateSettings({ devEnvTestRuns: normalized.devEnvTestRuns })
+      if (JSON.stringify(normalized.devEnvTestRuns) !== JSON.stringify(parsed)) {
+        toast.warning(translate('devEnv.json.droppedSome', 'Some invalid entries were not saved'))
+      }
+      return
+    }
     if (!Array.isArray(parsed)) {
       setError(translate('devEnv.json.notArray', 'Expected a JSON array'))
       return
     }
-    const normalized = normalizeDevEnvSettings({ [field]: parsed }, 'darwin')
     const { update, saved } = getListUpdate(normalized, field)
     setError(null)
     void updateSettings(update)

@@ -142,6 +142,18 @@ export function DevEnvSettingsPane(): React.JSX.Element {
         />
       </section>
       <section>
+        <div className={HEADING}>{translate('testRuns.settings.title', 'Test runs')}</div>
+        <DevEnvJsonSettingEditor
+          field="devEnvTestRuns"
+          help={translate(
+            'testRuns.settings.help',
+            'Env for test runs started from Orca: localEnv for Dev Environments, presets for shared environments, e.g. {"localEnv": {"TEST_ENV": "local"}, "presets": [{"name": "dev", "env": {"TEST_ENV": "dev"}}]}.'
+          )}
+          saveLabel={translate('testRuns.settings.save', 'Save test runs')}
+          importLabel={translate('testRuns.settings.import', 'Import test runs JSON')}
+        />
+      </section>
+      <section>
         <div className={HEADING}>{translate('devEnv.settings.secrets', 'Secrets')}</div>
         <DevEnvSecretsEditor />
       </section>
