@@ -23607,7 +23607,8 @@
     "suggesting": "Suggesting…",
     "suggest": "Suggest",
     "listed": "{{count}} tests listed",
-    "refreshList": "Refresh list"
+    "refreshList": "Refresh list",
+    "suggestShortened": "Only part of the test list fit the agent’s command line; suggestions may miss tests."
   },
   "keybindings": {
     "title": {
