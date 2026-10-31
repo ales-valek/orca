@@ -23,7 +23,11 @@ export type LaunchSpawnSpec = {
   detached: boolean
 }
 
+/** A held run lock; the spawned run takes it over so it outlives Orca. */
+export type TestRunLock = { release: () => void; setHolderPid: (pid: number) => void }
+
 export type LaunchChild = {
+  pid?: number
   stdout: NodeJS.ReadableStream | null
   stderr: NodeJS.ReadableStream | null
   once(event: 'exit', listener: (code: number | null) => void): unknown
@@ -96,7 +100,7 @@ export class TestRunLauncher {
         key: string
         holder: Holder
         signal: AbortSignal
-      }) => Promise<() => void>
+      }) => Promise<TestRunLock>
       prepareSource: (
         request: TestRunLaunchRequest,
         signal: AbortSignal,
@@ -159,10 +163,10 @@ export class TestRunLauncher {
     signal: AbortSignal
   ): Promise<void> {
     const lockTarget = getTargetLockKey(request.target)
-    let release: (() => void) | null = null
+    let lock: TestRunLock | null = null
     try {
       // Why the whole target: an Orca run has no lane, so it may touch every lane's data.
-      release = await this.deps.acquireLock({
+      lock = await this.deps.acquireLock({
         key: `${lockTarget}#`,
         holder: { pid: process.pid, trigger: 'orca', label: targetLabel },
         signal
@@ -178,7 +182,7 @@ export class TestRunLauncher {
         this.finish(id, 'error', prepared.error)
         return
       }
-      const code = await this.spawnRun(id, request, prepared, lockTarget, logPath)
+      const code = await this.spawnRun(id, request, prepared, lockTarget, logPath, lock)
       this.finish(id, signal.aborted ? 'stopped' : code === 0 ? 'passed' : 'failed')
     } catch (error) {
       if (isAbortError(error)) {
@@ -187,7 +191,7 @@ export class TestRunLauncher {
         this.finish(id, 'error', error instanceof Error ? error.message : String(error))
       }
     } finally {
-      release?.()
+      lock?.release()
       this.controllers.delete(id)
       this.children.delete(id)
     }
@@ -198,7 +202,8 @@ export class TestRunLauncher {
     request: TestRunLaunchRequest,
     prepared: PreparedSource,
     lockTarget: string,
-    logPath: string
+    logPath: string,
+    lock: TestRunLock
   ): Promise<number | null> {
     const spawn = this.deps.spawn ?? spawnProcess
     const child = spawn({
@@ -226,6 +231,10 @@ export class TestRunLauncher {
       detached: process.platform !== 'win32'
     })
     this.children.set(id, child)
+    // Why: if Orca dies mid-run, the detached run keeps going and must keep the lock.
+    if (child.pid) {
+      lock.setHolderPid(child.pid)
+    }
     const onOutput = (chunk: Buffer | string): void => {
       appendFileSync(logPath, chunk)
       if (this.get(id)?.state === 'preparing') {

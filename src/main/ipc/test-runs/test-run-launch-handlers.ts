@@ -16,7 +16,12 @@ import {
   type TestRunSource
 } from '../../test-runs/test-run-sources'
 import type { TestRunStore } from '../../test-runs/test-run-store'
-import { getTargetEnv, getTargetLockKey } from '../../test-runs/test-run-target-env'
+import {
+  getCheckoutKey,
+  getSourceTargetError,
+  getTargetEnv,
+  getTargetLockKey
+} from '../../test-runs/test-run-target-env'
 
 const TargetArgs = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('dev-env'), devEnvId: z.string().min(1) }),
@@ -42,7 +47,7 @@ type LockModule = {
     key: string
     holder: { pid: number; trigger: string; label: string }
     signal?: AbortSignal
-  }) => Promise<() => void>
+  }) => Promise<(() => void) & { setHolderPid: (pid: number) => void }>
 }
 
 type SourceView = TestRunSource & { id: string; configFiles: string[] }
@@ -77,6 +82,21 @@ export function createTestRunLaunchHandlers(deps: {
   // Why require: the launcher and terminal runs must share one lock implementation.
   const lock: LockModule = createRequire(__filename)(deps.lockPath)
   const checkouts = new TestRunCheckouts({ dir })
+  // Why at start: a deleted environment's checkout (with its node_modules) is dead weight.
+  try {
+    const keep = new Set(
+      store
+        .getRepos()
+        .flatMap((repo) =>
+          store
+            .getDevEnvs()
+            .map((env) => getCheckoutKey(repo.id, { kind: 'dev-env', devEnvId: env.id }))
+        )
+    )
+    checkouts.removeUnused(keep)
+  } catch (error) {
+    console.error('[test-runs] cannot remove unused checkouts', error)
+  }
 
   const listTargets = (): {
     id: string
@@ -127,7 +147,10 @@ export function createTestRunLaunchHandlers(deps: {
 
   const launcher = new TestRunLauncher({
     dir,
-    acquireLock: ({ key, holder, signal }) => lock.acquireLock({ dir, key, holder, signal }),
+    acquireLock: async ({ key, holder, signal }) => {
+      const release = await lock.acquireLock({ dir, key, holder, signal })
+      return { release, setHolderPid: release.setHolderPid }
+    },
     findRunByLaunch: (launchId) =>
       runs.listRuns().find((run) => run.launchId === launchId)?.id ?? null,
     notify: deps.notify,
@@ -140,6 +163,14 @@ export function createTestRunLaunchHandlers(deps: {
       const source = (await listSources()).find((entry) => entry.id === request.sourceId)
       if (!source) {
         return { error: 'This test source is no longer available.' }
+      }
+      const mismatch = getSourceTargetError({
+        sourceWorktreeId: source.kind === 'worktree' ? source.worktreeId : null,
+        target: request.target,
+        envs: store.getDevEnvs()
+      })
+      if (mismatch) {
+        return { error: mismatch }
       }
       let cwd = getSourceDir(source)
       if (source.kind === 'origin-main') {
@@ -156,10 +187,7 @@ export function createTestRunLaunchHandlers(deps: {
             error: `The template of ${env?.name ?? 'this environment'} has no slot for ${source.label}. Add one so Orca can prepare the tests.`
           }
         }
-        const key = `${source.repoId}__${getTargetLockKey(request.target)}`.replace(
-          /[^\w.-]+/g,
-          '-'
-        )
+        const key = getCheckoutKey(source.repoId, request.target)
         cwd = (
           await checkouts.prepare({
             key,
