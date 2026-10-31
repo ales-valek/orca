@@ -3,6 +3,7 @@ import { basename } from 'node:path'
 import { app, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
 import type {
+  TestRunLaunch,
   TestRunTarget,
   TestRunTargetOption
 } from '../../../shared/test-runs/test-run-launch-types'
@@ -88,6 +89,7 @@ export function createTestRunLaunchHandlers(deps: {
 }): {
   handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown>
   stop: () => void
+  launch: (request: unknown) => TestRunLaunch | { error: string }
   listTargets: () => TestRunTargetOption[]
   listSources: () => Promise<SourceView[]>
   prepareTestSource: PrepareTestSource
@@ -216,6 +218,16 @@ export function createTestRunLaunchHandlers(deps: {
     return { cwd, cli, env: { ...env, ...targetEnv.env } }
   }
 
+  const launchRequest = (raw: unknown): TestRunLaunch | { error: string } => {
+    const request = LaunchArgs.parse(raw)
+    const target = listTargets().find(
+      (entry) => getTargetLockKey(entry.target) === getTargetLockKey(request.target)
+    )
+    return target
+      ? launcher.launch(request, { targetLabel: target.label })
+      : { error: 'This target no longer exists.' }
+  }
+
   const launcher = new TestRunLauncher({
     dir,
     acquireLock: async ({ key, holder, signal }) => {
@@ -232,21 +244,13 @@ export function createTestRunLaunchHandlers(deps: {
     handlers: {
       'testRuns:listTargets': () => listTargets(),
       'testRuns:listSources': () => listSources(),
-      'testRuns:launch': (_event, raw) => {
-        const request = LaunchArgs.parse(raw)
-        const target = listTargets().find(
-          (entry) => getTargetLockKey(entry.target) === getTargetLockKey(request.target)
-        )
-        if (!target) {
-          return { error: 'This target no longer exists.' }
-        }
-        return launcher.launch(request, { targetLabel: target.label })
-      },
+      'testRuns:launch': (_event, raw) => launchRequest(raw),
       'testRuns:stopLaunch': (_event, raw) => launcher.stop(LaunchIdArgs.parse(raw).id),
       'testRuns:listLaunches': () => launcher.list(),
       'testRuns:readLaunchLog': (_event, raw) => launcher.readLog(LaunchIdArgs.parse(raw).id)
     },
     stop: () => launcher.stopAll(),
+    launch: launchRequest,
     listTargets,
     listSources,
     prepareTestSource
