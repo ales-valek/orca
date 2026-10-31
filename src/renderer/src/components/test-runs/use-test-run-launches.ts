@@ -2,11 +2,12 @@ import { translate } from '@/i18n/i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
-import type {
-  TestRunLaunch,
-  TestRunSelection,
-  TestRunSourceOption,
-  TestRunTargetOption
+import {
+  isTestRunLaunch,
+  type TestRunLaunch,
+  type TestRunSelection,
+  type TestRunSourceOption,
+  type TestRunTargetOption
 } from '../../../../shared/test-runs/test-run-launch-types'
 import {
   getKnownBugAnnotations,
@@ -102,7 +103,7 @@ export function useTestRunLaunchControls(
           worktreeId
         })
         .then((result) => {
-          if ('error' in result) {
+          if (!isTestRunLaunch(result)) {
             toast.error(translate('testRuns.launch.failed', 'Could not start the tests'), {
               description: result.error
             })
