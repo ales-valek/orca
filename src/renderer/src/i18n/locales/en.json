@@ -23586,9 +23586,19 @@
     "listFailed": "Could not list the tests",
     "filter": {
       "feature": "My feature ({{count}})",
-      "all": "All ({{count}})"
+      "all": "All ({{count}})",
+      "failed": "Failed ({{count}})",
+      "neverRun": "Never run ({{count}})"
     },
-    "sharedCodeChanged": "Shared code changed: {{files}}"
+    "sharedCodeChanged": "Shared code changed: {{files}}",
+    "search": {
+      "label": "Search tests",
+      "placeholder": "Search id, title, file, @tag…",
+      "clear": "Clear search"
+    },
+    "runPicked": "Run selected ({{count}})",
+    "cancelPick": "Cancel",
+    "pickTests": "Select"
   },
   "keybindings": {
     "title": {

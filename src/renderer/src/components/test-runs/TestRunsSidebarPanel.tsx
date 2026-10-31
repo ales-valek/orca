@@ -7,6 +7,7 @@ import { getTestRowState } from './test-results-grouping'
 import {
   buildTestRows,
   getRowConfigFile,
+  getRowFile,
   getRowLabels,
   getRowTitlePath,
   type TestRow
@@ -14,13 +15,16 @@ import {
 import {
   getSelectionForFailed,
   getSelectionForFolder,
+  getSelectionForRows,
   getSelectionForTests
 } from './test-run-selection'
+import { getTestTier } from '../../../../shared/test-runs/test-identity'
 import { TestResultDetail } from './TestResultDetail'
 import { TestLabels, TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
 import { TestRunLaunchBar } from './TestRunLaunchBar'
 import { TestRunLaunches } from './TestRunLaunches'
-import { isFeatureRow } from './test-row-filters'
+import { filterTestRows, isFeatureRow, type TestRowFilter } from './test-row-filters'
+import { TestRowSearchField } from './TestRowSearchField'
 import { useFeatureScope, useTestCatalog } from './use-test-catalog'
 import {
   useSourceRepoSettings,
@@ -121,9 +125,28 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
         : [],
     [rows, featureScope, worktreeId]
   )
-  const [chosenFilter, setChosenFilter] = useState<'feature' | 'all' | null>(null)
+  const [chosenFilter, setChosenFilter] = useState<TestRowFilter | null>(null)
   const filter = chosenFilter ?? (featureRows.length > 0 ? 'feature' : 'all')
-  const visibleRows = filter === 'feature' ? featureRows : rows
+  const [query, setQuery] = useState('')
+  const [picked, setPicked] = useState<ReadonlySet<string> | null>(null)
+  const tiers = useMemo(
+    () =>
+      [...new Set(rows.map((row) => getTestTier(getRowFile(row), repoSettings.tierPattern)))]
+        .filter((tier): tier is number => tier !== null)
+        .toSorted((a, b) => a - b),
+    [rows, repoSettings.tierPattern]
+  )
+  const visibleRows = useMemo(
+    () =>
+      filterTestRows(rows, {
+        query,
+        filter,
+        feature: featureScope ?? { changedSpecFiles: [], since: null },
+        worktreeId: worktreeId ?? '',
+        tierPattern: repoSettings.tierPattern
+      }),
+    [rows, query, filter, featureScope, worktreeId, repoSettings.tierPattern]
+  )
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
 
   if (isRemote) {
@@ -221,15 +244,70 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
               </details>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-1 border-b border-border px-3 py-1.5">
-            <FilterChip isActive={filter === 'feature'} onClick={() => setChosenFilter('feature')}>
-              {translate('testRuns.filter.feature', 'My feature ({{count}})', {
-                count: featureRows.length
-              })}
-            </FilterChip>
-            <FilterChip isActive={filter === 'all'} onClick={() => setChosenFilter('all')}>
-              {translate('testRuns.filter.all', 'All ({{count}})', { count: rows.length })}
-            </FilterChip>
+          <div className="flex flex-col gap-1.5 border-b border-border px-3 py-1.5">
+            <TestRowSearchField query={query} onQueryChange={setQuery} />
+            <div className="flex flex-wrap items-center gap-1">
+              <FilterChip
+                isActive={filter === 'feature'}
+                onClick={() => setChosenFilter('feature')}
+              >
+                {translate('testRuns.filter.feature', 'My feature ({{count}})', {
+                  count: featureRows.length
+                })}
+              </FilterChip>
+              <FilterChip isActive={filter === 'failed'} onClick={() => setChosenFilter('failed')}>
+                {translate('testRuns.filter.failed', 'Failed ({{count}})', {
+                  count: counts.failed
+                })}
+              </FilterChip>
+              <FilterChip
+                isActive={filter === 'never-run'}
+                onClick={() => setChosenFilter('never-run')}
+              >
+                {translate('testRuns.filter.neverRun', 'Never run ({{count}})', {
+                  count: counts.neverRun
+                })}
+              </FilterChip>
+              {tiers.map((tier) => (
+                <FilterChip
+                  key={tier}
+                  isActive={typeof filter === 'object' && filter.tier === tier}
+                  onClick={() => setChosenFilter({ tier })}
+                >
+                  {translate('testRuns.tier', 'Tier {{tier}}', { tier })}
+                </FilterChip>
+              ))}
+              <FilterChip isActive={filter === 'all'} onClick={() => setChosenFilter('all')}>
+                {translate('testRuns.filter.all', 'All ({{count}})', { count: rows.length })}
+              </FilterChip>
+              <span className="flex-1" />
+              {picked ? (
+                <>
+                  <Button
+                    size="xs"
+                    disabled={picked.size === 0}
+                    onClick={() => {
+                      controls.launch(
+                        getSelectionForRows(rows.filter((row) => picked.has(row.identity))),
+                        configFile ?? undefined
+                      )
+                      setPicked(null)
+                    }}
+                  >
+                    {translate('testRuns.runPicked', 'Run selected ({{count}})', {
+                      count: picked.size
+                    })}
+                  </Button>
+                  <Button size="xs" variant="ghost" onClick={() => setPicked(null)}>
+                    {translate('testRuns.cancelPick', 'Cancel')}
+                  </Button>
+                </>
+              ) : (
+                <Button size="xs" variant="ghost" onClick={() => setPicked(new Set())}>
+                  {translate('testRuns.pickTests', 'Select')}
+                </Button>
+              )}
+            </div>
           </div>
           {filter === 'feature' && featureScope && featureScope.changedOtherFiles.length > 0 ? (
             <p className="px-3 pt-1.5 text-2xs text-muted-foreground">
@@ -254,6 +332,18 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
               tierPattern={repoSettings.tierPattern}
               selectedIdentity={selectedIdentity}
               onSelect={(row) => setSelectedIdentity(row.identity)}
+              picked={picked ?? undefined}
+              onTogglePick={(identity) =>
+                setPicked((current) => {
+                  const next = new Set(current)
+                  if (next.has(identity)) {
+                    next.delete(identity)
+                  } else {
+                    next.add(identity)
+                  }
+                  return next
+                })
+              }
               onRunGroup={(folder, groupConfigFile) =>
                 controls.launch(getSelectionForFolder(folder), groupConfigFile)
               }
