@@ -7,22 +7,25 @@ import {
   statSync,
   writeFileSync
 } from 'node:fs'
-import { basename, join, resolve, sep } from 'node:path'
-import { normalizeOriginUrl } from '../../shared/test-runs/test-identity'
+import { extname, join, resolve, sep } from 'node:path'
+import { getRepoKey } from '../../shared/test-runs/test-identity'
 import type { TestResultRecord, TestRunRecord } from '../../shared/test-runs/test-run-types'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_MAX_AGE_DAYS = 14
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024 * 1024
+const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const IMAGE_MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif'
+}
 
 export type TestResultEntry = { result: TestResultRecord; run: TestRunRecord }
 
 export type TestRunFilter = { worktreeId?: string; repoKey?: string; limit?: number }
-
-/** Same key the reporter puts in front of test identities. */
-export function getRunRepoKey(run: TestRunRecord): string {
-  return run.repo.originUrl ? normalizeOriginUrl(run.repo.originUrl) : basename(run.repo.root)
-}
 
 function isProcessAliveByPid(pid: number): boolean {
   try {
@@ -89,7 +92,7 @@ export class TestRunStore {
     const runs = this.readAllRuns().filter(
       (run) =>
         (filter.worktreeId === undefined || run.worktreeId === filter.worktreeId) &&
-        (filter.repoKey === undefined || getRunRepoKey(run) === filter.repoKey)
+        (filter.repoKey === undefined || getRepoKey(run.repo) === filter.repoKey)
     )
     return filter.limit === undefined ? runs : runs.slice(0, filter.limit)
   }
@@ -151,6 +154,16 @@ export class TestRunStore {
       return null
     }
     return existsSync(target) ? target : null
+  }
+
+  /** Screenshots for the renderer; Orca's media protocol serves only audio and video. */
+  readImageDataUrl(runId: string, file: string, maxBytes = DEFAULT_MAX_IMAGE_BYTES): string | null {
+    const path = this.getArtifactPath(runId, file)
+    const mimeType = IMAGE_MIME_TYPES[extname(file).toLowerCase()]
+    if (!path || !mimeType || statSync(path).size > maxBytes) {
+      return null
+    }
+    return `data:${mimeType};base64,${readFileSync(path).toString('base64')}`
   }
 
   prune(limits: { maxAgeDays?: number; maxBytes?: number } = {}): { removedRunIds: string[] } {
