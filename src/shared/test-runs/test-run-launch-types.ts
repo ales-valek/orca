@@ -38,6 +38,8 @@ export type TestRunLaunch = {
   endedAt: number | null
   runId: string | null
   error: string | null
+  /** While queued: the run that holds the environment. */
+  waitingFor?: { trigger: string; pid: number } | null
 }
 
 export type TestRunTargetOption = {
