@@ -2,6 +2,8 @@
 export const ORCA_PLAYWRIGHT_REPORTER_ENV = 'ORCA_PLAYWRIGHT_REPORTER'
 /** Directory the reporter writes runs into. */
 export const ORCA_TEST_RUNS_DIR_ENV = 'ORCA_TEST_RUNS_DIR'
+/** Path of Orca's run lock, which test repos put first in `globalSetup`. */
+export const ORCA_PLAYWRIGHT_LOCK_ENV = 'ORCA_PLAYWRIGHT_LOCK'
 
 export type TestRunTrigger = 'agent' | 'user' | 'orca'
 
