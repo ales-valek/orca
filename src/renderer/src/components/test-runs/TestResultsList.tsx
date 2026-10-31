@@ -1,7 +1,9 @@
 import { translate } from '@/i18n/i18n'
 import { formatUiRelativeTime } from '@/i18n/relative-time-format'
 import React from 'react'
+import { Play } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { TestRunTrigger } from '../../../../shared/test-runs/test-run-types'
 import type { DevEnvTone } from '../dev-env/dev-env-labels'
@@ -70,13 +72,15 @@ export function TestResultsList({
   entries,
   selectedIdentity,
   onSelect,
-  getWorkspaceName
+  getWorkspaceName,
+  onRunGroup
 }: {
   entries: TestResultEntry[]
   selectedIdentity: string | null
   onSelect: (entry: TestResultEntry) => void
   /** Global page: which workspace produced each result. */
   getWorkspaceName?: (entry: TestResultEntry) => string | null
+  onRunGroup?: (folder: string, configFile: string) => void
 }): React.JSX.Element {
   return (
     <div className="flex flex-col">
@@ -95,6 +99,16 @@ export function TestResultsList({
                   })
                 : group.entries.length}
             </span>
+            {onRunGroup ? (
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                aria-label={translate('testRuns.launch.runFolder', 'Run this folder')}
+                onClick={() => onRunGroup(group.label, group.entries[0].result.configFile)}
+              >
+                <Play className="size-3" />
+              </Button>
+            ) : null}
           </div>
           {group.entries.map((entry) => {
             const workspace = getWorkspaceName?.(entry)

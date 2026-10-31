@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/i18n'
 import React, { useEffect, useState } from 'react'
-import { ArrowLeft, FileSearch } from 'lucide-react'
+import { ArrowLeft, FileSearch, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { TestAttachmentRecord } from '../../../../shared/test-runs/test-run-types'
 import { openDevEnvUrl, runDevEnvAction } from '../dev-env/dev-env-actions'
@@ -64,12 +64,14 @@ function History({ history }: { history: TestResultEntry[] | null }): React.JSX.
 export function TestResultDetail({
   entry,
   traceWorktreeId,
-  onBack
+  onBack,
+  onRun
 }: {
   entry: TestResultEntry
   /** Workspace whose browser tabs receive the trace viewer. */
   traceWorktreeId: string | null
   onBack: () => void
+  onRun?: () => void
 }): React.JSX.Element {
   const { result, run } = entry
   const history = useTestHistory(result.identity)
@@ -132,17 +134,20 @@ export function TestResultDetail({
           {result.error.location ? `\n\n${result.error.location}` : ''}
         </pre>
       ) : null}
-      {trace ? (
-        <Button
-          size="xs"
-          variant="outline"
-          className="self-start"
-          onClick={() => openTrace(trace.file)}
-        >
-          <FileSearch className="size-3.5" />
-          {translate('testRuns.openTrace', 'Open trace')}
-        </Button>
-      ) : null}
+      <div className="flex gap-1.5">
+        {onRun ? (
+          <Button size="xs" variant="outline" onClick={onRun}>
+            <Play className="size-3.5" />
+            {translate('testRuns.launch.runAgain', 'Run again')}
+          </Button>
+        ) : null}
+        {trace ? (
+          <Button size="xs" variant="outline" onClick={() => openTrace(trace.file)}>
+            <FileSearch className="size-3.5" />
+            {translate('testRuns.openTrace', 'Open trace')}
+          </Button>
+        ) : null}
+      </div>
       {media.map((attachment) => (
         <ArtifactMedia key={attachment.file} runId={run.id} attachment={attachment} />
       ))}
