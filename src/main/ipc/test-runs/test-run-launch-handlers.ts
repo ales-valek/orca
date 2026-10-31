@@ -2,10 +2,11 @@ import { createRequire } from 'node:module'
 import { basename } from 'node:path'
 import { app, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
-import type {
-  TestRunLaunch,
-  TestRunTarget,
-  TestRunTargetOption
+import {
+  PLAYWRIGHT_CONFIG_FILE_PATTERN,
+  type TestRunLaunch,
+  type TestRunTarget,
+  type TestRunTargetOption
 } from '../../../shared/test-runs/test-run-launch-types'
 import { composeWorktreeId } from '../../../shared/worktree/id'
 import { listWorktrees } from '../../git/worktree-scan-cache'
@@ -16,6 +17,7 @@ import { TestRunLauncher } from '../../test-runs/test-run-launcher'
 import {
   findPlaywrightCli,
   findPlaywrightConfigs,
+  listPlaywrightConfigsAtDefaultBranch,
   listTestRunSources,
   type TestRunSource
 } from '../../test-runs/test-run-sources'
@@ -36,7 +38,7 @@ const TargetArgs = z.discriminatedUnion('kind', [
 const LaunchArgs = z.object({
   target: TargetArgs,
   sourceId: z.string().min(1),
-  configFile: z.string().regex(/^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/),
+  configFile: z.string().regex(PLAYWRIGHT_CONFIG_FILE_PATTERN),
   selection: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('tests'), locations: z.array(SelectionEntry).min(1) }),
     z.object({ kind: z.literal('paths'), paths: z.array(SelectionEntry).min(1) }),
@@ -148,15 +150,22 @@ export function createTestRunLaunchHandlers(deps: {
         )
       )
     ).flat()
-    return listTestRunSources({
+    const sources = listTestRunSources({
       repos: repos.map((repo) => ({ id: repo.id, path: repo.path, name: repo.displayName })),
       worktrees
-    }).map((source) => ({
-      ...source,
-      id: getSourceId(source),
-      path: getSourceDir(source),
-      configFiles: findPlaywrightConfigs(getSourceDir(source))
-    }))
+    })
+    return Promise.all(
+      sources.map(async (source) => ({
+        ...source,
+        id: getSourceId(source),
+        path: getSourceDir(source),
+        // Why: origin/main's configs are what Orca's checkout will have, not the user's working copy.
+        configFiles:
+          source.kind === 'origin-main'
+            ? await listPlaywrightConfigsAtDefaultBranch(source.repoPath)
+            : findPlaywrightConfigs(source.path)
+      }))
+    )
   }
 
   const prepareTestSource: PrepareTestSource = async (request, signal, logPath, options = {}) => {
@@ -194,6 +203,9 @@ export function createTestRunLaunchHandlers(deps: {
       }
       const key = getCheckoutKey(source.repoId, request.target)
       // Why reuse: listing must not reset a checkout a run may be using right now.
+      if (options.reuseCheckout) {
+        await checkouts.whenIdle(key)
+      }
       if (options.reuseCheckout && checkouts.exists(key)) {
         cwd = checkouts.getPath(key)
       } else {
