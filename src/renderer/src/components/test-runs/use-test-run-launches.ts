@@ -119,6 +119,7 @@ export function useTestRunLaunchControls(
 /** Tier pattern and known-bug annotations of the chosen test source's repo. */
 export function useSourceRepoSettings(controls: TestRunLaunchControls): {
   tierPattern: RegExp
+  cumulativeTiers: boolean
   knownBugAnnotations: string[]
 } {
   const repoId = controls.sources?.find((source) => source.id === controls.choices.sourceId)?.repoId
@@ -126,6 +127,7 @@ export function useSourceRepoSettings(controls: TestRunLaunchControls): {
   return useMemo(
     () => ({
       tierPattern: getTierPattern(settings),
+      cumulativeTiers: settings?.cumulativeTiers === true,
       knownBugAnnotations: getKnownBugAnnotations(settings)
     }),
     [settings]

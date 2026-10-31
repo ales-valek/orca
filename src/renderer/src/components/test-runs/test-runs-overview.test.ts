@@ -103,4 +103,31 @@ describe('test runs overview', () => {
       ['repo::/w/main', 'main-new', 0]
     ])
   })
+
+  it('counts lower tiers into higher ones when tiers are cumulative', () => {
+    const run = makeRun('r1')
+    expect(
+      summarizeRepoTiers(
+        [
+          entry('tests/tier-1/a.spec.ts', run),
+          entry('tests/tier-2/b.spec.ts', run, { status: 'failed', outcome: 'unexpected' }),
+          entry('tests/tier-3/c.spec.ts', run)
+        ],
+        { cumulativeTiers: true }
+      ).map((tier) => [tier.tier, tier.passed, tier.failed])
+    ).toEqual([
+      [1, 1, 0],
+      [2, 1, 1],
+      [3, 2, 1]
+    ])
+  })
+
+  it("uses the repo's tier pattern", () => {
+    const run = makeRun('r1')
+    expect(
+      summarizeRepoTiers([entry('e2e/smoke-2/a.spec.ts', run)], {
+        tierPattern: /smoke-(\d+)\//
+      }).map((tier) => tier.tier)
+    ).toEqual([2])
+  })
 })
