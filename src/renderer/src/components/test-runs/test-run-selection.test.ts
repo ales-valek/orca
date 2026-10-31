@@ -9,6 +9,7 @@ import {
   getDefaultTarget,
   getSelectionForFailed,
   getSelectionForFolder,
+  getSelectionForRows,
   getSelectionForTests,
   getSelectionForTier
 } from './test-run-selection'
@@ -120,5 +121,66 @@ describe('test run selection', () => {
     expect(getDefaultSource(sources, 'tests')).toBe('origin-main:tests')
     expect(getDefaultSource(sources, null)).toBe('origin-main:tests')
     expect(getDefaultSource([], null)).toBeNull()
+  })
+
+  it('selects picked rows by file and line', () => {
+    const listed = {
+      identity: 'listed',
+      catalog: {
+        identity: 'listed',
+        configFile: 'playwright.config.ts',
+        project: 'chromium',
+        file: 'tests/new.spec.ts',
+        line: 4,
+        titlePath: ['New'],
+        tags: [],
+        annotations: [],
+        isSerial: false
+      },
+      latest: null
+    }
+    const ranOnly = { identity: 'ran', catalog: null, latest: entry('tests/old.spec.ts', 9) }
+    expect(getSelectionForRows([listed, ranOnly, listed])).toEqual({
+      kind: 'tests',
+      locations: ['tests/new.spec.ts:4', 'tests/old.spec.ts:9']
+    })
+  })
+
+  it('prefers a worktree source for a shared preset, the open workspace first', () => {
+    const sources: TestRunSourceOption[] = [
+      {
+        id: 'origin-main:tests',
+        kind: 'origin-main',
+        repoId: 'tests',
+        path: '/r/tests',
+        label: 'tests @ origin/main',
+        configFiles: []
+      },
+      {
+        id: 'worktree:w-other',
+        kind: 'worktree',
+        repoId: 'tests',
+        path: '/w/other',
+        label: 'tests · other',
+        configFiles: []
+      },
+      {
+        id: 'worktree:w-open',
+        kind: 'worktree',
+        repoId: 'tests',
+        path: '/w/open',
+        label: 'tests · open',
+        configFiles: []
+      }
+    ]
+    expect(getDefaultSource(sources, 'tests', { isPreset: true, worktreeId: 'w-open' })).toBe(
+      'worktree:w-open'
+    )
+    expect(getDefaultSource(sources, 'tests', { isPreset: true, worktreeId: null })).toBe(
+      'worktree:w-other'
+    )
+    expect(getDefaultSource(sources, 'tests', { isPreset: false, worktreeId: 'w-open' })).toBe(
+      'origin-main:tests'
+    )
   })
 })
