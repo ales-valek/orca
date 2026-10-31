@@ -45,4 +45,25 @@ Hope this helps.`
     expect(parseTestSuggestions('', 2)).toEqual([])
     expect(parseTestSuggestions('no json here', 2)).toEqual([])
   })
+
+  it('finds the array after bracketed prose and before trailing notes', () => {
+    const raw = 'Based on [the diff] I picked:\n[{"index": 0, "reason": "upsell"}]\nSee [docs].'
+    expect(parseTestSuggestions(raw, 2)).toEqual([{ index: 0, reason: 'upsell' }])
+  })
+
+  it('reads a fenced JSON block', () => {
+    const raw = 'Here:\n```json\n[{"index": 1, "reason": "stock"}]\n```'
+    expect(parseTestSuggestions(raw, 2)).toEqual([{ index: 1, reason: 'stock' }])
+  })
+
+  it('lists at most 200 changed files and says how many more there are', () => {
+    const prompt = buildTestSuggestionPrompt({
+      changedFiles: Array.from({ length: 250 }, (_, index) => `src/file-${index}.ts`),
+      diffStat: '',
+      tests: []
+    })
+    expect(prompt).toContain('src/file-199.ts')
+    expect(prompt).not.toContain('src/file-200.ts')
+    expect(prompt).toContain('… and 50 more')
+  })
 })

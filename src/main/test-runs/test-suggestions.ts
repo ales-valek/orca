@@ -10,6 +10,8 @@ export type SuggestionTest = { index: number; title: string; file: string; tags:
 export type TestSuggestion = { index: number; reason: string }
 
 const MAX_SUGGESTIONS = 15
+const MAX_CHANGED_FILES = 200
+const MAX_PARSE_ATTEMPTS = 20
 
 /** Asks for the tests a change could break, as JSON the parser below reads. */
 export function buildTestSuggestionPrompt(
@@ -31,7 +33,10 @@ export function buildTestSuggestionPrompt(
     'Pick only tests the change could break. No prose outside the JSON array.',
     '',
     'Changed files:',
-    ...input.changedFiles.map((file) => `- ${file}`),
+    ...input.changedFiles.slice(0, MAX_CHANGED_FILES).map((file) => `- ${file}`),
+    ...(input.changedFiles.length > MAX_CHANGED_FILES
+      ? [`… and ${input.changedFiles.length - MAX_CHANGED_FILES} more`]
+      : []),
     '',
     'Diff summary:',
     input.diffStat.trim(),
@@ -41,20 +46,42 @@ export function buildTestSuggestionPrompt(
   ].join('\n')
 }
 
-/** The first JSON array in the answer; unknown, duplicate or malformed items are dropped. */
+function getIndexes(text: string, char: string): number[] {
+  const indexes: number[] = []
+  for (let index = text.indexOf(char); index !== -1; index = text.indexOf(char, index + 1)) {
+    indexes.push(index)
+  }
+  return indexes
+}
+
+/** The JSON array an agent returned, also when prose or a fenced block surrounds it. */
+function findJsonArray(raw: string): unknown[] | null {
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(raw)?.[1]
+  const text = fenced ?? raw
+  const starts = getIndexes(text, '[').slice(0, MAX_PARSE_ATTEMPTS)
+  const ends = getIndexes(text, ']').toReversed().slice(0, MAX_PARSE_ATTEMPTS)
+  for (const start of starts) {
+    for (const end of ends) {
+      if (end <= start) {
+        continue
+      }
+      try {
+        const parsed: unknown = JSON.parse(text.slice(start, end + 1))
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+      } catch {
+        // Not this pair of brackets; try the next.
+      }
+    }
+  }
+  return null
+}
+
+/** Known tests from the agent's answer; unknown, duplicate or malformed items are dropped. */
 export function parseTestSuggestions(raw: string, count: number): TestSuggestion[] {
-  const start = raw.indexOf('[')
-  const end = raw.lastIndexOf(']')
-  if (start === -1 || end <= start) {
-    return []
-  }
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw.slice(start, end + 1))
-  } catch {
-    return []
-  }
-  if (!Array.isArray(parsed)) {
+  const parsed = findJsonArray(raw)
+  if (!parsed) {
     return []
   }
   const seen = new Set<number>()
@@ -83,7 +110,7 @@ export async function generateTestSuggestions(input: {
   changedFiles: string[]
   diffStat: string
   tests: SuggestionTest[]
-}): Promise<{ suggestions: TestSuggestion[] } | { error: string }> {
+}): Promise<{ suggestions: TestSuggestion[]; isListShortened: boolean } | { error: string }> {
   const resolved = resolveTextGenerationParams(
     input.settings,
     LOCAL_COMMIT_MESSAGE_HOST_KEY,
@@ -116,5 +143,9 @@ export async function generateTestSuggestions(input: {
   if (!result.success) {
     return { error: result.error }
   }
-  return { suggestions: parseTestSuggestions(result.rawOutput, input.tests.length) }
+  return {
+    suggestions: parseTestSuggestions(result.rawOutput, input.tests.length),
+    // Why: on Windows the command line only fits part of a large test list.
+    isListShortened: prompt.length < buildTestSuggestionPrompt(input).length
+  }
 }
