@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { join } from 'node:path'
 import { gitExecFileAsync } from '../git/command-runner/git-exec-file'
 import { DEV_ENV_COMMAND_TIMEOUT_MS, runDevEnvShellCommand } from '../dev-env/dev-env-shell-command'
@@ -59,6 +67,16 @@ export class TestRunCheckouts {
 
   getPath(key: string): string {
     return join(this.deps.dir, 'checkouts', key)
+  }
+
+  /** Removes checkouts of targets that no longer exist; returns their keys. */
+  removeUnused(keepKeys: ReadonlySet<string>): string[] {
+    const root = join(this.deps.dir, 'checkouts')
+    const unused = existsSync(root) ? readdirSync(root).filter((key) => !keepKeys.has(key)) : []
+    for (const key of unused) {
+      rmSync(join(root, key), { recursive: true, force: true })
+    }
+    return unused
   }
 
   async prepare(input: {

@@ -29,7 +29,9 @@ const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 
 
 function createHarness(
   options: {
-    lock?: (signal: AbortSignal) => Promise<() => void>
+    lock?: (
+      signal: AbortSignal
+    ) => Promise<{ release: () => void; setHolderPid: (pid: number) => void }>
     prepare?: () => Promise<
       { cwd: string; cli: string; env: Record<string, string> } | { error: string }
     >
@@ -38,6 +40,7 @@ function createHarness(
   const children: FakeChild[] = []
   const specs: LaunchSpawnSpec[] = []
   const releases = vi.fn()
+  const holderPids: number[] = []
   const terminated: FakeChild[] = []
   let runId: string | null = null
   const launcher = new TestRunLauncher({
@@ -45,6 +48,7 @@ function createHarness(
     spawn: (spec) => {
       specs.push(spec)
       const child = Object.assign(new EventEmitter(), {
+        pid: 4242,
         stdout: new PassThrough(),
         stderr: new PassThrough()
       })
@@ -54,7 +58,13 @@ function createHarness(
     terminate: (child) => {
       terminated.push(children.find((entry) => entry === child) ?? children[0])
     },
-    acquireLock: ({ signal }) => (options.lock ? options.lock(signal) : Promise.resolve(releases)),
+    acquireLock: ({ signal }) =>
+      options.lock
+        ? options.lock(signal)
+        : Promise.resolve({
+            release: releases,
+            setHolderPid: (pid: number) => holderPids.push(pid)
+          }),
     prepareSource: async () =>
       options.prepare
         ? options.prepare()
@@ -68,6 +78,7 @@ function createHarness(
     children,
     specs,
     releases,
+    holderPids,
     terminated,
     setRunId: (id: string) => {
       runId = id
@@ -140,6 +151,13 @@ describe('TestRunLauncher', () => {
       endedAt: expect.any(Number)
     })
     expect(harness.releases).toHaveBeenCalledTimes(1)
+  })
+
+  it('hands the lock to the spawned run, so it stays held if Orca dies', async () => {
+    const harness = createHarness()
+    harness.launcher.launch(REQUEST, { targetLabel: 'Kiosek' })
+    await flush()
+    expect(harness.holderPids).toEqual([4242])
   })
 
   it('marks a failing exit as failed and releases the lock', async () => {

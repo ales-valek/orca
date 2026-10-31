@@ -16,7 +16,7 @@ type LockModule = ((config?: unknown) => Promise<(() => Promise<void>) | undefin
     signal?: AbortSignal
     onWait?: (holder: Holder) => void
     pollMs?: number
-  }) => Promise<() => void>
+  }) => Promise<(() => void) & { setHolderPid: (pid: number) => void }>
 }
 
 const HOLDER: Holder = { pid: process.pid, trigger: 'agent', label: 'kiosek' }
@@ -132,6 +132,25 @@ describe('Orca Playwright run lock', () => {
     const first = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER })
     const second = await lock.acquireLock({ dir, key: 'dev-env:b#', holder: HOLDER })
     first()
+    second()
+  })
+
+  it('hands a held lock to the process that runs the tests', async () => {
+    const lock = loadLock()
+    const release = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER })
+    // Orca holds the lock while preparing, then the spawned run owns it; it dies here.
+    release.setHolderPid(DEAD_PID)
+    const next = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER, pollMs: 5 })
+    next()
+  })
+
+  it("names every holder's lock file uniquely, so cleaning a stale one never removes a live one", async () => {
+    const lock = loadLock()
+    const first = await lock.acquireLock({ dir, key: 'dev-env:a#eshop', holder: HOLDER })
+    const name = lockFiles()[0]
+    first()
+    const second = await lock.acquireLock({ dir, key: 'dev-env:a#eshop', holder: HOLDER })
+    expect(lockFiles()[0]).not.toBe(name)
     second()
   })
 

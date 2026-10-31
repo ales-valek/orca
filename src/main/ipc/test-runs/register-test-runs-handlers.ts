@@ -27,6 +27,9 @@ const ArtifactArgs = z.object({ runId: z.string().min(1), file: z.string().min(1
 
 /** One registration's background work; a re-attached main window replaces it. */
 let stopPrevious: (() => void) | null = null
+/** Launches outlive a closed window (macOS); they stop only when Orca quits. */
+let launches: ReturnType<typeof createTestRunLaunchHandlers> | null = null
+let launchWindow: BrowserWindow | null = null
 
 /** Desktop only in v1: runs are captured where Orca's terminals run. */
 export function registerTestRunsHandlers(
@@ -64,21 +67,25 @@ export function registerTestRunsHandlers(
     }
   })
   notifier.start()
-  const launches = createTestRunLaunchHandlers({
-    store,
-    runs,
-    dir,
-    lockPath,
-    notify: () => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('testRuns:launchesChanged')
-      }
-    },
-    renderSlotEnvFilesInto: (envId, repoId, target) =>
-      getDevEnvOperations().renderSlotEnvFilesInto(envId, repoId, target)
-  })
+  launchWindow = mainWindow
+  if (!launches) {
+    const created = createTestRunLaunchHandlers({
+      store,
+      runs,
+      dir,
+      lockPath,
+      notify: () => {
+        if (launchWindow && !launchWindow.isDestroyed()) {
+          launchWindow.webContents.send('testRuns:launchesChanged')
+        }
+      },
+      renderSlotEnvFilesInto: (envId, repoId, target) =>
+        getDevEnvOperations().renderSlotEnvFilesInto(envId, repoId, target)
+    })
+    app.once('will-quit', () => created.stop())
+    launches = created
+  }
   const stop = (): void => {
-    launches.stop()
     clearTimeout(firstPrune)
     clearInterval(prunes)
     notifier.stop()
