@@ -1,3 +1,7 @@
+import {
+  REPOSITORY_TEST_RUNS_SEARCH_ENTRIES,
+  RepositoryTestRunsSection
+} from './RepositoryTestRunsSection'
 import type { GhAccountBinding } from '../../../../../shared/github/account-binding'
 import { useCallback, useRef, useState } from 'react'
 import type { OrcaHooks, RepoHookSettings } from '../../../../../shared/orca-yaml-hook-types'
@@ -362,6 +366,11 @@ export function RepositoryPane({
     !repo.connectionId &&
     (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, symlinkEntries)) ? (
       <WorktreeSymlinksSection key="symlinks" repo={repo} updateRepo={updateSelectedRepo} />
+    ) : null,
+    !repo.connectionId &&
+    (forceFullPaneForRepoMatch ||
+      matchesSettingsSearch(searchQuery, REPOSITORY_TEST_RUNS_SEARCH_ENTRIES)) ? (
+      <RepositoryTestRunsSection key="test-runs" repo={repo} updateRepo={updateSelectedRepo} />
     ) : null,
     !isFolder &&
     (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, sparsePresetEntries)) ? (

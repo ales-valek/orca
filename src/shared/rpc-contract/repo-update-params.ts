@@ -1,3 +1,4 @@
+import { normalizeRepoTestRunSettings } from '../test-runs/repo-test-run-settings'
 import { z } from 'zod'
 import { normalizeRepoSourceControlAiOverrides } from '../source-control-ai'
 import { normalizeRepoBadgeColor } from '../repo-badge-color'
@@ -56,6 +57,7 @@ export function createRepoUpdateSchema<T extends Readonly<Record<string, z.ZodTy
       worktreeBasePath: OptionalString,
       kind: z.enum(['git', 'folder']).optional(),
       symlinkPaths: z.array(z.string()).optional(),
+      testRuns: z.unknown().optional().transform(normalizeRepoTestRunSettings),
       issueSourcePreference: z.enum(['auto', 'upstream', 'origin']).optional(),
       defaultJiraProject: z.unknown().optional().transform(normalizeJiraProjectReference),
       ghAccount: z
