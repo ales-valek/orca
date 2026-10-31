@@ -61,7 +61,8 @@ function sanitize(name) {
 class OrcaReporter {
   constructor(options) {
     this.lane = (options && options.lane) || null
-    this.root = env('ORCA_TEST_RUNS_DIR')
+    // Why: listing runs reporters too, and a list is not a test run.
+    this.root = process.argv.includes('--list') ? null : env('ORCA_TEST_RUNS_DIR')
     this.trigger = getTrigger()
     this.attachmentCount = 0
     this.finalCategories = new Map()
