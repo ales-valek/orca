@@ -38,8 +38,7 @@ function ArtifactMedia({
   )
 }
 
-function History({ identity }: { identity: string }): React.JSX.Element | null {
-  const history = useTestHistory(identity)
+function History({ history }: { history: TestResultEntry[] | null }): React.JSX.Element | null {
   if (!history || history.length === 0) {
     return null
   }
@@ -73,6 +72,9 @@ export function TestResultDetail({
   onBack: () => void
 }): React.JSX.Element {
   const { result, run } = entry
+  const history = useTestHistory(result.identity)
+  // Why from history: the result list leaves test output out.
+  const output = history?.find((item) => item.run.id === run.id)?.result
   const media = result.attachments.filter(
     (attachment) =>
       attachment.contentType.startsWith('image/') || attachment.contentType.startsWith('video/')
@@ -141,15 +143,15 @@ export function TestResultDetail({
       {media.map((attachment) => (
         <ArtifactMedia key={attachment.file} runId={run.id} attachment={attachment} />
       ))}
-      <History identity={result.identity} />
-      {result.stdout || result.stderr ? (
+      <History history={history} />
+      {output && (output.stdout || output.stderr) ? (
         <details>
           <summary className="cursor-pointer text-muted-foreground">
             {translate('testRuns.output', 'Output')}
           </summary>
           <pre className="scrollbar-sleek mt-1 max-h-60 overflow-auto rounded-md bg-muted/40 px-2 py-1.5 font-mono text-2xs whitespace-pre-wrap">
-            {result.stdout}
-            {result.stderr}
+            {output.stdout}
+            {output.stderr}
           </pre>
         </details>
       ) : null}

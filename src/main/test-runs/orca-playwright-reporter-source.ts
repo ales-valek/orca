@@ -65,7 +65,7 @@ class OrcaReporter {
     this.root = process.argv.includes('--list') ? null : env('ORCA_TEST_RUNS_DIR')
     this.trigger = getTrigger()
     this.attachmentCount = 0
-    this.finalCategories = new Map()
+    this.lastCategories = new Map()
     this.hasWarned = false
   }
 
@@ -188,14 +188,13 @@ class OrcaReporter {
         stderr: joinOutput(result.stderr)
       }
       fs.appendFileSync(path.join(this.dir, 'results.jsonl'), JSON.stringify(record) + '\\n')
-      if (isFinalAttempt) {
-        const category =
-          outcome === 'flaky' ? 'flaky'
-          : outcome === 'skipped' ? 'skipped'
-          : outcome === 'unexpected' ? 'failed'
-          : 'passed'
-        this.finalCategories.set(identity, category)
-      }
+      // Why every record: the last one per test wins, as serial groups re-run finished tests.
+      const category =
+        outcome === 'flaky' ? 'flaky'
+        : outcome === 'skipped' ? 'skipped'
+        : outcome === 'unexpected' ? 'failed'
+        : 'passed'
+      this.lastCategories.set(identity, category)
     } catch (error) {
       this.warn(error)
     }
@@ -205,7 +204,7 @@ class OrcaReporter {
     if (!this.dir) return
     try {
       const totals = { passed: 0, failed: 0, skipped: 0, flaky: 0 }
-      for (const category of this.finalCategories.values()) totals[category]++
+      for (const category of this.lastCategories.values()) totals[category]++
       this.run.totals = totals
       this.run.status = result.status
       this.run.endedAt = Date.now()
