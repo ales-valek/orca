@@ -1,3 +1,4 @@
+import type { RepoTestRunSettings } from './test-runs/repo-test-run-settings'
 import type { RepoIcon } from './repo-icon'
 import type { GhAccountBinding } from './github/account-binding'
 import type { GitHubRepositoryIdentity } from './github/pull-request-types'
@@ -90,6 +91,8 @@ export type Repo = {
   externalWorktreeDiscoverySuppressedAt?: number
   /** Relative paths to APFS-clone on macOS when possible, otherwise symlink, into new worktrees. Absent/empty creates none. */
   symlinkPaths?: string[]
+  /** How the Tests panel reads this repo's Playwright tests. */
+  testRuns?: RepoTestRunSettings
   /** Durable sidebar-only repo organization. Execution remains repo-scoped. */
   projectGroupId?: string | null
   /** User-authored ordering inside the project group or ungrouped bucket. */

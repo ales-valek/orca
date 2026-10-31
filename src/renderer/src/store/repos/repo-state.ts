@@ -46,6 +46,7 @@ export type RepoUpdate = Partial<
     | 'worktreeBasePath'
     | 'kind'
     | 'symlinkPaths'
+    | 'testRuns'
     | 'issueSourcePreference'
     | 'defaultJiraProject'
     | 'forkSyncMode'
