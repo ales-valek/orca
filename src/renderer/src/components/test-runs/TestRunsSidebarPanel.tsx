@@ -1,6 +1,8 @@
 import { translate } from '@/i18n/i18n'
 import React, { useMemo, useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { runDevEnvAction } from '../dev-env/dev-env-actions'
 import { useActiveRepo, useActiveWorktreeId } from '@/store/selectors'
 import { DevEnvStatusDot } from '../dev-env/DevEnvStatusDot'
 import { getTestRowState } from './test-results-grouping'
@@ -125,7 +127,31 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
         : [],
     [rows, featureScope, worktreeId]
   )
-  const [chosenFilter, setChosenFilter] = useState<TestRowFilter | null>(null)
+  const [chosenFilter, setChosenFilter] = useState<TestRowFilter | 'suggested' | null>(null)
+  const [suggestions, setSuggestions] = useState<ReadonlyMap<string, string> | null>(null)
+  const [isSuggesting, setIsSuggesting] = useState(false)
+  const suggest = (): void => {
+    if (!worktreeId || !controls.choices.targetId || !controls.choices.sourceId || !configFile) {
+      return
+    }
+    setIsSuggesting(true)
+    void runDevEnvAction(
+      translate('testRuns.suggestFailed', 'Could not suggest tests'),
+      async () => {
+        const result = await window.api.testRuns.suggest({
+          worktreeId,
+          targetId: controls.choices.targetId ?? '',
+          sourceId: controls.choices.sourceId ?? '',
+          configFile
+        })
+        if ('error' in result) {
+          throw new Error(result.error)
+        }
+        setSuggestions(new Map(result.suggestions.map((entry) => [entry.identity, entry.reason])))
+        setChosenFilter('suggested')
+      }
+    ).finally(() => setIsSuggesting(false))
+  }
   const filter = chosenFilter ?? (featureRows.length > 0 ? 'feature' : 'all')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<ReadonlySet<string> | null>(null)
@@ -138,14 +164,17 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
   )
   const visibleRows = useMemo(
     () =>
-      filterTestRows(rows, {
-        query,
-        filter,
-        feature: featureScope ?? { changedSpecFiles: [], since: null },
-        worktreeId: worktreeId ?? '',
-        tierPattern: repoSettings.tierPattern
-      }),
-    [rows, query, filter, featureScope, worktreeId, repoSettings.tierPattern]
+      filterTestRows(
+        filter === 'suggested' ? rows.filter((row) => suggestions?.has(row.identity)) : rows,
+        {
+          query,
+          filter: filter === 'suggested' ? 'all' : filter,
+          feature: featureScope ?? { changedSpecFiles: [], since: null },
+          worktreeId: worktreeId ?? '',
+          tierPattern: repoSettings.tierPattern
+        }
+      ),
+    [rows, query, filter, suggestions, featureScope, worktreeId, repoSettings.tierPattern]
   )
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
 
@@ -255,6 +284,16 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
                   count: featureRows.length
                 })}
               </FilterChip>
+              {suggestions ? (
+                <FilterChip
+                  isActive={filter === 'suggested'}
+                  onClick={() => setChosenFilter('suggested')}
+                >
+                  {translate('testRuns.filter.suggested', 'Suggested ({{count}})', {
+                    count: suggestions.size
+                  })}
+                </FilterChip>
+              ) : null}
               <FilterChip isActive={filter === 'failed'} onClick={() => setChosenFilter('failed')}>
                 {translate('testRuns.filter.failed', 'Failed ({{count}})', {
                   count: counts.failed
@@ -281,6 +320,12 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
                 {translate('testRuns.filter.all', 'All ({{count}})', { count: rows.length })}
               </FilterChip>
               <span className="flex-1" />
+              <Button size="xs" variant="ghost" disabled={isSuggesting} onClick={suggest}>
+                <Sparkles className="size-3" />
+                {isSuggesting
+                  ? translate('testRuns.suggesting', 'Suggesting…')
+                  : translate('testRuns.suggest', 'Suggest')}
+              </Button>
               {picked ? (
                 <>
                   <Button
@@ -333,6 +378,9 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
               selectedIdentity={selectedIdentity}
               onSelect={(row) => setSelectedIdentity(row.identity)}
               picked={picked ?? undefined}
+              getNote={(row) =>
+                filter === 'suggested' ? (suggestions?.get(row.identity) ?? null) : null
+              }
               onTogglePick={(identity) =>
                 setPicked((current) => {
                   const next = new Set(current)
