@@ -6,9 +6,10 @@ export function useTestCatalog(input: {
   targetId: string | null
   sourceId: string | null
   configFile: string | null
-}): { catalog: TestCatalog | null; isLoading: boolean } {
+}): { catalog: TestCatalog | null; isLoading: boolean; refresh: () => void } {
   const [catalog, setCatalog] = useState<TestCatalog | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [refreshCount, setRefreshCount] = useState(0)
   const { targetId, sourceId, configFile } = input
   useEffect(() => {
     if (!targetId || !sourceId || !configFile) {
@@ -35,8 +36,8 @@ export function useTestCatalog(input: {
     return () => {
       isCurrent = false
     }
-  }, [targetId, sourceId, configFile])
-  return { catalog, isLoading }
+  }, [targetId, sourceId, configFile, refreshCount])
+  return { catalog, isLoading, refresh: () => setRefreshCount((count) => count + 1) }
 }
 
 /** What the source's branch changed since it left the default branch. */

@@ -162,10 +162,13 @@ export class TestCatalogs {
     repoRoot: string
     repoKey: string
     commit: string | null
+    /** Uncommitted changes: a commit no longer says which tests exist. */
+    isDirty: boolean
     cacheKey: string
   }): Promise<TestCatalog> {
     const key = `${input.cacheKey}|${input.configFile}|${input.commit ?? 'uncommitted'}`
-    const cached = input.commit ? this.cache.get(key) : undefined
+    const isCacheable = input.commit !== null && !input.isDirty
+    const cached = isCacheable ? this.cache.get(key) : undefined
     if (cached) {
       return cached
     }
@@ -193,7 +196,7 @@ export class TestCatalogs {
       error,
       builtAt: now
     }
-    if (!error) {
+    if (!error && isCacheable) {
       this.cache.set(key, catalog)
     }
     return catalog

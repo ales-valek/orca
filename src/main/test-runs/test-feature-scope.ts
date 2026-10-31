@@ -41,7 +41,10 @@ export async function getFeatureScope(input: {
       await git(['diff', '--name-only', `${baseCommit}..HEAD`], input.path)
     )
     const uncommitted = getLines(await git(['diff', '--name-only', 'HEAD'], input.path))
-    const files = [...new Set([...committed, ...uncommitted])].toSorted()
+    const untracked = getLines(
+      await git(['ls-files', '--others', '--exclude-standard'], input.path)
+    )
+    const files = [...new Set([...committed, ...uncommitted, ...untracked])].toSorted()
     const committedAt = Number(
       (await git(['show', '-s', '--format=%ct', baseCommit], input.path)).trim()
     )
