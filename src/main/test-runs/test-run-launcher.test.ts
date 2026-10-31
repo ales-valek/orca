@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
@@ -30,7 +30,8 @@ const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 
 function createHarness(
   options: {
     lock?: (
-      signal: AbortSignal
+      signal: AbortSignal,
+      onWait: (holder: { pid: number; trigger: string; label: string }) => void
     ) => Promise<{ release: () => void; setHolderPid: (pid: number) => void }>
     prepare?: () => Promise<
       { cwd: string; cli: string; env: Record<string, string> } | { error: string }
@@ -43,6 +44,8 @@ function createHarness(
   const holderPids: number[] = []
   const terminated: FakeChild[] = []
   let runId: string | null = null
+  let runLookups = 0
+  let nextId = 0
   const launcher = new TestRunLauncher({
     dir,
     spawn: (spec) => {
@@ -58,9 +61,9 @@ function createHarness(
     terminate: (child) => {
       terminated.push(children.find((entry) => entry === child) ?? children[0])
     },
-    acquireLock: ({ signal }) =>
+    acquireLock: ({ signal, onWait }) =>
       options.lock
-        ? options.lock(signal)
+        ? options.lock(signal, onWait)
         : Promise.resolve({
             release: releases,
             setHolderPid: (pid: number) => holderPids.push(pid)
@@ -69,9 +72,13 @@ function createHarness(
       options.prepare
         ? options.prepare()
         : { cwd: '/src', cli: '/src/cli.js', env: { TEST_ENV: 'local' } },
-    findRunByLaunch: () => runId,
+    findRunByLaunch: () => {
+      runLookups++
+      return runId
+    },
     notify: () => undefined,
-    createId: () => 'launch-1'
+    now: () => 1000,
+    createId: () => (nextId++ === 0 ? 'launch-1' : `launch-${nextId}`)
   })
   return {
     launcher,
@@ -80,6 +87,7 @@ function createHarness(
     releases,
     holderPids,
     terminated,
+    runLookups: () => runLookups,
     setRunId: (id: string) => {
       runId = id
     }
@@ -197,6 +205,76 @@ describe('TestRunLauncher', () => {
     await flush()
     expect(harness.launcher.list()[0].state).toBe('stopped')
     expect(harness.releases).toHaveBeenCalledTimes(1)
+  })
+
+  it('names who holds the environment while it waits', async () => {
+    const harness = createHarness({
+      lock: (_signal, onWait) => {
+        onWait({ pid: 77, trigger: 'agent', label: 'dev-env:kiosek#eshop' })
+        return new Promise(() => undefined)
+      }
+    })
+    harness.launcher.launch(REQUEST, { targetLabel: 'Kiosek' })
+    await flush()
+    expect(harness.launcher.list()[0]).toMatchObject({
+      state: 'queued',
+      waitingFor: { trigger: 'agent', pid: 77 }
+    })
+  })
+
+  it('shows a stop during preparation as stopped, not as a failure', async () => {
+    let launcher: TestRunLauncher | null = null
+    const harness = createHarness({
+      prepare: async () => {
+        launcher?.stop('launch-1')
+        throw new Error('pnpm install failed')
+      }
+    })
+    launcher = harness.launcher
+    harness.launcher.launch(REQUEST, { targetLabel: 'Kiosek' })
+    await flush()
+    expect(harness.launcher.list()[0].state).toBe('stopped')
+  })
+
+  it('looks for the run at most once a second while output streams', async () => {
+    const harness = createHarness()
+    harness.launcher.launch(REQUEST, { targetLabel: 'Kiosek' })
+    await flush()
+    for (let index = 0; index < 20; index++) {
+      harness.children[0].stdout.write(`line ${index}\n`)
+    }
+    await flush()
+    expect(harness.runLookups()).toBeLessThanOrEqual(1)
+  })
+
+  it('keeps every active launch when trimming the list', async () => {
+    const harness = createHarness({ lock: () => new Promise(() => undefined) })
+    for (let index = 0; index < 25; index++) {
+      harness.launcher.launch(REQUEST, { targetLabel: 'Kiosek' })
+    }
+    await flush()
+    expect(harness.launcher.list()).toHaveLength(25)
+  })
+
+  it('removes launch logs older than a week', () => {
+    mkdirSync(join(dir, 'launches'), { recursive: true })
+    const old = join(dir, 'launches', 'old.log')
+    writeFileSync(old, 'x')
+    const weekAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)
+    utimesSync(old, weekAgo, weekAgo)
+    createHarness()
+    expect(existsSync(old)).toBe(false)
+  })
+
+  it("does not hand Orca's own workspace to a launch without one", async () => {
+    vi.stubEnv('ORCA_WORKTREE_ID', 'w-orca')
+    vi.stubEnv('ORCA_PANE_KEY', 'pane-orca')
+    const harness = createHarness()
+    harness.launcher.launch({ ...REQUEST, worktreeId: null }, { targetLabel: 'dev' })
+    await flush()
+    expect(harness.specs[0].env.ORCA_WORKTREE_ID).toBeUndefined()
+    expect(harness.specs[0].env.ORCA_PANE_KEY).toBeUndefined()
+    vi.unstubAllEnvs()
   })
 
   it('reports a source that cannot be prepared', async () => {

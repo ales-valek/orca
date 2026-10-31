@@ -27,6 +27,8 @@ import {
   getTargetLockKey
 } from '../../test-runs/test-run-target-env'
 
+// Why no leading dash: each entry reaches Playwright's CLI as an argument, never as an option.
+const SelectionEntry = z.string().regex(/^[^-]/, 'Selections are file paths or file:line')
 const TargetArgs = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('dev-env'), devEnvId: z.string().min(1) }),
   z.object({ kind: z.literal('preset'), name: z.string().min(1) })
@@ -36,8 +38,8 @@ const LaunchArgs = z.object({
   sourceId: z.string().min(1),
   configFile: z.string().regex(/^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/),
   selection: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('tests'), locations: z.array(z.string().min(1)).min(1) }),
-    z.object({ kind: z.literal('paths'), paths: z.array(z.string().min(1)).min(1) }),
+    z.object({ kind: z.literal('tests'), locations: z.array(SelectionEntry).min(1) }),
+    z.object({ kind: z.literal('paths'), paths: z.array(SelectionEntry).min(1) }),
     z.object({ kind: z.literal('all') })
   ]),
   headed: z.boolean(),
@@ -51,6 +53,7 @@ type LockModule = {
     key: string
     holder: { pid: number; trigger: string; label: string }
     signal?: AbortSignal
+    onWait?: (holder: { pid: number; trigger: string; label: string }) => void
   }) => Promise<(() => void) & { setHolderPid: (pid: number) => void }>
 }
 
@@ -230,8 +233,8 @@ export function createTestRunLaunchHandlers(deps: {
 
   const launcher = new TestRunLauncher({
     dir,
-    acquireLock: async ({ key, holder, signal }) => {
-      const release = await lock.acquireLock({ dir, key, holder, signal })
+    acquireLock: async ({ key, holder, signal, onWait }) => {
+      const release = await lock.acquireLock({ dir, key, holder, signal, onWait })
       return { release, setHolderPid: release.setHolderPid }
     },
     findRunByLaunch: (launchId) =>

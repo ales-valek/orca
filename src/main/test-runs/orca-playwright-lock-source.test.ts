@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { getEventListeners } from 'node:events'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -152,6 +153,33 @@ describe('Orca Playwright run lock', () => {
     const second = await lock.acquireLock({ dir, key: 'dev-env:a#eshop', holder: HOLDER })
     expect(lockFiles()[0]).not.toBe(name)
     second()
+  })
+
+  it('keeps one abort listener however long it waits', async () => {
+    const lock = loadLock()
+    const release = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER })
+    const controller = new AbortController()
+    const waiting = lock
+      .acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER, signal: controller.signal, pollMs: 2 })
+      .catch(() => undefined)
+    await new Promise((resolve) => setTimeout(resolve, 60))
+    expect(getEventListeners(controller.signal, 'abort').length).toBeLessThanOrEqual(1)
+    controller.abort()
+    await waiting
+    release()
+  })
+
+  it('takes over a lock held far longer than any run, even if its pid answers', async () => {
+    const lock = loadLock()
+    const target = join(dir, 'locks', createHash('sha1').update('dev-env:a').digest('hex'))
+    mkdirSync(target, { recursive: true })
+    const day = 24 * 60 * 60 * 1000
+    writeFileSync(
+      join(target, '_all.json'),
+      JSON.stringify({ ...HOLDER, acquiredAt: Date.now() - day })
+    )
+    const release = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER, pollMs: 5 })
+    release()
   })
 
   it('stops waiting when aborted', async () => {

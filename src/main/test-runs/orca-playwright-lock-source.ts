@@ -13,6 +13,8 @@ const crypto = require('node:crypto')
 const DEFAULT_POLL_MS = 2000
 // Why: a lock file read between its creation and its first write looks empty.
 const UNREADABLE_GRACE_MS = 5000
+// Why: after a reboot or on Windows a dead holder's pid can belong to a new process.
+const MAX_LOCK_AGE_MS = 12 * 60 * 60 * 1000
 
 function read(source, name) {
   const value = source[name]
@@ -65,13 +67,16 @@ function createAbortError() {
 
 function sleep(ms, signal) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms)
-    if (signal) {
-      signal.addEventListener('abort', () => {
-        clearTimeout(timer)
-        reject(createAbortError())
-      }, { once: true })
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(createAbortError())
     }
+    const timer = setTimeout(() => {
+      // Why: a long wait polls many times; each poll must not leave a listener behind.
+      if (signal) signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    if (signal) signal.addEventListener('abort', onAbort, { once: true })
   })
 }
 
@@ -84,7 +89,10 @@ function readHolder(file) {
 }
 
 function isStale(file, holder) {
-  if (holder) return !isAlive(holder.pid)
+  if (holder) {
+    const isTooOld = typeof holder.acquiredAt === 'number' && Date.now() - holder.acquiredAt > MAX_LOCK_AGE_MS
+    return isTooOld || !isAlive(holder.pid)
+  }
   try {
     return Date.now() - fs.statSync(file).mtimeMs > UNREADABLE_GRACE_MS
   } catch {
@@ -121,13 +129,14 @@ async function acquireLock(input) {
   const dir = path.join(input.dir, 'locks', hash(target))
   fs.mkdirSync(dir, { recursive: true })
   const token = crypto.randomUUID()
+  const acquiredAt = Date.now()
   const prefix = scope ? 'lane-' + hash(scope).slice(0, 16) + '.' : '_all.'
   const ownName = prefix + token + '.json'
   const own = path.join(dir, ownName)
   const pollMs = input.pollMs || DEFAULT_POLL_MS
   let hasReportedWait = false
   const write = (holder) => {
-    fs.writeFileSync(own + '.tmp', JSON.stringify({ ...holder, key: input.key, token }))
+    fs.writeFileSync(own + '.tmp', JSON.stringify({ ...holder, key: input.key, token, acquiredAt }))
     fs.renameSync(own + '.tmp', own)
   }
   for (;;) {
