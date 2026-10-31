@@ -28,6 +28,7 @@ export const HOST_OPERATION_OWNERSHIP = {
   diagnostics: 'host',
   emulator: 'host',
   devenv: 'host',
+  testRuns: 'host',
   files: 'host',
   folderWorkspace: 'host',
   git: 'host',
