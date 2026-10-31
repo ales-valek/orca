@@ -1,4 +1,8 @@
 import { getTestTier } from '../../../../shared/test-runs/test-identity'
+import {
+  getTestResultState,
+  type TestResultState
+} from '../../../../shared/test-runs/test-result-state'
 import type { TestResultRecord, TestRunRecord } from '../../../../shared/test-runs/test-run-types'
 import { getRowFile, getRowTitlePath, type TestRow } from './test-rows'
 
@@ -11,14 +15,7 @@ export type TestLabel = {
   text: string
 }
 
-export type TestResultState = keyof TestResultCounts
-
-export function getTestResultState(result: TestResultRecord): TestResultState {
-  if (result.outcome === 'unexpected') {
-    return 'failed'
-  }
-  return result.status === 'skipped' ? 'skipped' : 'passed'
-}
+export { getTestResultState, type TestResultState }
 
 function getSpecFolder(file: string): string {
   const index = file.lastIndexOf('/')

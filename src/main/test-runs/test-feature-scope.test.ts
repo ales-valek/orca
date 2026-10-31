@@ -55,6 +55,11 @@ describe('getFeatureScope', () => {
     expect((await getFeatureScope({ path: repo })).changedSpecFiles).toEqual(['tests/a.spec.ts'])
   })
 
+  it('includes new files git does not track yet', async () => {
+    writeFileSync(join(repo, 'tests', 'new.spec.ts'), 'new')
+    expect((await getFeatureScope({ path: repo })).changedSpecFiles).toEqual(['tests/new.spec.ts'])
+  })
+
   it('returns an empty change set without a merge base', async () => {
     const folder = join(dir, 'folder')
     mkdirSync(folder)
