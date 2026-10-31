@@ -28,9 +28,11 @@ function makeEnv(overrides: Partial<DevEnv>): DevEnv {
 describe('test run targets', () => {
   it('uses local env for a Dev Environment and the preset env for a preset', () => {
     expect(getTargetEnv({ kind: 'dev-env', devEnvId: 'kiosek' }, SETTINGS)).toEqual({
-      TEST_ENV: 'local'
+      env: { TEST_ENV: 'local' }
     })
-    expect(getTargetEnv({ kind: 'preset', name: 'dev' }, SETTINGS)).toEqual({ TEST_ENV: 'dev' })
+    expect(getTargetEnv({ kind: 'preset', name: 'dev' }, SETTINGS)).toEqual({
+      env: { TEST_ENV: 'dev' }
+    })
   })
 
   it('reports an unknown preset', () => {
