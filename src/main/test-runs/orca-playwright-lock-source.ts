@@ -102,7 +102,7 @@ function splitKey(key) {
 }
 
 function removeStaleLocks(dir) {
-  for (const name of fs.readdirSync(dir)) {
+  for (const name of fs.readdirSync(dir).filter((entry) => entry.endsWith('.json'))) {
     const file = path.join(dir, name)
     if (isStale(file, readHolder(file))) {
       try {
@@ -113,53 +113,55 @@ function removeStaleLocks(dir) {
 }
 
 /**
- * One lock folder per target; a lane locks its own file, a run without a lane locks the whole
- * target. Why both: a run without a lane runs every lane's tests.
+ * One lock folder per target; a lane locks its own files, a run without a lane the whole target.
+ * Why one file per holder: a cleaner can only remove the exact file it judged stale.
  */
 async function acquireLock(input) {
   const [target, scope] = splitKey(input.key)
   const dir = path.join(input.dir, 'locks', hash(target))
   fs.mkdirSync(dir, { recursive: true })
-  const ownName = scope ? 'lane-' + hash(scope).slice(0, 16) + '.json' : '_all.json'
-  const own = path.join(dir, ownName)
   const token = crypto.randomUUID()
+  const prefix = scope ? 'lane-' + hash(scope).slice(0, 16) + '.' : '_all.'
+  const ownName = prefix + token + '.json'
+  const own = path.join(dir, ownName)
   const pollMs = input.pollMs || DEFAULT_POLL_MS
   let hasReportedWait = false
-  const wait = async (holder) => {
+  const write = (holder) => {
+    fs.writeFileSync(own + '.tmp', JSON.stringify({ ...holder, key: input.key, token }))
+    fs.renameSync(own + '.tmp', own)
+  }
+  for (;;) {
+    if (input.signal && input.signal.aborted) throw createAbortError()
+    removeStaleLocks(dir)
+    write(input.holder)
+    const conflicts = fs
+      .readdirSync(dir)
+      .filter(
+        (name) =>
+          name !== ownName &&
+          name.endsWith('.json') &&
+          (!scope || name.startsWith(prefix) || name.startsWith('_all.'))
+      )
+    if (conflicts.length === 0) {
+      const release = function release() {
+        try {
+          fs.unlinkSync(own)
+        } catch {}
+      }
+      /** Hands the lock to the process that runs the tests, so it outlives the caller. */
+      release.setHolderPid = (pid) => write({ ...input.holder, pid })
+      return release
+    }
+    try {
+      fs.unlinkSync(own)
+    } catch {}
+    const holder = readHolder(path.join(dir, conflicts[0]))
     if (holder && !hasReportedWait) {
       hasReportedWait = true
       if (input.onWait) input.onWait(holder)
     }
     // Why jitter: two runs that backed off from each other must not retry in lockstep.
     await sleep(pollMs + Math.floor(Math.random() * pollMs), input.signal)
-  }
-  for (;;) {
-    if (input.signal && input.signal.aborted) throw createAbortError()
-    removeStaleLocks(dir)
-    try {
-      fs.writeFileSync(own, JSON.stringify({ ...input.holder, key: input.key, token }), { flag: 'wx' })
-    } catch (error) {
-      if (!error || error.code !== 'EEXIST') throw error
-      await wait(readHolder(own))
-      continue
-    }
-    const conflicts = fs
-      .readdirSync(dir)
-      .filter((name) => name !== ownName && (!scope || name === '_all.json'))
-    if (conflicts.length === 0) {
-      return function release() {
-        const holder = readHolder(own)
-        if (holder && holder.token === token) {
-          try {
-            fs.unlinkSync(own)
-          } catch {}
-        }
-      }
-    }
-    try {
-      fs.unlinkSync(own)
-    } catch {}
-    await wait(readHolder(path.join(dir, conflicts[0])))
   }
 }
 
