@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -109,6 +117,79 @@ describe('TestRunStore', () => {
       ['a', 'r2', 'passed'],
       ['b', 'r1', 'passed']
     ])
+  })
+
+  it('uses the last record of each test in a run, as serial groups retry', () => {
+    writeRun(makeRun('r1'), [
+      makeResult('a', { retry: 0 }),
+      makeResult('b', { retry: 0, status: 'skipped', outcome: 'skipped' }),
+      makeResult('a', { retry: 1, status: 'failed', outcome: 'unexpected' }),
+      makeResult('b', { retry: 1 })
+    ])
+    const store = createStore()
+    expect(
+      store.getLatestResults({}).map((entry) => [entry.result.identity, entry.result.status])
+    ).toEqual([
+      ['a', 'failed'],
+      ['b', 'passed']
+    ])
+    expect(store.getHistory('a').map((entry) => entry.result.status)).toEqual(['failed'])
+  })
+
+  it('does not cache results read while the run was ending', () => {
+    writeRun(makeRun('r1', { status: 'running', endedAt: null, pid: 7 }), [makeResult('a')])
+    const runDir = join(dir, 'runs', 'r1')
+    let isFirstResultsRead = true
+    const store = new TestRunStore({
+      dir,
+      now: () => NOW,
+      isProcessAlive: () => true,
+      readFile: (path) => {
+        const text = readFileSync(path, 'utf8')
+        if (path.endsWith('results.jsonl') && isFirstResultsRead) {
+          isFirstResultsRead = false
+          // The run's last test and its end land between the two reads.
+          appendFileSync(join(runDir, 'results.jsonl'), `\n${JSON.stringify(makeResult('b'))}`)
+          writeFileSync(join(runDir, 'run.json'), JSON.stringify(makeRun('r1')))
+        }
+        return text
+      }
+    })
+    expect(store.getRunResults('r1')).toHaveLength(1)
+    expect(store.getRunResults('r1')).toHaveLength(2)
+  })
+
+  it('reads a finished run record once', () => {
+    writeRun(makeRun('r1'), [])
+    const reads: string[] = []
+    const store = new TestRunStore({
+      dir,
+      now: () => NOW,
+      readFile: (path) => {
+        reads.push(path)
+        return readFileSync(path, 'utf8')
+      }
+    })
+    store.listRuns()
+    store.listRuns()
+    expect(reads.filter((path) => path.endsWith('run.json'))).toHaveLength(1)
+  })
+
+  it('leaves test output out of the latest results', () => {
+    writeRun(makeRun('r1'), [makeResult('a', { stdout: 'log', stderr: 'warn' })])
+    const store = createStore()
+    expect(store.getLatestResults({})[0].result).toMatchObject({ stdout: '', stderr: '' })
+    expect(store.getHistory('a')[0].result).toMatchObject({ stdout: 'log', stderr: 'warn' })
+  })
+
+  it('keeps a bounded number of runs in memory', () => {
+    writeRun(makeRun('r1'), [makeResult('a')])
+    writeRun(makeRun('r2'), [makeResult('b')])
+    const store = new TestRunStore({ dir, now: () => NOW, maxCachedRuns: 1 })
+    store.getRunResults('r1')
+    store.getRunResults('r2')
+    appendFileSync(join(dir, 'runs', 'r1', 'results.jsonl'), `\n${JSON.stringify(makeResult('c'))}`)
+    expect(store.getRunResults('r1')).toHaveLength(2)
   })
 
   it("returns a test's history across runs", () => {
