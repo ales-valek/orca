@@ -50,13 +50,15 @@ export default function TestRunsPage(): React.JSX.Element {
     () => (effectiveRepoKey ? { repoKey: effectiveRepoKey } : null),
     [effectiveRepoKey]
   )
-  const { entries, runs } = useTestRuns(scope)
+  const { entries } = useTestRuns(scope)
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
   useEffect(() => setSelectedIdentity(null), [effectiveRepoKey])
 
   const selected = entries?.find((entry) => entry.result.identity === selectedIdentity)
   const tiers = summarizeRepoTiers(entries ?? [], {})
-  const workspaces = summarizeWorkspaces(runs ?? [])
+  const workspaces = summarizeWorkspaces(
+    (allRuns ?? []).filter((run) => getRepoKey(run.repo) === effectiveRepoKey)
+  )
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-background">

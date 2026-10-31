@@ -19,10 +19,12 @@ const FilterArgs = z.object({
 const HistoryArgs = z.object({ identity: z.string().min(1) })
 const ArtifactArgs = z.object({ runId: z.string().min(1), file: z.string().min(1) })
 
-let notifier: TestRunsChangeNotifier | null = null
+/** One registration's background work; a re-attached main window replaces it. */
+let stopPrevious: (() => void) | null = null
 
 /** Desktop only in v1: runs are captured where Orca's terminals run. */
 export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store): void {
+  stopPrevious?.()
   const dir = getTestRunsDir(app.getPath('userData'))
   installOrcaPlaywrightReporter(dir)
   const runsDir = join(dir, 'runs')
@@ -37,10 +39,11 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
       console.error('[test-runs] prune failed', error)
     }
   }
-  setTimeout(prune, 60_000).unref()
-  setInterval(prune, PRUNE_INTERVAL_MS).unref()
-  notifier?.stop()
-  notifier = new TestRunsChangeNotifier({
+  const firstPrune = setTimeout(prune, 60_000)
+  firstPrune.unref()
+  const prunes = setInterval(prune, PRUNE_INTERVAL_MS)
+  prunes.unref()
+  const notifier = new TestRunsChangeNotifier({
     runsDir,
     store: runs,
     notify: () => {
@@ -50,10 +53,15 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
     }
   })
   notifier.start()
-  app.once('will-quit', () => {
-    notifier?.stop()
+  const stop = (): void => {
+    clearTimeout(firstPrune)
+    clearInterval(prunes)
+    notifier.stop()
     traceViewers.disposeAll()
-  })
+    app.removeListener('will-quit', stop)
+  }
+  stopPrevious = stop
+  app.once('will-quit', stop)
 
   const handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> = {
     'testRuns:listRuns': (_event, raw) => runs.listRuns(FilterArgs.parse(raw ?? {})),

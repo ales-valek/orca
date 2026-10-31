@@ -84,13 +84,16 @@ export function TestResultDetail({
     void runDevEnvAction(
       translate('testRuns.traceFailed', 'Could not open the trace'),
       async () => {
+        if (!traceWorktreeId) {
+          throw new Error(
+            translate('testRuns.traceNeedsWorkspace', 'Open a workspace to view the trace in.')
+          )
+        }
         const opened = await window.api.testRuns.openTrace({ runId: run.id, file })
         if ('error' in opened) {
           throw new Error(opened.error)
         }
-        if (traceWorktreeId) {
-          openDevEnvUrl(traceWorktreeId, opened.url)
-        }
+        openDevEnvUrl(traceWorktreeId, opened.url)
       }
     )
 

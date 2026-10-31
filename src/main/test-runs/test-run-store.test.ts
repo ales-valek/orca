@@ -5,6 +5,8 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
+  utimesSync,
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -213,6 +215,31 @@ describe('TestRunStore', () => {
     })
     const saved = JSON.parse(readFileSync(join(dir, 'runs', 'dead', 'run.json'), 'utf8'))
     expect(saved.status).toBe('interrupted')
+  })
+
+  it('marks a running run interrupted once it has written nothing for hours', () => {
+    writeRun(makeRun('stuck', { status: 'running', endedAt: null, pid: 1 }), [])
+    const stale = new Date(NOW - 7 * 60 * 60 * 1000)
+    for (const file of ['run.json', 'results.jsonl']) {
+      utimesSync(join(dir, 'runs', 'stuck', file), stale, stale)
+    }
+    // Why alive: after a reboot the recorded pid can belong to another process.
+    expect(createStore(() => true).listRuns()[0].status).toBe('interrupted')
+  })
+
+  it('prunes old run folders without a readable run record', () => {
+    const broken = join(dir, 'runs', 'broken')
+    mkdirSync(broken, { recursive: true })
+    const old = new Date(NOW - 20 * DAY)
+    utimesSync(broken, old, old)
+    expect(createStore().prune().removedRunIds).toEqual(['broken'])
+  })
+
+  it('sizes runs whose files vanish while pruning', () => {
+    writeRun(makeRun('r1', { startedAt: NOW - 20 * DAY }), [makeResult('a')])
+    writeRun(makeRun('r2'), [makeResult('a')])
+    symlinkSync(join(dir, 'gone'), join(dir, 'runs', 'r1', 'attachments', 'dangling'))
+    expect(createStore().prune().removedRunIds).toEqual(['r1'])
   })
 
   it('never prunes running runs or the latest result of a test', () => {

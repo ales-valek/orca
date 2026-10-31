@@ -15,6 +15,8 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_MAX_AGE_DAYS = 14
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024 * 1024
 const DEFAULT_MAX_CACHED_RUNS = 50
+/** A run that wrote nothing this long is dead even if its pid answers (reboot, pid reuse). */
+const STALE_RUNNING_MS = 6 * 60 * 60 * 1000
 const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const IMAGE_MIME_TYPES: Record<string, string> = {
   '.png': 'image/png',
@@ -38,11 +40,32 @@ function isProcessAliveByPid(pid: number): boolean {
   }
 }
 
+// Why tolerant: the reporter renames files while a prune walks the run.
 function getDirectorySize(path: string): number {
-  return readdirSync(path, { withFileTypes: true }).reduce((total, entry) => {
-    const child = join(path, entry.name)
-    return total + (entry.isDirectory() ? getDirectorySize(child) : statSync(child).size)
-  }, 0)
+  try {
+    return readdirSync(path, { withFileTypes: true }).reduce((total, entry) => {
+      const child = join(path, entry.name)
+      return total + (entry.isDirectory() ? getDirectorySize(child) : getFileSize(child))
+    }, 0)
+  } catch {
+    return 0
+  }
+}
+
+function getFileSize(path: string): number {
+  try {
+    return statSync(path).size
+  } catch {
+    return 0
+  }
+}
+
+function getModifiedAt(path: string): number {
+  try {
+    return statSync(path).mtimeMs
+  } catch {
+    return 0
+  }
 }
 
 /** Reads the run directories Orca's Playwright reporter writes. */
@@ -78,7 +101,7 @@ export class TestRunStore {
     try {
       const run: TestRunRecord = JSON.parse(this.readText(file))
       const isAlive = this.deps.isProcessAlive ?? isProcessAliveByPid
-      if (run.status === 'running' && isAlive(run.pid)) {
+      if (run.status === 'running' && isAlive(run.pid) && !this.isStale(id)) {
         return run
       }
       if (run.status !== 'running') {
@@ -94,6 +117,14 @@ export class TestRunStore {
     } catch {
       return null
     }
+  }
+
+  private isStale(id: string): boolean {
+    const lastWriteAt = Math.max(
+      getModifiedAt(join(this.runsDir, id, 'run.json')),
+      getModifiedAt(join(this.runsDir, id, 'results.jsonl'))
+    )
+    return (this.deps.now ?? Date.now)() - lastWriteAt > STALE_RUNNING_MS
   }
 
   private readAllRuns(): TestRunRecord[] {
@@ -218,6 +249,15 @@ export class TestRunStore {
     const sizes = new Map(runs.map((run) => [run.id, getDirectorySize(join(this.runsDir, run.id))]))
     let totalBytes = [...sizes.values()].reduce((sum, size) => sum + size, 0)
     const removedRunIds: string[] = []
+    // Folders a reporter never finished writing a run record into, once old.
+    const knownIds = new Set(runs.map((run) => run.id))
+    for (const id of existsSync(this.runsDir) ? readdirSync(this.runsDir) : []) {
+      const path = join(this.runsDir, id)
+      if (!knownIds.has(id) && now - getModifiedAt(path) > maxAgeMs) {
+        rmSync(path, { recursive: true, force: true })
+        removedRunIds.push(id)
+      }
+    }
     for (const run of runs.toReversed()) {
       if (protectedIds.has(run.id)) {
         continue
