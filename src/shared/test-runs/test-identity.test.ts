@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTestIdentity, getTestTier, normalizeOriginUrl } from './test-identity'
+import { getRepoKey, getTestIdentity, getTestTier, normalizeOriginUrl } from './test-identity'
 
 const TEST = {
   configFile: 'playwright.config.ts',
@@ -42,5 +42,14 @@ describe('test identity', () => {
     expect(normalizeOriginUrl('git@github.com:Org/Repo.git')).toBe('github.com/org/repo')
     expect(normalizeOriginUrl('https://user:token@github.com/Org/Repo')).toBe('github.com/org/repo')
     expect(normalizeOriginUrl('ssh://git@github.com/Org/Repo.git/')).toBe('github.com/org/repo')
+  })
+})
+
+describe('getRepoKey', () => {
+  it('uses the remote, or the folder name of a repo without one', () => {
+    expect(getRepoKey({ root: '/w/feature', originUrl: 'git@github.com:o/tests.git' })).toBe(
+      'github.com/o/tests'
+    )
+    expect(getRepoKey({ root: 'C:\\w\\tests', originUrl: null })).toBe('tests')
   })
 })

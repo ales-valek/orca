@@ -12,6 +12,15 @@ export function normalizeOriginUrl(url: string): string {
     .toLowerCase()
 }
 
+function getPathBasename(path: string): string {
+  return path.split(/[\\/]/).findLast(Boolean) ?? path
+}
+
+/** Groups runs of every worktree and clone of one repo; also the prefix of its test identities. */
+export function getRepoKey(repo: { root: string; originUrl: string | null }): string {
+  return repo.originUrl ? normalizeOriginUrl(repo.originUrl) : getPathBasename(repo.root)
+}
+
 /** Stable across runs, worktrees and clones of one repo. */
 export function getTestIdentity(input: {
   originUrl: string | null

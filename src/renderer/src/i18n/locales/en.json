@@ -23768,7 +23768,13 @@
     "loading": "Loading test runs…",
     "empty": "No test runs in this workspace yet. Runs started in Orca terminals appear here.",
     "lastRun": "Last run {{age}} by {{who}}",
-    "running": "running…"
+    "running": "running…",
+    "nav": "Tests",
+    "title": "Tests",
+    "pageEmpty": "No test runs yet. Playwright runs started in Orca terminals appear here once the test repo opts in.",
+    "noTier": "Without tier",
+    "workspaces": "Workspaces",
+    "failedCount": "{{count}} failed"
   },
   "keybindings": {
     "title": {
