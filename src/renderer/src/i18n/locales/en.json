@@ -23472,7 +23472,10 @@
       "stop": "Stop",
       "runTier": "Run tier",
       "pickFirst": "Pick a target and a test source first.",
-      "failed": "Could not start the tests"
+      "failed": "Could not start the tests",
+      "waitingForAgent": "Waiting for an agent run (pid {{pid}})",
+      "waitingForOrca": "Waiting for another Orca run",
+      "waitingForUser": "Waiting for your run (pid {{pid}})"
     },
     "repoSettings": {
       "title": "Tests",
