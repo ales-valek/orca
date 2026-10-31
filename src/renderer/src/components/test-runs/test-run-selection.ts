@@ -31,9 +31,43 @@ export function getSelectionForFolder(folder: string): TestRunSelection {
   return { kind: 'paths', paths: [folder.endsWith('/') ? folder : `${folder}/`] }
 }
 
-/** Playwright matches each path argument as a pattern, so a tier folder selects every suite's tier. */
-export function getSelectionForTier(tier: number): TestRunSelection {
-  return { kind: 'paths', paths: [`tier-${tier}/`] }
+/** The pattern's first capture group (the tier number) swapped for `replacement`. */
+function replaceFirstCaptureGroup(source: string, replacement: string): string {
+  for (let index = 0; index < source.length; index++) {
+    if (source[index] === '\\') {
+      index++
+      continue
+    }
+    if (source[index] !== '(' || source[index + 1] === '?') {
+      continue
+    }
+    let depth = 0
+    for (let end = index; end < source.length; end++) {
+      if (source[end] === '\\') {
+        end++
+      } else if (source[end] === '(') {
+        depth++
+      } else if (source[end] === ')' && --depth === 0) {
+        return source.slice(0, index) + replacement + source.slice(end + 1)
+      }
+    }
+  }
+  return source
+}
+
+/**
+ * Playwright reads each path argument as a regular expression, so the repo's own tier pattern
+ * selects a tier (and, when tiers are cumulative, every lower one) in any folder layout.
+ */
+export function getSelectionForTier(
+  tier: number,
+  options: { tierPattern: RegExp; cumulative?: boolean }
+): TestRunSelection {
+  const tiers = options.cumulative ? Array.from({ length: tier }, (_, index) => index + 1) : [tier]
+  return {
+    kind: 'paths',
+    paths: [replaceFirstCaptureGroup(options.tierPattern.source, `(?:${tiers.join('|')})`)]
+  }
 }
 
 export function getDefaultTarget(
