@@ -154,6 +154,17 @@ describe('Orca Playwright reporter', () => {
     expect(run.totals).toEqual({ passed: 0, failed: 0, skipped: 0, flaky: 1 })
   })
 
+  it("counts each test's last record, even one interrupted before its retries", () => {
+    const reporter = loadReporter()
+    reporter.onBegin(config(), {})
+    reporter.onTestEnd(
+      fakeTest('interrupted', { retries: 1, outcome: 'unexpected' }),
+      fakeResult('interrupted', { retry: 0 })
+    )
+    reporter.onEnd({ status: 'interrupted' })
+    expect(readRun().run.totals).toEqual({ passed: 0, failed: 1, skipped: 0, flaky: 0 })
+  })
+
   it('writes body attachments and survives a failing copy', () => {
     const reporter = loadReporter()
     reporter.onBegin(config(), {})

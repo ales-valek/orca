@@ -43,6 +43,21 @@ export function useTestRuns(scope: TestRunsScope | null): {
   return { entries, runs }
 }
 
+/** Runs of every repo, without their results: enough to list repos and workspaces. */
+export function useRecentRuns(): TestRunRecord[] | null {
+  const [runs, setRuns] = useState<TestRunRecord[] | null>(null)
+  useEffect(() => {
+    const load = (): void =>
+      void window.api.testRuns
+        .listRuns({ limit: 50 })
+        .then(setRuns)
+        .catch(() => setRuns([]))
+    load()
+    return window.api.testRuns.onChanged(load)
+  }, [])
+  return runs
+}
+
 export function useTestHistory(identity: string): TestResultEntry[] | null {
   const [history, setHistory] = useState<TestResultEntry[] | null>(null)
   useEffect(() => {

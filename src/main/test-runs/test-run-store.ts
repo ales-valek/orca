@@ -14,6 +14,7 @@ import type { TestResultRecord, TestRunRecord } from '../../shared/test-runs/tes
 const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_MAX_AGE_DAYS = 14
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024 * 1024
+const DEFAULT_MAX_CACHED_RUNS = 50
 const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const IMAGE_MIME_TYPES: Record<string, string> = {
   '.png': 'image/png',
@@ -46,6 +47,8 @@ function getDirectorySize(path: string): number {
 
 /** Reads the run directories Orca's Playwright reporter writes. */
 export class TestRunStore {
+  /** Finished runs never change, so their records and results are read once. */
+  private readonly finishedRuns = new Map<string, TestRunRecord>()
   private readonly resultsCache = new Map<string, TestResultRecord[]>()
 
   constructor(
@@ -53,25 +56,40 @@ export class TestRunStore {
       dir: string
       now?: () => number
       isProcessAlive?: (pid: number) => boolean
+      readFile?: (path: string) => string
+      maxCachedRuns?: number
     }
   ) {}
+
+  private readText(path: string): string {
+    return (this.deps.readFile ?? ((file: string) => readFileSync(file, 'utf8')))(path)
+  }
 
   private get runsDir(): string {
     return join(this.deps.dir, 'runs')
   }
 
   private readRun(id: string): TestRunRecord | null {
+    const finished = this.finishedRuns.get(id)
+    if (finished) {
+      return finished
+    }
     const file = join(this.runsDir, id, 'run.json')
     try {
-      const run: TestRunRecord = JSON.parse(readFileSync(file, 'utf8'))
+      const run: TestRunRecord = JSON.parse(this.readText(file))
       const isAlive = this.deps.isProcessAlive ?? isProcessAliveByPid
-      if (run.status !== 'running' || isAlive(run.pid)) {
+      if (run.status === 'running' && isAlive(run.pid)) {
+        return run
+      }
+      if (run.status !== 'running') {
+        this.finishedRuns.set(id, run)
         return run
       }
       // Why: a killed run never reaches onEnd and would show as running forever.
       const interrupted: TestRunRecord = { ...run, status: 'interrupted' }
       writeFileSync(`${file}.tmp`, JSON.stringify(interrupted, null, 2))
       renameSync(`${file}.tmp`, file)
+      this.finishedRuns.set(id, interrupted)
       return interrupted
     } catch {
       return null
@@ -100,11 +118,16 @@ export class TestRunStore {
   getRunResults(runId: string): TestResultRecord[] {
     const cached = this.resultsCache.get(runId)
     if (cached) {
+      // Map order is the recency order for eviction.
+      this.resultsCache.delete(runId)
+      this.resultsCache.set(runId, cached)
       return cached
     }
+    // Why before reading: results read while the run still ran may miss its last tests.
+    const isFinished = this.readRun(runId)?.status !== 'running'
     let results: TestResultRecord[] = []
     try {
-      results = readFileSync(join(this.runsDir, runId, 'results.jsonl'), 'utf8')
+      results = this.readText(join(this.runsDir, runId, 'results.jsonl'))
         .split('\n')
         .flatMap((line) => {
           try {
@@ -116,33 +139,48 @@ export class TestRunStore {
     } catch {
       return []
     }
-    // Why: a finished run never changes; a running one still appends results.
-    if (this.readRun(runId)?.status !== 'running') {
+    if (isFinished) {
       this.resultsCache.set(runId, results)
+      for (const id of this.resultsCache.keys()) {
+        if (this.resultsCache.size <= (this.deps.maxCachedRuns ?? DEFAULT_MAX_CACHED_RUNS)) {
+          break
+        }
+        this.resultsCache.delete(id)
+      }
     }
     return results
   }
 
-  private getFinalEntries(runs: TestRunRecord[]): TestResultEntry[] {
-    return runs.flatMap((run) =>
-      this.getRunResults(run.id)
-        .filter((result) => result.isFinalAttempt)
-        .map((result) => ({ result, run }))
-    )
+  /**
+   * One entry per test and run: its last record. Why not the reporter's final-attempt guess:
+   * a serial group re-runs tests that already passed or were skipped on an earlier attempt.
+   */
+  private getRunEntries(runs: TestRunRecord[]): TestResultEntry[] {
+    return runs.flatMap((run) => {
+      const last = new Map<string, TestResultRecord>()
+      for (const result of this.getRunResults(run.id)) {
+        last.set(result.identity, result)
+      }
+      return [...last.values()].map((result) => ({ result, run }))
+    })
   }
 
+  /** Without stdout/stderr: lists only need the outcome; a test's history carries the output. */
   getLatestResults(filter: Omit<TestRunFilter, 'limit'>): TestResultEntry[] {
     const latest = new Map<string, TestResultEntry>()
-    for (const entry of this.getFinalEntries(this.listRuns(filter))) {
+    for (const entry of this.getRunEntries(this.listRuns(filter))) {
       if (!latest.has(entry.result.identity)) {
-        latest.set(entry.result.identity, entry)
+        latest.set(entry.result.identity, {
+          run: entry.run,
+          result: { ...entry.result, stdout: '', stderr: '' }
+        })
       }
     }
     return [...latest.values()]
   }
 
   getHistory(identity: string, limit = 20): TestResultEntry[] {
-    return this.getFinalEntries(this.listRuns())
+    return this.getRunEntries(this.listRuns())
       .filter((entry) => entry.result.identity === identity)
       .slice(0, limit)
   }
@@ -189,6 +227,7 @@ export class TestRunStore {
       }
       rmSync(join(this.runsDir, run.id), { recursive: true, force: true })
       this.resultsCache.delete(run.id)
+      this.finishedRuns.delete(run.id)
       totalBytes -= sizes.get(run.id) ?? 0
       removedRunIds.push(run.id)
     }

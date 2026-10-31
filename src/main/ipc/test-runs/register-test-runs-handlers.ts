@@ -1,15 +1,15 @@
-import { mkdirSync, watch, type FSWatcher } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
 import { readMediaPreview } from '../../media/media-preview-protocol'
 import type { Store } from '../../persistence'
 import { TestRunStore } from '../../test-runs/test-run-store'
+import { TestRunsChangeNotifier } from '../../test-runs/test-runs-change-notifier'
 import { getTestRunsDir, installOrcaPlaywrightReporter } from '../../test-runs/test-runs-install'
 import { TraceViewers } from '../../test-runs/trace-viewer'
 
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000
-const CHANGE_DEBOUNCE_MS = 500
 
 const FilterArgs = z.object({
   worktreeId: z.string().optional(),
@@ -19,27 +19,7 @@ const FilterArgs = z.object({
 const HistoryArgs = z.object({ identity: z.string().min(1) })
 const ArtifactArgs = z.object({ runId: z.string().min(1), file: z.string().min(1) })
 
-let watcher: FSWatcher | null = null
-
-function watchRuns(runsDir: string, mainWindow: BrowserWindow): void {
-  watcher?.close()
-  let timer: ReturnType<typeof setTimeout> | null = null
-  try {
-    watcher = watch(runsDir, { recursive: true }, () => {
-      if (timer) {
-        return
-      }
-      timer = setTimeout(() => {
-        timer = null
-        if (!mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('testRuns:changed')
-        }
-      }, CHANGE_DEBOUNCE_MS)
-    })
-  } catch (error) {
-    console.error('[test-runs] cannot watch runs', error)
-  }
-}
+let notifier: TestRunsChangeNotifier | null = null
 
 /** Desktop only in v1: runs are captured where Orca's terminals run. */
 export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store): void {
@@ -59,9 +39,19 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
   }
   setTimeout(prune, 60_000).unref()
   setInterval(prune, PRUNE_INTERVAL_MS).unref()
-  watchRuns(runsDir, mainWindow)
+  notifier?.stop()
+  notifier = new TestRunsChangeNotifier({
+    runsDir,
+    store: runs,
+    notify: () => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('testRuns:changed')
+      }
+    }
+  })
+  notifier.start()
   app.once('will-quit', () => {
-    watcher?.close()
+    notifier?.stop()
     traceViewers.disposeAll()
   })
 
