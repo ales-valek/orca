@@ -140,3 +140,4 @@ export type TopLevelView =
   | 'mobile'
   | 'dev-envs'
   | 'dev-tools'
+  | 'test-runs'

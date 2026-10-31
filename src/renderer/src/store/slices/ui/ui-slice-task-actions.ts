@@ -27,6 +27,7 @@ export function createUiTaskActions(set: UISliceSet, get: UISliceGet): Partial<U
     previousViewBeforeArtifacts: 'terminal',
     previousViewBeforeDevEnvs: 'terminal',
     previousViewBeforeDevTools: 'terminal',
+    previousViewBeforeTestRuns: 'terminal',
     setActiveView: (view) => set({ activeView: view }),
     taskPageData: {},
     taskResumeState: undefined,

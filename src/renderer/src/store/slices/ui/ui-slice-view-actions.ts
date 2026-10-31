@@ -114,6 +114,13 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
           state.activeView === 'dev-tools' ? state.previousViewBeforeDevTools : state.activeView
       })),
     closeDevToolsPage: () => set((state) => ({ activeView: state.previousViewBeforeDevTools })),
+    openTestRunsPage: () =>
+      set((state) => ({
+        activeView: 'test-runs',
+        previousViewBeforeTestRuns:
+          state.activeView === 'test-runs' ? state.previousViewBeforeTestRuns : state.activeView
+      })),
+    closeTestRunsPage: () => set((state) => ({ activeView: state.previousViewBeforeTestRuns })),
     openMobilePage: () =>
       set((state) => ({
         activeView: 'mobile',

@@ -6,6 +6,7 @@ import {
   Container,
   EyeOff,
   Files,
+  FlaskConical,
   Search,
   Smartphone,
   Wrench
@@ -69,6 +70,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const openSkillsPage = useAppStore((s) => s.openSkillsPage)
   const openDevEnvsPage = useAppStore((s) => s.openDevEnvsPage)
   const openDevToolsPage = useAppStore((s) => s.openDevToolsPage)
+  const openTestRunsPage = useAppStore((s) => s.openTestRunsPage)
   const openModal = useAppStore((s) => s.openModal)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const activeView = useAppStore((s) => s.activeView)
@@ -83,6 +85,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const skillsActive = activeView === 'skills'
   const devEnvsActive = activeView === 'dev-envs'
   const devToolsActive = activeView === 'dev-tools'
+  const testRunsActive = activeView === 'test-runs'
   useDevEnvSidebarRefresh()
   const mobileOnboardingBadge = useMobileSidebarOnboardingBadge(showMobileButton)
   const hideAutomationsButton = React.useCallback(() => {
@@ -257,6 +260,26 @@ const SidebarNav = React.memo(function SidebarNav() {
           strokeWidth={devToolsActive ? 2.25 : 1.75}
         />
         <span className="flex-1">{translate('devTools.nav', 'Tools')}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => openTestRunsPage()}
+        aria-current={testRunsActive ? 'page' : undefined}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+          testRunsActive
+            ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+            : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+        )}
+      >
+        <FlaskConical
+          className={cn(
+            'size-4 shrink-0',
+            !testRunsActive && 'text-worktree-sidebar-foreground/30'
+          )}
+          strokeWidth={testRunsActive ? 2.25 : 1.75}
+        />
+        <span className="flex-1">{translate('testRuns.nav', 'Tests')}</span>
       </button>
       {showAgentDashboardButton ? (
         <React.Suspense fallback={null}>
