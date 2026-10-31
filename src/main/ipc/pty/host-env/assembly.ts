@@ -35,6 +35,7 @@ import { AGENT_HOOK_RUNTIME_ENV_KEYS } from './spawn-env-keys'
 import { applyManagedDataAccountEnvironment } from '../../../managed-data-accounts/launch-environment'
 import { applyOpenCodeStatusPluginEnv, captureOpenCodeSourceConfig } from './opencode-config'
 import { applyRemoteViewerClipboardEnv } from './remote-viewer-clipboard-env'
+import { applyTestRunsEnv } from './test-runs-env'
 
 /** Mutate host-local PTY environment only for local execution; SSH cannot use these loopback endpoints or filesystem paths. */
 export function buildPtyHostEnv(
@@ -298,6 +299,7 @@ export function buildPtyHostEnv(
     }
     delete baseEnv.ORCA_CLI_COMMAND
   }
+  applyTestRunsEnv(baseEnv, { userDataPath: opts.userDataPath, isWsl: Boolean(opts.isWsl) })
   prependOrcaCliDirToChildPath(baseEnv, {
     isPackaged: opts.isPackaged,
     userDataPath: opts.userDataPath,
