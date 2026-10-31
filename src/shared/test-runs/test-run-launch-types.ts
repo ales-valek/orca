@@ -57,3 +57,8 @@ export type TestRunSourceOption = {
   label: string
   configFiles: string[]
 }
+
+/** Why not `'error' in value`: a started launch has an `error` field too. */
+export function isTestRunLaunch(value: TestRunLaunch | { error: string }): value is TestRunLaunch {
+  return 'id' in value
+}
