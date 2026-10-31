@@ -139,9 +139,15 @@ describe('TestRunCheckouts', () => {
 
   it('waits for a running preparation before a checkout counts as ready', async () => {
     let release: () => void = () => undefined
+    let markInstallStarted: () => void = () => undefined
+    const installStarted = new Promise<void>((resolve) => (markInstallStarted = resolve))
     const checkouts = new TestRunCheckouts({
       dir: join(dir, 'store'),
-      runInstall: () => new Promise((resolve) => (release = resolve))
+      runInstall: () =>
+        new Promise((resolve) => {
+          release = resolve
+          markInstallStarted()
+        })
     })
     const preparing = checkouts.prepare({
       key: 'k',
@@ -151,7 +157,8 @@ describe('TestRunCheckouts', () => {
     })
     let isIdle = false
     const idle = checkouts.whenIdle('k').then(() => (isIdle = true))
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    // Why wait for the install itself: under load the clone before it can take a while.
+    await installStarted
     expect(isIdle).toBe(false)
     release()
     await preparing
