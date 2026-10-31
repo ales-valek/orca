@@ -31,4 +31,10 @@ export type TestRunsApi = {
     configFile: string
   }) => Promise<TestCatalog>
   getFeatureScope: (args: { sourceId: string }) => Promise<FeatureScope>
+  suggest: (args: {
+    worktreeId: string
+    targetId: string
+    sourceId: string
+    configFile: string
+  }) => Promise<{ suggestions: { identity: string; reason: string }[] } | { error: string }>
 }
