@@ -145,6 +145,68 @@ export function createTestRunLaunchHandlers(deps: {
     }))
   }
 
+  /** Checkout, env files and Playwright CLI of a source for a target; shared by launches and lists. */
+  const prepareTestSource = async (
+    request: { target: TestRunTarget; sourceId: string },
+    signal: AbortSignal | undefined,
+    logPath: string
+  ): Promise<{ cwd: string; cli: string; env: Record<string, string> } | { error: string }> => {
+    const settings = store.getSettings()
+    const targetEnv = getTargetEnv(request.target, settings.devEnvTestRuns)
+    if ('error' in targetEnv) {
+      return targetEnv
+    }
+    const source = (await listSources()).find((entry) => entry.id === request.sourceId)
+    if (!source) {
+      return { error: 'This test source is no longer available.' }
+    }
+    const mismatch = getSourceTargetError({
+      sourceWorktreeId: source.kind === 'worktree' ? source.worktreeId : null,
+      target: request.target,
+      envs: store.getDevEnvs()
+    })
+    if (mismatch) {
+      return { error: mismatch }
+    }
+    let cwd = getSourceDir(source)
+    if (source.kind === 'origin-main') {
+      if (request.target.kind !== 'dev-env') {
+        return {
+          error: 'Presets run from a worktree of the test repo, which has its own env files.'
+        }
+      }
+      const env = store.getDevEnv(request.target.devEnvId)
+      const template = settings.devEnvTemplates.find((entry) => entry.id === env?.templateId)
+      const slot = template?.slots.find((entry) => entry.repoId === source.repoId)
+      if (!env || !slot) {
+        return {
+          error: `The template of ${env?.name ?? 'this environment'} has no slot for ${source.label}. Add one so Orca can prepare the tests.`
+        }
+      }
+      const key = getCheckoutKey(source.repoId, request.target)
+      cwd = (
+        await checkouts.prepare({
+          key,
+          repoPath: source.repoPath,
+          install: slot.install,
+          logPath,
+          signal
+        })
+      ).path
+      const rendered = await deps.renderSlotEnvFilesInto(env.id, source.repoId, cwd)
+      if ('error' in rendered) {
+        return rendered
+      }
+    }
+    const cli = findPlaywrightCli(cwd)
+    if (!cli) {
+      return { error: `Playwright is not installed in ${cwd}` }
+    }
+    const env: Record<string, string> = {}
+    applyTestRunsEnv(env, { userDataPath: app.getPath('userData'), isWsl: false })
+    return { cwd, cli, env: { ...env, ...targetEnv.env } }
+  }
+
   const launcher = new TestRunLauncher({
     dir,
     acquireLock: async ({ key, holder, signal }) => {
@@ -154,62 +216,7 @@ export function createTestRunLaunchHandlers(deps: {
     findRunByLaunch: (launchId) =>
       runs.listRuns().find((run) => run.launchId === launchId)?.id ?? null,
     notify: deps.notify,
-    prepareSource: async (request, signal, logPath) => {
-      const settings = store.getSettings()
-      const targetEnv = getTargetEnv(request.target, settings.devEnvTestRuns)
-      if ('error' in targetEnv) {
-        return targetEnv
-      }
-      const source = (await listSources()).find((entry) => entry.id === request.sourceId)
-      if (!source) {
-        return { error: 'This test source is no longer available.' }
-      }
-      const mismatch = getSourceTargetError({
-        sourceWorktreeId: source.kind === 'worktree' ? source.worktreeId : null,
-        target: request.target,
-        envs: store.getDevEnvs()
-      })
-      if (mismatch) {
-        return { error: mismatch }
-      }
-      let cwd = getSourceDir(source)
-      if (source.kind === 'origin-main') {
-        if (request.target.kind !== 'dev-env') {
-          return {
-            error: 'Presets run from a worktree of the test repo, which has its own env files.'
-          }
-        }
-        const env = store.getDevEnv(request.target.devEnvId)
-        const template = settings.devEnvTemplates.find((entry) => entry.id === env?.templateId)
-        const slot = template?.slots.find((entry) => entry.repoId === source.repoId)
-        if (!env || !slot) {
-          return {
-            error: `The template of ${env?.name ?? 'this environment'} has no slot for ${source.label}. Add one so Orca can prepare the tests.`
-          }
-        }
-        const key = getCheckoutKey(source.repoId, request.target)
-        cwd = (
-          await checkouts.prepare({
-            key,
-            repoPath: source.repoPath,
-            install: slot.install,
-            logPath,
-            signal
-          })
-        ).path
-        const rendered = await deps.renderSlotEnvFilesInto(env.id, source.repoId, cwd)
-        if ('error' in rendered) {
-          return rendered
-        }
-      }
-      const cli = findPlaywrightCli(cwd)
-      if (!cli) {
-        return { error: `Playwright is not installed in ${cwd}` }
-      }
-      const env: Record<string, string> = {}
-      applyTestRunsEnv(env, { userDataPath: app.getPath('userData'), isWsl: false })
-      return { cwd, cli, env: { ...env, ...targetEnv.env } }
-    }
+    prepareSource: (request, signal, logPath) => prepareTestSource(request, signal, logPath)
   })
 
   return {
