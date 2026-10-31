@@ -1,7 +1,8 @@
 import { translate } from '@/i18n/i18n'
 import React, { useEffect, useMemo, useState } from 'react'
-import { FlaskConical } from 'lucide-react'
+import { FlaskConical, Play } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { Button } from '@/components/ui/button'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import {
   Select,
@@ -17,6 +18,8 @@ import { DevEnvStatusDot } from '../dev-env/DevEnvStatusDot'
 import { summarizeRepoTiers, summarizeWorkspaces } from './test-runs-overview'
 import { TestResultDetail } from './TestResultDetail'
 import { TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
+import { getSelectionForTier } from './test-run-selection'
+import { useTestRunLaunchControls } from './use-test-run-launches'
 import { useRecentRuns, useTestRuns } from './use-test-runs'
 
 function getWorkspaceName(worktreeId: string | null): string | null {
@@ -51,6 +54,7 @@ export default function TestRunsPage(): React.JSX.Element {
     [effectiveRepoKey]
   )
   const { entries } = useTestRuns(scope)
+  const controls = useTestRunLaunchControls(activeWorktreeId, entries?.[0]?.run.repo.root ?? null)
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
   useEffect(() => setSelectedIdentity(null), [effectiveRepoKey])
 
@@ -119,6 +123,24 @@ export default function TestRunsPage(): React.JSX.Element {
                     <span className="text-2xs text-muted-foreground">
                       {getRunAge(tier.lastRunAt)}
                     </span>
+                  ) : null}
+                  {tier.tier !== null ? (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      className="mt-1 self-start"
+                      onClick={() => {
+                        if (tier.tier !== null) {
+                          controls.launch(
+                            getSelectionForTier(tier.tier),
+                            entries?.[0]?.result.configFile
+                          )
+                        }
+                      }}
+                    >
+                      <Play className="size-3" />
+                      {translate('testRuns.launch.runTier', 'Run tier')}
+                    </Button>
                   ) : null}
                 </div>
               ))}
