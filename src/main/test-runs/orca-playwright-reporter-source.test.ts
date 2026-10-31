@@ -197,6 +197,19 @@ describe('Orca Playwright reporter', () => {
     expect(triggers).toEqual(['agent', 'user', 'orca'])
   })
 
+  it('ignores test listing', () => {
+    const argv = process.argv
+    process.argv = [...argv, 'test', '--list']
+    try {
+      const reporter = loadReporter()
+      reporter.onBegin(config(), {})
+      reporter.onEnd({ status: 'passed' })
+    } finally {
+      process.argv = argv
+    }
+    expect(() => readdirSync(runsDir)).toThrow()
+  })
+
   it('does nothing without ORCA_TEST_RUNS_DIR', () => {
     vi.stubEnv('ORCA_TEST_RUNS_DIR', '')
     const reporter = loadReporter()
