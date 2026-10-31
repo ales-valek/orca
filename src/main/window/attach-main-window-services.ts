@@ -12,6 +12,7 @@ import { setRepoRemoteClientNotifier } from '../ipc/repos/repos-changed-notifica
 import { setWorktreeCatalogRemoteClientNotifier } from '../ipc/watched-worktree-catalog-notification'
 import { registerMissionHandlers } from '../ipc/missions'
 import { registerDevEnvHandlers } from '../ipc/dev-env/register-handlers'
+import { registerTestRunsHandlers } from '../ipc/test-runs/register-test-runs-handlers'
 import { registerWorktreeHandlers } from '../ipc/worktrees'
 import { registerWorkspaceCleanupHandlers } from '../ipc/workspace-cleanup/workspace-cleanup'
 import { registerPtyHandlers } from '../ipc/pty/register-handlers'
@@ -88,6 +89,7 @@ export function attachMainWindowServices(
     onWorktreeLifecycle: options?.onWorktreeLifecycle
   })
   registerDevEnvHandlers(mainWindow, store, runtime)
+  registerTestRunsHandlers(mainWindow, store)
   registerMissionHandlers(mainWindow, store, runtime)
   // Repo/settings mutations resync watchers through this window context.
   setWorktreeBaseDirectoryWatcherSyncContext(store, mainWindow)
