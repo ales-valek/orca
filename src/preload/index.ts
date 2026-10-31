@@ -38,6 +38,7 @@ import { jiraApi } from './api/jira-bridge'
 import { hulyApi } from './api/huly-bridge'
 import { devEnvApi } from './api/dev-env-bridge'
 import { devToolsApi } from './api/dev-tools-bridge'
+import { testRunsApi } from './api/test-runs-bridge'
 import { starNagApi } from './api/star-nag-bridge'
 import { diagnosticsApi } from './api/diagnostics-bridge'
 import { settingsApi } from './api/settings-bridge'
@@ -144,6 +145,7 @@ const api = {
   huly: hulyApi,
   devEnv: devEnvApi,
   devTools: devToolsApi,
+  testRuns: testRunsApi,
   starNag: starNagApi,
   telemetryTrack: telemetryTrackApi,
   telemetrySetOptIn: telemetrySetOptInApi,
