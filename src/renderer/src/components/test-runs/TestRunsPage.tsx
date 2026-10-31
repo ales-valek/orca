@@ -17,7 +17,7 @@ import { DevEnvStatusDot } from '../dev-env/DevEnvStatusDot'
 import { summarizeRepoTiers, summarizeWorkspaces } from './test-runs-overview'
 import { TestResultDetail } from './TestResultDetail'
 import { TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
-import { useTestRuns } from './use-test-runs'
+import { useRecentRuns, useTestRuns } from './use-test-runs'
 
 function getWorkspaceName(worktreeId: string | null): string | null {
   return worktreeId ? (getWorktreePathBasenameFromId(worktreeId) ?? worktreeId) : null
@@ -42,7 +42,7 @@ function openWorkspaceTests(worktreeId: string): void {
 /** Every repo's latest Playwright results by tier, and which workspaces ran tests last. */
 export default function TestRunsPage(): React.JSX.Element {
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
-  const { runs: allRuns } = useTestRuns({})
+  const allRuns = useRecentRuns()
   const repos = useMemo(() => getRepoChoices(allRuns ?? []), [allRuns])
   const [repoKey, setRepoKey] = useState<string | null>(null)
   const effectiveRepoKey = repoKey ?? repos[0]?.key ?? null
