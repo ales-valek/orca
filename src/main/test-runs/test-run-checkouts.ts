@@ -115,6 +115,15 @@ export class TestRunCheckouts {
         this.deps.dir
       )
     }
+    // Why: a shared clone's origin is the local repo path; runs and lists in it must carry the
+    // same repo identity as runs in the user's own worktrees.
+    const originUrl = await git(['remote', 'get-url', 'origin'], input.repoPath).then(
+      (url) => url.trim(),
+      () => ''
+    )
+    if (originUrl) {
+      await git(['remote', 'set-url', 'origin', originUrl], path)
+    }
     try {
       await git(['fetch', '--quiet', 'origin'], input.repoPath)
     } catch {

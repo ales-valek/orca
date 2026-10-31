@@ -4,6 +4,7 @@ import {
   TestRunsRunParams
 } from '../../../../shared/rpc-contract/test-runs-params'
 import { isTestRunLaunch } from '../../../../shared/test-runs/test-run-launch-types'
+import { getTestResultState } from '../../../../shared/test-runs/test-result-state'
 import { getTestRunServices, pickTestRunDefaults } from '../../../test-runs/test-run-services'
 import { defineMethod, type RpcContext } from '../core'
 
@@ -44,10 +45,7 @@ export const testRunsResultsMethod = defineMethod({
     const { services, worktreeId } = await resolveWorkspace(context, params.worktree)
     const results = services
       .getLatestResults(worktreeId)
-      .filter(
-        (entry) =>
-          !params.failed || entry.result.status === 'failed' || entry.result.status === 'timedOut'
-      )
+      .filter((entry) => !params.failed || getTestResultState(entry.result) === 'failed')
       .map((entry) => ({
         status: entry.result.status,
         title: entry.result.titlePath.join(' › '),

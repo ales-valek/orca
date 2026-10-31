@@ -11,7 +11,6 @@ import {
   getRowConfigFile,
   getRowFile,
   getRowLabels,
-  getRowTitlePath,
   type TestRow
 } from './test-rows'
 import {
@@ -21,8 +20,10 @@ import {
   getSelectionForTests
 } from './test-run-selection'
 import { getTestTier } from '../../../../shared/test-runs/test-identity'
+import { NeverRunDetail } from './NeverRunDetail'
 import { TestResultDetail } from './TestResultDetail'
-import { TestLabels, TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
+import { TestRowFilterChip as FilterChip } from './TestRowFilterChip'
+import { TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
 import { TestRunLaunchBar } from './TestRunLaunchBar'
 import { TestRunLaunches } from './TestRunLaunches'
 import { filterTestRows, isFeatureRow, type TestRowFilter } from './test-row-filters'
@@ -37,61 +38,6 @@ import { useTestRuns } from './use-test-runs'
 
 function PanelMessage({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <p className="px-3 py-3 text-xs text-muted-foreground">{children}</p>
-}
-
-function FilterChip({
-  isActive,
-  onClick,
-  children
-}: {
-  isActive: boolean
-  onClick: () => void
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <Button
-      size="xs"
-      variant={isActive ? 'secondary' : 'ghost'}
-      aria-pressed={isActive}
-      onClick={onClick}
-    >
-      {children}
-    </Button>
-  )
-}
-
-/** A test Playwright lists but no run has recorded yet. */
-function NeverRunDetail({
-  row,
-  labels,
-  onBack,
-  onRun
-}: {
-  row: TestRow
-  labels: ReturnType<typeof getRowLabels>
-  onBack: () => void
-  onRun: () => void
-}): React.JSX.Element {
-  return (
-    <div className="flex flex-col gap-2 px-3 py-2 text-xs">
-      <span className="font-medium">{getRowTitlePath(row).join(' › ')}</span>
-      <span className="font-mono text-2xs text-muted-foreground">
-        {row.catalog?.file}:{row.catalog?.line}
-      </span>
-      <TestLabels labels={labels} />
-      <span className="text-muted-foreground">
-        {translate('testRuns.neverRunHint', 'This test has not run yet.')}
-      </span>
-      <div className="flex gap-1.5">
-        <Button size="xs" variant="outline" onClick={onBack}>
-          {translate('testRuns.back', 'Back')}
-        </Button>
-        <Button size="xs" onClick={onRun}>
-          {translate('testRuns.launch.runAgain', 'Run')}
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 /** Every test of the chosen source with its latest result, and runs started from here. */
@@ -109,7 +55,11 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
   const launches = useTestRunLaunches(worktreeId)
   const source = controls.sources?.find((option) => option.id === controls.choices.sourceId)
   const configFile = entries?.[0]?.result.configFile ?? source?.configFiles[0] ?? null
-  const { catalog, isLoading } = useTestCatalog({
+  const {
+    catalog,
+    isLoading,
+    refresh: refreshCatalog
+  } = useTestCatalog({
     targetId: isRemote ? null : controls.choices.targetId,
     sourceId: isRemote ? null : controls.choices.sourceId,
     configFile
@@ -257,11 +207,18 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
                   : ''}
               </span>
             ) : null}
-            {isLoading ? (
-              <span className="text-2xs text-muted-foreground">
-                {translate('testRuns.listing', 'Listing tests…')}
-              </span>
-            ) : null}
+            <span className="flex items-center gap-2 text-2xs text-muted-foreground">
+              {isLoading
+                ? translate('testRuns.listing', 'Listing tests…')
+                : catalog
+                  ? translate('testRuns.listed', '{{count}} tests listed', {
+                      count: catalog.entries.length
+                    })
+                  : null}
+              <Button size="xs" variant="ghost" disabled={isLoading} onClick={refreshCatalog}>
+                {translate('testRuns.refreshList', 'Refresh list')}
+              </Button>
+            </span>
             {catalog?.error ? (
               <details className="text-2xs text-destructive">
                 <summary className="cursor-pointer">
