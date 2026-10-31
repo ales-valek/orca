@@ -13,6 +13,15 @@ export type TestCatalogEntry = {
   isSerial: boolean
 }
 
+/** What a branch changed since it left the default branch, committed or not. */
+export type FeatureScope = {
+  baseCommit: string | null
+  /** When the branch left the default branch; runs since then belong to the feature. */
+  since: number | null
+  changedSpecFiles: string[]
+  changedOtherFiles: string[]
+}
+
 export type TestCatalog = {
   sourceCommit: string | null
   configFile: string

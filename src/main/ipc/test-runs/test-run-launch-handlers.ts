@@ -1,5 +1,10 @@
+import type { TestCatalog } from '../../../shared/test-runs/test-catalog-types'
+import { getRepoKey } from '../../../shared/test-runs/test-identity'
+import { gitExecFileAsync } from '../../git/command-runner/git-exec-file'
+import { TestCatalogs } from '../../test-runs/test-catalog'
+import { getFeatureScope } from '../../test-runs/test-feature-scope'
 import { createRequire } from 'node:module'
-import { basename } from 'node:path'
+import { basename, join } from 'node:path'
 import { app, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
 import type { TestRunTarget } from '../../../shared/test-runs/test-run-launch-types'
@@ -40,6 +45,24 @@ const LaunchArgs = z.object({
   worktreeId: z.string().nullable()
 })
 const LaunchIdArgs = z.object({ id: z.string().min(1) })
+const CatalogArgs = z.object({
+  targetId: z.string().min(1),
+  sourceId: z.string().min(1),
+  configFile: z.string().regex(/^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/)
+})
+const FeatureScopeArgs = z.object({ sourceId: z.string().min(1) })
+
+function emptyCatalog(configFile: string, error: string): TestCatalog {
+  return { sourceCommit: null, configFile, entries: [], error, builtAt: Date.now() }
+}
+
+async function readGit(args: string[], cwd: string): Promise<string | null> {
+  try {
+    return (await gitExecFileAsync(args, { cwd })).stdout.trim() || null
+  } catch {
+    return null
+  }
+}
 
 type LockModule = {
   acquireLock: (input: {
@@ -82,6 +105,7 @@ export function createTestRunLaunchHandlers(deps: {
   // Why require: the launcher and terminal runs must share one lock implementation.
   const lock: LockModule = createRequire(__filename)(deps.lockPath)
   const checkouts = new TestRunCheckouts({ dir })
+  const catalogs = new TestCatalogs()
   // Why at start: a deleted environment's checkout (with its node_modules) is dead weight.
   try {
     const keep = new Set(
@@ -149,7 +173,8 @@ export function createTestRunLaunchHandlers(deps: {
   const prepareTestSource = async (
     request: { target: TestRunTarget; sourceId: string },
     signal: AbortSignal | undefined,
-    logPath: string
+    logPath: string,
+    options: { reuseCheckout?: boolean } = {}
   ): Promise<{ cwd: string; cli: string; env: Record<string, string> } | { error: string }> => {
     const settings = store.getSettings()
     const targetEnv = getTargetEnv(request.target, settings.devEnvTestRuns)
@@ -184,18 +209,23 @@ export function createTestRunLaunchHandlers(deps: {
         }
       }
       const key = getCheckoutKey(source.repoId, request.target)
-      cwd = (
-        await checkouts.prepare({
-          key,
-          repoPath: source.repoPath,
-          install: slot.install,
-          logPath,
-          signal
-        })
-      ).path
-      const rendered = await deps.renderSlotEnvFilesInto(env.id, source.repoId, cwd)
-      if ('error' in rendered) {
-        return rendered
+      // Why reuse: listing must not reset a checkout a run may be using right now.
+      if (options.reuseCheckout && checkouts.exists(key)) {
+        cwd = checkouts.getPath(key)
+      } else {
+        cwd = (
+          await checkouts.prepare({
+            key,
+            repoPath: source.repoPath,
+            install: slot.install,
+            logPath,
+            signal
+          })
+        ).path
+        const rendered = await deps.renderSlotEnvFilesInto(env.id, source.repoId, cwd)
+        if ('error' in rendered) {
+          return rendered
+        }
       }
     }
     const cli = findPlaywrightCli(cwd)
@@ -232,6 +262,41 @@ export function createTestRunLaunchHandlers(deps: {
           return { error: 'This target no longer exists.' }
         }
         return launcher.launch(request, { targetLabel: target.label })
+      },
+      'testRuns:getCatalog': async (_event, raw) => {
+        const { targetId, sourceId, configFile } = CatalogArgs.parse(raw)
+        const target = listTargets().find((entry) => entry.id === targetId)
+        if (!target) {
+          return emptyCatalog(configFile, 'This target no longer exists.')
+        }
+        const prepared = await prepareTestSource(
+          { target: target.target, sourceId },
+          undefined,
+          join(dir, 'catalog.log'),
+          { reuseCheckout: true }
+        )
+        if ('error' in prepared) {
+          return emptyCatalog(configFile, prepared.error)
+        }
+        const [originUrl, commit] = await Promise.all([
+          readGit(['remote', 'get-url', 'origin'], prepared.cwd),
+          readGit(['rev-parse', 'HEAD'], prepared.cwd)
+        ])
+        return catalogs.get({
+          ...prepared,
+          configFile,
+          repoRoot: prepared.cwd,
+          repoKey: getRepoKey({ root: prepared.cwd, originUrl }),
+          commit,
+          cacheKey: `${sourceId}|${targetId}`
+        })
+      },
+      'testRuns:getFeatureScope': async (_event, raw) => {
+        const { sourceId } = FeatureScopeArgs.parse(raw)
+        const source = (await listSources()).find((entry) => entry.id === sourceId)
+        return source?.kind === 'worktree'
+          ? getFeatureScope({ path: source.path })
+          : { baseCommit: null, since: null, changedSpecFiles: [], changedOtherFiles: [] }
       },
       'testRuns:stopLaunch': (_event, raw) => launcher.stop(LaunchIdArgs.parse(raw).id),
       'testRuns:listLaunches': () => launcher.list(),

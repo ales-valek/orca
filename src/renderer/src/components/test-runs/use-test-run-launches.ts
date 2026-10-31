@@ -8,6 +8,10 @@ import type {
   TestRunSourceOption,
   TestRunTargetOption
 } from '../../../../shared/test-runs/test-run-launch-types'
+import {
+  getKnownBugAnnotations,
+  getTierPattern
+} from '../../../../shared/test-runs/repo-test-run-settings'
 import { findDevEnvForWorktree } from '../dev-env/DevEnvStatusBadge'
 import { getDefaultSource, getDefaultTarget } from './test-run-selection'
 
@@ -106,6 +110,22 @@ export function useTestRunLaunchControls(
   )
 
   return { targets, sources, choices, setChoices, launch }
+}
+
+/** Tier pattern and known-bug annotations of the chosen test source's repo. */
+export function useSourceRepoSettings(controls: TestRunLaunchControls): {
+  tierPattern: RegExp
+  knownBugAnnotations: string[]
+} {
+  const repoId = controls.sources?.find((source) => source.id === controls.choices.sourceId)?.repoId
+  const settings = useAppStore((s) => s.repos.find((repo) => repo.id === repoId)?.testRuns)
+  return useMemo(
+    () => ({
+      tierPattern: getTierPattern(settings),
+      knownBugAnnotations: getKnownBugAnnotations(settings)
+    }),
+    [settings]
+  )
 }
 
 /** Launches of one workspace, newest first; refreshed when the launcher reports a change. */
