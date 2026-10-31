@@ -42,6 +42,25 @@ function getStateLabel(state: TestRunLaunchState): string {
   }
 }
 
+function getWaitLabel(waitingFor: { trigger: string; pid: number }): string {
+  switch (waitingFor.trigger) {
+    case 'agent':
+      return translate(
+        'testRuns.launch.waitingForAgent',
+        'Waiting for an agent run (pid {{pid}})',
+        {
+          pid: waitingFor.pid
+        }
+      )
+    case 'orca':
+      return translate('testRuns.launch.waitingForOrca', 'Waiting for another Orca run')
+    default:
+      return translate('testRuns.launch.waitingForUser', 'Waiting for your run (pid {{pid}})', {
+        pid: waitingFor.pid
+      })
+  }
+}
+
 function LaunchRow({ launch }: { launch: TestRunLaunch }): React.JSX.Element {
   const isActive = ACTIVE_STATES.includes(launch.state)
   const log = useTestRunLaunchLog(launch.id, isActive)
@@ -53,7 +72,10 @@ function LaunchRow({ launch }: { launch: TestRunLaunch }): React.JSX.Element {
           {launch.title} · {launch.targetLabel}
         </span>
         <span className="shrink-0 text-2xs text-muted-foreground">
-          {getStateLabel(launch.state)} · {getRunAge(launch.startedAt)}
+          {launch.state === 'queued' && launch.waitingFor
+            ? getWaitLabel(launch.waitingFor)
+            : getStateLabel(launch.state)}{' '}
+          · {getRunAge(launch.startedAt)}
         </span>
         {isActive ? (
           <Button

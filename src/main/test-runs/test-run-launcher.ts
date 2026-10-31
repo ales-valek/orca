@@ -1,6 +1,6 @@
 import type { ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { appendFileSync, mkdirSync, readFileSync, statSync } from 'node:fs'
+import { appendFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { spawnProcess } from '@orca/process-host'
 import {
@@ -9,10 +9,13 @@ import {
 } from '@orca/process-host/process-tree-termination'
 import type {
   TestRunLaunch,
-  TestRunLaunchRequest,
-  TestRunSelection
+  TestRunLaunchRequest
 } from '../../shared/test-runs/test-run-launch-types'
+import { buildPlaywrightArgs, getLaunchTitle } from './test-run-launch-args'
+import { readLogTail, removeOldLaunchLogs } from './test-run-launch-logs'
 import { getTargetLockKey } from './test-run-target-env'
+
+export { buildPlaywrightArgs }
 
 export type LaunchSpawnSpec = {
   program: string
@@ -40,39 +43,8 @@ type Holder = { pid: number; trigger: string; label: string }
 
 const STOP_GRACE_MS = 5000
 const MAX_LAUNCHES = 20
-const LOG_TAIL_BYTES = 64 * 1024
-
-export function buildPlaywrightArgs(input: {
-  cli: string
-  configFile: string
-  selection: TestRunSelection
-  headed: boolean
-}): string[] {
-  const filters =
-    input.selection.kind === 'tests'
-      ? input.selection.locations
-      : input.selection.kind === 'paths'
-        ? input.selection.paths
-        : []
-  return [
-    input.cli,
-    'test',
-    '-c',
-    input.configFile,
-    ...filters,
-    ...(input.headed ? ['--headed'] : [])
-  ]
-}
-
-function getLaunchTitle(selection: TestRunSelection, headed: boolean): string {
-  const title =
-    selection.kind === 'tests'
-      ? `${selection.locations.length} ${selection.locations.length === 1 ? 'test' : 'tests'}`
-      : selection.kind === 'paths'
-        ? selection.paths.join(', ')
-        : 'All tests'
-  return headed ? `${title} · headed` : title
-}
+const RUN_LOOKUP_INTERVAL_MS = 1000
+const ACTIVE_STATES: TestRunLaunch['state'][] = ['queued', 'preparing', 'running']
 
 function terminateTree(child: LaunchChild): void {
   // SAFETY: launches always come from spawnProcess, which returns a ChildProcess.
@@ -90,6 +62,7 @@ export class TestRunLauncher {
   private readonly launches: TestRunLaunch[] = []
   private readonly controllers = new Map<string, AbortController>()
   private readonly children = new Map<string, LaunchChild>()
+  private readonly lastRunLookups = new Map<string, number>()
 
   constructor(
     private readonly deps: {
@@ -100,6 +73,7 @@ export class TestRunLauncher {
         key: string
         holder: Holder
         signal: AbortSignal
+        onWait: (holder: Holder) => void
       }) => Promise<TestRunLock>
       prepareSource: (
         request: TestRunLaunchRequest,
@@ -111,7 +85,9 @@ export class TestRunLauncher {
       now?: () => number
       createId?: () => string
     }
-  ) {}
+  ) {
+    removeOldLaunchLogs(join(this.deps.dir, 'launches'))
+  }
 
   private now(): number {
     return (this.deps.now ?? Date.now)()
@@ -147,7 +123,16 @@ export class TestRunLauncher {
       error: null
     }
     this.launches.unshift(launch)
-    this.launches.splice(MAX_LAUNCHES)
+    // Why only finished ones: an evicted active launch would lose its Stop button.
+    for (
+      let index = this.launches.length - 1;
+      index >= 0 && this.launches.length > MAX_LAUNCHES;
+      index--
+    ) {
+      if (!ACTIVE_STATES.includes(this.launches[index].state)) {
+        this.launches.splice(index, 1)
+      }
+    }
     mkdirSync(join(this.deps.dir, 'launches'), { recursive: true })
     const controller = new AbortController()
     this.controllers.set(id, controller)
@@ -169,9 +154,11 @@ export class TestRunLauncher {
       lock = await this.deps.acquireLock({
         key: `${lockTarget}#`,
         holder: { pid: process.pid, trigger: 'orca', label: targetLabel },
-        signal
+        signal,
+        onWait: (holder) =>
+          this.update(id, { waitingFor: { trigger: holder.trigger, pid: holder.pid } })
       })
-      this.update(id, { state: 'preparing' })
+      this.update(id, { state: 'preparing', waitingFor: null })
       const logPath = this.getLogPath(id)
       const prepared = await this.deps.prepareSource(request, signal, logPath)
       if (signal.aborted) {
@@ -185,7 +172,8 @@ export class TestRunLauncher {
       const code = await this.spawnRun(id, request, prepared, lockTarget, logPath, lock)
       this.finish(id, signal.aborted ? 'stopped' : code === 0 ? 'passed' : 'failed')
     } catch (error) {
-      if (isAbortError(error)) {
+      // Why signal too: a stop during install surfaces as the install's own error.
+      if (isAbortError(error) || signal.aborted) {
         this.finish(id, 'stopped')
       } else {
         this.finish(id, 'error', error instanceof Error ? error.message : String(error))
@@ -215,18 +203,7 @@ export class TestRunLauncher {
         headed: request.headed
       }),
       cwd: prepared.cwd,
-      env: {
-        ...process.env,
-        ...prepared.env,
-        // Why: Orca's own binary runs the repo's Playwright as plain Node.
-        ELECTRON_RUN_AS_NODE: '1',
-        ORCA_TEST_RUN_TRIGGER: 'orca',
-        ORCA_TEST_LAUNCH_ID: id,
-        ORCA_TEST_LOCK_KEY: lockTarget,
-        // Why: this launcher already holds the lock the run's global setup would take.
-        ORCA_TEST_LOCK_HELD: '1',
-        ...(request.worktreeId ? { ORCA_WORKTREE_ID: request.worktreeId } : {})
-      },
+      env: this.getRunEnv(id, request, prepared, lockTarget),
       stdio: 'pipe',
       detached: process.platform !== 'win32'
     })
@@ -237,11 +214,21 @@ export class TestRunLauncher {
     }
     const onOutput = (chunk: Buffer | string): void => {
       appendFileSync(logPath, chunk)
-      if (this.get(id)?.state === 'preparing') {
-        const runId = this.deps.findRunByLaunch(id)
-        if (runId) {
-          this.update(id, { state: 'running', runId })
-        }
+      if (this.get(id)?.state !== 'preparing') {
+        return
+      }
+      // Why throttled: each lookup reads the run records from disk on the main thread.
+      const now = this.now()
+      if (
+        now - (this.lastRunLookups.get(id) ?? Number.NEGATIVE_INFINITY) <
+        RUN_LOOKUP_INTERVAL_MS
+      ) {
+        return
+      }
+      this.lastRunLookups.set(id, now)
+      const runId = this.deps.findRunByLaunch(id)
+      if (runId) {
+        this.update(id, { state: 'running', runId })
       }
     }
     child.stdout?.on('data', onOutput)
@@ -250,6 +237,33 @@ export class TestRunLauncher {
       child.once('error', reject)
       child.once('exit', (code) => resolve(code))
     })
+  }
+
+  private getRunEnv(
+    id: string,
+    request: TestRunLaunchRequest,
+    prepared: PreparedSource,
+    lockTarget: string
+  ): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      ...prepared.env,
+      // Why: Orca's own binary runs the repo's Playwright as plain Node.
+      ELECTRON_RUN_AS_NODE: '1',
+      ORCA_TEST_RUN_TRIGGER: 'orca',
+      ORCA_TEST_LAUNCH_ID: id,
+      ORCA_TEST_LOCK_KEY: lockTarget,
+      // Why: this launcher already holds the lock the run's global setup would take.
+      ORCA_TEST_LOCK_HELD: '1',
+      ...(request.worktreeId ? { ORCA_WORKTREE_ID: request.worktreeId } : {})
+    }
+    if (!request.worktreeId) {
+      // Why: otherwise the run would be filed under the pane Orca itself was started from.
+      delete env.ORCA_WORKTREE_ID
+      delete env.ORCA_PANE_KEY
+      delete env.ORCA_TAB_ID
+    }
+    return env
   }
 
   private finish(id: string, state: TestRunLaunch['state'], error: string | null = null): void {
@@ -276,13 +290,6 @@ export class TestRunLauncher {
   }
 
   readLog(id: string): string {
-    const path = this.getLogPath(id)
-    try {
-      const size = statSync(path).size
-      const text = readFileSync(path, 'utf8')
-      return size > LOG_TAIL_BYTES ? text.slice(-LOG_TAIL_BYTES) : text
-    } catch {
-      return ''
-    }
+    return readLogTail(this.getLogPath(id))
   }
 }
