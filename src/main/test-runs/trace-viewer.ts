@@ -12,7 +12,9 @@ export type TraceViewerSpawnSpec = {
 
 export type TraceViewerChild = {
   stdout: NodeJS.ReadableStream | null
+  stderr: NodeJS.ReadableStream | null
   once(event: 'exit', listener: () => void): unknown
+  once(event: 'error', listener: (error: Error) => void): unknown
   kill(): boolean
 }
 
@@ -65,7 +67,7 @@ export class TraceViewers {
       return { url: await viewer.url }
     } catch (error) {
       viewer.child.kill()
-      this.viewers.delete(traceFile)
+      this.forget(traceFile, viewer)
       return { error: error instanceof Error ? error.message : String(error) }
     }
   }
@@ -87,7 +89,10 @@ export class TraceViewers {
       env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
       stdio: 'pipe'
     })
-    const url = new Promise<string>((resolve, reject) => {
+    // Why drain: an unread stderr pipe fills up and stalls the viewer.
+    child.stderr?.resume()
+    const viewer: Viewer = { child, url: Promise.resolve('') }
+    viewer.url = new Promise<string>((resolve, reject) => {
       let output = ''
       const timer = setTimeout(
         () => reject(new Error('The trace viewer did not start')),
@@ -101,13 +106,27 @@ export class TraceViewers {
           resolve(match[1])
         }
       })
+      child.once('error', (error) => {
+        clearTimeout(timer)
+        this.forget(traceFile, viewer)
+        reject(error)
+      })
       child.once('exit', () => {
         clearTimeout(timer)
-        this.viewers.delete(traceFile)
+        this.forget(traceFile, viewer)
         reject(new Error('The trace viewer exited'))
       })
     })
-    return { child, url }
+    // Why: a viewer nobody awaits (evicted, never opened) must not reject unhandled.
+    viewer.url.catch(() => undefined)
+    return viewer
+  }
+
+  /** Only this viewer: a reopened trace may already have a newer one. */
+  private forget(traceFile: string, viewer: Viewer): void {
+    if (this.viewers.get(traceFile) === viewer) {
+      this.viewers.delete(traceFile)
+    }
   }
 
   private evictOldest(): void {
