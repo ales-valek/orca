@@ -23742,6 +23742,34 @@
     "openSettings": "Open settings",
     "noTabs": "Open a tool from a card above."
   },
+  "testRuns": {
+    "panel": {
+      "tab": "Tests"
+    },
+    "history": "History",
+    "traceFailed": "Could not open the trace",
+    "back": "Back",
+    "retry": "retry {{retry}}",
+    "openTrace": "Open trace",
+    "output": "Output",
+    "trigger": {
+      "agent": "agent",
+      "user": "you",
+      "orca": "Orca"
+    },
+    "label": {
+      "knownBugWithId": "Known bug {{id}}",
+      "knownBug": "Known bug",
+      "expectedFail": "Expected to fail"
+    },
+    "tier": "Tier {{tier}}",
+    "groupCountsFailed": "{{failed}} failed / {{total}}",
+    "remote": "Tests are not available for remote workspaces yet.",
+    "loading": "Loading test runs…",
+    "empty": "No test runs in this workspace yet. Runs started in Orca terminals appear here.",
+    "lastRun": "Last run {{age}} by {{who}}",
+    "running": "running…"
+  },
   "keybindings": {
     "title": {
       "worktreeQuickOpen": "Go to File",
