@@ -47,7 +47,10 @@ export function createTestRunCatalogHandlers(deps: {
   const { store, dir } = deps
   const { listTargets, listSources, prepareTestSource } = deps.launches
   const catalogs = new TestCatalogs()
-  const suggestionCache = new Map<string, { suggestions: { identity: string; reason: string }[] }>()
+  const suggestionCache = new Map<
+    string,
+    { suggestions: { identity: string; reason: string }[]; isListShortened: boolean }
+  >()
 
   const getCatalog = async (
     target: { id: string; target: TestRunTarget },
@@ -144,6 +147,7 @@ export function createTestRunCatalogHandlers(deps: {
         return result
       }
       const response = {
+        isListShortened: result.isListShortened,
         suggestions: result.suggestions.map((suggestion) => ({
           identity: catalog.entries[suggestion.index].identity,
           reason: suggestion.reason
