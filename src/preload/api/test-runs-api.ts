@@ -36,5 +36,8 @@ export type TestRunsApi = {
     targetId: string
     sourceId: string
     configFile: string
-  }) => Promise<{ suggestions: { identity: string; reason: string }[] } | { error: string }>
+  }) => Promise<
+    | { suggestions: { identity: string; reason: string }[]; isListShortened: boolean }
+    | { error: string }
+  >
 }
