@@ -74,6 +74,10 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
     'testRuns:getHistory': (_event, raw) => runs.getHistory(HistoryArgs.parse(raw).identity),
     'testRuns:getArtifactUrl': (event, raw) => {
       const { runId, file } = ArtifactArgs.parse(raw)
+      const imageUrl = runs.readImageDataUrl(runId, file)
+      if (imageUrl) {
+        return { url: imageUrl }
+      }
       const filePath = runs.getArtifactPath(runId, file)
       // Why user-file: main validated the path inside the runs dir, which no project root covers.
       const media = filePath

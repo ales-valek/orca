@@ -161,6 +161,19 @@ describe('TestRunStore', () => {
     expect(createStore().prune({ maxBytes: 10_000 }).removedRunIds).toEqual(['r1'])
   })
 
+  it('reads image artifacts as data URLs within the size limit', () => {
+    writeRun(makeRun('r1'), [])
+    const attachments = join(dir, 'runs', 'r1', 'attachments')
+    writeFileSync(join(attachments, '1-screenshot.png'), Buffer.from('png'))
+    writeFileSync(join(attachments, '2-big.png'), Buffer.alloc(2000))
+    const store = createStore()
+    expect(store.readImageDataUrl('r1', 'attachments/1-screenshot.png', 1000)).toBe(
+      `data:image/png;base64,${Buffer.from('png').toString('base64')}`
+    )
+    expect(store.readImageDataUrl('r1', 'attachments/2-big.png', 1000)).toBeNull()
+    expect(store.readImageDataUrl('r1', 'run.json', 1000)).toBeNull()
+  })
+
   it('rejects artifact paths outside the run', () => {
     writeRun(makeRun('r1'), [], 10)
     const store = createStore()
