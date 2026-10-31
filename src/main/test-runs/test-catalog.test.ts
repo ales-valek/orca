@@ -197,6 +197,26 @@ describe('test catalog', () => {
     expect(spawns()).toBe(2)
   })
 
+  it('runs one list for callers that ask at the same time', async () => {
+    const { catalogs, spawns } = createCatalogs({ code: 0, stdout: JSON.stringify(LIST) })
+    await Promise.all([
+      catalogs.get({ ...input, isDirty: true }),
+      catalogs.get({ ...input, isDirty: true })
+    ])
+    expect(spawns()).toBe(1)
+  })
+
+  it('keeps the tests Playwright listed even when it exits with an error', async () => {
+    const { catalogs } = createCatalogs({
+      code: 1,
+      stdout: JSON.stringify(LIST),
+      stderr: 'Error: tests/broken.spec.ts: Unexpected token'
+    })
+    const catalog = await catalogs.get(input)
+    expect(catalog.entries).toHaveLength(3)
+    expect(catalog.error).toContain('Unexpected token')
+  })
+
   it('reuses the catalog for the same commit', async () => {
     const { catalogs, spawns } = createCatalogs({ code: 0, stdout: JSON.stringify(LIST) })
     const first = await catalogs.get(input)

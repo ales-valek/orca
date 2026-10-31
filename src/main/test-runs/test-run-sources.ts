@@ -1,7 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-
-const CONFIG_PATTERN = /^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/
+import { resolveDefaultBaseRefViaExec } from '../../shared/git-default-base-ref'
+import { PLAYWRIGHT_CONFIG_FILE_PATTERN } from '../../shared/test-runs/test-run-launch-types'
+import { gitExecFileAsync } from '../git/command-runner/git-exec-file'
 
 export type TestRunSource =
   | { kind: 'origin-main'; repoId: string; repoPath: string; label: string }
@@ -21,13 +22,32 @@ export function findPlaywrightConfigs(dir: string): string[] {
   if (!existsSync(dir)) {
     return []
   }
-  return readdirSync(dir)
-    .filter((name) => CONFIG_PATTERN.test(name))
+  return sortConfigs(readdirSync(dir))
+}
+
+function sortConfigs(names: string[]): string[] {
+  return names
+    .filter((name) => PLAYWRIGHT_CONFIG_FILE_PATTERN.test(name))
     .toSorted(
       (a, b) =>
         Number(!a.startsWith('playwright.config.')) - Number(!b.startsWith('playwright.config.')) ||
         a.localeCompare(b)
     )
+}
+
+/** Configs on the default branch, which Orca's origin/main checkout will have. */
+export async function listPlaywrightConfigsAtDefaultBranch(repoPath: string): Promise<string[]> {
+  const git = async (argv: string[]): Promise<{ stdout: string }> =>
+    gitExecFileAsync(argv, { cwd: repoPath })
+  try {
+    const ref = await resolveDefaultBaseRefViaExec(git)
+    if (ref) {
+      return sortConfigs((await git(['ls-tree', '--name-only', ref])).stdout.split('\n'))
+    }
+  } catch {
+    // Without a readable default branch, the working copy's configs are the best guess.
+  }
+  return findPlaywrightConfigs(repoPath)
 }
 
 /** Local repos with a Playwright config: their origin/main plus each of their worktrees. */
