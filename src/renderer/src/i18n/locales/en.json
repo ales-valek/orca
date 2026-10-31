@@ -23783,6 +23783,34 @@
       "help": "Env for test runs started from Orca: localEnv for Dev Environments, presets for shared environments, e.g. {\"localEnv\": {\"TEST_ENV\": \"local\"}, \"presets\": [{\"name\": \"dev\", \"env\": {\"TEST_ENV\": \"dev\"}}]}.",
       "save": "Save test runs",
       "import": "Import test runs JSON"
+    },
+    "launch": {
+      "runAgain": "Run again",
+      "runFolder": "Run this folder",
+      "noTargets": "Create a Dev Environment or a test-run preset to run tests from Orca.",
+      "noSources": "No repo with a Playwright config is added to Orca.",
+      "target": "Target",
+      "pickTarget": "Target…",
+      "sharedTarget": "{{name}} (shared)",
+      "source": "Tests",
+      "pickSource": "Test source…",
+      "sharedHint": "Shared environment: only runs from this computer wait for each other.",
+      "headed": "Visible browser",
+      "runFailed": "Run failed",
+      "runAll": "Run all",
+      "state": {
+        "queued": "Waiting for the environment",
+        "preparing": "Preparing",
+        "running": "Running",
+        "passed": "Passed",
+        "failed": "Failed",
+        "stopped": "Stopped",
+        "error": "Could not run"
+      },
+      "stop": "Stop",
+      "runTier": "Run tier",
+      "pickFirst": "Pick a target and a test source first.",
+      "failed": "Could not start the tests"
     }
   },
   "keybindings": {
