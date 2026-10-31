@@ -23435,7 +23435,8 @@
     "pageEmpty": "No test runs yet. Playwright runs started in Orca terminals appear here once the test repo opts in.",
     "noTier": "Without tier",
     "workspaces": "Workspaces",
-    "failedCount": "{{count}} failed"
+    "failedCount": "{{count}} failed",
+    "traceNeedsWorkspace": "Open a workspace to view the trace in."
   },
   "keybindings": {
     "title": {
