@@ -61,12 +61,15 @@ export function useTestRunLaunchControls(
 
   const choices = useMemo((): LaunchChoices => {
     const repoId = sources?.find((source) => source.path === resultsRoot)?.repoId ?? null
+    const targetId = stored?.targetId ?? getDefaultTarget(targets ?? [], devEnvId)
+    const isPreset = targets?.find((option) => option.id === targetId)?.target.kind === 'preset'
     return {
-      targetId: stored?.targetId ?? getDefaultTarget(targets ?? [], devEnvId),
-      sourceId: stored?.sourceId ?? getDefaultSource(sources ?? [], repoId),
+      targetId,
+      sourceId:
+        stored?.sourceId ?? getDefaultSource(sources ?? [], repoId, { isPreset, worktreeId }),
       headed: stored?.headed ?? false
     }
-  }, [stored, targets, sources, devEnvId, resultsRoot])
+  }, [stored, targets, sources, devEnvId, resultsRoot, worktreeId])
 
   const setChoices = useCallback(
     (changes: Partial<LaunchChoices>) => {
