@@ -20,6 +20,7 @@ export const testRunsApi = {
   readLaunchLog: (args) => ipcRenderer.invoke('testRuns:readLaunchLog', args),
   getCatalog: (args) => ipcRenderer.invoke('testRuns:getCatalog', args),
   getFeatureScope: (args) => ipcRenderer.invoke('testRuns:getFeatureScope', args),
+  suggest: (args) => ipcRenderer.invoke('testRuns:suggest', args),
   onLaunchesChanged: (callback) => {
     const listener = (): void => callback()
     ipcRenderer.on('testRuns:launchesChanged', listener)

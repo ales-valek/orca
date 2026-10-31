@@ -1,13 +1,11 @@
-import type { TestCatalog } from '../../../shared/test-runs/test-catalog-types'
-import { getRepoKey } from '../../../shared/test-runs/test-identity'
-import { gitExecFileAsync } from '../../git/command-runner/git-exec-file'
-import { TestCatalogs } from '../../test-runs/test-catalog'
-import { getFeatureScope } from '../../test-runs/test-feature-scope'
 import { createRequire } from 'node:module'
-import { basename, join } from 'node:path'
+import { basename } from 'node:path'
 import { app, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
-import type { TestRunTarget } from '../../../shared/test-runs/test-run-launch-types'
+import type {
+  TestRunTarget,
+  TestRunTargetOption
+} from '../../../shared/test-runs/test-run-launch-types'
 import { composeWorktreeId } from '../../../shared/worktree/id'
 import { listWorktrees } from '../../git/worktree-scan-cache'
 import type { Store } from '../../persistence'
@@ -45,24 +43,6 @@ const LaunchArgs = z.object({
   worktreeId: z.string().nullable()
 })
 const LaunchIdArgs = z.object({ id: z.string().min(1) })
-const CatalogArgs = z.object({
-  targetId: z.string().min(1),
-  sourceId: z.string().min(1),
-  configFile: z.string().regex(/^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/)
-})
-const FeatureScopeArgs = z.object({ sourceId: z.string().min(1) })
-
-function emptyCatalog(configFile: string, error: string): TestCatalog {
-  return { sourceCommit: null, configFile, entries: [], error, builtAt: Date.now() }
-}
-
-async function readGit(args: string[], cwd: string): Promise<string | null> {
-  try {
-    return (await gitExecFileAsync(args, { cwd })).stdout.trim() || null
-  } catch {
-    return null
-  }
-}
 
 type LockModule = {
   acquireLock: (input: {
@@ -73,7 +53,15 @@ type LockModule = {
   }) => Promise<(() => void) & { setHolderPid: (pid: number) => void }>
 }
 
-type SourceView = TestRunSource & { id: string; configFiles: string[] }
+type SourceView = TestRunSource & { id: string; path: string; configFiles: string[] }
+
+/** Checkout, env files and Playwright CLI of a source for a target; shared by launches and lists. */
+export type PrepareTestSource = (
+  request: { target: TestRunTarget; sourceId: string },
+  signal: AbortSignal | undefined,
+  logPath: string,
+  options?: { reuseCheckout?: boolean }
+) => Promise<{ cwd: string; cli: string; env: Record<string, string> } | { error: string }>
 
 function getSourceId(source: TestRunSource): string {
   return source.kind === 'origin-main'
@@ -100,12 +88,14 @@ export function createTestRunLaunchHandlers(deps: {
 }): {
   handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown>
   stop: () => void
+  listTargets: () => TestRunTargetOption[]
+  listSources: () => Promise<SourceView[]>
+  prepareTestSource: PrepareTestSource
 } {
   const { store, runs, dir } = deps
   // Why require: the launcher and terminal runs must share one lock implementation.
   const lock: LockModule = createRequire(__filename)(deps.lockPath)
   const checkouts = new TestRunCheckouts({ dir })
-  const catalogs = new TestCatalogs()
   // Why at start: a deleted environment's checkout (with its node_modules) is dead weight.
   try {
     const keep = new Set(
@@ -122,12 +112,7 @@ export function createTestRunLaunchHandlers(deps: {
     console.error('[test-runs] cannot remove unused checkouts', error)
   }
 
-  const listTargets = (): {
-    id: string
-    target: TestRunTarget
-    label: string
-    isShared: boolean
-  }[] => [
+  const listTargets = (): TestRunTargetOption[] => [
     ...store.getDevEnvs().map((env) => ({
       id: `dev-env:${env.id}`,
       target: { kind: 'dev-env' as const, devEnvId: env.id },
@@ -169,13 +154,7 @@ export function createTestRunLaunchHandlers(deps: {
     }))
   }
 
-  /** Checkout, env files and Playwright CLI of a source for a target; shared by launches and lists. */
-  const prepareTestSource = async (
-    request: { target: TestRunTarget; sourceId: string },
-    signal: AbortSignal | undefined,
-    logPath: string,
-    options: { reuseCheckout?: boolean } = {}
-  ): Promise<{ cwd: string; cli: string; env: Record<string, string> } | { error: string }> => {
+  const prepareTestSource: PrepareTestSource = async (request, signal, logPath, options = {}) => {
     const settings = store.getSettings()
     const targetEnv = getTargetEnv(request.target, settings.devEnvTestRuns)
     if ('error' in targetEnv) {
@@ -263,45 +242,13 @@ export function createTestRunLaunchHandlers(deps: {
         }
         return launcher.launch(request, { targetLabel: target.label })
       },
-      'testRuns:getCatalog': async (_event, raw) => {
-        const { targetId, sourceId, configFile } = CatalogArgs.parse(raw)
-        const target = listTargets().find((entry) => entry.id === targetId)
-        if (!target) {
-          return emptyCatalog(configFile, 'This target no longer exists.')
-        }
-        const prepared = await prepareTestSource(
-          { target: target.target, sourceId },
-          undefined,
-          join(dir, 'catalog.log'),
-          { reuseCheckout: true }
-        )
-        if ('error' in prepared) {
-          return emptyCatalog(configFile, prepared.error)
-        }
-        const [originUrl, commit] = await Promise.all([
-          readGit(['remote', 'get-url', 'origin'], prepared.cwd),
-          readGit(['rev-parse', 'HEAD'], prepared.cwd)
-        ])
-        return catalogs.get({
-          ...prepared,
-          configFile,
-          repoRoot: prepared.cwd,
-          repoKey: getRepoKey({ root: prepared.cwd, originUrl }),
-          commit,
-          cacheKey: `${sourceId}|${targetId}`
-        })
-      },
-      'testRuns:getFeatureScope': async (_event, raw) => {
-        const { sourceId } = FeatureScopeArgs.parse(raw)
-        const source = (await listSources()).find((entry) => entry.id === sourceId)
-        return source?.kind === 'worktree'
-          ? getFeatureScope({ path: source.path })
-          : { baseCommit: null, since: null, changedSpecFiles: [], changedOtherFiles: [] }
-      },
       'testRuns:stopLaunch': (_event, raw) => launcher.stop(LaunchIdArgs.parse(raw).id),
       'testRuns:listLaunches': () => launcher.list(),
       'testRuns:readLaunchLog': (_event, raw) => launcher.readLog(LaunchIdArgs.parse(raw).id)
     },
-    stop: () => launcher.stopAll()
+    stop: () => launcher.stopAll(),
+    listTargets,
+    listSources,
+    prepareTestSource
   }
 }

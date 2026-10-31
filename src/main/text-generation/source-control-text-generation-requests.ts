@@ -50,7 +50,7 @@ export function trimGeneratedCommitMessage(message: string): string {
 const COMMAND_LINE_FIT_HEADROOM = 1_000
 
 /** Argv-delivered prompts must fit the local command line, so shrink only the patch to the largest budget that fits. */
-function fitPromptToLocalCommandLine(
+export function fitPromptToLocalCommandLine(
   params: GenerateParams,
   target: CommitMessageGenerationTarget,
   build: (diffBudget?: number) => string
