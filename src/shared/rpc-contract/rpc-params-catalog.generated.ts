@@ -660,6 +660,7 @@ import {
   TerminalUnsubscribe,
   TerminalUpdateViewport
 } from './terminal-viewport-schemas-params'
+import { TestRunsListParams, TestRunsResultsParams, TestRunsRunParams } from './test-runs-params'
 import { UpdaterCheckParams } from './updater-params'
 import {
   UsageCredentialApiKeyParams,
@@ -1503,6 +1504,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.wait': TerminalWait,
   'terminalDaemon.restartSevered': TerminalDaemonRestartSeveredParams,
   'terminalDaemon.severedStatus': null,
+  'testRuns.list': TestRunsListParams,
+  'testRuns.results': TestRunsResultsParams,
+  'testRuns.run': TestRunsRunParams,
   'ui.get': null,
   'ui.getJiraQuickFilters': null,
   'ui.getJiraSavedFilters': null,

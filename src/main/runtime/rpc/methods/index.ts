@@ -40,6 +40,7 @@ import { LINEAR_AGENT_ACCESS_METHODS } from './linear-agent-access'
 import { JIRA_METHODS } from './jira'
 import { HULY_METHODS } from './huly'
 import { DEV_ENV_METHODS } from './dev-env'
+import { TEST_RUN_METHODS } from './test-runs'
 import { SSH_METHODS } from './ssh'
 import { MANAGED_SERVER_METHODS } from './managed-server'
 import { SPEECH_METHODS } from './speech'
@@ -132,6 +133,7 @@ export const ALL_RPC_METHODS = [
   ...JIRA_METHODS,
   ...HULY_METHODS,
   ...DEV_ENV_METHODS,
+  ...TEST_RUN_METHODS,
   ...SSH_METHODS,
   ...MANAGED_SERVER_METHODS,
   ...SPEECH_METHODS,

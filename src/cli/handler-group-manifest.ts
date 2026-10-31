@@ -4,6 +4,7 @@ import { JIRA_HANDLER_GROUP } from './jira-handler-group'
 import { LINEAR_HANDLER_GROUP } from './linear-handler-group'
 import { MISSION_HANDLER_GROUP } from './mission-handler-group'
 import { DEVENV_HANDLER_GROUP } from './devenv-handler-group'
+import { TEST_RUN_HANDLER_GROUP } from './test-runs-handler-group'
 import { REFERENCE_HANDLER_GROUP } from './reference-handler-group'
 
 export type HandlerGroup = {
@@ -102,6 +103,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   MISSION_HANDLER_GROUP,
   DEVENV_HANDLER_GROUP,
+  TEST_RUN_HANDLER_GROUP,
   {
     name: 'file',
     keys: ['file open', 'file diff', 'file open-changed'],

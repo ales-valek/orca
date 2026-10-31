@@ -13,6 +13,8 @@ import {
   installOrcaPlaywrightReporter
 } from '../../test-runs/test-runs-install'
 import { TraceViewers } from '../../test-runs/trace-viewer'
+import { getDevEnvForWorktree } from '../../test-runs/test-run-targets'
+import { setTestRunServices } from '../../test-runs/test-run-services'
 import { createTestRunCatalogHandlers } from './test-run-catalog-handlers'
 import { createTestRunLaunchHandlers } from './test-run-launch-handlers'
 
@@ -96,9 +98,19 @@ export function registerTestRunsHandlers(
   stopPrevious = stop
   app.once('will-quit', stop)
 
+  const catalog = createTestRunCatalogHandlers({ store, dir, launches })
+  setTestRunServices({
+    listTargets: launches.listTargets,
+    listSources: launches.listSources,
+    getDevEnvIdForWorktree: (worktreeId) =>
+      getDevEnvForWorktree(store.getDevEnvs(), worktreeId)?.id ?? null,
+    getLatestResults: (worktreeId) => runs.getLatestResults({ worktreeId }),
+    getCatalog: catalog.getCatalogById,
+    launch: launches.launch
+  })
   const handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> = {
     ...launches.handlers,
-    ...createTestRunCatalogHandlers({ store, dir, launches }),
+    ...catalog.handlers,
     'testRuns:listRuns': (_event, raw) => runs.listRuns(FilterArgs.parse(raw ?? {})),
     'testRuns:getLatestResults': (_event, raw) => {
       const { worktreeId, repoKey } = FilterArgs.parse(raw ?? {})
