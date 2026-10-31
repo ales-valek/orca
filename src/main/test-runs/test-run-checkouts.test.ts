@@ -115,4 +115,15 @@ describe('TestRunCheckouts', () => {
     await checkouts.prepare({ key: 'k', repoPath: repo, install: [], logPath: join(dir, 'log') })
     expect(checkouts.exists('k')).toBe(true)
   })
+
+  it("reports the source repo's own origin, so its tests keep the same identity", async () => {
+    const checkouts = new TestRunCheckouts({ dir: join(dir, 'store'), runInstall: async () => {} })
+    const { path } = await checkouts.prepare({
+      key: 'k',
+      repoPath: repo,
+      install: [],
+      logPath: join(dir, 'log')
+    })
+    expect(git(path, 'remote', 'get-url', 'origin').trim()).toBe(origin)
+  })
 })
