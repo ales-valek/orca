@@ -26,6 +26,10 @@ export type TestRunRecord = {
   pid: number
   trigger: TestRunTrigger
   worktreeId: string | null
+  /** Dev Environment the worktree belonged to when the run started. */
+  devEnvId?: string | null
+  /** Orca launch that started the run; absent for runs started in a terminal. */
+  launchId?: string | null
   paneKey: string | null
   repo: { root: string; originUrl: string | null; commit: string | null; branch: string | null }
   /** Relative to the repo root. */

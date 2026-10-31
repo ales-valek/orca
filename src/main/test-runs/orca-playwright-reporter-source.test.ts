@@ -190,6 +190,16 @@ describe('Orca Playwright reporter', () => {
     expect(attachments[1].file).toMatch(/\.webm$/)
   })
 
+  it('records the dev env and launch of a run', () => {
+    mkdirSync(runsDir, { recursive: true })
+    writeFileSync(join(runsDir, 'targets.json'), JSON.stringify({ 'repo-1::/w/feature': 'kiosek' }))
+    vi.stubEnv('ORCA_TEST_LAUNCH_ID', 'launch-7')
+    const reporter = loadReporter()
+    reporter.onBegin(config(), {})
+    reporter.onEnd({ status: 'passed' })
+    expect(readRun().run).toMatchObject({ devEnvId: 'kiosek', launchId: 'launch-7' })
+  })
+
   it('records who ran it', () => {
     const triggers: string[] = []
     for (const env of [{ ORCA_AGENT_LAUNCH: '1' }, {}, { ORCA_TEST_RUN_TRIGGER: 'orca' }]) {

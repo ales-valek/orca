@@ -39,6 +39,15 @@ function git(cwd, args) {
   }
 }
 
+function readDevEnvId(root, worktreeId) {
+  if (!root || !worktreeId) return null
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, 'targets.json'), 'utf8'))[worktreeId] || null
+  } catch {
+    return null
+  }
+}
+
 function getTrigger() {
   if (env('ORCA_TEST_RUN_TRIGGER') === 'orca') return 'orca'
   const isAgent = ['ORCA_AGENT_LAUNCH', 'ORCA_AGENT_LAUNCH_TOKEN', 'CLAUDECODE', 'CODEX_THREAD_ID'].some(env)
@@ -105,6 +114,8 @@ class OrcaReporter {
         pid: process.pid,
         trigger: this.trigger,
         worktreeId: env('ORCA_WORKTREE_ID'),
+        devEnvId: readDevEnvId(this.root, env('ORCA_WORKTREE_ID')),
+        launchId: env('ORCA_TEST_LAUNCH_ID'),
         paneKey: env('ORCA_PANE_KEY'),
         repo: {
           root: repoRoot,
