@@ -147,7 +147,7 @@ export function DevEnvSettingsPane(): React.JSX.Element {
           field="devEnvTestRuns"
           help={translate(
             'testRuns.settings.help',
-            'Env for test runs started from Orca: localEnv for Dev Environments, presets for shared environments, e.g. {"localEnv": {"TEST_ENV": "local"}, "presets": [{"name": "dev", "env": {"TEST_ENV": "dev"}}]}.'
+            'Env for test runs started from Orca: localEnv for Dev Environments, presets for shared environments. envFiles copies a preset\'s missing .env files from an absolute folder into the source, e.g. {"localEnv": {"TEST_ENV": "local"}, "presets": [{"name": "dev", "env": {"TEST_ENV": "dev"}, "envFiles": {"from": "/path/to/tests", "to": "tests"}}]}.'
           )}
           saveLabel={translate('testRuns.settings.save', 'Save test runs')}
           importLabel={translate('testRuns.settings.import', 'Import test runs JSON')}
