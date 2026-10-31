@@ -6,7 +6,11 @@ import { readMediaPreview } from '../../media/media-preview-protocol'
 import type { Store } from '../../persistence'
 import { TestRunStore } from '../../test-runs/test-run-store'
 import { TestRunsChangeNotifier } from '../../test-runs/test-runs-change-notifier'
-import { getTestRunsDir, installOrcaPlaywrightReporter } from '../../test-runs/test-runs-install'
+import {
+  getTestRunsDir,
+  installOrcaPlaywrightLock,
+  installOrcaPlaywrightReporter
+} from '../../test-runs/test-runs-install'
 import { TraceViewers } from '../../test-runs/trace-viewer'
 
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -27,6 +31,7 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
   stopPrevious?.()
   const dir = getTestRunsDir(app.getPath('userData'))
   installOrcaPlaywrightReporter(dir)
+  installOrcaPlaywrightLock(dir)
   const runsDir = join(dir, 'runs')
   mkdirSync(runsDir, { recursive: true })
   const runs = new TestRunStore({ dir })

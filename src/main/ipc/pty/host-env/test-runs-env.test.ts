@@ -10,6 +10,7 @@ describe('applyTestRunsEnv', () => {
     applyTestRunsEnv(env, { userDataPath: USER_DATA, isWsl: false })
     expect(env).toEqual({
       ORCA_PLAYWRIGHT_REPORTER: join(USER_DATA, 'test-runs', 'orca-playwright-reporter.cjs'),
+      ORCA_PLAYWRIGHT_LOCK: join(USER_DATA, 'test-runs', 'orca-playwright-lock.cjs'),
       ORCA_TEST_RUNS_DIR: join(USER_DATA, 'test-runs')
     })
   })
@@ -21,7 +22,7 @@ describe('applyTestRunsEnv', () => {
   })
 
   it('skips WSL shells', () => {
-    const env: Record<string, string> = {}
+    const env: Record<string, string> = { ORCA_PLAYWRIGHT_LOCK: '/other/lock.cjs' }
     applyTestRunsEnv(env, { userDataPath: USER_DATA, isWsl: true })
     expect(env).toEqual({})
   })

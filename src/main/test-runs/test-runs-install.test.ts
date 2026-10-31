@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { getOrcaPlaywrightReporterSource } from './orca-playwright-reporter-source'
-import { installOrcaPlaywrightReporter } from './test-runs-install'
+import { getOrcaPlaywrightLockSource } from './orca-playwright-lock-source'
+import { installOrcaPlaywrightLock, installOrcaPlaywrightReporter } from './test-runs-install'
 
 let dir: string
 
@@ -28,5 +29,11 @@ describe('installOrcaPlaywrightReporter', () => {
     writeFileSync(path, 'stale')
     installOrcaPlaywrightReporter(dir)
     expect(readFileSync(path, 'utf8')).toBe(getOrcaPlaywrightReporterSource())
+  })
+
+  it('installs the run lock next to the reporter', () => {
+    const path = installOrcaPlaywrightLock(dir)
+    expect(path).toBe(join(dir, 'orca-playwright-lock.cjs'))
+    expect(readFileSync(path, 'utf8')).toBe(getOrcaPlaywrightLockSource())
   })
 })
