@@ -49,6 +49,7 @@ export const CLI_COMMAND_NAMES = [
   'linear',
   'mission',
   'devenv',
+  'test',
   'mouse',
   'network',
   'open',
