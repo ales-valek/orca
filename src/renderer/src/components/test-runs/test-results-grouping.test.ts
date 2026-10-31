@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TestResultRecord, TestRunRecord } from '../../../../shared/test-runs/test-run-types'
-import { getTestLabels, groupTestResults } from './test-results-grouping'
+import { groupTestRows } from './test-results-grouping'
+import { buildTestRows } from './test-rows'
 
 const RUN: TestRunRecord = {
   id: 'r1',
@@ -51,20 +52,26 @@ function entry(
 
 describe('groupTestResults', () => {
   it('groups by spec folder with failed groups first', () => {
-    const groups = groupTestResults(
-      [
-        entry('tests/admin/tier-1/a.spec.ts', 'A'),
-        entry('tests/eshop/tier-1/b.spec.ts', 'B ok'),
-        entry('tests/eshop/tier-1/c.spec.ts', 'C bad', { status: 'failed', outcome: 'unexpected' }),
-        entry('tests/eshop/tier-1/d.spec.ts', 'D skip', { status: 'skipped', outcome: 'skipped' })
-      ],
+    const groups = groupTestRows(
+      buildTestRows(
+        [],
+        [
+          entry('tests/admin/tier-1/a.spec.ts', 'A'),
+          entry('tests/eshop/tier-1/b.spec.ts', 'B ok'),
+          entry('tests/eshop/tier-1/c.spec.ts', 'C bad', {
+            status: 'failed',
+            outcome: 'unexpected'
+          }),
+          entry('tests/eshop/tier-1/d.spec.ts', 'D skip', { status: 'skipped', outcome: 'skipped' })
+        ]
+      ),
       {}
     )
     expect(groups.map((group) => [group.label, group.counts])).toEqual([
-      ['tests/eshop/tier-1', { passed: 1, failed: 1, skipped: 1 }],
-      ['tests/admin/tier-1', { passed: 1, failed: 0, skipped: 0 }]
+      ['tests/eshop/tier-1', { passed: 1, failed: 1, skipped: 1, neverRun: 0 }],
+      ['tests/admin/tier-1', { passed: 1, failed: 0, skipped: 0, neverRun: 0 }]
     ])
-    expect(groups[0].entries.map((item) => item.result.titlePath[0])).toEqual([
+    expect(groups[0].rows.map((row) => row.latest?.result.titlePath[0])).toEqual([
       'C bad',
       'B ok',
       'D skip'
@@ -72,8 +79,11 @@ describe('groupTestResults', () => {
   })
 
   it('reads the tier per group', () => {
-    const groups = groupTestResults(
-      [entry('tests/eshop/tier-3/a.spec.ts', 'A'), entry('e2e/smoke.spec.ts', 'B')],
+    const groups = groupTestRows(
+      buildTestRows(
+        [],
+        [entry('tests/eshop/tier-3/a.spec.ts', 'A'), entry('e2e/smoke.spec.ts', 'B')]
+      ),
       {}
     )
     expect(groups.map((group) => [group.label, group.tier])).toEqual([
@@ -83,21 +93,28 @@ describe('groupTestResults', () => {
   })
 })
 
-describe('getTestLabels', () => {
-  it('labels known bugs, expected failures, tags and project', () => {
-    const { result } = entry('tests/tier-1/a.spec.ts', 'A', {
-      tags: ['@serial'],
-      annotations: [
-        { type: 'bug-pin', description: 'CART-12' },
-        { type: 'note', description: 'ignored' }
-      ],
-      expectedStatus: 'failed'
-    })
-    expect(getTestLabels(result)).toEqual([
-      { kind: 'known-bug', text: 'CART-12' },
-      { kind: 'expected-fail', text: '' },
-      { kind: 'tag', text: '@serial' },
-      { kind: 'project', text: 'chromium' }
-    ])
+describe('never-run tests', () => {
+  it('counts tests that never ran and lists them last', () => {
+    const [group] = groupTestRows(
+      buildTestRows(
+        [
+          {
+            identity: 'new',
+            configFile: 'playwright.config.ts',
+            project: 'chromium',
+            file: 'tests/tier-1/new.spec.ts',
+            line: 1,
+            titlePath: ['A new test'],
+            tags: [],
+            annotations: [],
+            isSerial: false
+          }
+        ],
+        [entry('tests/tier-1/old.spec.ts', 'Old')]
+      ),
+      {}
+    )
+    expect(group.counts).toEqual({ passed: 1, failed: 0, skipped: 0, neverRun: 1 })
+    expect(group.rows.map((row) => row.identity)).toEqual(['tests/tier-1/old.spec.ts|Old', 'new'])
   })
 })

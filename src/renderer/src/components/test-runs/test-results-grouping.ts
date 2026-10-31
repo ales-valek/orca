@@ -1,21 +1,13 @@
 import { getTestTier } from '../../../../shared/test-runs/test-identity'
 import type { TestResultRecord, TestRunRecord } from '../../../../shared/test-runs/test-run-types'
+import { getRowFile, getRowTitlePath, type TestRow } from './test-rows'
 
 export type TestResultEntry = { result: TestResultRecord; run: TestRunRecord }
 
 export type TestResultCounts = { passed: number; failed: number; skipped: number }
 
-export type TestResultGroup = {
-  key: string
-  /** Spec folder relative to the repo root. */
-  label: string
-  tier: number | null
-  counts: TestResultCounts
-  entries: TestResultEntry[]
-}
-
 export type TestLabel = {
-  kind: 'tag' | 'known-bug' | 'expected-fail' | 'project'
+  kind: 'tag' | 'known-bug' | 'expected-fail' | 'serial' | 'project'
   text: string
 }
 
@@ -27,8 +19,6 @@ export function getTestResultState(result: TestResultRecord): TestResultState {
   }
   return result.status === 'skipped' ? 'skipped' : 'passed'
 }
-
-const STATE_ORDER: Record<TestResultState, number> = { failed: 0, passed: 1, skipped: 2 }
 
 function getSpecFolder(file: string): string {
   const index = file.lastIndexOf('/')
@@ -43,44 +33,55 @@ export function countTestResults(entries: TestResultEntry[]): TestResultCounts {
   return counts
 }
 
-/** Groups by spec folder; failing groups and tests come first. */
-export function groupTestResults(
-  entries: TestResultEntry[],
-  options: { tierPattern?: RegExp }
-): TestResultGroup[] {
-  const byFolder = new Map<string, TestResultEntry[]>()
-  for (const entry of entries) {
-    const folder = getSpecFolder(entry.result.file)
-    byFolder.set(folder, [...(byFolder.get(folder) ?? []), entry])
+export type TestRowState = TestResultState | 'neverRun'
+
+export type TestRowGroup = {
+  key: string
+  /** Spec folder relative to the repo root. */
+  label: string
+  tier: number | null
+  counts: Record<TestRowState, number>
+  rows: TestRow[]
+}
+
+export function getTestRowState(row: TestRow): TestRowState {
+  return row.latest ? getTestResultState(row.latest.result) : 'neverRun'
+}
+
+const ROW_STATE_ORDER: Record<TestRowState, number> = {
+  failed: 0,
+  passed: 1,
+  skipped: 2,
+  neverRun: 3
+}
+
+/** Groups by spec folder; failing groups and tests come first, tests that never ran last. */
+export function groupTestRows(rows: TestRow[], options: { tierPattern?: RegExp }): TestRowGroup[] {
+  const byFolder = new Map<string, TestRow[]>()
+  for (const row of rows) {
+    const folder = getSpecFolder(getRowFile(row))
+    byFolder.set(folder, [...(byFolder.get(folder) ?? []), row])
   }
   return [...byFolder.entries()]
-    .map(([folder, items]) => ({
-      key: folder,
-      label: folder,
-      tier: getTestTier(`${folder}/`, options.tierPattern),
-      counts: countTestResults(items),
-      entries: items.toSorted(
-        (a, b) =>
-          STATE_ORDER[getTestResultState(a.result)] - STATE_ORDER[getTestResultState(b.result)] ||
-          a.result.titlePath.join(' ').localeCompare(b.result.titlePath.join(' '))
-      )
-    }))
+    .map(([folder, items]) => {
+      const counts: Record<TestRowState, number> = { passed: 0, failed: 0, skipped: 0, neverRun: 0 }
+      for (const row of items) {
+        counts[getTestRowState(row)]++
+      }
+      return {
+        key: folder,
+        label: folder,
+        tier: getTestTier(`${folder}/`, options.tierPattern),
+        counts,
+        rows: items.toSorted(
+          (a, b) =>
+            ROW_STATE_ORDER[getTestRowState(a)] - ROW_STATE_ORDER[getTestRowState(b)] ||
+            getRowTitlePath(a).join(' ').localeCompare(getRowTitlePath(b).join(' '))
+        )
+      }
+    })
     .toSorted(
       (a, b) =>
         Number(b.counts.failed > 0) - Number(a.counts.failed > 0) || a.label.localeCompare(b.label)
     )
-}
-
-export function getTestLabels(result: TestResultRecord): TestLabel[] {
-  const labels: TestLabel[] = result.annotations
-    .filter((annotation) => annotation.type === 'bug-pin')
-    .map((annotation) => ({ kind: 'known-bug', text: annotation.description ?? '' }))
-  if (result.expectedStatus === 'failed') {
-    labels.push({ kind: 'expected-fail', text: '' })
-  }
-  labels.push(...result.tags.map((tag): TestLabel => ({ kind: 'tag', text: tag })))
-  if (result.project) {
-    labels.push({ kind: 'project', text: result.project })
-  }
-  return labels
 }
