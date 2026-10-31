@@ -37,7 +37,10 @@ export function createTestRunCatalogHandlers(deps: {
   store: Store
   dir: string
   launches: ReturnType<typeof createTestRunLaunchHandlers>
-}): Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> {
+}): {
+  handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown>
+  getCatalogById: (targetId: string, sourceId: string, configFile: string) => Promise<TestCatalog>
+} {
   const { store, dir } = deps
   const { listTargets, listSources, prepareTestSource } = deps.launches
   const catalogs = new TestCatalogs()
@@ -71,13 +74,21 @@ export function createTestRunCatalogHandlers(deps: {
     })
   }
 
-  return {
+  const getCatalogById = async (
+    targetId: string,
+    sourceId: string,
+    configFile: string
+  ): Promise<TestCatalog> => {
+    const target = listTargets().find((entry) => entry.id === targetId)
+    return target
+      ? getCatalog(target, sourceId, configFile)
+      : emptyCatalog(configFile, 'This target no longer exists.')
+  }
+
+  const handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> = {
     'testRuns:getCatalog': async (_event, raw) => {
       const { targetId, sourceId, configFile } = CatalogArgs.parse(raw)
-      const target = listTargets().find((entry) => entry.id === targetId)
-      return target
-        ? getCatalog(target, sourceId, configFile)
-        : emptyCatalog(configFile, 'This target no longer exists.')
+      return getCatalogById(targetId, sourceId, configFile)
     },
     'testRuns:getFeatureScope': async (_event, raw) => {
       const { sourceId } = FeatureScopeArgs.parse(raw)
@@ -135,4 +146,5 @@ export function createTestRunCatalogHandlers(deps: {
       return response
     }
   }
+  return { handlers, getCatalogById }
 }
