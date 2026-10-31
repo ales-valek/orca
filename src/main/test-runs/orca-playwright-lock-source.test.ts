@@ -32,7 +32,10 @@ function loadLock(): LockModule {
 }
 
 function lockFiles(): string[] {
-  return existsSync(join(dir, 'locks')) ? readdirSync(join(dir, 'locks')) : []
+  const locks = join(dir, 'locks')
+  return existsSync(locks)
+    ? readdirSync(locks).flatMap((target) => readdirSync(join(locks, target)))
+    : []
 }
 
 describe('Orca Playwright run lock', () => {
@@ -80,9 +83,9 @@ describe('Orca Playwright run lock', () => {
 
   it('takes over a lock whose holder is gone', async () => {
     const lock = loadLock()
-    mkdirSync(join(dir, 'locks'))
-    const name = createHash('sha1').update('dev-env:a#').digest('hex')
-    writeFileSync(join(dir, 'locks', `${name}.json`), JSON.stringify({ ...HOLDER, pid: DEAD_PID }))
+    const target = join(dir, 'locks', createHash('sha1').update('dev-env:a').digest('hex'))
+    mkdirSync(target, { recursive: true })
+    writeFileSync(join(target, '_all.json'), JSON.stringify({ ...HOLDER, pid: DEAD_PID }))
     const release = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER, pollMs: 5 })
     release()
     expect(lockFiles()).toHaveLength(0)
@@ -95,6 +98,41 @@ describe('Orca Playwright run lock', () => {
     expect(lockFiles()).toHaveLength(2)
     eshop()
     admin()
+  })
+
+  it('makes a run without a lane wait for every lane, and every lane wait for it', async () => {
+    const lock = loadLock()
+    const eshop = await lock.acquireLock({ dir, key: 'dev-env:a#eshop', holder: HOLDER })
+    let isWholeAcquired = false
+    const whole = lock
+      .acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER, pollMs: 5 })
+      .then((release) => {
+        isWholeAcquired = true
+        return release
+      })
+    await new Promise((resolve) => setTimeout(resolve, 40))
+    expect(isWholeAcquired).toBe(false)
+    eshop()
+    const releaseWhole = await whole
+    let isAdminAcquired = false
+    const admin = lock
+      .acquireLock({ dir, key: 'dev-env:a#admin', holder: HOLDER, pollMs: 5 })
+      .then((release) => {
+        isAdminAcquired = true
+        return release
+      })
+    await new Promise((resolve) => setTimeout(resolve, 40))
+    expect(isAdminAcquired).toBe(false)
+    releaseWhole()
+    ;(await admin)()
+  })
+
+  it('keeps other environments independent', async () => {
+    const lock = loadLock()
+    const first = await lock.acquireLock({ dir, key: 'dev-env:a#', holder: HOLDER })
+    const second = await lock.acquireLock({ dir, key: 'dev-env:b#', holder: HOLDER })
+    first()
+    second()
   })
 
   it('stops waiting when aborted', async () => {
