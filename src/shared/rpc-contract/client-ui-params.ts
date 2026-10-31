@@ -45,7 +45,8 @@ export const STATIC_RIGHT_SIDEBAR_TABS = [
   'source-control',
   'checks',
   'ports',
-  'dev-env'
+  'dev-env',
+  'tests'
 ] as const
 
 // Plugin panels are open-ended `plugin:<publisher>.<id>/<panel>` keys, so the
