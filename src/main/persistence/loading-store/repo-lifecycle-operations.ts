@@ -195,6 +195,7 @@ export class RepoLifecycleOperations {
         | 'folderUpgradeGitRootPath'
         | 'executionHostId'
         | 'symlinkPaths'
+        | 'testRuns'
         | 'issueSourcePreference'
         | 'forkSyncMode'
         | 'agentWorkspaceTrust'

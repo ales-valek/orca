@@ -24278,6 +24278,14 @@
       "runTier": "Run tier",
       "pickFirst": "Pick a target and a test source first.",
       "failed": "Could not start the tests"
+    },
+    "repoSettings": {
+      "title": "Tests",
+      "description": "How the Tests panel reads this repo’s Playwright tests.",
+      "tierPattern": "Tier folder pattern",
+      "tierPatternHelp": "A regular expression matched against test file paths; its first group is the tier number.",
+      "cumulative": "Higher tiers include lower ones",
+      "knownBugs": "Known-bug annotation types"
     }
   },
   "keybindings": {

@@ -1,3 +1,4 @@
+import { normalizeRepoTestRunSettings } from '../../../shared/test-runs/repo-test-run-settings'
 import type { BrowserWindow } from 'electron'
 import { ipcMain } from 'electron'
 import type { Store } from '../../persistence/loading-store/store'
@@ -45,6 +46,7 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
             | 'worktreeBasePath'
             | 'kind'
             | 'symlinkPaths'
+            | 'testRuns'
             | 'issueSourcePreference'
             | 'forkSyncMode'
             | 'agentWorkspaceTrust'
@@ -109,6 +111,14 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
         const v = updates.symlinkPaths as unknown
         if (!Array.isArray(v) || !v.every((e) => typeof e === 'string')) {
           delete updates.symlinkPaths
+        }
+      }
+      if ('testRuns' in updates) {
+        const normalized = normalizeRepoTestRunSettings(updates.testRuns)
+        if (normalized) {
+          updates.testRuns = normalized
+        } else {
+          delete updates.testRuns
         }
       }
       if ('worktreeBasePath' in updates && updates.worktreeBasePath !== undefined) {
