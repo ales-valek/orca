@@ -9,6 +9,8 @@ import { DEV_ENV_METHODS } from '../../runtime/rpc/methods/dev-env'
 import { readDevEnvLogTail } from './dev-env-log-tail'
 import { registerDevToolsHandlers } from './register-dev-tools-handlers'
 import { setRemovedWorktreeListener } from '../../worktree-removal-process-cleanup'
+import { writeTestRunTargetMap } from '../../test-runs/test-run-targets'
+import { getTestRunsDir } from '../../test-runs/test-runs-install'
 
 let operations: DevEnvOperations | null = null
 let notifyWindow: BrowserWindow | null = null
@@ -30,6 +32,15 @@ function isStepId(value: string): value is DevEnvStepId {
   return DEV_ENV_STEP_IDS.some((step) => step === value)
 }
 
+/** Test runs started in a terminal find their environment through this map. */
+function writeTestRunTargets(store: Store): void {
+  try {
+    writeTestRunTargetMap(getTestRunsDir(app.getPath('userData')), store.getDevEnvs())
+  } catch (error) {
+    console.error('[test-runs] cannot write the environment map', error)
+  }
+}
+
 /** One DevEnvOperations per app: it owns the hostname proxy port and the service terminals. */
 function getOperations(store: Store, runtime: OrcaRuntimeService): DevEnvOperations {
   operations ??= new DevEnvOperations({
@@ -38,6 +49,7 @@ function getOperations(store: Store, runtime: OrcaRuntimeService): DevEnvOperati
     userDataDir: app.getPath('userData'),
     terminals: runtime.getDevEnvTerminalPort(),
     notify: (devEnvId) => {
+      writeTestRunTargets(store)
       if (notifyWindow && !notifyWindow.isDestroyed()) {
         notifyWindow.webContents.send('devEnv:changed', { devEnvId })
       }
@@ -55,6 +67,7 @@ export function registerDevEnvHandlers(
   runtime.attachDevEnvOperations(() => getOperations(store, runtime))
   const devEnvs = (): DevEnvOperations => runtime.getDevEnvOperations()
   registerDevToolsHandlers(store, devEnvs)
+  writeTestRunTargets(store)
   setRemovedWorktreeListener(() => void devEnvs().reconcileWorktrees())
   // Why: service terminals outlive Orca in the daemon; their hostnames must answer again without a click.
   void Promise.resolve()
