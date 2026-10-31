@@ -93,7 +93,7 @@ export function attachMainWindowServices(
     onWorktreeLifecycle: options?.onWorktreeLifecycle
   })
   registerDevEnvHandlers(mainWindow, store, runtime)
-  registerTestRunsHandlers(mainWindow, store)
+  registerTestRunsHandlers(mainWindow, store, () => runtime.getDevEnvOperations())
   registerMissionHandlers(mainWindow, store, runtime)
   // Repo/settings mutations resync watchers through this window context.
   setWorktreeBaseDirectoryWatcherSyncContext(store, mainWindow)
