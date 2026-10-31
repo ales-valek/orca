@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Container, Plug, Files, GitBranch, ListChecks, Workflow } from 'lucide-react'
+import { Container, FlaskConical, Plug, Files, GitBranch, ListChecks, Workflow } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useRepoById } from '@/store/repos/use-repository-catalog'
 import { isFolderRepo } from '../../../../shared/repo-kind'
@@ -125,6 +125,12 @@ export function useRightSidebarActivityItems({
         id: 'dev-env',
         icon: Container,
         title: translate('devEnv.panel.tab', 'Dev Env'),
+        shortcut: ''
+      },
+      {
+        id: 'tests',
+        icon: FlaskConical,
+        title: translate('testRuns.panel.tab', 'Tests'),
         shortcut: ''
       },
       // Append plugin tabs to preserve built-in navigation positions.
