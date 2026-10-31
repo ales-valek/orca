@@ -1,10 +1,20 @@
 import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 
 const CONFIG_PATTERN = /^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/
 
 export type TestRunSource =
   | { kind: 'origin-main'; repoId: string; repoPath: string; label: string }
   | { kind: 'worktree'; repoId: string; worktreeId: string; path: string; label: string }
+
+/** The repo's own Playwright CLI; Orca runs it with its own Node. */
+export function findPlaywrightCli(dir: string): string | null {
+  const candidates = [
+    join(dir, 'node_modules', 'playwright', 'cli.js'),
+    join(dir, 'node_modules', '@playwright', 'test', 'cli.js')
+  ]
+  return candidates.find((candidate) => existsSync(candidate)) ?? null
+}
 
 /** Root-level Playwright configs, `playwright.config.*` first. */
 export function findPlaywrightConfigs(dir: string): string[] {
