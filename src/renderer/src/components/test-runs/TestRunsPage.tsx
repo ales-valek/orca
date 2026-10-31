@@ -61,7 +61,10 @@ export default function TestRunsPage(): React.JSX.Element {
   useEffect(() => setSelectedIdentity(null), [effectiveRepoKey])
 
   const selected = entries?.find((entry) => entry.result.identity === selectedIdentity)
-  const tiers = summarizeRepoTiers(entries ?? [], {})
+  const tiers = summarizeRepoTiers(entries ?? [], {
+    tierPattern: repoSettings.tierPattern,
+    cumulativeTiers: repoSettings.cumulativeTiers
+  })
   const workspaces = summarizeWorkspaces(
     (allRuns ?? []).filter((run) => getRepoKey(run.repo) === effectiveRepoKey)
   )
@@ -134,7 +137,10 @@ export default function TestRunsPage(): React.JSX.Element {
                       onClick={() => {
                         if (tier.tier !== null) {
                           controls.launch(
-                            getSelectionForTier(tier.tier),
+                            getSelectionForTier(tier.tier, {
+                              tierPattern: repoSettings.tierPattern,
+                              cumulative: repoSettings.cumulativeTiers
+                            }),
                             entries?.[0]?.result.configFile
                           )
                         }
