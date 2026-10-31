@@ -23602,7 +23602,9 @@
     "pickTests": "Select",
     "suggestFailed": "Could not suggest tests",
     "suggesting": "Suggesting…",
-    "suggest": "Suggest"
+    "suggest": "Suggest",
+    "listed": "{{count}} tests listed",
+    "refreshList": "Refresh list"
   },
   "keybindings": {
     "title": {

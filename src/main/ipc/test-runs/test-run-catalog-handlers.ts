@@ -60,9 +60,10 @@ export function createTestRunCatalogHandlers(deps: {
     if ('error' in prepared) {
       return emptyCatalog(configFile, prepared.error)
     }
-    const [originUrl, commit] = await Promise.all([
+    const [originUrl, commit, status] = await Promise.all([
       readGit(['remote', 'get-url', 'origin'], prepared.cwd),
-      readGit(['rev-parse', 'HEAD'], prepared.cwd)
+      readGit(['rev-parse', 'HEAD'], prepared.cwd),
+      readGit(['status', '--porcelain'], prepared.cwd)
     ])
     return catalogs.get({
       ...prepared,
@@ -70,6 +71,7 @@ export function createTestRunCatalogHandlers(deps: {
       repoRoot: prepared.cwd,
       repoKey: getRepoKey({ root: prepared.cwd, originUrl }),
       commit,
+      isDirty: status !== null,
       cacheKey: `${sourceId}|${target.id}`
     })
   }

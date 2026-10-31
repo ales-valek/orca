@@ -88,4 +88,39 @@ describe('test run RPC methods', () => {
       })
     ).toThrow()
   })
+
+  it('counts a failure like the panel: not pinned known failures, but interrupted runs', async () => {
+    const result = (overrides: Record<string, unknown>) => ({
+      run: { id: 'r', startedAt: 1, trigger: 'agent' },
+      result: { titlePath: ['t'], file: 'a.spec.ts', line: 1, error: null, ...overrides }
+    })
+    setTestRunServices({
+      listTargets: () => [],
+      listSources: async () => [],
+      getDevEnvIdForWorktree: () => null,
+      getLatestResults: () =>
+        [
+          result({ titlePath: ['pinned'], status: 'failed', outcome: 'expected' }),
+          result({ titlePath: ['broken'], status: 'failed', outcome: 'unexpected' }),
+          result({ titlePath: ['cut'], status: 'interrupted', outcome: 'unexpected' })
+        ] as never,
+      getCatalog: async () => ({
+        sourceCommit: null,
+        configFile: '',
+        entries: [],
+        error: null,
+        builtAt: 0
+      }),
+      launch: () => ({ error: 'unused' })
+    })
+    const method = testRunsResultsMethod
+    const output = await method.handler(
+      method.params?.parse({ worktree: 'path:/w', failed: true }),
+      {
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the handlers only call showManagedWorktree.
+        runtime: runtime as never
+      }
+    )
+    expect(output.results.map((entry) => entry.title)).toEqual(['broken', 'cut'])
+  })
 })

@@ -162,6 +162,7 @@ describe('test catalog', () => {
     repoRoot: REPO,
     repoKey: 'k',
     commit: 'abc',
+    isDirty: false,
     cacheKey: 'source|target'
   }
 
@@ -187,6 +188,13 @@ describe('test catalog', () => {
       entries: expect.any(Array)
     })
     expect((await catalogs.get(input)).entries).toHaveLength(3)
+  })
+
+  it('lists again while the source has uncommitted changes', async () => {
+    const { catalogs, spawns } = createCatalogs({ code: 0, stdout: JSON.stringify(LIST) })
+    await catalogs.get({ ...input, isDirty: true })
+    await catalogs.get({ ...input, isDirty: true })
+    expect(spawns()).toBe(2)
   })
 
   it('reuses the catalog for the same commit', async () => {
