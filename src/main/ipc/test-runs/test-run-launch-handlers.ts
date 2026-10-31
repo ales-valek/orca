@@ -120,6 +120,7 @@ export function createTestRunLaunchHandlers(deps: {
     }).map((source) => ({
       ...source,
       id: getSourceId(source),
+      path: getSourceDir(source),
       configFiles: findPlaywrightConfigs(getSourceDir(source))
     }))
   }
