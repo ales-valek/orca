@@ -23352,7 +23352,9 @@
     },
     "json": {
       "notArray": "Expected a JSON array",
-      "dropped": "{count} invalid entries were not saved"
+      "dropped": "{count} invalid entries were not saved",
+      "notObject": "Expected a JSON object",
+      "droppedSome": "Some invalid entries were not saved"
     },
     "tiers": {
       "help": "Each tier: id, name, danger (true for prod), dependencies {<service>: {url, values {<export>: value}}}. Values may use ${secret.<name>} and stay masked. Tiers are bound only from this desktop app; a danger tier asks for the environment key.",
@@ -23436,7 +23438,13 @@
     "noTier": "Without tier",
     "workspaces": "Workspaces",
     "failedCount": "{{count}} failed",
-    "traceNeedsWorkspace": "Open a workspace to view the trace in."
+    "traceNeedsWorkspace": "Open a workspace to view the trace in.",
+    "settings": {
+      "title": "Test runs",
+      "help": "Env for test runs started from Orca: localEnv for Dev Environments, presets for shared environments, e.g. {\"localEnv\": {\"TEST_ENV\": \"local\"}, \"presets\": [{\"name\": \"dev\", \"env\": {\"TEST_ENV\": \"dev\"}}]}.",
+      "save": "Save test runs",
+      "import": "Import test runs JSON"
+    }
   },
   "keybindings": {
     "title": {

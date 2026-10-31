@@ -229,6 +229,7 @@ export function buildDefaultSettings(args: {
     hulyProjects: {},
     devEnvInfra: [],
     devEnvTools: [],
+    devEnvTestRuns: { localEnv: {}, presets: [] },
     devEnvRemoteTiers: [],
     devEnvTemplates: [],
     // Why: shared defaults also build in the renderer, where `process` may be absent.
