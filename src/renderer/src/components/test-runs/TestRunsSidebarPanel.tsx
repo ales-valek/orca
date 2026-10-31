@@ -1,6 +1,7 @@
 import { translate } from '@/i18n/i18n'
 import React, { useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { runDevEnvAction } from '../dev-env/dev-env-actions'
 import { useActiveRepo, useActiveWorktreeId } from '@/store/selectors'
@@ -98,6 +99,14 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
           throw new Error(result.error)
         }
         setSuggestions(new Map(result.suggestions.map((entry) => [entry.identity, entry.reason])))
+        if (result.isListShortened) {
+          toast.info(
+            translate(
+              'testRuns.suggestShortened',
+              'Only part of the test list fit the agent’s command line; suggestions may miss tests.'
+            )
+          )
+        }
         setChosenFilter('suggested')
       }
     ).finally(() => setIsSuggesting(false))
