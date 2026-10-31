@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { app, ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
 import { readMediaPreview } from '../../media/media-preview-protocol'
+import type { DevEnvOperations } from '../../dev-env/dev-env-operations'
 import type { Store } from '../../persistence'
 import { TestRunStore } from '../../test-runs/test-run-store'
 import { TestRunsChangeNotifier } from '../../test-runs/test-runs-change-notifier'
@@ -12,6 +13,7 @@ import {
   installOrcaPlaywrightReporter
 } from '../../test-runs/test-runs-install'
 import { TraceViewers } from '../../test-runs/trace-viewer'
+import { createTestRunLaunchHandlers } from './test-run-launch-handlers'
 
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000
 
@@ -27,11 +29,15 @@ const ArtifactArgs = z.object({ runId: z.string().min(1), file: z.string().min(1
 let stopPrevious: (() => void) | null = null
 
 /** Desktop only in v1: runs are captured where Orca's terminals run. */
-export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store): void {
+export function registerTestRunsHandlers(
+  mainWindow: BrowserWindow,
+  store: Store,
+  getDevEnvOperations: () => DevEnvOperations
+): void {
   stopPrevious?.()
   const dir = getTestRunsDir(app.getPath('userData'))
   installOrcaPlaywrightReporter(dir)
-  installOrcaPlaywrightLock(dir)
+  const lockPath = installOrcaPlaywrightLock(dir)
   const runsDir = join(dir, 'runs')
   mkdirSync(runsDir, { recursive: true })
   const runs = new TestRunStore({ dir })
@@ -58,7 +64,21 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
     }
   })
   notifier.start()
+  const launches = createTestRunLaunchHandlers({
+    store,
+    runs,
+    dir,
+    lockPath,
+    notify: () => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('testRuns:launchesChanged')
+      }
+    },
+    renderSlotEnvFilesInto: (envId, repoId, target) =>
+      getDevEnvOperations().renderSlotEnvFilesInto(envId, repoId, target)
+  })
   const stop = (): void => {
+    launches.stop()
     clearTimeout(firstPrune)
     clearInterval(prunes)
     notifier.stop()
@@ -69,6 +89,7 @@ export function registerTestRunsHandlers(mainWindow: BrowserWindow, store: Store
   app.once('will-quit', stop)
 
   const handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> = {
+    ...launches.handlers,
     'testRuns:listRuns': (_event, raw) => runs.listRuns(FilterArgs.parse(raw ?? {})),
     'testRuns:getLatestResults': (_event, raw) => {
       const { worktreeId, repoKey } = FilterArgs.parse(raw ?? {})
