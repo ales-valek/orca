@@ -20,7 +20,8 @@ import { TestResultDetail } from './TestResultDetail'
 import { TestLabels, TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
 import { TestRunLaunchBar } from './TestRunLaunchBar'
 import { TestRunLaunches } from './TestRunLaunches'
-import { useTestCatalog } from './use-test-catalog'
+import { isFeatureRow } from './test-row-filters'
+import { useFeatureScope, useTestCatalog } from './use-test-catalog'
 import {
   useSourceRepoSettings,
   useTestRunLaunchControls,
@@ -30,6 +31,27 @@ import { useTestRuns } from './use-test-runs'
 
 function PanelMessage({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <p className="px-3 py-3 text-xs text-muted-foreground">{children}</p>
+}
+
+function FilterChip({
+  isActive,
+  onClick,
+  children
+}: {
+  isActive: boolean
+  onClick: () => void
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <Button
+      size="xs"
+      variant={isActive ? 'secondary' : 'ghost'}
+      aria-pressed={isActive}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  )
 }
 
 /** A test Playwright lists but no run has recorded yet. */
@@ -91,6 +113,17 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
     () => buildTestRows(catalog?.entries ?? [], entries ?? []),
     [catalog, entries]
   )
+  const featureScope = useFeatureScope(isRemote ? null : controls.choices.sourceId)
+  const featureRows = useMemo(
+    () =>
+      featureScope && worktreeId
+        ? rows.filter((row) => isFeatureRow(row, featureScope, worktreeId))
+        : [],
+    [rows, featureScope, worktreeId]
+  )
+  const [chosenFilter, setChosenFilter] = useState<'feature' | 'all' | null>(null)
+  const filter = chosenFilter ?? (featureRows.length > 0 ? 'feature' : 'all')
+  const visibleRows = filter === 'feature' ? featureRows : rows
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
 
   if (isRemote) {
@@ -188,7 +221,26 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
               </details>
             ) : null}
           </div>
-          {rows.length === 0 ? (
+          <div className="flex flex-wrap items-center gap-1 border-b border-border px-3 py-1.5">
+            <FilterChip isActive={filter === 'feature'} onClick={() => setChosenFilter('feature')}>
+              {translate('testRuns.filter.feature', 'My feature ({{count}})', {
+                count: featureRows.length
+              })}
+            </FilterChip>
+            <FilterChip isActive={filter === 'all'} onClick={() => setChosenFilter('all')}>
+              {translate('testRuns.filter.all', 'All ({{count}})', { count: rows.length })}
+            </FilterChip>
+          </div>
+          {filter === 'feature' && featureScope && featureScope.changedOtherFiles.length > 0 ? (
+            <p className="px-3 pt-1.5 text-2xs text-muted-foreground">
+              {translate('testRuns.sharedCodeChanged', 'Shared code changed: {{files}}', {
+                files:
+                  featureScope.changedOtherFiles.slice(0, 5).join(', ') +
+                  (featureScope.changedOtherFiles.length > 5 ? ', …' : '')
+              })}
+            </p>
+          ) : null}
+          {visibleRows.length === 0 ? (
             <PanelMessage>
               {translate(
                 'testRuns.empty',
@@ -197,7 +249,7 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
             </PanelMessage>
           ) : (
             <TestResultsList
-              rows={rows}
+              rows={visibleRows}
               knownBugAnnotations={repoSettings.knownBugAnnotations}
               tierPattern={repoSettings.tierPattern}
               selectedIdentity={selectedIdentity}
