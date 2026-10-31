@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/i18n'
 import { formatUiRelativeTime } from '@/i18n/relative-time-format'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Play } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -99,9 +99,10 @@ export function TestResultsList({
   /** A line under the title, e.g. why Orca suggests the test. */
   getNote?: (row: TestRow) => string | null
 }): React.JSX.Element {
+  const groups = useMemo(() => groupTestRows(rows, { tierPattern }), [rows, tierPattern])
   return (
     <div className="flex flex-col">
-      {groupTestRows(rows, { tierPattern }).map((group) => (
+      {groups.map((group) => (
         <div key={group.key} className="flex flex-col">
           <div className="flex items-center gap-2 px-2 pt-2 pb-1 text-2xs text-muted-foreground">
             <span className="flex-1 truncate font-mono">{group.label}</span>
