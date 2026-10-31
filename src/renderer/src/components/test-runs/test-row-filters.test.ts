@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TestCatalogEntry } from '../../../../shared/test-runs/test-catalog-types'
 import type { TestResultRecord, TestRunRecord } from '../../../../shared/test-runs/test-run-types'
-import { isFeatureRow } from './test-row-filters'
+import { filterTestRows, isFeatureRow } from './test-row-filters'
 import type { TestRow } from './test-rows'
 
 function catalogEntry(file: string, title: string, tags: string[] = []): TestCatalogEntry {
@@ -117,5 +117,67 @@ describe('isFeatureRow', () => {
         'w-feature'
       )
     ).toBe(false)
+  })
+})
+
+describe('filterTestRows', () => {
+  const rows: TestRow[] = [
+    row(
+      catalogEntry('tests/eshop/tier-1/esh-cart-07.spec.ts', 'ESH-CART-07 — Upsell modal', [
+        '@serial'
+      ])
+    ),
+    withResult(
+      catalogEntry('tests/eshop/tier-3/esh-chk-03.spec.ts', 'ESH-CHK-03 Checkout total'),
+      {},
+      {
+        status: 'failed',
+        outcome: 'unexpected'
+      }
+    ),
+    withResult(catalogEntry('tests/admin/tier-1/adm-inv-05.spec.ts', 'ADM-INV-05 Stock export'), {})
+  ]
+  const base = {
+    query: '',
+    filter: 'all' as const,
+    feature: { changedSpecFiles: [], since: null },
+    worktreeId: 'w-feature',
+    tierPattern: /(?:^|\/)tier-(\d+)\//
+  }
+  const titles = (result: TestRow[]): string[] =>
+    result.map((entry) => entry.catalog?.titlePath[0] ?? '')
+
+  it('matches ids, titles, files and tags', () => {
+    expect(titles(filterTestRows(rows, { ...base, query: 'esh-cart-0' }))).toEqual([
+      'ESH-CART-07 — Upsell modal'
+    ])
+    expect(titles(filterTestRows(rows, { ...base, query: 'stock' }))).toEqual([
+      'ADM-INV-05 Stock export'
+    ])
+    expect(titles(filterTestRows(rows, { ...base, query: 'tests/admin' }))).toEqual([
+      'ADM-INV-05 Stock export'
+    ])
+    expect(titles(filterTestRows(rows, { ...base, query: '@serial' }))).toEqual([
+      'ESH-CART-07 — Upsell modal'
+    ])
+  })
+
+  it('requires every term', () => {
+    expect(titles(filterTestRows(rows, { ...base, query: 'esh checkout' }))).toEqual([
+      'ESH-CHK-03 Checkout total'
+    ])
+  })
+
+  it('filters failed, never run and a tier', () => {
+    expect(titles(filterTestRows(rows, { ...base, filter: 'failed' }))).toEqual([
+      'ESH-CHK-03 Checkout total'
+    ])
+    expect(titles(filterTestRows(rows, { ...base, filter: 'never-run' }))).toEqual([
+      'ESH-CART-07 — Upsell modal'
+    ])
+    expect(titles(filterTestRows(rows, { ...base, filter: { tier: 1 } }))).toEqual([
+      'ESH-CART-07 — Upsell modal',
+      'ADM-INV-05 Stock export'
+    ])
   })
 })
