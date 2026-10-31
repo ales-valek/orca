@@ -1,2 +1,41 @@
 /** What a run is pointed at: a local Dev Environment, or a named shared preset. */
 export type TestRunTarget = { kind: 'dev-env'; devEnvId: string } | { kind: 'preset'; name: string }
+
+export type TestRunSelection =
+  /** `file:line` locations, e.g. `tests/eshop/tier-1/cart.spec.ts:12`. */
+  | { kind: 'tests'; locations: string[] }
+  /** Folders or tier folders; Playwright treats each argument as a path pattern. */
+  | { kind: 'paths'; paths: string[] }
+  | { kind: 'all' }
+
+export type TestRunLaunchRequest = {
+  target: TestRunTarget
+  /** `origin-main:<repoId>` or `worktree:<worktreeId>`. */
+  sourceId: string
+  configFile: string
+  selection: TestRunSelection
+  headed: boolean
+  /** Workspace whose Tests panel lists the run. */
+  worktreeId: string | null
+}
+
+export type TestRunLaunchState =
+  | 'queued'
+  | 'preparing'
+  | 'running'
+  | 'passed'
+  | 'failed'
+  | 'stopped'
+  | 'error'
+
+export type TestRunLaunch = {
+  id: string
+  state: TestRunLaunchState
+  title: string
+  targetLabel: string
+  worktreeId: string | null
+  startedAt: number
+  endedAt: number | null
+  runId: string | null
+  error: string | null
+}
