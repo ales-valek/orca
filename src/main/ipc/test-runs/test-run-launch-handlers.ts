@@ -13,6 +13,7 @@ import { listWorktrees } from '../../git/worktree-scan-cache'
 import type { Store } from '../../persistence'
 import { applyTestRunsEnv } from '../pty/host-env/test-runs-env'
 import { TestRunCheckouts } from '../../test-runs/test-run-checkouts'
+import { copyMissingEnvFiles } from '../../test-runs/test-run-env-files'
 import { TestRunLauncher } from '../../test-runs/test-run-launcher'
 import {
   findPlaywrightCli,
@@ -186,19 +187,33 @@ export function createTestRunLaunchHandlers(deps: {
     if (mismatch) {
       return { error: mismatch }
     }
+    const { target } = request
+    const preset =
+      target.kind === 'preset'
+        ? settings.devEnvTestRuns.presets.find((entry) => entry.name === target.name)
+        : undefined
     let cwd = getSourceDir(source)
     if (source.kind === 'origin-main') {
-      if (request.target.kind !== 'dev-env') {
+      const devEnv =
+        request.target.kind === 'dev-env' ? store.getDevEnv(request.target.devEnvId) : undefined
+      // Why any template for a preset: only the install steps are needed, not an environment.
+      const slot = settings.devEnvTemplates
+        .filter((entry) => !devEnv || entry.id === devEnv.templateId)
+        .flatMap((entry) => entry.slots)
+        .find((entry) => entry.repoId === source.repoId)
+      if (request.target.kind === 'dev-env' && (!devEnv || !slot)) {
         return {
-          error: 'Presets run from a worktree of the test repo, which has its own env files.'
+          error: `The template of ${devEnv?.name ?? 'this environment'} has no slot for ${source.label}. Add one so Orca can prepare the tests.`
         }
       }
-      const env = store.getDevEnv(request.target.devEnvId)
-      const template = settings.devEnvTemplates.find((entry) => entry.id === env?.templateId)
-      const slot = template?.slots.find((entry) => entry.repoId === source.repoId)
-      if (!env || !slot) {
+      if (!slot) {
         return {
-          error: `The template of ${env?.name ?? 'this environment'} has no slot for ${source.label}. Add one so Orca can prepare the tests.`
+          error: `Add ${source.label} to a Dev Environment template so Orca knows how to install it.`
+        }
+      }
+      if (preset && !preset.envFiles) {
+        return {
+          error: `Give preset ${preset.name} envFiles in Settings → Dev Environments, or run it from a worktree of the test repo.`
         }
       }
       const key = getCheckoutKey(source.repoId, request.target)
@@ -218,10 +233,18 @@ export function createTestRunLaunchHandlers(deps: {
             signal
           })
         ).path
-        const rendered = await deps.renderSlotEnvFilesInto(env.id, source.repoId, cwd)
-        if ('error' in rendered) {
-          return rendered
+        if (devEnv) {
+          const rendered = await deps.renderSlotEnvFilesInto(devEnv.id, source.repoId, cwd)
+          if ('error' in rendered) {
+            return rendered
+          }
         }
+      }
+    }
+    if (preset?.envFiles) {
+      const copied = copyMissingEnvFiles(preset.envFiles, cwd)
+      if ('error' in copied) {
+        return copied
       }
     }
     const cli = findPlaywrightCli(cwd)

@@ -37,6 +37,22 @@ describe('normalizeTestRunSettings', () => {
     ).toEqual([{ name: 'dev', env: { TEST_ENV: 'dev' } }])
   })
 
+  it('keeps env files to copy only with an absolute source and a relative target', () => {
+    const preset = (envFiles: unknown) =>
+      normalizeTestRunSettings({ presets: [{ name: 'dev', env: {}, envFiles }] }).presets[0]
+    expect(preset({ from: '/secrets/tests', to: 'tests' }).envFiles).toEqual({
+      from: '/secrets/tests',
+      to: 'tests'
+    })
+    expect(preset({ from: 'C:\\secrets', to: '.' }).envFiles).toEqual({
+      from: 'C:\\secrets',
+      to: '.'
+    })
+    expect(preset({ from: 'secrets', to: 'tests' }).envFiles).toBeUndefined()
+    expect(preset({ from: '/secrets', to: '../elsewhere' }).envFiles).toBeUndefined()
+    expect(preset({ from: '/secrets', to: '/abs' }).envFiles).toBeUndefined()
+  })
+
   it('falls back to defaults for garbage', () => {
     expect(normalizeTestRunSettings('nope')).toEqual(DEFAULT_TEST_RUN_SETTINGS)
     expect(normalizeTestRunSettings({ localEnv: [], presets: {} })).toEqual(
