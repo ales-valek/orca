@@ -87,7 +87,7 @@ describe('test run selection', () => {
     })
     expect(getSelectionForTier(2, { tierPattern: /(?:^|\/)tier-(\d+)\// })).toEqual({
       kind: 'paths',
-      paths: ['(?:^|\\/)tier-(?:2)\\/']
+      paths: ['(?:^|\\/)tier-(?:2)(?!\\d)\\/']
     })
   })
 
@@ -182,16 +182,55 @@ describe('test run selection', () => {
     expect(getDefaultSource(sources, 'tests', { isPreset: true, worktreeId: null })).toBe(
       'worktree:w-other'
     )
-    expect(getDefaultSource(sources, 'tests', { isPreset: false, worktreeId: 'w-open' })).toBe(
+    expect(getDefaultSource(sources, 'tests', { isPreset: false, worktreeId: null })).toBe(
       'origin-main:tests'
     )
   })
 
   it('selects every lower tier too when tiers are cumulative, with any pattern', () => {
     const selection = getSelectionForTier(3, { tierPattern: /smoke-(\d+)\//, cumulative: true })
-    expect(selection).toEqual({ kind: 'paths', paths: ['smoke-(?:1|2|3)\\/'] })
+    expect(selection).toEqual({ kind: 'paths', paths: ['smoke-(?:1|2|3)(?!\\d)\\/'] })
     const pattern = new RegExp(selection.kind === 'paths' ? selection.paths[0] : '')
     expect(pattern.test('/w/e2e/smoke-2/a.spec.ts')).toBe(true)
     expect(pattern.test('/w/e2e/smoke-4/a.spec.ts')).toBe(false)
+  })
+
+  it('builds a tier filter that matches whole numbers on absolute paths', () => {
+    const toRegex = (selection: ReturnType<typeof getSelectionForTier>): RegExp =>
+      new RegExp(selection.kind === 'paths' ? selection.paths[0] : '', 'i')
+    const plain = toRegex(getSelectionForTier(1, { tierPattern: /tier-(\d+)\// }))
+    expect(plain.test('/w/tests/tier-1/a.spec.ts')).toBe(true)
+    expect(plain.test('/w/tests/tier-10/a.spec.ts')).toBe(false)
+    const anchored = toRegex(getSelectionForTier(2, { tierPattern: /^tests\/tier-(\d+)\// }))
+    expect(anchored.test('/w/repo/tests/tier-2/a.spec.ts')).toBe(true)
+    const named = toRegex(getSelectionForTier(3, { tierPattern: /[(]?tier-(?<tier>\d+)\// }))
+    expect(named.test('/w/tests/tier-3/a.spec.ts')).toBe(true)
+    expect(named.test('/w/tests/tier-4/a.spec.ts')).toBe(false)
+    const dashed = getSelectionForTier(1, { tierPattern: /-tier-(\d+)/ })
+    expect(dashed.kind === 'paths' && dashed.paths[0].startsWith('-')).toBe(false)
+  })
+
+  it("prefers the open workspace's own tests when it is a test repo worktree", () => {
+    const sources: TestRunSourceOption[] = [
+      {
+        id: 'origin-main:tests',
+        kind: 'origin-main',
+        repoId: 'tests',
+        path: '/r/tests',
+        label: 'tests @ origin/main',
+        configFiles: []
+      },
+      {
+        id: 'worktree:w-open',
+        kind: 'worktree',
+        repoId: 'tests',
+        path: '/w/open',
+        label: 'tests · open',
+        configFiles: []
+      }
+    ]
+    expect(getDefaultSource(sources, 'tests', { isPreset: false, worktreeId: 'w-open' })).toBe(
+      'worktree:w-open'
+    )
   })
 })

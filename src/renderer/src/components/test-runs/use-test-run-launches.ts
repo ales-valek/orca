@@ -45,16 +45,20 @@ export function useTestRunLaunchControls(
   )
 
   useEffect(() => {
-    void Promise.all([window.api.testRuns.listTargets(), window.api.testRuns.listSources()])
-      .then(([nextTargets, nextSources]) => {
-        setTargets(nextTargets)
-        setSources(nextSources)
-      })
-      .catch(() => {
-        setTargets([])
-        setSources([])
-      })
-  }, [])
+    const load = (): void =>
+      void Promise.all([window.api.testRuns.listTargets(), window.api.testRuns.listSources()])
+        .then(([nextTargets, nextSources]) => {
+          setTargets(nextTargets)
+          setSources(nextSources)
+        })
+        .catch(() => {
+          setTargets([])
+          setSources([])
+        })
+    load()
+    // Why: a new or removed Dev Environment changes the targets; reopening covers new worktrees.
+    return window.api.devEnv.onChanged(load)
+  }, [worktreeId])
 
   useEffect(() => {
     setStored(worktreeId ? choicesByWorktree.get(worktreeId) : undefined)
@@ -109,6 +113,11 @@ export function useTestRunLaunchControls(
             })
           }
         })
+        .catch((error: unknown) =>
+          toast.error(translate('testRuns.launch.failed', 'Could not start the tests'), {
+            description: error instanceof Error ? error.message : String(error)
+          })
+        )
     },
     [targets, sources, choices, worktreeId]
   )
