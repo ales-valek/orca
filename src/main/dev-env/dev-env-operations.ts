@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { buildDevEnvContext } from '../../shared/dev-env/dev-env-context'
 import type {
   DevEnv,
@@ -95,6 +97,42 @@ export class DevEnvOperations extends DevEnvSnapshotCommands {
   async getEnvFiles(id: string): Promise<DevEnvEnvFileView[]> {
     const { env, template } = this.requireEnv(id)
     return maskDevEnvFiles(await this.pipeline.renderEnvFiles(env, template))
+  }
+
+  /** Renders the template slot of `repoId` into `dir`: a checkout Orca prepares for test runs. */
+  async renderSlotEnvFilesInto(
+    id: string,
+    repoId: string,
+    dir: string
+  ): Promise<{ ok: true; install: string[] } | { error: string }> {
+    const { env, template } = this.requireEnv(id)
+    const slot = template.slots.find((entry) => entry.repoId === repoId)
+    if (!slot) {
+      const repoName = this.deps.store.getRepo(repoId)?.displayName ?? repoId
+      return {
+        error: `The template of ${env.name} has no slot for ${repoName}. Add one so Orca can prepare the tests.`
+      }
+    }
+    const target: DevEnv = {
+      ...env,
+      slotWorktrees: {
+        ...env.slotWorktrees,
+        [slot.name]: { worktreeId: '', path: dir, label: slot.name }
+      }
+    }
+    const files = await this.pipeline.renderEnvFiles(target, template, [slot.name])
+    const failed = files.find((file) => file.error)
+    if (failed) {
+      return { error: `${failed.slot}/${failed.path}: ${failed.error}` }
+    }
+    for (const file of files) {
+      if (file.text !== undefined) {
+        const path = join(dir, file.path)
+        await mkdir(dirname(path), { recursive: true })
+        await writeFile(path, file.text)
+      }
+    }
+    return { ok: true, install: slot.install }
   }
 
   async revealSecretValue(id: string, slot: string, path: string, key: string): Promise<string> {

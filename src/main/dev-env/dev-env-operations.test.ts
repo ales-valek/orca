@@ -1,4 +1,6 @@
-import { writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DevEnvGlobalSettings } from '../../shared/dev-env/dev-env-settings'
 import {
@@ -230,6 +232,35 @@ describe('DevEnvOperations', () => {
     })
     expect(env.slotWorktrees.eshop?.worktreeId).toBe(ESHOP_MEMBER)
     expect(pipeline.run).toHaveBeenCalledWith(env.id, {})
+  })
+
+  it("renders a slot's env files into another directory", async () => {
+    const env = await operations.createForMission('m1', 't1')
+    pipeline.renderEnvFiles.mockResolvedValue([
+      { slot: 'eshop', path: 'config/.env', values: [], text: 'API=http://kiosek' }
+    ])
+    const dir = mkdtempSync(join(tmpdir(), 'orca-dev-env-render-'))
+    try {
+      await expect(operations.renderSlotEnvFilesInto(env.id, 'repo-eshop', dir)).resolves.toEqual({
+        ok: true,
+        install: []
+      })
+      expect(readFileSync(join(dir, 'config', '.env'), 'utf8')).toBe('API=http://kiosek')
+      const [renderedEnv, , slots] = pipeline.renderEnvFiles.mock.calls[0]
+      expect(renderedEnv.slotWorktrees.eshop.path).toBe(dir)
+      expect(slots).toEqual(['eshop'])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('explains a template without a slot for the test repo', async () => {
+    const env = await operations.createForMission('m1', 't1')
+    await expect(
+      operations.renderSlotEnvFilesInto(env.id, 'repo-tests', '/tmp/x')
+    ).resolves.toEqual({
+      error: `The template of ${env.name} has no slot for repo-tests. Add one so Orca can prepare the tests.`
+    })
   })
 
   it('refuses a second env for the same mission', async () => {
