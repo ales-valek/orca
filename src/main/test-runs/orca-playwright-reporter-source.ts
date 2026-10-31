@@ -135,7 +135,8 @@ class OrcaReporter {
           : EXTENSIONS[attachment.contentType] || ''
         const file = 'attachments/' + ++this.attachmentCount + '-' + sanitize(attachment.name) + extension
         if (attachment.path) {
-          fs.copyFileSync(attachment.path, path.join(this.dir, file))
+          // Why FICLONE: a near-free clone on APFS/btrfs, a plain copy elsewhere.
+          fs.copyFileSync(attachment.path, path.join(this.dir, file), fs.constants.COPYFILE_FICLONE)
         } else {
           fs.writeFileSync(path.join(this.dir, file), attachment.body)
         }

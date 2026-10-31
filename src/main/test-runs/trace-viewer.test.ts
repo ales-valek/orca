@@ -3,7 +3,8 @@ import { PassThrough } from 'node:stream'
 import { describe, expect, it } from 'vitest'
 import { TraceViewers, type TraceViewerChild, type TraceViewerSpawnSpec } from './trace-viewer'
 
-type FakeChild = TraceViewerChild & { killed: boolean; stdout: PassThrough }
+type FakeChild = TraceViewerChild &
+  EventEmitter & { killed: boolean; stdout: PassThrough; stderr: PassThrough }
 
 function createFakeSpawn(output: string | null): {
   spawn: (spec: TraceViewerSpawnSpec) => TraceViewerChild
@@ -16,6 +17,7 @@ function createFakeSpawn(output: string | null): {
     specs.push(spec)
     const child = Object.assign(new EventEmitter(), {
       stdout: new PassThrough(),
+      stderr: new PassThrough(),
       killed: false,
       kill() {
         child.killed = true
@@ -70,6 +72,29 @@ describe('TraceViewers', () => {
     await viewers.open('/a.zip', '/repo')
     await viewers.open('/c.zip', '/repo')
     expect(fake.children.map((child) => child.killed)).toEqual([false, true, false])
+  })
+
+  it('keeps a reopened viewer when the evicted one exits later', async () => {
+    const fake = createFakeSpawn('Listening on http://127.0.0.1:53001\n')
+    const viewers = new TraceViewers({
+      spawn: fake.spawn,
+      resolvePlaywrightCli: () => '/r/cli.js',
+      maxViewers: 1
+    })
+    await viewers.open('/a.zip', '/repo')
+    await viewers.open('/b.zip', '/repo')
+    await viewers.open('/a.zip', '/repo')
+    fake.children[0].emit('exit')
+    await viewers.open('/a.zip', '/repo')
+    expect(fake.specs).toHaveLength(3)
+  })
+
+  it('reports a viewer that cannot be spawned', async () => {
+    const fake = createFakeSpawn(null)
+    const viewers = new TraceViewers({ spawn: fake.spawn, resolvePlaywrightCli: () => '/r/cli.js' })
+    const opened = viewers.open('/a.zip', '/repo')
+    fake.children[0].emit('error', new Error('spawn ENOENT'))
+    await expect(opened).resolves.toEqual({ error: 'spawn ENOENT' })
   })
 
   it('reports a repo without Playwright', async () => {
