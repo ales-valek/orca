@@ -80,4 +80,15 @@ describe('TestRunCheckouts', () => {
       path: join(dir, 'store', 'checkouts', 'k')
     })
   })
+
+  it('removes checkouts whose environment is gone', () => {
+    const checkouts = new TestRunCheckouts({ dir: join(dir, 'store') })
+    mkdirSync(join(dir, 'store', 'checkouts', 'tests__dev-env-kiosek'), { recursive: true })
+    mkdirSync(join(dir, 'store', 'checkouts', 'tests__dev-env-deleted'), { recursive: true })
+    expect(checkouts.removeUnused(new Set(['tests__dev-env-kiosek']))).toEqual([
+      'tests__dev-env-deleted'
+    ])
+    expect(existsSync(join(dir, 'store', 'checkouts', 'tests__dev-env-kiosek'))).toBe(true)
+    expect(existsSync(join(dir, 'store', 'checkouts', 'tests__dev-env-deleted'))).toBe(false)
+  })
 })
