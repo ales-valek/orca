@@ -146,6 +146,8 @@ export function findSerialFiles(repoRoot: string, files: string[]): Set<string> 
 /** Playwright's own test list per source and target, cached per commit. */
 export class TestCatalogs {
   private readonly cache = new Map<string, TestCatalog>()
+  /** Why: the panel, a suggestion and the CLI may ask at once; one list serves them all. */
+  private readonly inFlight = new Map<string, Promise<TestCatalog>>()
 
   constructor(
     private readonly deps: {
@@ -172,18 +174,32 @@ export class TestCatalogs {
     if (cached) {
       return cached
     }
+    const running = this.inFlight.get(key)
+    if (running) {
+      return running
+    }
+    const next = this.build(input, key, isCacheable).finally(() => this.inFlight.delete(key))
+    this.inFlight.set(key, next)
+    return next
+  }
+
+  private async build(
+    input: Parameters<TestCatalogs['get']>[0],
+    key: string,
+    isCacheable: boolean
+  ): Promise<TestCatalog> {
     const now = (this.deps.now ?? Date.now)()
     const result = await this.runList(input)
     let entries: TestCatalogEntry[] = []
     let error: string | null = null
-    if (result.code === 0) {
-      try {
-        entries = parsePlaywrightList(JSON.parse(getJsonOutput(result.stdout)), input)
-      } catch {
-        error = 'Playwright did not return a test list.'
-      }
-    } else {
-      error = `${result.stderr}${result.stdout}`.slice(-ERROR_TAIL) || 'Listing the tests failed.'
+    try {
+      entries = parsePlaywrightList(JSON.parse(getJsonOutput(result.stdout)), input)
+    } catch {
+      error = 'Playwright did not return a test list.'
+    }
+    // Why keep the entries: one spec that fails to load still leaves the rest listed.
+    if (result.code !== 0) {
+      error = result.stderr.slice(-ERROR_TAIL) || error || 'Listing the tests failed.'
     }
     const serial = findSerialFiles(
       input.repoRoot,
