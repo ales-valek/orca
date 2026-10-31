@@ -82,7 +82,8 @@ export function TestResultsList({
   getWorkspaceName,
   onRunGroup,
   picked,
-  onTogglePick
+  onTogglePick,
+  getNote
 }: {
   rows: TestRow[]
   knownBugAnnotations: string[]
@@ -95,6 +96,8 @@ export function TestResultsList({
   /** When set, rows show a checkbox to pick them for a run. */
   picked?: ReadonlySet<string>
   onTogglePick?: (identity: string) => void
+  /** A line under the title, e.g. why Orca suggests the test. */
+  getNote?: (row: TestRow) => string | null
 }): React.JSX.Element {
   return (
     <div className="flex flex-col">
@@ -165,6 +168,11 @@ export function TestResultsList({
                       {workspace ? ` · ${workspace}` : ''}
                     </span>
                   </span>
+                  {getNote?.(row) ? (
+                    <span className="pl-4 text-2xs text-muted-foreground italic">
+                      {getNote(row)}
+                    </span>
+                  ) : null}
                   <span className="pl-4">
                     <TestLabels labels={getRowLabels(row, { knownBugAnnotations })} />
                   </span>

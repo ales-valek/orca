@@ -13,6 +13,7 @@ import {
   installOrcaPlaywrightReporter
 } from '../../test-runs/test-runs-install'
 import { TraceViewers } from '../../test-runs/trace-viewer'
+import { createTestRunCatalogHandlers } from './test-run-catalog-handlers'
 import { createTestRunLaunchHandlers } from './test-run-launch-handlers'
 
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -97,6 +98,7 @@ export function registerTestRunsHandlers(
 
   const handlers: Record<string, (event: IpcMainInvokeEvent, args: unknown) => unknown> = {
     ...launches.handlers,
+    ...createTestRunCatalogHandlers({ store, dir, launches }),
     'testRuns:listRuns': (_event, raw) => runs.listRuns(FilterArgs.parse(raw ?? {})),
     'testRuns:getLatestResults': (_event, raw) => {
       const { worktreeId, repoKey } = FilterArgs.parse(raw ?? {})
