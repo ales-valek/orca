@@ -48,6 +48,7 @@ const SETTINGS: DevEnvGlobalSettings = {
   devEnvRemoteTiers: [],
   devEnvTemplates: [],
   devEnvTools: TOOLS,
+  devEnvTestRuns: { localEnv: {}, presets: [] },
   devEnvProxyPort: 80
 }
 

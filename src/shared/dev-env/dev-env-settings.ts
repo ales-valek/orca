@@ -20,12 +20,14 @@ import {
 } from './dev-env-settings-values'
 import { normalizeDevTools } from './dev-tools-settings'
 import type { DevTool } from './dev-tools-types'
+import { normalizeTestRunSettings, type TestRunSettings } from '../test-runs/test-run-settings'
 
 export type DevEnvGlobalSettings = {
   devEnvInfra: DevEnvInfraService[]
   devEnvRemoteTiers: DevEnvRemoteTier[]
   devEnvTemplates: DevEnvTemplate[]
   devEnvTools: DevTool[]
+  devEnvTestRuns: TestRunSettings
   /** Fixed port of the Dev Environments hostname proxy. */
   devEnvProxyPort: number
 }
@@ -236,6 +238,7 @@ export function normalizeDevEnvSettings(
     devEnvRemoteTiers: mapValid(settings.devEnvRemoteTiers, normalizeRemoteTier),
     devEnvTemplates: normalizeTemplates(settings.devEnvTemplates),
     devEnvTools: normalizeDevTools(settings.devEnvTools),
+    devEnvTestRuns: normalizeTestRunSettings(settings.devEnvTestRuns),
     devEnvProxyPort: normalizeProxyPort(settings.devEnvProxyPort, platform)
   }
 }
@@ -252,6 +255,9 @@ export function normalizeDevEnvSettingsUpdate(
   }
   if ('devEnvTools' in updates) {
     normalized.devEnvTools = normalizeDevTools(updates.devEnvTools)
+  }
+  if ('devEnvTestRuns' in updates) {
+    normalized.devEnvTestRuns = normalizeTestRunSettings(updates.devEnvTestRuns)
   }
   if ('devEnvTemplates' in updates) {
     normalized.devEnvTemplates = normalizeTemplates(updates.devEnvTemplates)
