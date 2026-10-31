@@ -91,4 +91,28 @@ describe('TestRunCheckouts', () => {
     expect(existsSync(join(dir, 'store', 'checkouts', 'tests__dev-env-kiosek'))).toBe(true)
     expect(existsSync(join(dir, 'store', 'checkouts', 'tests__dev-env-deleted'))).toBe(false)
   })
+
+  it('prepares one checkout at a time', async () => {
+    let active = 0
+    let maxActive = 0
+    const checkouts = new TestRunCheckouts({
+      dir: join(dir, 'store'),
+      runInstall: async () => {
+        active++
+        maxActive = Math.max(maxActive, active)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        active--
+      }
+    })
+    const input = { key: 'k', repoPath: repo, install: ['pnpm install'], logPath: join(dir, 'log') }
+    await Promise.all([checkouts.prepare(input), checkouts.prepare(input)])
+    expect(maxActive).toBe(1)
+  })
+
+  it('reports whether a checkout exists', async () => {
+    const checkouts = new TestRunCheckouts({ dir: join(dir, 'store'), runInstall: async () => {} })
+    expect(checkouts.exists('k')).toBe(false)
+    await checkouts.prepare({ key: 'k', repoPath: repo, install: [], logPath: join(dir, 'log') })
+    expect(checkouts.exists('k')).toBe(true)
+  })
 })

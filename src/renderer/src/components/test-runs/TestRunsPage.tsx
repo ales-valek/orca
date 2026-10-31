@@ -19,7 +19,8 @@ import { summarizeRepoTiers, summarizeWorkspaces } from './test-runs-overview'
 import { TestResultDetail } from './TestResultDetail'
 import { TestResultsList, getRunAge, getTriggerLabel } from './TestResultsList'
 import { getSelectionForTier } from './test-run-selection'
-import { useTestRunLaunchControls } from './use-test-run-launches'
+import { buildTestRows, getRowLabels } from './test-rows'
+import { useSourceRepoSettings, useTestRunLaunchControls } from './use-test-run-launches'
 import { useRecentRuns, useTestRuns } from './use-test-runs'
 
 function getWorkspaceName(worktreeId: string | null): string | null {
@@ -55,6 +56,7 @@ export default function TestRunsPage(): React.JSX.Element {
   )
   const { entries } = useTestRuns(scope)
   const controls = useTestRunLaunchControls(activeWorktreeId, entries?.[0]?.run.repo.root ?? null)
+  const repoSettings = useSourceRepoSettings(controls)
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
   useEffect(() => setSelectedIdentity(null), [effectiveRepoKey])
 
@@ -180,15 +182,21 @@ export default function TestRunsPage(): React.JSX.Element {
             {selected ? (
               <TestResultDetail
                 entry={selected}
+                labels={getRowLabels(
+                  { identity: selected.result.identity, catalog: null, latest: selected },
+                  repoSettings
+                )}
                 traceWorktreeId={selected.run.worktreeId ?? activeWorktreeId}
                 onBack={() => setSelectedIdentity(null)}
               />
             ) : (
               <TestResultsList
-                entries={entries ?? []}
+                rows={buildTestRows([], entries ?? [])}
+                knownBugAnnotations={repoSettings.knownBugAnnotations}
+                tierPattern={repoSettings.tierPattern}
                 selectedIdentity={selectedIdentity}
-                onSelect={(entry) => setSelectedIdentity(entry.result.identity)}
-                getWorkspaceName={(entry) => getWorkspaceName(entry.run.worktreeId)}
+                onSelect={(row) => setSelectedIdentity(row.identity)}
+                getWorkspaceName={(row) => getWorkspaceName(row.latest?.run.worktreeId ?? null)}
               />
             )}
           </div>

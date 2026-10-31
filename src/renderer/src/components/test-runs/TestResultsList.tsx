@@ -4,18 +4,19 @@ import React from 'react'
 import { Play } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import type { TestRunTrigger } from '../../../../shared/test-runs/test-run-types'
 import type { DevEnvTone } from '../dev-env/dev-env-labels'
 import { DevEnvStatusDot } from '../dev-env/DevEnvStatusDot'
 import {
-  getTestLabels,
-  getTestResultState,
-  groupTestResults,
+  getTestRowState,
+  groupTestRows,
   type TestLabel,
-  type TestResultEntry,
-  type TestResultState
+  type TestResultState,
+  type TestRowState
 } from './test-results-grouping'
+import { getRowConfigFile, getRowLabels, getRowTitlePath, type TestRow } from './test-rows'
 
 export const TEST_STATE_TONE: Record<TestResultState, DevEnvTone> = {
   passed: 'ok',
@@ -46,16 +47,18 @@ function getLabelText(label: TestLabel): string {
         : translate('testRuns.label.knownBug', 'Known bug')
     case 'expected-fail':
       return translate('testRuns.label.expectedFail', 'Expected to fail')
+    case 'serial':
+      return translate('testRuns.label.serial', 'Serial')
     case 'tag':
     case 'project':
       return label.text
   }
 }
 
-export function TestLabels({ entry }: { entry: TestResultEntry }): React.JSX.Element {
+export function TestLabels({ labels }: { labels: TestLabel[] }): React.JSX.Element {
   return (
     <span className="flex flex-wrap gap-1">
-      {getTestLabels(entry.result).map((label) => (
+      {labels.map((label) => (
         <Badge
           key={`${label.kind}:${label.text}`}
           variant="hostContext"
@@ -68,23 +71,34 @@ export function TestLabels({ entry }: { entry: TestResultEntry }): React.JSX.Ele
   )
 }
 
+const ROW_STATE_TONE: Record<TestRowState, DevEnvTone> = { ...TEST_STATE_TONE, neverRun: 'muted' }
+
 export function TestResultsList({
-  entries,
+  rows,
+  knownBugAnnotations,
+  tierPattern,
   selectedIdentity,
   onSelect,
   getWorkspaceName,
-  onRunGroup
+  onRunGroup,
+  picked,
+  onTogglePick
 }: {
-  entries: TestResultEntry[]
+  rows: TestRow[]
+  knownBugAnnotations: string[]
+  tierPattern?: RegExp
   selectedIdentity: string | null
-  onSelect: (entry: TestResultEntry) => void
+  onSelect: (row: TestRow) => void
   /** Global page: which workspace produced each result. */
-  getWorkspaceName?: (entry: TestResultEntry) => string | null
+  getWorkspaceName?: (row: TestRow) => string | null
   onRunGroup?: (folder: string, configFile: string) => void
+  /** When set, rows show a checkbox to pick them for a run. */
+  picked?: ReadonlySet<string>
+  onTogglePick?: (identity: string) => void
 }): React.JSX.Element {
   return (
     <div className="flex flex-col">
-      {groupTestResults(entries, {}).map((group) => (
+      {groupTestRows(rows, { tierPattern }).map((group) => (
         <div key={group.key} className="flex flex-col">
           <div className="flex items-center gap-2 px-2 pt-2 pb-1 text-2xs text-muted-foreground">
             <span className="flex-1 truncate font-mono">{group.label}</span>
@@ -95,47 +109,67 @@ export function TestResultsList({
               {group.counts.failed > 0
                 ? translate('testRuns.groupCountsFailed', '{{failed}} failed / {{total}}', {
                     failed: group.counts.failed,
-                    total: group.entries.length
+                    total: group.rows.length
                   })
-                : group.entries.length}
+                : group.rows.length}
             </span>
             {onRunGroup ? (
               <Button
                 size="icon-xs"
                 variant="ghost"
                 aria-label={translate('testRuns.launch.runFolder', 'Run this folder')}
-                onClick={() => onRunGroup(group.label, group.entries[0].result.configFile)}
+                onClick={() => onRunGroup(group.label, getRowConfigFile(group.rows[0]))}
               >
                 <Play className="size-3" />
               </Button>
             ) : null}
           </div>
-          {group.entries.map((entry) => {
-            const workspace = getWorkspaceName?.(entry)
+          {group.rows.map((row) => {
+            const workspace = getWorkspaceName?.(row)
+            const state = getTestRowState(row)
             return (
-              <button
-                key={entry.result.identity}
-                type="button"
-                onClick={() => onSelect(entry)}
+              <div
+                key={row.identity}
                 className={cn(
-                  'flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left text-xs hover:bg-accent',
-                  selectedIdentity === entry.result.identity && 'bg-accent'
+                  'flex w-full items-start gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent',
+                  selectedIdentity === row.identity && 'bg-accent'
                 )}
               >
-                <span className="flex w-full items-center gap-2">
-                  <DevEnvStatusDot tone={TEST_STATE_TONE[getTestResultState(entry.result)]} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {entry.result.titlePath.join(' › ')}
+                {picked && onTogglePick ? (
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={picked.has(row.identity)}
+                    onCheckedChange={() => onTogglePick(row.identity)}
+                    aria-label={translate('testRuns.pick', 'Pick this test')}
+                  />
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onSelect(row)}
+                  className="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
+                >
+                  <span className="flex w-full items-center gap-2">
+                    <DevEnvStatusDot
+                      tone={ROW_STATE_TONE[state]}
+                      className={cn(
+                        state === 'neverRun' && 'bg-transparent ring-1 ring-muted-foreground/40'
+                      )}
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {getRowTitlePath(row).join(' › ')}
+                    </span>
+                    <span className="shrink-0 text-2xs text-muted-foreground">
+                      {row.latest
+                        ? `${getRunAge(row.latest.run.startedAt)} · ${getTriggerLabel(row.latest.run.trigger)}`
+                        : translate('testRuns.neverRun', 'never run')}
+                      {workspace ? ` · ${workspace}` : ''}
+                    </span>
                   </span>
-                  <span className="shrink-0 text-2xs text-muted-foreground">
-                    {getRunAge(entry.run.startedAt)} · {getTriggerLabel(entry.run.trigger)}
-                    {workspace ? ` · ${workspace}` : ''}
+                  <span className="pl-4">
+                    <TestLabels labels={getRowLabels(row, { knownBugAnnotations })} />
                   </span>
-                </span>
-                <span className="pl-4">
-                  <TestLabels entry={entry} />
-                </span>
-              </button>
+                </button>
+              </div>
             )
           })}
         </div>

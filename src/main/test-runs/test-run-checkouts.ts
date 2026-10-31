@@ -61,12 +61,19 @@ function getLockfileHash(dir: string): string {
  * Orca lists every worktree of a repo, and these must stay out of the user's way.
  */
 export class TestRunCheckouts {
+  /** Why: a list and a launch must never clean one checkout at the same time. */
+  private readonly queues = new Map<string, Promise<unknown>>()
+
   constructor(
     private readonly deps: { dir: string; git?: GitRunner; runInstall?: InstallRunner }
   ) {}
 
   getPath(key: string): string {
     return join(this.deps.dir, 'checkouts', key)
+  }
+
+  exists(key: string): boolean {
+    return existsSync(join(this.getPath(key), '.git'))
   }
 
   /** Removes checkouts of targets that no longer exist; returns their keys. */
@@ -79,7 +86,20 @@ export class TestRunCheckouts {
     return unused
   }
 
-  async prepare(input: {
+  prepare(input: {
+    key: string
+    repoPath: string
+    install: string[]
+    logPath: string
+    signal?: AbortSignal
+  }): Promise<{ path: string; commit: string }> {
+    const previous = this.queues.get(input.key) ?? Promise.resolve()
+    const next = previous.catch(() => undefined).then(() => this.prepareNow(input))
+    this.queues.set(input.key, next)
+    return next
+  }
+
+  private async prepareNow(input: {
     key: string
     repoPath: string
     install: string[]

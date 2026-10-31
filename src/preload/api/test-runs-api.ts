@@ -4,6 +4,7 @@ import type {
   TestRunSourceOption,
   TestRunTargetOption
 } from '../../shared/test-runs/test-run-launch-types'
+import type { FeatureScope, TestCatalog } from '../../shared/test-runs/test-catalog-types'
 import type { TestResultRecord, TestRunRecord } from '../../shared/test-runs/test-run-types'
 
 type TestRunFilterArgs = { worktreeId?: string; repoKey?: string; limit?: number }
@@ -24,4 +25,10 @@ export type TestRunsApi = {
   listLaunches: () => Promise<TestRunLaunch[]>
   readLaunchLog: (args: { id: string }) => Promise<string>
   onLaunchesChanged: (callback: () => void) => () => void
+  getCatalog: (args: {
+    targetId: string
+    sourceId: string
+    configFile: string
+  }) => Promise<TestCatalog>
+  getFeatureScope: (args: { sourceId: string }) => Promise<FeatureScope>
 }
