@@ -1,5 +1,5 @@
 import { translate } from '@/i18n/i18n'
-import React, { useMemo, useState } from 'react'
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -113,7 +113,16 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
   }
   const filter = chosenFilter ?? (featureRows.length > 0 ? 'feature' : 'all')
   const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const [picked, setPicked] = useState<ReadonlySet<string> | null>(null)
+  // Why: suggestions, picks and the filter belong to one workspace and source.
+  useEffect(() => {
+    setSuggestions(null)
+    setChosenFilter(null)
+    setPicked(null)
+    setQuery('')
+    setSelectedIdentity(null)
+  }, [worktreeId, controls.choices.sourceId])
   const tiers = useMemo(
     () =>
       [...new Set(rows.map((row) => getTestTier(getRowFile(row), repoSettings.tierPattern)))]
@@ -126,14 +135,14 @@ export default function TestRunsSidebarPanel(): React.JSX.Element {
       filterTestRows(
         filter === 'suggested' ? rows.filter((row) => suggestions?.has(row.identity)) : rows,
         {
-          query,
+          query: deferredQuery,
           filter: filter === 'suggested' ? 'all' : filter,
           feature: featureScope ?? { changedSpecFiles: [], since: null },
           worktreeId: worktreeId ?? '',
           tierPattern: repoSettings.tierPattern
         }
       ),
-    [rows, query, filter, suggestions, featureScope, worktreeId, repoSettings.tierPattern]
+    [rows, deferredQuery, filter, suggestions, featureScope, worktreeId, repoSettings.tierPattern]
   )
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null)
 
