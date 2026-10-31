@@ -92,39 +92,74 @@ function isStale(file, holder) {
   }
 }
 
-async function acquireLock(input) {
-  const locks = path.join(input.dir, 'locks')
-  fs.mkdirSync(locks, { recursive: true })
-  const file = path.join(locks, crypto.createHash('sha1').update(input.key).digest('hex') + '.json')
-  const token = crypto.randomUUID()
-  let hasReportedWait = false
-  for (;;) {
-    if (input.signal && input.signal.aborted) throw createAbortError()
-    try {
-      fs.writeFileSync(file, JSON.stringify({ ...input.holder, key: input.key, token }), { flag: 'wx' })
-      return function release() {
-        const holder = readHolder(file)
-        if (holder && holder.token === token) {
-          try {
-            fs.unlinkSync(file)
-          } catch {}
-        }
-      }
-    } catch (error) {
-      if (!error || error.code !== 'EEXIST') throw error
-    }
-    const holder = readHolder(file)
-    if (isStale(file, holder)) {
+function hash(value) {
+  return crypto.createHash('sha1').update(value).digest('hex')
+}
+
+function splitKey(key) {
+  const index = key.lastIndexOf('#')
+  return index === -1 ? [key, ''] : [key.slice(0, index), key.slice(index + 1)]
+}
+
+function removeStaleLocks(dir) {
+  for (const name of fs.readdirSync(dir)) {
+    const file = path.join(dir, name)
+    if (isStale(file, readHolder(file))) {
       try {
         fs.unlinkSync(file)
       } catch {}
-      continue
     }
+  }
+}
+
+/**
+ * One lock folder per target; a lane locks its own file, a run without a lane locks the whole
+ * target. Why both: a run without a lane runs every lane's tests.
+ */
+async function acquireLock(input) {
+  const [target, scope] = splitKey(input.key)
+  const dir = path.join(input.dir, 'locks', hash(target))
+  fs.mkdirSync(dir, { recursive: true })
+  const ownName = scope ? 'lane-' + hash(scope).slice(0, 16) + '.json' : '_all.json'
+  const own = path.join(dir, ownName)
+  const token = crypto.randomUUID()
+  const pollMs = input.pollMs || DEFAULT_POLL_MS
+  let hasReportedWait = false
+  const wait = async (holder) => {
     if (holder && !hasReportedWait) {
       hasReportedWait = true
       if (input.onWait) input.onWait(holder)
     }
-    await sleep(input.pollMs || DEFAULT_POLL_MS, input.signal)
+    // Why jitter: two runs that backed off from each other must not retry in lockstep.
+    await sleep(pollMs + Math.floor(Math.random() * pollMs), input.signal)
+  }
+  for (;;) {
+    if (input.signal && input.signal.aborted) throw createAbortError()
+    removeStaleLocks(dir)
+    try {
+      fs.writeFileSync(own, JSON.stringify({ ...input.holder, key: input.key, token }), { flag: 'wx' })
+    } catch (error) {
+      if (!error || error.code !== 'EEXIST') throw error
+      await wait(readHolder(own))
+      continue
+    }
+    const conflicts = fs
+      .readdirSync(dir)
+      .filter((name) => name !== ownName && (!scope || name === '_all.json'))
+    if (conflicts.length === 0) {
+      return function release() {
+        const holder = readHolder(own)
+        if (holder && holder.token === token) {
+          try {
+            fs.unlinkSync(own)
+          } catch {}
+        }
+      }
+    }
+    try {
+      fs.unlinkSync(own)
+    } catch {}
+    await wait(readHolder(path.join(dir, conflicts[0])))
   }
 }
 
