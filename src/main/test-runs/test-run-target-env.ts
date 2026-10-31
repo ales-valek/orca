@@ -10,13 +10,13 @@ export function getTargetLockKey(target: TestRunTarget): string {
 export function getTargetEnv(
   target: TestRunTarget,
   settings: TestRunSettings
-): Record<string, string> | { error: string } {
+): { env: Record<string, string> } | { error: string } {
   if (target.kind === 'dev-env') {
-    return settings.localEnv
+    return { env: settings.localEnv }
   }
   const preset = settings.presets.find((entry) => entry.name === target.name)
   return preset
-    ? preset.env
+    ? { env: preset.env }
     : { error: `Preset ${target.name} is not defined in Settings → Dev Environments.` }
 }
 

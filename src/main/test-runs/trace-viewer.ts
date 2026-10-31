@@ -1,6 +1,5 @@
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
 import { spawnProcess } from '@orca/process-host'
+import { findPlaywrightCli } from './test-run-sources'
 
 export type TraceViewerSpawnSpec = {
   program: string
@@ -23,14 +22,6 @@ type Viewer = { child: TraceViewerChild; url: Promise<string> }
 const DEFAULT_STARTUP_TIMEOUT_MS = 20_000
 const DEFAULT_MAX_VIEWERS = 3
 const LISTENING = /Listening on (http:\/\/\S+)/
-
-function resolvePlaywrightCliInRepo(repoRoot: string): string | null {
-  const candidates = [
-    join(repoRoot, 'node_modules', 'playwright', 'cli.js'),
-    join(repoRoot, 'node_modules', '@playwright', 'test', 'cli.js')
-  ]
-  return candidates.find((candidate) => existsSync(candidate)) ?? null
-}
 
 /**
  * Runs the test repo's own `playwright show-trace` as a local web server for an Orca browser tab.
@@ -55,7 +46,7 @@ export class TraceViewers {
       this.viewers.delete(traceFile)
       this.viewers.set(traceFile, viewer)
     } else {
-      const cli = (this.deps.resolvePlaywrightCli ?? resolvePlaywrightCliInRepo)(repoRoot)
+      const cli = (this.deps.resolvePlaywrightCli ?? findPlaywrightCli)(repoRoot)
       if (!cli) {
         return { error: `Playwright is not installed in ${repoRoot}` }
       }
