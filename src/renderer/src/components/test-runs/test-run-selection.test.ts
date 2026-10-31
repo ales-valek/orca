@@ -85,7 +85,10 @@ describe('test run selection', () => {
       kind: 'paths',
       paths: ['tests/eshop/tier-1/']
     })
-    expect(getSelectionForTier(2)).toEqual({ kind: 'paths', paths: ['tier-2/'] })
+    expect(getSelectionForTier(2, { tierPattern: /(?:^|\/)tier-(\d+)\// })).toEqual({
+      kind: 'paths',
+      paths: ['(?:^|\\/)tier-(?:2)\\/']
+    })
   })
 
   it("defaults to the workspace's environment and the test repo's origin/main", () => {
@@ -182,5 +185,13 @@ describe('test run selection', () => {
     expect(getDefaultSource(sources, 'tests', { isPreset: false, worktreeId: 'w-open' })).toBe(
       'origin-main:tests'
     )
+  })
+
+  it('selects every lower tier too when tiers are cumulative, with any pattern', () => {
+    const selection = getSelectionForTier(3, { tierPattern: /smoke-(\d+)\//, cumulative: true })
+    expect(selection).toEqual({ kind: 'paths', paths: ['smoke-(?:1|2|3)\\/'] })
+    const pattern = new RegExp(selection.kind === 'paths' ? selection.paths[0] : '')
+    expect(pattern.test('/w/e2e/smoke-2/a.spec.ts')).toBe(true)
+    expect(pattern.test('/w/e2e/smoke-4/a.spec.ts')).toBe(false)
   })
 })
