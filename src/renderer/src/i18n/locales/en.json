@@ -23762,7 +23762,8 @@
     "label": {
       "knownBugWithId": "Known bug {{id}}",
       "knownBug": "Known bug",
-      "expectedFail": "Expected to fail"
+      "expectedFail": "Expected to fail",
+      "serial": "Serial"
     },
     "tier": "Tier {{tier}}",
     "groupCountsFailed": "{{failed}} failed / {{total}}",
@@ -23819,7 +23820,13 @@
       "tierPatternHelp": "A regular expression matched against test file paths; its first group is the tier number.",
       "cumulative": "Higher tiers include lower ones",
       "knownBugs": "Known-bug annotation types"
-    }
+    },
+    "pick": "Pick this test",
+    "neverRun": "never run",
+    "neverRunHint": "This test has not run yet.",
+    "neverRunCount": "{{count}} never run",
+    "listing": "Listing tests…",
+    "listFailed": "Could not list the tests"
   },
   "keybindings": {
     "title": {

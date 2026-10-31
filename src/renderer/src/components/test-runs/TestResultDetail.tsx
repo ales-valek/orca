@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { TestAttachmentRecord } from '../../../../shared/test-runs/test-run-types'
 import { openDevEnvUrl, runDevEnvAction } from '../dev-env/dev-env-actions'
 import { DevEnvStatusDot } from '../dev-env/DevEnvStatusDot'
-import { getTestResultState, type TestResultEntry } from './test-results-grouping'
+import { getTestResultState, type TestLabel, type TestResultEntry } from './test-results-grouping'
 import { TEST_STATE_TONE, TestLabels, getRunAge, getTriggerLabel } from './TestResultsList'
 import { useTestHistory } from './use-test-runs'
 
@@ -64,10 +64,12 @@ function History({ history }: { history: TestResultEntry[] | null }): React.JSX.
 export function TestResultDetail({
   entry,
   traceWorktreeId,
+  labels,
   onBack,
   onRun
 }: {
   entry: TestResultEntry
+  labels: TestLabel[]
   /** Workspace whose browser tabs receive the trace viewer. */
   traceWorktreeId: string | null
   onBack: () => void
@@ -125,7 +127,7 @@ export function TestResultDetail({
               ? ` · ${translate('testRuns.retry', 'retry {{retry}}', { retry: result.retry })}`
               : ''}
           </span>
-          <TestLabels entry={entry} />
+          <TestLabels labels={labels} />
         </div>
       </div>
       {result.error ? (
