@@ -126,4 +126,36 @@ describe('TestRunCheckouts', () => {
     })
     expect(git(path, 'remote', 'get-url', 'origin').trim()).toBe(origin)
   })
+
+  it('clones again when the checkout broke', async () => {
+    const checkouts = new TestRunCheckouts({ dir: join(dir, 'store'), runInstall: async () => {} })
+    const input = { key: 'k', repoPath: repo, install: [], logPath: join(dir, 'log') }
+    const { path } = await checkouts.prepare(input)
+    // Any damage git refuses to work with, e.g. objects lost after a force-push plus gc.
+    writeFileSync(join(path, '.git', 'config'), '[[[ not a git config')
+    await expect(checkouts.prepare(input)).resolves.toMatchObject({ path })
+    expect(existsSync(join(path, 'pnpm-lock.yaml'))).toBe(true)
+  })
+
+  it('waits for a running preparation before a checkout counts as ready', async () => {
+    let release: () => void = () => undefined
+    const checkouts = new TestRunCheckouts({
+      dir: join(dir, 'store'),
+      runInstall: () => new Promise((resolve) => (release = resolve))
+    })
+    const preparing = checkouts.prepare({
+      key: 'k',
+      repoPath: repo,
+      install: ['pnpm install'],
+      logPath: join(dir, 'log')
+    })
+    let isIdle = false
+    const idle = checkouts.whenIdle('k').then(() => (isIdle = true))
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(isIdle).toBe(false)
+    release()
+    await preparing
+    await idle
+    expect(isIdle).toBe(true)
+  })
 })

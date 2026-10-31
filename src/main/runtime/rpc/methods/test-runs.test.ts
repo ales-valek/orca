@@ -123,4 +123,15 @@ describe('test run RPC methods', () => {
     )
     expect(output.results.map((entry) => entry.title)).toEqual(['broken', 'cut'])
   })
+
+  it('refuses a config that is not a Playwright config file', () => {
+    expect(() =>
+      testRunsRunMethod.params?.parse({ worktree: 'path:/w', config: '--reporter=line' })
+    ).toThrow()
+    expect(
+      testRunsRunMethod.params?.parse({ worktree: 'path:/w', config: 'playwright.admin.config.ts' })
+    ).toMatchObject({
+      config: 'playwright.admin.config.ts'
+    })
+  })
 })

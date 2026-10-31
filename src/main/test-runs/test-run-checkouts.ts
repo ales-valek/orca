@@ -72,6 +72,14 @@ export class TestRunCheckouts {
     return join(this.deps.dir, 'checkouts', key)
   }
 
+  /** Resolves once no preparation of this checkout is running. */
+  whenIdle(key: string): Promise<void> {
+    return (this.queues.get(key) ?? Promise.resolve()).then(
+      () => undefined,
+      () => undefined
+    )
+  }
+
   exists(key: string): boolean {
     return existsSync(join(this.getPath(key), '.git'))
   }
@@ -106,8 +114,26 @@ export class TestRunCheckouts {
     logPath: string
     signal?: AbortSignal
   }): Promise<{ path: string; commit: string }> {
-    const git = this.deps.git ?? runGit
     const path = this.getPath(input.key)
+    let commit: string
+    try {
+      commit = await this.syncCheckout(input, path)
+    } catch {
+      // Why: a force-push plus gc in the source repo can leave a shared clone git rejects.
+      appendFileSync(input.logPath, 'The checkout was broken; cloning it again.\n')
+      rmSync(path, { recursive: true, force: true })
+      commit = await this.syncCheckout(input, path)
+    }
+    await this.installIfNeeded(input, path)
+    return { path, commit }
+  }
+
+  /** Clone if needed, then reset to the source repo's default branch; returns its commit. */
+  private async syncCheckout(
+    input: { repoPath: string; logPath: string },
+    path: string
+  ): Promise<string> {
+    const git = this.deps.git ?? runGit
     if (!existsSync(join(path, '.git'))) {
       mkdirSync(join(this.deps.dir, 'checkouts'), { recursive: true })
       await git(
@@ -145,8 +171,13 @@ export class TestRunCheckouts {
     )
     await git(['checkout', '--quiet', '--force', '--detach', SOURCE_REF], path)
     await git(['clean', '-fdxq', '-e', 'node_modules', '-e', INSTALL_STAMP], path)
-    const commit = (await git(['rev-parse', 'HEAD'], path)).trim()
+    return (await git(['rev-parse', 'HEAD'], path)).trim()
+  }
 
+  private async installIfNeeded(
+    input: { install: string[]; logPath: string; signal?: AbortSignal },
+    path: string
+  ): Promise<void> {
     const stampPath = join(path, INSTALL_STAMP)
     const lockfileHash = getLockfileHash(path)
     const stamp = existsSync(stampPath) ? readFileSync(stampPath, 'utf8') : null
@@ -161,6 +192,5 @@ export class TestRunCheckouts {
       }
       writeFileSync(stampPath, lockfileHash)
     }
-    return { path, commit }
   }
 }

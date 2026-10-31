@@ -3,7 +3,10 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
 import type { TestCatalog } from '../../../shared/test-runs/test-catalog-types'
 import { getRepoKey } from '../../../shared/test-runs/test-identity'
-import type { TestRunTarget } from '../../../shared/test-runs/test-run-launch-types'
+import {
+  PLAYWRIGHT_CONFIG_FILE_PATTERN,
+  type TestRunTarget
+} from '../../../shared/test-runs/test-run-launch-types'
 import { splitWorktreeIdForFilesystem } from '../../../shared/worktree/id'
 import { gitExecFileAsync } from '../../git/command-runner/git-exec-file'
 import type { Store } from '../../persistence'
@@ -15,7 +18,7 @@ import type { createTestRunLaunchHandlers } from './test-run-launch-handlers'
 const CatalogArgs = z.object({
   targetId: z.string().min(1),
   sourceId: z.string().min(1),
-  configFile: z.string().regex(/^playwright(\.[\w-]+)?\.config\.(ts|js|mjs|cjs)$/)
+  configFile: z.string().regex(PLAYWRIGHT_CONFIG_FILE_PATTERN)
 })
 const FeatureScopeArgs = z.object({ sourceId: z.string().min(1) })
 const SuggestArgs = CatalogArgs.extend({ worktreeId: z.string().min(1) })
@@ -60,16 +63,18 @@ export function createTestRunCatalogHandlers(deps: {
     if ('error' in prepared) {
       return emptyCatalog(configFile, prepared.error)
     }
-    const [originUrl, commit, status] = await Promise.all([
+    const [originUrl, commit, status, toplevel] = await Promise.all([
       readGit(['remote', 'get-url', 'origin'], prepared.cwd),
       readGit(['rev-parse', 'HEAD'], prepared.cwd),
-      readGit(['status', '--porcelain'], prepared.cwd)
+      readGit(['status', '--porcelain'], prepared.cwd),
+      readGit(['rev-parse', '--show-toplevel'], prepared.cwd)
     ])
     return catalogs.get({
       ...prepared,
       configFile,
       repoRoot: prepared.cwd,
-      repoKey: getRepoKey({ root: prepared.cwd, originUrl }),
+      // Why toplevel: the reporter names a repo without origin by its real top-level folder.
+      repoKey: getRepoKey({ root: toplevel ?? prepared.cwd, originUrl }),
       commit,
       isDirty: status !== null,
       cacheKey: `${sourceId}|${target.id}`
