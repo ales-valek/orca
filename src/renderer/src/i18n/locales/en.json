@@ -24298,7 +24298,8 @@
       "feature": "My feature ({{count}})",
       "all": "All ({{count}})",
       "failed": "Failed ({{count}})",
-      "neverRun": "Never run ({{count}})"
+      "neverRun": "Never run ({{count}})",
+      "suggested": "Suggested ({{count}})"
     },
     "sharedCodeChanged": "Shared code changed: {{files}}",
     "search": {
@@ -24308,7 +24309,10 @@
     },
     "runPicked": "Run selected ({{count}})",
     "cancelPick": "Cancel",
-    "pickTests": "Select"
+    "pickTests": "Select",
+    "suggestFailed": "Could not suggest tests",
+    "suggesting": "Suggesting…",
+    "suggest": "Suggest"
   },
   "keybindings": {
     "title": {
