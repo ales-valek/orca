@@ -120,7 +120,8 @@ export const TopLevelViewSchema = z.enum([
   'artifacts',
   'mobile',
   'dev-envs',
-  'dev-tools'
+  'dev-tools',
+  'test-runs'
 ])
 
 export const UiUpdateFields = z

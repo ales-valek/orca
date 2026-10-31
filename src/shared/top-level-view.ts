@@ -12,7 +12,8 @@ const TOP_LEVEL_VIEW_LOOKUP: Record<TopLevelView, true> = {
   artifacts: true,
   mobile: true,
   'dev-envs': true,
-  'dev-tools': true
+  'dev-tools': true,
+  'test-runs': true
 }
 
 export function isTopLevelView(value: unknown): value is TopLevelView {
