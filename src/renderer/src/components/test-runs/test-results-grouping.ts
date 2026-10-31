@@ -57,7 +57,12 @@ export function groupTestRows(rows: TestRow[], options: { tierPattern?: RegExp }
   const byFolder = new Map<string, TestRow[]>()
   for (const row of rows) {
     const folder = getSpecFolder(getRowFile(row))
-    byFolder.set(folder, [...(byFolder.get(folder) ?? []), row])
+    const items = byFolder.get(folder)
+    if (items) {
+      items.push(row)
+    } else {
+      byFolder.set(folder, [row])
+    }
   }
   return [...byFolder.entries()]
     .map(([folder, items]) => {
@@ -70,11 +75,15 @@ export function groupTestRows(rows: TestRow[], options: { tierPattern?: RegExp }
         label: folder,
         tier: getTestTier(`${folder}/`, options.tierPattern),
         counts,
-        rows: items.toSorted(
-          (a, b) =>
-            ROW_STATE_ORDER[getTestRowState(a)] - ROW_STATE_ORDER[getTestRowState(b)] ||
-            getRowTitlePath(a).join(' ').localeCompare(getRowTitlePath(b).join(' '))
-        )
+        // Why keyed once: ~1,300 rows would otherwise rebuild titles inside every comparison.
+        rows: items
+          .map((row) => ({
+            row,
+            order: ROW_STATE_ORDER[getTestRowState(row)],
+            title: getRowTitlePath(row).join(' ')
+          }))
+          .toSorted((a, b) => a.order - b.order || a.title.localeCompare(b.title))
+          .map((item) => item.row)
       }
     })
     .toSorted(

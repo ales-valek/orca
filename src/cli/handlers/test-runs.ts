@@ -48,7 +48,10 @@ export const TEST_RUN_HANDLERS: Record<string, CommandHandler> = {
     const result = await ctx.client.call<TestRunLaunch>('testRuns.run', {
       worktree: await worktree(ctx),
       ...choices(ctx),
-      filters: getRepeatedStringFlag(ctx.flags, 'filter'),
+      // Why: Playwright reads filters as regular expressions, where a Windows \\ is an escape.
+      filters: getRepeatedStringFlag(ctx.flags, 'filter').map((filter) =>
+        filter.replaceAll('\\', '/')
+      ),
       ...(ctx.flags.get('headed') === true ? { headed: true } : {})
     })
     printResult(result, ctx.json, formatTestLaunch)

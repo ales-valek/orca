@@ -31,23 +31,52 @@ export function getSelectionForFolder(folder: string): TestRunSelection {
   return { kind: 'paths', paths: [folder.endsWith('/') ? folder : `${folder}/`] }
 }
 
+function isCaptureGroupStart(source: string, index: number): boolean {
+  if (source[index + 1] !== '?') {
+    return true
+  }
+  // Named groups capture too; (?<= and (?<! are lookbehinds.
+  return source[index + 2] === '<' && source[index + 3] !== '=' && source[index + 3] !== '!'
+}
+
+/** End of the group opened at `index`, skipping escapes and character classes. */
+function findGroupEnd(source: string, index: number): number {
+  let depth = 0
+  for (let end = index; end < source.length; end++) {
+    if (source[end] === '\\') {
+      end++
+    } else if (source[end] === '[') {
+      end = findClassEnd(source, end)
+    } else if (source[end] === '(') {
+      depth++
+    } else if (source[end] === ')' && --depth === 0) {
+      return end
+    }
+  }
+  return -1
+}
+
+function findClassEnd(source: string, index: number): number {
+  for (let end = index + 1; end < source.length; end++) {
+    if (source[end] === '\\') {
+      end++
+    } else if (source[end] === ']') {
+      return end
+    }
+  }
+  return source.length
+}
+
 /** The pattern's first capture group (the tier number) swapped for `replacement`. */
 function replaceFirstCaptureGroup(source: string, replacement: string): string {
   for (let index = 0; index < source.length; index++) {
     if (source[index] === '\\') {
       index++
-      continue
-    }
-    if (source[index] !== '(' || source[index + 1] === '?') {
-      continue
-    }
-    let depth = 0
-    for (let end = index; end < source.length; end++) {
-      if (source[end] === '\\') {
-        end++
-      } else if (source[end] === '(') {
-        depth++
-      } else if (source[end] === ')' && --depth === 0) {
+    } else if (source[index] === '[') {
+      index = findClassEnd(source, index)
+    } else if (source[index] === '(' && isCaptureGroupStart(source, index)) {
+      const end = findGroupEnd(source, index)
+      if (end !== -1) {
         return source.slice(0, index) + replacement + source.slice(end + 1)
       }
     }
@@ -64,10 +93,17 @@ export function getSelectionForTier(
   options: { tierPattern: RegExp; cumulative?: boolean }
 ): TestRunSelection {
   const tiers = options.cumulative ? Array.from({ length: tier }, (_, index) => index + 1) : [tier]
-  return {
-    kind: 'paths',
-    paths: [replaceFirstCaptureGroup(options.tierPattern.source, `(?:${tiers.join('|')})`)]
+  // Why the lookahead: tier-1 must not also select tier-10…19.
+  let pattern = replaceFirstCaptureGroup(
+    options.tierPattern.source,
+    `(?:${tiers.join('|')})(?!\\d)`
+  )
+  // Why: Playwright matches against absolute paths, so a start anchor would match nothing.
+  if (pattern.startsWith('^')) {
+    pattern = `(?:^|/)${pattern.slice(1)}`
   }
+  // Why: an argument starting with a dash would reach Playwright as an option.
+  return { kind: 'paths', paths: [pattern.startsWith('-') ? `(?:)${pattern}` : pattern] }
 }
 
 export function getDefaultTarget(
@@ -85,6 +121,11 @@ export function getDefaultSource(
   repoId: string | null,
   context: { isPreset: boolean; worktreeId: string | null } = { isPreset: false, worktreeId: null }
 ): string | null {
+  // Why first: an open test-repo worktree is what the user (or agent) is changing right now.
+  const own = sources.find((source) => source.id === `worktree:${context.worktreeId}`)
+  if (own) {
+    return own.id
+  }
   // Why: a shared preset needs a worktree's own env files; origin/main has none.
   if (context.isPreset) {
     const worktrees = sources.filter((source) => source.kind === 'worktree')
