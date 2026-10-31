@@ -24293,7 +24293,12 @@
     "neverRunHint": "This test has not run yet.",
     "neverRunCount": "{{count}} never run",
     "listing": "Listing tests…",
-    "listFailed": "Could not list the tests"
+    "listFailed": "Could not list the tests",
+    "filter": {
+      "feature": "My feature ({{count}})",
+      "all": "All ({{count}})"
+    },
+    "sharedCodeChanged": "Shared code changed: {{files}}"
   },
   "keybindings": {
     "title": {
