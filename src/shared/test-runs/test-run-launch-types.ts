@@ -39,3 +39,21 @@ export type TestRunLaunch = {
   runId: string | null
   error: string | null
 }
+
+export type TestRunTargetOption = {
+  id: string
+  target: TestRunTarget
+  label: string
+  /** Shared presets: the lock only coordinates this machine's runs. */
+  isShared: boolean
+}
+
+export type TestRunSourceOption = {
+  id: string
+  kind: 'origin-main' | 'worktree'
+  repoId: string
+  /** Repo path for origin/main, worktree path otherwise. */
+  path: string
+  label: string
+  configFiles: string[]
+}

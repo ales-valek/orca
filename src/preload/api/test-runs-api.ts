@@ -1,7 +1,8 @@
 import type {
   TestRunLaunch,
   TestRunLaunchRequest,
-  TestRunTarget
+  TestRunSourceOption,
+  TestRunTargetOption
 } from '../../shared/test-runs/test-run-launch-types'
 import type { TestResultRecord, TestRunRecord } from '../../shared/test-runs/test-run-types'
 
@@ -23,20 +24,4 @@ export type TestRunsApi = {
   listLaunches: () => Promise<TestRunLaunch[]>
   readLaunchLog: (args: { id: string }) => Promise<string>
   onLaunchesChanged: (callback: () => void) => () => void
-}
-
-export type TestRunTargetOption = {
-  id: string
-  target: TestRunTarget
-  label: string
-  /** Shared presets: the lock only coordinates this machine's runs. */
-  isShared: boolean
-}
-
-export type TestRunSourceOption = {
-  id: string
-  kind: 'origin-main' | 'worktree'
-  repoId: string
-  label: string
-  configFiles: string[]
 }
