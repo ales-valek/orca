@@ -8,6 +8,7 @@ import { SHOW_UI_LANGUAGE_SETTING } from '@/i18n/supported-languages'
 import { getStatusBarToggles } from './appearance-status-bar-search'
 import { getUsagePercentageDisplayEntry } from './appearance-usage-percentage-search'
 import { getMenuBarIconEntries, getSystemTrayEntries } from './appearance-system-presence-search'
+import { getCustomCssEntries } from './appearance-custom-css-search'
 import { getReduceVisualEffectsEntries } from './appearance-reduce-visual-effects-search'
 
 export const getThemeEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
@@ -295,6 +296,7 @@ export function getAppearancePaneSearchEntries(
     ...getSidebarEntries(),
     ...getAppIconEntries(),
     ...getSystemTrayEntries(options),
-    ...getMenuBarIconEntries(options)
+    ...getMenuBarIconEntries(options),
+    ...getCustomCssEntries()
   ]
 }
