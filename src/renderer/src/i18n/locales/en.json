@@ -13981,7 +13981,9 @@
             "clipboardStagingUnavailable": "Could not copy the file because Orca's temporary storage is unavailable",
             "revealInFinder": "Reveal in Finder",
             "openContainingFolder": "Open Containing Folder",
-            "revealInFileExplorer": "Reveal in File Explorer"
+            "revealInFileExplorer": "Reveal in File Explorer",
+            "folderColor": "Folder Color",
+            "automaticThemeColor": "Automatic theme color"
           },
           "FileExplorerToolbar": {
             "d238264654": "Show Git Ignored Files",
@@ -22118,6 +22120,21 @@
       "titleTrash": "Couldn't move '{{name}}' to the Trash. Delete it permanently?",
       "description": "This cannot be undone.",
       "confirm": "Delete Permanently"
+    },
+    "folderColor": {
+      "magenta": "Magenta",
+      "violet": "Violet",
+      "purpleMagenta": "Purple magenta",
+      "orange": "Orange",
+      "orangeMagenta": "Orange magenta",
+      "yellow": "Yellow",
+      "green": "Green",
+      "yellowGreen": "Yellow green",
+      "yellowOrange": "Yellow orange",
+      "cyanBlue": "Cyan blue",
+      "greenBlue": "Green blue",
+      "purpleBlue": "Purple blue",
+      "blue": "Blue"
     }
   },
   "sparsePreset": {

@@ -32,6 +32,8 @@ function ExplorerMenu({ row }: { row: boolean }) {
               depth: DEPTH
             }}
             isExpanded
+            folderColor={null}
+            onFolderColorChange={() => {}}
             targetDir={DIRECTORY}
             targetDepth={DEPTH}
             selectionSize={1}
