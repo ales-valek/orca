@@ -58,5 +58,8 @@ export const WSL_DRIVE_UNC_STATE_DISPOSITIONS = {
   onboarding: 'keep',
   featureInteractionTelemetryBuckets: 'keep',
   codexResetCreditAttemptLedger: 'keep',
-  chatUiLaunchTipAudience: 'keep'
+  chatUiLaunchTipAudience: 'keep',
+  // Missions refuse WSL repos; dev environments run on the local Docker host.
+  missions: 'keep',
+  devEnvs: 'keep'
 } as const satisfies Record<keyof PersistedState, Disposition>

@@ -29,14 +29,13 @@ import {
   createdWorkspaceActivationCallbacks,
   wslUserAct
 } from '../startup/workspace-create-activation'
-import { assertWslMoveRepoWritable } from '../../../persistence/moving-wsl-projects/wsl-move-scope-guard'
 import { resolveManagedWorktreeCreateStartup } from '../startup/managed-worktree-create-startup'
 import type { WorkspaceCreationHandle } from '../lifecycle/workspace-lifecycle-creations'
 import { workspaceLifecycleKey } from '../lifecycle/workspace-lifecycle-commands'
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import { applyWorkspaceCreatePluginHook } from '../../../plugins/hooks/workspace-create-plugin-hook'
 import { withProjectWorktreeCreate } from '../../../workspaces/creation/worktree-create-in-flight'
-import { resolveMissionManagedWorktreeCreate } from '../runtime-mission-worktree-create'
+import { assertManagedWorktreeCreateAllowed } from './managed-worktree-create-guards'
 
 export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWithGetWorktreeTerminalProvisioningHost {
   abstract resolveLineageForWorktreeCreate(
@@ -93,17 +92,11 @@ export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWi
     events: RuntimeWorkspaceCreateEvents
   ): Promise<CreateWorktreeResult> {
     const store = this.requireStore()
-    // Reject SSH and folder repos before their create helpers can suffix a Mission branch.
-    resolveMissionManagedWorktreeCreate({
-      request: args,
-      repo,
-      store
-    })
     const onWorkspaceCreated = (worktreeId: string): void => {
       creation?.named(worktreeId)
       args.onWorkspaceCreated?.(worktreeId)
     }
-    assertWslMoveRepoWritable(store, repo)
+    assertManagedWorktreeCreateAllowed(store, repo, args)
     const createSettings = store.getSettings()
     const {
       effectiveStartup,

@@ -1,6 +1,6 @@
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import { getRepoIdFromWorktreeId, splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 
 const RESTACK_DEBOUNCE_MS = 2_000
 

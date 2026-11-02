@@ -249,7 +249,9 @@ describe('useEditorPanelContentState diff loading', () => {
       expect.objectContaining({
         compare: expect.objectContaining({ headOid: 'head', mergeBase: 'merge-base' }),
         filePath: 'api/src/file.ts'
-      })
+      }),
+      // Showing the tab is a user act.
+      { wakeWslDistro: true }
     )
   })
 
@@ -309,7 +311,9 @@ describe('useEditorPanelContentState diff loading', () => {
           mergeBase: 'merge-base'
         }),
         filePath: 'src/file.ts'
-      })
+      }),
+      // Showing the tab is a user act.
+      { wakeWslDistro: true }
     )
     expect(mocks.getRuntimeGitDiff).not.toHaveBeenCalled()
   })
@@ -399,7 +403,9 @@ describe('useEditorPanelContentState diff loading', () => {
         filePath: 'file.ts',
         compareAgainstHead: true,
         staged: false
-      })
+      }),
+      // Showing the tab is a user act.
+      { wakeWslDistro: true }
     )
   })
 

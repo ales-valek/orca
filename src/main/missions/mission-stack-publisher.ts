@@ -2,7 +2,7 @@ import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Mission } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import {

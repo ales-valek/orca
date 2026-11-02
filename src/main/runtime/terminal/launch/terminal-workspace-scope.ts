@@ -27,10 +27,8 @@ import type { Worktree } from '../../../../shared/worktree/types'
 import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspaces/folder-workspace-worktree'
 import type { TerminalWorkspaceLaunchScope } from '../../orchestration/terminal-authority/structured-sessions/runtime-legacy-worker-terminal-recovery-types'
 import { resolveTerminalStartupCwd } from '../../../../shared/shell/launch/terminal-startup-cwd'
-
 import type { ResolvedTerminalWorkspaceLaunchTarget } from './terminal-workspace-launch-target'
-import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
-import { getMissionBriefPath } from '../../../../shared/mission-source'
+import { getFolderWorkspaceOwnerEnvWithMission } from '../../../../shared/mission-folder-workspace-env'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { homedir } from 'node:os'
 import { getExplicitWorktreeIdSelector } from '../../workspaces/catalog/runtime-worktree-selection'
@@ -238,15 +236,12 @@ export abstract class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktr
     if (!scope.folderWorkspace) {
       return env
     }
-    const missionId = scope.folderWorkspace.missionId
-    const mission = missionId ? this.store?.getMission?.(missionId) : null
     return {
       ...env,
-      ...getFolderWorkspaceOwnerEnv({
-        ...scope.folderWorkspace,
-        missionRootPath: mission?.rootPath,
-        missionBriefPath: mission ? getMissionBriefPath(mission) : null
-      }),
+      ...getFolderWorkspaceOwnerEnvWithMission(
+        scope.folderWorkspace,
+        (id) => this.store?.getMission?.(id) ?? undefined
+      ),
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
   }

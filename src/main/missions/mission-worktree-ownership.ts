@@ -2,7 +2,7 @@ import { getMissionSlotBranch } from '../../shared/mission-task-stack'
 import type { Mission, MissionSlot } from '../../shared/mission-types'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 
 export type MissionOwnedWorktree = {
   worktreeId: string

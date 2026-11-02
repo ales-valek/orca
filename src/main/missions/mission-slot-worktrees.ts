@@ -3,7 +3,7 @@ import { getMissionRootDirName, getMissionWorktreeName } from '../../shared/miss
 import { getMissionSlotBranch } from '../../shared/mission-task-stack'
 import type { Mission, MissionMemberResult, MissionSlot } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import type { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'

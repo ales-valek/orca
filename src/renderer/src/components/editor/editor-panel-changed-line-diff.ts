@@ -1,7 +1,11 @@
 import type { OpenFile } from '@/store/slices/editor'
+import type { AppState } from '@/store/types'
 import type { GitBranchChangeEntry } from '../../../../shared/git-diff-compare-types'
 import type { GitStatusEntry } from '../../../../shared/git-status-types'
 import { canUseChangesModeForFile } from './editor-panel-file-mode'
+
+export const selectChangedLineHighlightsEnabled = (state: AppState): boolean =>
+  state.settings?.editorChangedLineHighlightsEnabled ?? true
 
 export function shouldLoadChangedLineDiffForEditFile(
   file: OpenFile | null,

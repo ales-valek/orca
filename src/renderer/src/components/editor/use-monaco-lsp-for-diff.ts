@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { selectWorktreesByRepo } from '@/store/workspace-record-selectors'
 import type { editor } from 'monaco-editor'
 import { useAppStore } from '@/store'
 import { findWorktreeById } from '@/store/slices/worktree-helpers'
@@ -19,7 +20,7 @@ export function useMonacoLspForDiff(params: {
 }): void {
   const { modifiedEditor, relativePath, worktreeId, language, modelIdentity } = params
   const worktreePath = useAppStore((s) =>
-    worktreeId ? (findWorktreeById(s.worktreesByRepo, worktreeId)?.path ?? null) : null
+    worktreeId ? (findWorktreeById(selectWorktreesByRepo(s) ?? {}, worktreeId)?.path ?? null) : null
   )
 
   useEffect(() => {

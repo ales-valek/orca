@@ -64,7 +64,7 @@ describe('useAppChromeLayout with the workspace list on the right', () => {
     expect(result.current.leftSlotOpen).toBe(false)
   })
 
-  it('releases the left slot while worktree creation hides the activity sidebar', () => {
+  it('keeps the activity sidebar in the left slot beside the pending composer', () => {
     setChromeState({
       activeView: 'terminal',
       activePendingCreationId: 'creation-1',
@@ -73,7 +73,8 @@ describe('useAppChromeLayout with the workspace list on the right', () => {
     const { result } = renderHook(() => useAppChromeLayout())
 
     expect(result.current.creationLayoutActive).toBe(true)
-    expect(result.current.leftSlotOpen).toBe(false)
+    expect(result.current.showRightSidebarControls).toBe(true)
+    expect(result.current.leftSlotOpen).toBe(true)
   })
 
   it('keeps the left header out of a zero-width column in stacked views', () => {

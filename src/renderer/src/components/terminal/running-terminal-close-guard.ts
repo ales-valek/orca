@@ -98,19 +98,18 @@ function guardRunningTerminalPtyClose({
       if (decided) {
         return
       }
-      // Unanswered probes are unknown; prompt for every candidate rather than kill uninspected remote work.
-      const timedOut = probes.some((probe) => probe.timedOut)
+      // Unanswered probes are unknown, not idle; answered failures fail open like Cmd+W.
       // "Could not tell" must not kill a bound pty's work (#33265); layout-only ids are often stale leaves that never answer
       const boundPtyIds = new Set(useAppStore.getState().ptyIdsByTabId?.[terminalTabId] ?? [])
-      const busyPtyIds = timedOut
-        ? ptyIds
-        : probes
-            .filter(
-              (probe) =>
-                probe.verdict === 'live' ||
-                (probe.verdict === 'unverifiable' && boundPtyIds.has(probe.ptyId))
-            )
-            .map((probe) => probe.ptyId)
+      const busyPtyIds = probes
+        .filter(
+          (probe) =>
+            probe.timedOut ||
+            probe.verdict === 'live' ||
+            (probe.verdict === 'unverifiable' && boundPtyIds.has(probe.ptyId))
+        )
+        .map((probe) => probe.ptyId)
+      const timedOut = probes.some((probe) => probe.timedOut)
       if (busyPtyIds.length === 0) {
         closeNow()
         return
@@ -139,11 +138,12 @@ export function guardRunningTerminalClose(params: {
     settings: state.settings,
     ptyIds,
     onClose,
-    requestConfirm: (busyPtyIds) => {
+    requestConfirm: (busyPtyIds, timedOut) => {
       useRunningTerminalCloseConfirmStore.getState().requestRunningTerminalCloseConfirm({
         terminalTabId,
         tabLabel,
-        copyKind: resolveBusyPtyCloseCopyKind(terminalTabId, busyPtyIds),
+        // An unanswered probe may hide an agent pane, so a timeout reads every candidate.
+        copyKind: resolveBusyPtyCloseCopyKind(terminalTabId, timedOut ? ptyIds : busyPtyIds),
         onConfirm: onClose,
         ...(onCancel ? { onCancel } : {})
       })

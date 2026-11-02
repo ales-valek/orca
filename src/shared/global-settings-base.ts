@@ -25,6 +25,7 @@ import type { AgentWorkspaceTrustSettings } from './agent-launch/permissions/age
 import type { KeybindingGlobalSettings } from './keybindings/global-settings'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
 import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
+import type { EditorLineAnnotationSettings } from './editor-line-annotation-settings'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AntigravityChatAuthSettings &
@@ -53,4 +54,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   AgentWorkspaceTrustSettings &
   KeybindingGlobalSettings &
   HulyGlobalSettings &
-  DevEnvGlobalSettings
+  DevEnvGlobalSettings &
+  EditorLineAnnotationSettings
