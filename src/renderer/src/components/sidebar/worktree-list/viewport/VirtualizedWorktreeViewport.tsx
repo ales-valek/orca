@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Why: fork features (missions, tab groups, line blame) on an upstream file at its limit; splitting would rewrite upstream lines each rebase. */
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { useProjectHeaderHostContexts } from './use-project-header-host-contexts'

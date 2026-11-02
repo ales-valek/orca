@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Why: fork features (missions, tab groups, line blame) on an upstream file at its limit; splitting would rewrite upstream lines each rebase. */
 import type { Repo } from '../../../../shared/repo-types'
 import { WorktreeCreateCollisionError } from '../../../../shared/new-workspace/worktree-create-collision'
 import type { CreateWorktreeArgs } from '../../../../shared/worktree/create-types'

@@ -10,7 +10,7 @@ import {
 } from '../../../shared/test-runs/test-run-launch-types'
 import { composeWorktreeId } from '../../../shared/worktree/id'
 import { listWorktrees } from '../../git/worktree-scan-cache'
-import type { Store } from '../../persistence'
+import type { Store } from '../../persistence/loading-store/store'
 import { applyTestRunsEnv } from '../pty/host-env/test-runs-env'
 import { TestRunCheckouts } from '../../test-runs/test-run-checkouts'
 import { copyMissingEnvFiles } from '../../test-runs/test-run-env-files'

@@ -1,5 +1,5 @@
 import { app, ipcMain, webContents } from 'electron'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import {
   LSP_REQUEST_METHODS,
   type LspChangeDocumentArgs,

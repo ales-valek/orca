@@ -288,3 +288,4 @@ export function closeTerminalTabInWorkspaceSession(
   }
   return { session: next, ptyIdsToKill, closed: true, pinned: false }
 }
+export { pickNextActiveTabAfterClose } from './tab-close-successor'

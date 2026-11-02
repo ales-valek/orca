@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Why: fork features (missions, tab groups, line blame) on an upstream file at its limit; splitting would rewrite upstream lines each rebase. */
 import { runtimeEnvironmentIdOrLocalUnlessTwin } from './worktree-runtime-owner'
 import { noteUserWorkspaceOpen } from './workspace-switch-user-act'
 import { translate } from '@/i18n/i18n'

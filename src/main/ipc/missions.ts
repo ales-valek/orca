@@ -16,7 +16,7 @@ import { HulyStatusWriteBack } from '../huly/huly-status-write-back'
 import { setMissionWorktreeRebasedListener } from '../missions/mission-rebase-notification'
 import { setMissionPullRequestMergedListener } from '../missions/mission-stack-merge-notification'
 import { ensureMissionRootStrict, syncMissionRootIfPresent } from '../missions/mission-root-sync'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import {
   MissionAbsorbArgs,

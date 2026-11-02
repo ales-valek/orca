@@ -2,11 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
 import type { AppState } from '@/store/types'
 import {
   createTestStore,
@@ -100,11 +96,11 @@ describe('cluster grouping menu targets', () => {
 
   it('keeps a pinned-only target out of groups through the rendered menu', () => {
     render(
-      <DropdownMenu open>
-        <DropdownMenuTrigger asChild>
+      <ContextMenu open>
+        <ContextMenuTrigger asChild>
           <button>Tab menu</button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
           <TabClusterMenuSection
             worktreeId="wt"
             groupId="pane"
@@ -112,8 +108,8 @@ describe('cluster grouping menu targets', () => {
             isPinned
             onQueueNewCluster={(create) => create()}
           />
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </ContextMenuContent>
+      </ContextMenu>
     )
     const create = screen.getByRole('menuitem', { name: 'Add Tab to New Group' })
     expect(create.getAttribute('aria-disabled')).toBe('true')

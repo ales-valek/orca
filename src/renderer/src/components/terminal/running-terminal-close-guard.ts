@@ -98,12 +98,11 @@ function guardRunningTerminalPtyClose({
       if (decided) {
         return
       }
-      // Unanswered probes are unknown; prompt for every candidate rather than kill uninspected remote work.
+      // Unanswered probes are unknown, not idle; answered failures fail open like Cmd+W.
+      const busyPtyIds = probes
+        .filter((probe) => probe.timedOut || probe.verdict === 'live')
+        .map((probe) => probe.ptyId)
       const timedOut = probes.some((probe) => probe.timedOut)
-      // Answered probe failures/stale handles fail open like Cmd+W; they provide no live-child evidence and must not disable closing.
-      const busyPtyIds = timedOut
-        ? ptyIds
-        : probes.filter((probe) => probe.verdict === 'live').map((probe) => probe.ptyId)
       if (busyPtyIds.length === 0) {
         closeNow()
         return
@@ -132,11 +131,12 @@ export function guardRunningTerminalClose(params: {
     settings: state.settings,
     ptyIds,
     onClose,
-    requestConfirm: (busyPtyIds) => {
+    requestConfirm: (busyPtyIds, timedOut) => {
       useRunningTerminalCloseConfirmStore.getState().requestRunningTerminalCloseConfirm({
         terminalTabId,
         tabLabel,
-        copyKind: resolveBusyPtyCloseCopyKind(terminalTabId, busyPtyIds),
+        // An unanswered probe may hide an agent pane, so a timeout reads every candidate.
+        copyKind: resolveBusyPtyCloseCopyKind(terminalTabId, timedOut ? ptyIds : busyPtyIds),
         onConfirm: onClose,
         ...(onCancel ? { onCancel } : {})
       })

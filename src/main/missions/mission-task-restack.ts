@@ -14,7 +14,7 @@ import {
 } from '../../shared/mission-task-stack'
 import type { Mission, MissionSlot, MissionTask } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import {
   getBranchTip,
   getCommitAncestry,

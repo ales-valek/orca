@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Why: fork features (missions, tab groups, line blame) on an upstream file at its limit; splitting would rewrite upstream lines each rebase. */
 import { NO_RESOURCE_EVIDENCE } from '@/lib/workspace-copy-owner'
 import { useDiffCommentView } from '../../../diff-comments/use-diff-comment-owner'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'

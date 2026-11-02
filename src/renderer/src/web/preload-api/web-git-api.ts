@@ -3,6 +3,7 @@ import { callAbortableRuntimeEnvironment } from '../../runtime/abortable-runtime
 import { toRuntimeWorktreeSelector } from '../../runtime/runtime-worktree-selector'
 import { translate } from '@/i18n/i18n'
 import { callRuntimeResult } from './web-runtime-calls'
+import { webGitBlame } from './web-git-blame'
 import { mutateGitPath, mutateGitPaths, resolveGitConflict } from './web-git-mutations'
 import { requireGitStageWorktreeScopeReceipt } from '../../../../shared/git/paths/git-stage-worktree-scope'
 import { requireActiveEnvironment, updateEnvironmentFromResponse } from './web-runtime-session'
@@ -148,15 +149,7 @@ export function createGitApi(): NonNullable<Partial<PreloadApi>['git']> {
         commitId
       })
     },
-    blame: async ({ worktreePath, filePath, revision, contentsSource }) => {
-      const file = await resolveRuntimeFilePath(filePath, worktreePath)
-      return callRuntimeResult('git.blame', {
-        worktree: toRuntimeWorktreeSelector(file.worktree.id),
-        filePath: file.relativePath,
-        ...(revision ? { revision } : {}),
-        ...(contentsSource ? { contentsSource } : {})
-      })
-    },
+    blame: webGitBlame,
     upstreamStatus: async ({ worktreePath, pushTarget }) => {
       const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
       return callRuntimeResult('git.upstreamStatus', {

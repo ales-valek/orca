@@ -137,7 +137,6 @@ export async function generateTestSuggestions(input: {
     prompt,
     target,
     spawnAgent: spawnSourceControlAgent,
-    emptyResultName: 'suggestions',
     operation: 'test-suggestions'
   })
   if (!result.success) {

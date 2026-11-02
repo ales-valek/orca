@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WorkspacePort } from '../../../shared/workspace-ports'
+import type { WorkspacePort } from '../../../../shared/workspace-ports'
 
 vi.mock('@/runtime/runtime-rpc-client', () => ({
   callRuntimeRpc: vi.fn(),
