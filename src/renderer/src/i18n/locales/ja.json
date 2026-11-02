@@ -195,6 +195,14 @@
         "terminalControlledTooltip": "ターミナルの外観に合わせています。変更するには「ターミナルの外観に合わせる」をオフにしてください。",
         "fontKeywordTypeface": "書体",
         "fontKeywordTypography": "タイポグラフィ"
+      },
+      "customCss": {
+        "description": "組み込みテーマの上に ~/.orca/custom.css を読み込みます。ファイルを保存するとすぐに変更が反映されます。",
+        "openFile": "custom.css を開く",
+        "revealFile": "ファイルマネージャーで表示",
+        "title": "カスタム CSS",
+        "tooLarge": "custom.css が {{limit}} KB を超えているため読み込まれませんでした。",
+        "unreadable": "custom.css を読み込めませんでした: {{message}}"
       }
     },
     "browser": {
