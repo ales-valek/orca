@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import { selectCanonicalProjects } from '@/store/project-host-setup-selector'
 import { getHulyProjectSettings } from '../../../../shared/huly/huly-project-settings'
 import type { HulyIssue } from '../../../../shared/huly/huly-types'
 import { slugifyMissionBranch } from '../../../../shared/missions'
@@ -50,7 +49,7 @@ export default function MissionFromHulyDialog(): React.JSX.Element {
   const open = useAppStore((s) => s.activeModal === 'mission-create-huly')
   const closeModal = useAppStore((s) => s.closeModal)
   const repos = useAppStore((s) => s.repos)
-  const orcaProjects = useAppStore((s) => selectCanonicalProjects(s))
+  const orcaProjects = useAppStore((s) => s.projects)
   const settings = useAppStore((s) => s.settings)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const createMissionFromMilestone = useAppStore((s) => s.createMissionFromMilestone)

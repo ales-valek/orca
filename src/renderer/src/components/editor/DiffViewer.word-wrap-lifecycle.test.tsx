@@ -32,7 +32,7 @@ const fixture = vi.hoisted(() => {
   }
   const editors: ReturnType<typeof createEditor>[] = []
   const state = {
-    settings: { diffWordWrap: true },
+    settings: { diffWordWrap: true, editorGitLineBlameEnabled: false },
     editorFontZoomLevel: 0,
     addDiffComment: vi.fn(),
     deleteDiffComment: vi.fn(),

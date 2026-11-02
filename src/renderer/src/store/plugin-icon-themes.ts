@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
-import { useAppStore } from '@/store'
 import {
   isPluginIconThemeMetadata,
   isPluginIconThemeRegistration,
@@ -105,10 +104,4 @@ export function usePluginIconThemeActivation(selectedId: string | null | undefin
         }
       })
   }, [selected, revision])
-}
-
-/** The file icon theme the user picked, or null for Orca's built-in icons. */
-export function useSelectedFileIconTheme(): PluginIconThemeRegistration | null {
-  const selectedId = useAppStore((state) => state.settings?.fileIconTheme ?? 'builtin')
-  return usePluginIconThemes().find((theme) => theme.id === selectedId) ?? null
 }

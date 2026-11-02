@@ -233,21 +233,8 @@ export function mapRuntimeError(id: string, meta: RpcEnvelopeMeta, error: unknow
     error instanceof Error &&
     'code' in error &&
     typeof (error as { code: unknown }).code === 'string' &&
-    LINEAR_PASSTHROUGH_CODES.has((error as { code: string }).code)
-  ) {
-    return errorResponse(
-      id,
-      meta,
-      (error as { code: string }).code,
-      message,
-      (error as { data?: unknown }).data
-    )
-  }
-  if (
-    error instanceof Error &&
-    'code' in error &&
-    typeof (error as { code: unknown }).code === 'string' &&
-    STRUCTURED_RUNTIME_PASSTHROUGH_CODES.has((error as { code: string }).code)
+    (LINEAR_PASSTHROUGH_CODES.has((error as { code: string }).code) ||
+      STRUCTURED_RUNTIME_PASSTHROUGH_CODES.has((error as { code: string }).code))
   ) {
     return errorResponse(
       id,

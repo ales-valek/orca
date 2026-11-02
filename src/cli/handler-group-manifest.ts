@@ -2,9 +2,7 @@ import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser/browser-handler-groups'
 import { JIRA_HANDLER_GROUP } from './jira-handler-group'
 import { LINEAR_HANDLER_GROUP } from './linear-handler-group'
-import { MISSION_HANDLER_GROUP } from './mission-handler-group'
-import { DEVENV_HANDLER_GROUP } from './devenv-handler-group'
-import { TEST_RUN_HANDLER_GROUP } from './test-runs-handler-group'
+import { FORK_HANDLER_GROUPS } from './fork-handler-groups'
 import { REFERENCE_HANDLER_GROUP } from './reference-handler-group'
 import { PLUGIN_HANDLER_GROUPS } from './plugin-handler-groups'
 
@@ -102,9 +100,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     ],
     load: async () => (await import('./handlers/worktree.js')).WORKTREE_HANDLERS
   },
-  MISSION_HANDLER_GROUP,
-  DEVENV_HANDLER_GROUP,
-  TEST_RUN_HANDLER_GROUP,
+  ...FORK_HANDLER_GROUPS,
   {
     name: 'file',
     keys: ['file open', 'file diff', 'file open-changed'],

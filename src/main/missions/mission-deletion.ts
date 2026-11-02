@@ -4,7 +4,7 @@ import type {
   MissionMember,
   MissionMemberResult
 } from '../../shared/mission-types'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { removeMissionRootIfPresent, syncMissionRootIfPresent } from './mission-root-sync'
 

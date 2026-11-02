@@ -8,7 +8,7 @@ import type {
 } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
 import { getBranchTip, isAncestorCommit } from '../git/stack-layer-git'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { MissionPullRequestMerge } from './mission-stack-merge-notification'
 import { resolveLocalMissionDefaultBaseBranch } from './mission-stack-pull-request-git'
 

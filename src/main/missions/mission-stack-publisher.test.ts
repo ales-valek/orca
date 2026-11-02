@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Mission } from '../../shared/mission-types'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import { MissionStackPublisher } from './mission-stack-publisher'
 
 vi.mock('./mission-repo-eligibility', () => ({

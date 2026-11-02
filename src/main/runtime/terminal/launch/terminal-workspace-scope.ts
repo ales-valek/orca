@@ -24,8 +24,7 @@ import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ResolvedWorktree } from '../../runtime-worktree-path-identity'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspace-worktree'
-import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
-import { getMissionBriefPath } from '../../../../shared/mission-source'
+import { getFolderWorkspaceOwnerEnvWithMission } from '../../../../shared/mission-folder-workspace-env'
 import type { TerminalWorkspaceLaunchScope } from '../../runtime-legacy-worker-terminal-recovery-types'
 import { resolveTerminalStartupCwd } from '../../../../shared/terminal-startup-cwd'
 import type { ResolvedTerminalWorkspaceLaunchTarget } from '../../orca-runtime-core'
@@ -232,15 +231,12 @@ export abstract class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktr
     if (!scope.folderWorkspace) {
       return env
     }
-    const missionId = scope.folderWorkspace.missionId
-    const mission = missionId ? this.store?.getMission?.(missionId) : null
     return {
       ...env,
-      ...getFolderWorkspaceOwnerEnv({
-        ...scope.folderWorkspace,
-        missionRootPath: mission?.rootPath,
-        missionBriefPath: mission ? getMissionBriefPath(mission) : null
-      }),
+      ...getFolderWorkspaceOwnerEnvWithMission(
+        scope.folderWorkspace,
+        (id) => this.store?.getMission?.(id) ?? undefined
+      ),
       ORCA_WORKSPACE_ROOT: scope.folderWorkspace.folderPath
     }
   }

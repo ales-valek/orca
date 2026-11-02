@@ -14,7 +14,7 @@ import { detectHostedReviewProvider } from '../source-control/forge-provider'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
 import { resolveWorktreeCreateBase } from '../worktree-create-base'
 import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { MissionStackInspectionDeps } from './mission-stack-inspection'
 import type {
   MissionStackPullRequestDeps,

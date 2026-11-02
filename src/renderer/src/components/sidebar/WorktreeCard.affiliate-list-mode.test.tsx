@@ -36,7 +36,7 @@ vi.mock('@/store', () => {
     openModal,
     openTaskPage: vi.fn(),
     projectGroups: [],
-      missions: [],
+    missions: [],
     ptyIdsByTabId: {},
     remoteBranchConflictByWorktreeId: {},
     renamingWorktreeId: null,

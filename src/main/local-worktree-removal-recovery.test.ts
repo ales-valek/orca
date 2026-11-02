@@ -193,7 +193,7 @@ describe('recoverPartialLocalWorktreeRemoval', () => {
       ])
 
       await expect(
-        recoverLocalWindowsWorktreeRemoval({
+        recoverPartialLocalWorktreeRemoval({
           error: new Error('git worktree remove failed'),
           force: true,
           canonicalWorktreePath: 'C:/repo/worktree/feature',

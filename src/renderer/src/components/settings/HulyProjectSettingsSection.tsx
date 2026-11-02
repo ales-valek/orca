@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/select'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import { selectCanonicalProjects } from '@/store/project-host-setup-selector'
 import {
   getHulyProjectSettings,
   type HulyProjectSettings
@@ -50,7 +49,7 @@ export function HulyProjectSettingsSection(props: {
   const settings = useAppStore((s) => s.settings)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const repos = useAppStore((s) => s.repos)
-  const orcaProjects = useAppStore(selectCanonicalProjects)
+  const orcaProjects = useAppStore((s) => s.projects)
   const projects = useHulyProjects(props.onAuthRequired)
   const [pickedProject, setPickedProject] = useState<string | null>(null)
 

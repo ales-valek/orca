@@ -113,11 +113,10 @@ export async function recoverPartialLocalWorktreeRemoval(
 
   // Release watcher handles before recursively finishing Git’s partial removal; abort if closing fails.
   await args.closeWatcher(args.canonicalWorktreePath)
-  if (!(await isRecoverableWindowsFilesystemRemovalFailure(args))) {
+  if (!(await isRecoverablePartialRemovalFailure(args))) {
     throw staleRegistrationRecoveryError(
       new Error('Git registered a worktree at the removal path during watcher teardown.'),
-      args.canonicalWorktreePath,
-      args.force
+      args.canonicalWorktreePath
     )
   }
   try {

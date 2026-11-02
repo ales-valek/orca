@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { DEV_ENV_NAME_PATTERN } from '../../../shared/dev-env/dev-env-types'
 import type { DevEnvOperations } from '../../dev-env/dev-env-operations'
 import { DevTools } from '../../dev-env/dev-tools'
-import type { Store } from '../../persistence'
+import type { Store } from '../../persistence/loading-store/store'
 import { readDevEnvLogTail } from './dev-env-log-tail'
 
 const ToolArgs = z.object({ name: z.string().regex(DEV_ENV_NAME_PATTERN) })
