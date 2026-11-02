@@ -63,7 +63,7 @@ import type { RuntimeApi } from './api/runtime-api'
 import type { WslMoveApi } from './api/wsl-move-bridge'
 import type { WslDriveProjectApi } from './api/wsl-drive-project-bridge'
 import type { WslDriveUncConversionApi } from './api/wsl-drive-unc-conversion-bridge'
-import type { KeybindingsApi, SettingsApi } from './api/settings-api'
+import type { CustomCssApi, KeybindingsApi, SettingsApi } from './api/settings-api'
 import type { ShellApi } from './api/shell-api'
 import type { SpeechApi } from './api/speech-api'
 import type { SshApi } from './api/ssh-api'
@@ -122,6 +122,7 @@ export type PreloadApi = {
   agentAwake: AgentAwakeApi
   localhostWorktreeLabels: LocalhostWorktreeLabelsApi
   keybindings: KeybindingsApi
+  customCss: CustomCssApi
   codexAccounts: CodexAccountsApi
   claudeAccounts: ClaudeAccountsApi
   cli: CliApi

@@ -168,6 +168,7 @@ export function buildDefaultSettings(args: {
     showGitIgnoredFiles: true,
     followSymlinkedDirectories: false,
     folderColorOverrides: {},
+    customCssEnabled: false,
     sourceControlViewMode: 'list',
     sourceControlGroupOrder: DEFAULT_SOURCE_CONTROL_GROUP_ORDER,
     sourceControlCompareAgainstUpstream: false,

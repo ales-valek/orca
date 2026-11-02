@@ -8,6 +8,8 @@ import { ReduceVisualEffectsSetting } from './ReduceVisualEffectsSetting'
 import { getReduceVisualEffectsEntries } from './appearance-reduce-visual-effects-search'
 import { AppearanceAdvancedDisclosure } from './AppearanceAdvancedDisclosure'
 import { SettingsSearchableSelect } from '../form-controls/SettingsSearchableSelect'
+import { CustomCssSetting } from './CustomCssSetting'
+import { getCustomCssEntries } from './appearance-custom-css-search'
 import { useAppStore } from '../../../store/index'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutHintList } from './AppearanceShortcutHintList'
@@ -119,7 +121,8 @@ export function AppearanceInterfaceSection({
     ...getTitlebarEntries(),
     ...getReduceVisualEffectsEntries(),
     ...getSystemTrayEntries({ showSystemTray: isDesktopWindows }),
-    ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac })
+    ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac }),
+    ...getCustomCssEntries()
   ]
   const showAdvanced = !isSearching || matchesSettingsSearch(searchQuery, advancedEntries)
   const languageTitle = translate('settings.appearance.language.title', 'Language')
@@ -408,6 +411,8 @@ export function AppearanceInterfaceSection({
                 />
               </SearchableSetting>
             ) : null}
+
+            <CustomCssSetting settings={settings} updateSettings={updateSettings} />
           </div>
         </AppearanceAdvancedDisclosure>
       ) : null}
