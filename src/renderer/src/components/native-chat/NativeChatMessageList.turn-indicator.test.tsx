@@ -109,7 +109,7 @@ describe('NativeChatMessageList turn indicator', () => {
 
     const activity = screen.getByText('Working…')
     const row = activity.closest('[data-native-chat-turn-activity]')
-    const spinner = row?.querySelector('svg')
+    const spinner = row?.querySelector('.animate-spin')
     expect(activity).not.toHaveClass('animate-pulse', 'animate-spin')
     expect(spinner).toHaveClass('size-4', 'animate-spin', 'motion-reduce:hidden')
     expect(row).toHaveAttribute('aria-live', 'polite')
@@ -154,7 +154,9 @@ describe('NativeChatMessageList turn indicator', () => {
     expect(activity.textContent).not.toBe(toolLabel.textContent)
     expect(activity).not.toHaveTextContent('shell')
     expect(activity).not.toHaveTextContent('pnpm test')
-    const spinner = activity.closest('[data-native-chat-turn-activity]')?.querySelector('svg')
+    const spinner = activity
+      .closest('[data-native-chat-turn-activity]')
+      ?.querySelector('.animate-spin')
     expect(activity).not.toHaveClass('animate-pulse', 'animate-spin')
     expect(spinner).toHaveClass('animate-spin', 'motion-reduce:hidden')
   })
@@ -263,9 +265,9 @@ describe('NativeChatMessageList turn indicator', () => {
     expect(liveRun?.querySelector('.lucide-check')).toBeNull()
     const activity = screen.getByText('Preparing the answer')
     expect(activity).not.toHaveClass('animate-pulse', 'animate-spin')
-    expect(activity.closest('[data-native-chat-turn-activity]')?.querySelector('svg')).toHaveClass(
-      'animate-spin'
-    )
+    expect(
+      activity.closest('[data-native-chat-turn-activity]')?.querySelector('.animate-spin')
+    ).toBeInTheDocument()
 
     rerender(
       <NativeChatMessageList
@@ -375,9 +377,9 @@ describe('NativeChatMessageList turn indicator', () => {
     expect(bar.compareDocumentPosition(thinking)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(screen.getAllByText('Thinking')).toHaveLength(1)
     expect(screen.queryByText('Working…')).toBeNull()
-    expect(thinking.closest('[data-native-chat-turn-activity]')?.querySelector('svg')).toHaveClass(
-      'animate-spin'
-    )
+    expect(
+      thinking.closest('[data-native-chat-turn-activity]')?.querySelector('.animate-spin')
+    ).toBeInTheDocument()
     expect(container.querySelector('.animate-bounce')).toBeNull()
   })
 
