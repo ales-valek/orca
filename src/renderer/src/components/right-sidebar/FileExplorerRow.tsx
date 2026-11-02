@@ -2,6 +2,7 @@ import React from 'react'
 import { ChevronRight, CircleAlert, CircleSlash, Link, Loader2 } from 'lucide-react'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store'
 import { FileTypeIcon, FolderIcon } from '@/components/FileTypeIcon'
 import {
   encodeWorkspaceFilePaths,
@@ -20,6 +21,13 @@ import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
 import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
 import { createMultiSelectDragGhost } from './file-explorer-multi-drag-image'
 import { FileExplorerRowContextMenu } from './file-explorer-row-context-menu'
+import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
+import {
+  folderColorOverrideKey,
+  resolveFolderColorOverride,
+  setFolderColorOverride,
+  type FolderColorHex
+} from '../../../../shared/folder-color-palette'
 
 export type FileExplorerRowProps = {
   node: TreeNode
@@ -115,6 +123,20 @@ export function FileExplorerRow({
   onNativeDragTargetChange,
   onNativeDragExpandDir
 }: FileExplorerRowProps): React.JSX.Element {
+  const folderColorOverrides = useAppStore((state) => state.settings?.folderColorOverrides)
+  const updateSettings = useAppStore((state) => state.updateSettings)
+  const folderColorKey = folderColorOverrideKey(
+    node.path,
+    getFileExplorerOperationExecutionHostId(node.operationOwner)
+  )
+  const folderColor = node.isDirectory
+    ? resolveFolderColorOverride(folderColorOverrides, folderColorKey)
+    : null
+  const handleFolderColorChange = (color: FolderColorHex | null): void => {
+    void updateSettings({
+      folderColorOverrides: setFolderColorOverride(folderColorOverrides, folderColorKey, color)
+    })
+  }
   const showLoadError = node.isDirectory && isExpanded && !isLoading && loadError !== null
   const rowDropDir = node.isDirectory ? node.path : targetDir
   const statusAccent = nodeStatus ? statusColor : null
@@ -219,7 +241,7 @@ export function FileExplorerRow({
                   folderPath={node.name}
                   open={isExpanded}
                   className="size-3 shrink-0 text-muted-foreground"
-                  style={iconStyle}
+                  style={iconStyle ?? (folderColor ? { color: folderColor } : undefined)}
                 />
               )}
             </>
@@ -292,6 +314,8 @@ export function FileExplorerRow({
       <FileExplorerRowContextMenu
         node={node}
         isExpanded={isExpanded}
+        folderColor={folderColor}
+        onFolderColorChange={handleFolderColorChange}
         deleteShortcutLabel={deleteShortcutLabel}
         connectionId={connectionId}
         runtimeDownloadContext={runtimeDownloadContext}
