@@ -26,6 +26,7 @@ import type { KeybindingGlobalSettings } from './keybindings/global-settings'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
 import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
 import type { EditorLineAnnotationSettings } from './editor-line-annotation-settings'
+import type { FolderColorSettings } from './folder-color-palette'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AntigravityChatAuthSettings &
@@ -55,4 +56,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   KeybindingGlobalSettings &
   HulyGlobalSettings &
   DevEnvGlobalSettings &
-  EditorLineAnnotationSettings
+  EditorLineAnnotationSettings &
+  FolderColorSettings
