@@ -2,9 +2,9 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
-import { readMediaPreview } from '../../media/media-preview-protocol'
+import { readLocalFilePreview } from '../../media/media-preview-protocol'
 import type { DevEnvOperations } from '../../dev-env/dev-env-operations'
-import type { Store } from '../../persistence'
+import type { Store } from '../../persistence/loading-store/store'
 import { TestRunStore } from '../../test-runs/test-run-store'
 import { TestRunsChangeNotifier } from '../../test-runs/test-runs-change-notifier'
 import {
@@ -117,7 +117,7 @@ export function registerTestRunsHandlers(
       return runs.getLatestResults({ worktreeId, repoKey })
     },
     'testRuns:getHistory': (_event, raw) => runs.getHistory(HistoryArgs.parse(raw).identity),
-    'testRuns:getArtifactUrl': (event, raw) => {
+    'testRuns:getArtifactUrl': async (event, raw) => {
       const { runId, file } = ArtifactArgs.parse(raw)
       const imageUrl = runs.readImageDataUrl(runId, file)
       if (imageUrl) {
@@ -126,7 +126,9 @@ export function registerTestRunsHandlers(
       const filePath = runs.getArtifactPath(runId, file)
       // Why user-file: main validated the path inside the runs dir, which no project root covers.
       const media = filePath
-        ? readMediaPreview(event, { filePath, access: { kind: 'user-file' } }, store)
+        ? await readLocalFilePreview(event, { filePath, access: { kind: 'user-file' } }, store, {
+            documents: false
+          })
         : null
       return media ? { url: media.mediaUrl } : { error: 'This artifact cannot be shown' }
     },

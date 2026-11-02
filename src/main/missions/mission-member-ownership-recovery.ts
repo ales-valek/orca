@@ -1,7 +1,7 @@
 import { getMissionSlotBranch } from '../../shared/mission-task-stack'
 import type { Mission, MissionMember, MissionSlot } from '../../shared/mission-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
 import { worktreePathComparisonKey } from '../worktree-path-comparison-key'

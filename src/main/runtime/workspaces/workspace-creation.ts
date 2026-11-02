@@ -24,8 +24,7 @@ import { trackRuntimeWorkspaceCreate } from '../../workspaces/creation/workspace
 import { assertOpenCodeModelLaunchPreferencesAbsent } from '../../opencode/opencode-model-startup-plan'
 import type { RuntimeWorkspaceCreateEvents } from '../../workspaces/creation/workspace-create-telemetry'
 import { createdWorkspaceActivationCallbacks, wslUserAct } from './workspace-create-activation'
-import { assertWslMoveRepoWritable } from '../../persistence/moving-wsl-projects/wsl-move-scope-guard'
-import { resolveMissionManagedWorktreeCreate } from '../runtime-mission-worktree-create'
+import { assertManagedWorktreeCreateAllowed } from './managed-worktree-create-guards'
 import { resolveManagedWorktreeCreateStartup } from './managed-worktree-create-startup'
 import type { WorkspaceCreationHandle } from './workspace-lifecycle-creations'
 import { workspaceLifecycleKey } from './workspace-lifecycle-commands'
@@ -89,17 +88,11 @@ export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWi
     events: RuntimeWorkspaceCreateEvents
   ): Promise<CreateWorktreeResult> {
     const store = this.requireStore()
-    // Reject SSH and folder repos before their create helpers can suffix a Mission branch.
-    resolveMissionManagedWorktreeCreate({
-      request: args,
-      repo,
-      store
-    })
     const onWorkspaceCreated = (worktreeId: string): void => {
       creation?.named(worktreeId)
       args.onWorkspaceCreated?.(worktreeId)
     }
-    assertWslMoveRepoWritable(store, repo)
+    assertManagedWorktreeCreateAllowed(store, repo, args)
     const createSettings = store.getSettings()
     const {
       effectiveStartup,

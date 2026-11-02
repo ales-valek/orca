@@ -3,11 +3,7 @@
 import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { AppState } from '@/store/types'
 import {
@@ -85,11 +81,11 @@ function CreationMenu(): React.JSX.Element {
   return (
     <TooltipProvider>
       <style>{MENU_EXIT_ANIMATION}</style>
-      <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-        <DropdownMenuTrigger asChild>
+      <ContextMenu open={open} onOpenChange={setOpen} modal={false}>
+        <ContextMenuTrigger asChild>
           <button>Tab menu</button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent onCloseAutoFocus={clusterMenuAction.runAfterClose}>
+        </ContextMenuTrigger>
+        <ContextMenuContent onCloseAutoFocus={clusterMenuAction.runAfterClose}>
           {open ? (
             <TabClusterMenuSection
               worktreeId="wt"
@@ -99,8 +95,8 @@ function CreationMenu(): React.JSX.Element {
               onQueueNewCluster={clusterMenuAction.queueAfterClose}
             />
           ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </ContextMenuContent>
+      </ContextMenu>
       <ChipsFromStore />
     </TooltipProvider>
   )

@@ -27,7 +27,6 @@ import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import { TAB_CLUSTER_COLORS, type TabCluster } from '../../../../shared/tab-types'
 import { getTabClusterSplitBlocker } from '../tab-group/tab-cluster-split-availability'
-import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
 import { TAB_CLUSTER_COLOR_CLASSES, TAB_CLUSTER_COLOR_LABELS } from './tab-cluster-colors'
 import { useTabClusterMenuCloseAction } from './use-tab-cluster-menu-close-action'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
@@ -71,7 +70,7 @@ export function TabClusterContextMenu({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent
-        className={TAB_CONTEXT_MENU_CONTENT_CLASS}
+        className="min-w-[13rem] max-w-[calc(100vw-1rem)] whitespace-nowrap"
         onCloseAutoFocus={clusterMenuAction.runAfterClose}
       >
         <ContextMenuItem onSelect={() => clusterMenuAction.queueAfterClose(onRename)}>

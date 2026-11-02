@@ -129,7 +129,8 @@ function Pane({
     content: '[[Ta',
     language,
     markdownDocuments: catalog,
-    conflictDecorationsEnabled: false
+    conflictDecorationsEnabled: false,
+    changedLineDecorationsEnabled: false
   })
   return null
 }

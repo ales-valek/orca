@@ -11,7 +11,7 @@ import type {
   MissionTask
 } from '../../shared/mission-types'
 import type { Repo } from '../../shared/repo-types'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import { deleteOrcaOwnedBranch } from '../git/mission-branch-refs'
 import { getBranchTip, getMergeBase } from '../git/stack-layer-git'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'

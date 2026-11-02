@@ -11,7 +11,7 @@ import type {
   MissionSlot,
   MissionTaskResult
 } from '../../shared/mission-types'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import { listLocalBranchesUnder } from '../git/mission-branch-refs'
 import type { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'

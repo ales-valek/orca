@@ -13,7 +13,7 @@ import type {
   MissionDeleteInput
 } from '../ipc/mission-ipc-args'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { MissionMemberLifecycle } from './mission-member-lifecycle'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'

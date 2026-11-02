@@ -41,7 +41,7 @@ export function useGitLineBlame(args: {
     widgetKey = 'file'
   } = args
   const head = useAppStore((state) =>
-    worktreeId ? (state.gitStatusHeadByWorktree[worktreeId] ?? null) : null
+    worktreeId ? (state.gitStatusHeadByWorktree?.[worktreeId] ?? null) : null
   )
   const blameRef = useRef<GitBlameLineIndex | null>(null)
   const lineRef = useRef(1)

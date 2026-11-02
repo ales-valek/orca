@@ -9,7 +9,7 @@ import {
 } from '../../../shared/test-runs/test-run-launch-types'
 import { splitWorktreeIdForFilesystem } from '../../../shared/worktree/id'
 import { gitExecFileAsync } from '../../git/command-runner/git-exec-file'
-import type { Store } from '../../persistence'
+import type { Store } from '../../persistence/loading-store/store'
 import { TestCatalogs } from '../../test-runs/test-catalog'
 import { getFeatureScope } from '../../test-runs/test-feature-scope'
 import { generateTestSuggestions } from '../../test-runs/test-suggestions'

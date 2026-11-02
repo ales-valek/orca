@@ -17,7 +17,7 @@ import { registerGitLabHandlers } from '../gitlab'
 import { registerHostedReviewHandlers } from '../hosted-review'
 import { registerLinearHandlers } from '../linear/register-handlers'
 import { registerJiraHandlers } from '../jira/register-handlers'
-import { registerHulyHandlers } from '../huly/register-handlers'
+import { registerForkFeatureHandlers } from './register-fork-feature-handlers'
 import { registerJiraIssueSummaryGenerationHandlers } from '../jira/issue-summary-generation'
 import { registerBitbucketHandlers } from '../bitbucket'
 import { registerFeedbackHandlers } from '../feedback'
@@ -204,7 +204,7 @@ export function registerCoreHandlers(
   registerHostedReviewHandlers(store, stats)
   registerLinearHandlers()
   registerJiraHandlers()
-  registerHulyHandlers(runtime)
+  registerForkFeatureHandlers(runtime)
   registerJiraIssueSummaryGenerationHandlers(store, commitMessageAgentEnv)
   registerBitbucketHandlers()
   registerFeedbackHandlers()

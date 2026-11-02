@@ -6,7 +6,7 @@ import type {
 } from '../../shared/mission-types'
 import { getRepoTaskStack } from '../../shared/mission-task-stack'
 import { folderWorkspaceKey } from '../../shared/workspace-scope'
-import type { Store } from '../persistence'
+import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
