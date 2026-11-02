@@ -112,9 +112,9 @@ describe('NativeChatMessageList turn indicator', () => {
     expect(liveRun?.querySelector('.lucide-check')).toBeNull()
     const activity = screen.getByText('Preparing the answer')
     expect(activity).not.toHaveClass('animate-pulse', 'animate-spin')
-    expect(activity.closest('[data-native-chat-turn-activity]')?.querySelector('svg')).toHaveClass(
-      'animate-spin'
-    )
+    expect(
+      activity.closest('[data-native-chat-turn-activity]')?.querySelector('.animate-spin')
+    ).toBeInTheDocument()
 
     rerender(
       <NativeChatMessageList
