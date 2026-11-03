@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import type { Repo } from '../../../../../shared/repo-types'
 import type { RepoTestRunSettings } from '../../../../../shared/test-runs/repo-test-run-settings'
-import { SearchableSetting } from '../SearchableSetting'
-import type { SettingsSearchEntry } from '../settings-search'
+import { SearchableSetting } from '../section-layout/SearchableSetting'
+import type { SettingsSearchEntry } from '../search/settings-search'
 
 export const REPOSITORY_TEST_RUNS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   {

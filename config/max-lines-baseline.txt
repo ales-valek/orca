@@ -12,3 +12,4 @@ inline src/renderer/src/components/editor/diff/monaco-view/DiffViewer.tsx
 inline src/renderer/src/lib/workspace/activation/worktree-activation.ts
 inline src/renderer/src/components/tab-bar/EditorFileTab.tsx
 inline src/renderer/src/components/right-sidebar/file-explorer/tree/use-file-explorer-tree-pane-state.ts
+inline src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx

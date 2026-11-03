@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import { isFolderRepo } from '../../../shared/repo-kind'
 import type { Store } from '../../persistence/loading-store/store'
 import { isDescendantOrEqual, normalizeExistingPath } from './filesystem-path-containment'
-import { resolveRegisteredWorktreePath } from '../registered-worktree-roots-cache'
+import { resolveRegisteredWorktreePath } from '../worktrees/removal/registered-worktree-roots-cache'
 
 export async function resolveNestedRepositoryPath(
   repositoryPath: string,

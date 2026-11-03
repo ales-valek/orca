@@ -1,7 +1,7 @@
 import type React from 'react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import { SearchableSetting } from './SearchableSetting'
-import { SettingsSwitchRow } from './SettingsFormControls'
+import { SearchableSetting } from './section-layout/SearchableSetting'
+import { SettingsSwitchRow } from './form-controls/SettingsFormControls'
 import { translate } from '@/i18n/i18n'
 
 type EditorChangedLineHighlightsSettingProps = {

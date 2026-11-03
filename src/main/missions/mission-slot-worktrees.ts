@@ -5,7 +5,7 @@ import type { Mission, MissionMemberResult, MissionSlot } from '../../shared/mis
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktrees/catalog/worktree-path-comparison'
 import type { MissionMemberOwnershipRecovery } from './mission-member-ownership-recovery'
 import { requireNativeLocalMissionRepos } from './mission-repo-eligibility'
 import {

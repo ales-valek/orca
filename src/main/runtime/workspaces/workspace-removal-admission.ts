@@ -1,12 +1,12 @@
 import { getRepoExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
 import type { RemoveWorktreeResult } from '../../../shared/worktree/create-types'
 import { preservedBranchCleanupScopeKey } from '../../../shared/preserved-branch-cleanup'
-import { finishAcceptedWorktreeRemoval } from '../../worktree-background-removal'
+import { finishAcceptedWorktreeRemoval } from '../../workspaces/removal/worktree-background-removal'
 import {
   assertWslMoveWorkspaceWritable,
   isWslMoveSourceHost
 } from '../../persistence/moving-wsl-projects/wsl-move-scope-guard'
-import { resolveWorktreeRemovalRepoOwner } from '../../worktree-removal-repo-owner'
+import { resolveWorktreeRemovalRepoOwner } from '../../workspaces/removal/worktree-removal-repo-owner'
 import {
   getRuntimeWorktreeRemovalOptionsKey,
   type RemoveManagedWorktreeOptions,

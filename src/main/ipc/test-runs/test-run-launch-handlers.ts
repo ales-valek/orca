@@ -9,7 +9,7 @@ import {
   type TestRunTargetOption
 } from '../../../shared/test-runs/test-run-launch-types'
 import { composeWorktreeId } from '../../../shared/worktree/id'
-import { listWorktrees } from '../../git/worktree-scan-cache'
+import { listWorktrees } from '../../git/worktrees/catalog/worktree-scan-cache'
 import type { Store } from '../../persistence/loading-store/store'
 import { applyTestRunsEnv } from '../pty/host-env/test-runs-env'
 import { TestRunCheckouts } from '../../test-runs/test-run-checkouts'

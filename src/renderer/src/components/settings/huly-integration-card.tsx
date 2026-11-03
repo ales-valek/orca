@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import type { HulyConnectionStatus } from '../../../../shared/huly/huly-types'
-import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
+import {
+  IntegrationCardDetails,
+  IntegrationCardShell
+} from '../integrations/presentation/integration-card-shell'
 import { HulyProjectSettingsSection } from './HulyProjectSettingsSection'
-import { HULY_INTEGRATION_SECTION_ID } from './task-provider-integration-section-ids'
+import { HULY_INTEGRATION_SECTION_ID } from '../integrations/task-trackers/task-provider-integration-section-ids'
 
 export function HulyIntegrationCard(): React.JSX.Element {
   const mountedRef = useMountedRef()

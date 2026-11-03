@@ -8,7 +8,7 @@ import {
   readStoredCredentialToken,
   writeCredentialFileAtomic,
   writeEncryptedCredential
-} from '../integration-credential-file'
+} from '../credentials/integration-credential-file'
 
 export type HulyCredentialStore = {
   readInfo(): HulyConnectionInfo | null

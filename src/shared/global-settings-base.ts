@@ -26,6 +26,7 @@ import type { KeybindingGlobalSettings } from './keybindings/global-settings'
 import type { HulyGlobalSettings } from './huly/huly-project-settings'
 import type { DevEnvGlobalSettings } from './dev-env/dev-env-settings'
 import type { CustomCssSettings } from './custom-css'
+import type { WorkspaceSidebarPositionSettings } from './ui-chrome-types'
 import type { EditorLineAnnotationSettings } from './editor-line-annotation-settings'
 import type { FolderColorSettings } from './folder-color-palette'
 
@@ -58,5 +59,6 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   HulyGlobalSettings &
   DevEnvGlobalSettings &
   CustomCssSettings &
+  WorkspaceSidebarPositionSettings &
   EditorLineAnnotationSettings &
   FolderColorSettings
