@@ -9,7 +9,8 @@ import {
 export const PLUGIN_ICON_THEME_SLOTS = ['file', 'folder', 'folder-open'] as const
 export type PluginIconThemeSlot = (typeof PLUGIN_ICON_THEME_SLOTS)[number]
 
-const ICON_THEME_MAPPING_LIMIT = 512
+// Why 4096: the fork's own Charmed Icons theme maps about 2000 file names; main allows 512.
+const ICON_THEME_MAPPING_LIMIT = 4096
 
 function hasControlCharacter(value: string): boolean {
   return [...value].some((character) => character.charCodeAt(0) <= 31)
