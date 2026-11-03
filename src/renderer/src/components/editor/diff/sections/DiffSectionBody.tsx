@@ -26,6 +26,11 @@ import {
   PLUGIN_SYNTAX_EDITOR_OPTIONS,
   applyModelLanguage
 } from '@/lib/monaco-languages/plugin-syntax-editor-options'
+import { useAppStore } from '@/store'
+import {
+  getDiffValidationDecorationOptions,
+  selectDiffLanguageIntelligenceEnabled
+} from './diff-language-intelligence'
 import { useMonacoTheme } from '@/hooks/use-monaco-theme'
 import { wholeFileDiffTintClass } from '../monaco-view/whole-file-diff-tint'
 import {
@@ -77,6 +82,7 @@ export function DiffSectionBody({
   const t = useTranslate()
   const language = usePluginSyntaxLanguage(section.path, coreLanguage)
   const monacoTheme = useMonacoTheme(isDark)
+  const languageIntelligence = useAppStore(selectDiffLanguageIntelligenceEnabled)
   const renderLimit = section.largeDiffRenderLimit?.limited ? section.largeDiffRenderLimit : null
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null)
   const wordWrapOptionsSubRef = useRef<{ dispose: () => void } | null>(null)
@@ -90,8 +96,7 @@ export function DiffSectionBody({
       editContext: false,
       readOnly: !isEditable,
       originalEditable: false,
-      // Why: the default 'editable' hides language-server squiggles on read-only diffs.
-      renderValidationDecorations: 'on',
+      ...getDiffValidationDecorationOptions(languageIntelligence),
       renderSideBySide: sideBySide,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
@@ -107,7 +112,7 @@ export function DiffSectionBody({
       find: monacoFindOptions,
       unicodeHighlight: buildEditorUnicodeHighlightOptions(language)
     }),
-    [isEditable, sideBySide, typography, diffWordWrap, diffShowWhitespace, language]
+    [isEditable, sideBySide, typography, diffWordWrap, diffShowWhitespace, language, languageIntelligence]
   )
   useLayoutEffect(() => {
     diffWordWrapRef.current = diffWordWrap

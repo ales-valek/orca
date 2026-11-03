@@ -134,6 +134,25 @@ export const getGeneralEditorSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
+    title: translate(
+      'auto.components.settings.general.search.diffLanguageIntelligence',
+      'Language Intelligence in Diffs'
+    ),
+    description: translate(
+      'auto.components.settings.general.search.diffLanguageIntelligenceDesc',
+      'Show TypeScript and ESLint diagnostics, language server hovers and line blame in diffs. Turn off to review very large diffs faster.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.general.search.diffKw', 'diff'),
+      ...translateSearchKeyword('auto.components.settings.general.search.lspKw', 'lsp'),
+      ...translateSearchKeyword('auto.components.settings.general.search.eslintKw', 'eslint'),
+      ...translateSearchKeyword(
+        'auto.components.settings.general.search.performanceKw',
+        'performance'
+      )
+    ]
+  },
+  {
     title: translate('auto.components.settings.general.search.gitLineBlame', 'Git Line Blame'),
     description: translate(
       'auto.components.settings.general.search.gitLineBlameDesc',
