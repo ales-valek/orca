@@ -3,8 +3,8 @@ import type { Mission, MissionMember, MissionSlot } from '../../shared/mission-t
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
-import { worktreePathComparisonKey } from '../worktree-path-comparison-key'
+import { areWorktreePathsEqual } from '../git/worktrees/catalog/worktree-path-comparison'
+import { worktreePathComparisonKey } from '../workspaces/catalog/worktree-path-comparison-key'
 import {
   findMissionOwnedWorktreeCandidates,
   getMissionRepoNonMemberSlots,

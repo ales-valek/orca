@@ -1,6 +1,6 @@
 import type { Repo } from '../../shared/repo-types'
 import { isMissionEligibleRepo } from '../../shared/missions'
-import { resolveLocalProjectRuntimeForRepo } from '../local-project-runtime-resolution'
+import { resolveLocalProjectRuntimeForRepo } from '../workspaces/execution-host/local-project-runtime-resolution'
 import type { Store } from '../persistence/loading-store/store'
 
 export const MISSION_NATIVE_LOCAL_ONLY_ERROR = 'mission_native_local_git_repos_only'

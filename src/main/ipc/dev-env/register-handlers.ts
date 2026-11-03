@@ -8,7 +8,7 @@ import { eraseRpcMethods } from '../../runtime/rpc/core'
 import { DEV_ENV_METHODS } from '../../runtime/rpc/methods/dev-env'
 import { readDevEnvLogTail } from './dev-env-log-tail'
 import { registerDevToolsHandlers } from './register-dev-tools-handlers'
-import { setRemovedWorktreeListener } from '../../worktree-removal-process-cleanup'
+import { setRemovedWorktreeListener } from '../../workspaces/removal/worktree-removal-process-cleanup'
 import { writeTestRunTargetMap } from '../../test-runs/test-run-targets'
 import { getTestRunsDir } from '../../test-runs/test-runs-install'
 

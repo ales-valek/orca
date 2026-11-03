@@ -8,7 +8,7 @@ import {
 import { listPatchPaths, restorePatchPaths } from './layer-patch-restore'
 import { gitExecFileAsync } from './runner'
 import { detectConflictOperation } from './source-control/git-conflict-operation'
-import { runWithGitReadCacheInvalidation } from './status'
+import { runWithGitReadCacheInvalidation } from './source-control/git-read-cache-invalidation'
 
 /** Commit a local branch points at, or null when the branch does not exist. */
 export async function getBranchTip(

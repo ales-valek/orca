@@ -5,7 +5,7 @@ import {
 } from '../../../../../../shared/repo-badge-color'
 import { Label } from '../../../ui/label'
 import { ColorPicker } from '../../../ui/color-picker'
-import { SettingsSwitchRow } from '../../SettingsFormControls'
+import { SettingsSwitchRow } from '../../form-controls/SettingsFormControls'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 

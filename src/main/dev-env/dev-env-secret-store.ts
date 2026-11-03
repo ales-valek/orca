@@ -1,6 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
-import { readStoredCredentialToken, writeEncryptedCredential } from '../integration-credential-file'
+import {
+  readStoredCredentialToken,
+  writeEncryptedCredential
+} from '../credentials/integration-credential-file'
 
 const SECRET_NAME = /^[a-z0-9][a-z0-9-]{0,62}$/
 const SECRET_SUFFIX = '.secret'
