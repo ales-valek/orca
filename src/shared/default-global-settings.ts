@@ -62,6 +62,7 @@ export function buildDefaultSettings(args: {
     editorMinimapEnabled: false,
     editorGitLineBlameEnabled: true,
     editorChangedLineHighlightsEnabled: true,
+    diffLanguageIntelligenceEnabled: true,
     // Why empty: the editor keeps following the terminal font unless the user opts in.
     editorFontFamily: '',
     editorWordWrap: true,

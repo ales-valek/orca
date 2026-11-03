@@ -8416,7 +8416,9 @@
           "collapseUnchangedTitle": "Collapse Unchanged Regions",
           "collapseUnchangedDescription": "Show only changed lines and a little surrounding context in a file diff, hiding the rest behind expandable bands. The View All Changes diff always collapses this way.",
           "gitLineBlame": "Git Line Blame",
-          "gitLineBlameDesc": "Show who last changed the current line. Click the annotation to open that commit’s diff."
+          "gitLineBlameDesc": "Show who last changed the current line. Click the annotation to open that commit’s diff.",
+          "diffLanguageIntelligence": "Language Intelligence in Diffs",
+          "diffLanguageIntelligenceDesc": "Show TypeScript and ESLint diagnostics, language server hovers and line blame in diffs. Turn off to review very large diffs faster."
         },
         "AdvancedNetworkSettingsSection": {
           "3e431564b5": "localhost, 127.0.0.1, *.internal",
@@ -10782,7 +10784,13 @@
             "command": "command",
             "confirm": "confirm",
             "close": "close",
-            "omp": "OMP"
+            "omp": "OMP",
+            "diffLanguageIntelligence": "Language Intelligence in Diffs",
+            "diffLanguageIntelligenceDesc": "Show TypeScript and ESLint diagnostics, language server hovers and line blame in diffs. Turn off to review very large diffs faster.",
+            "diffKw": "diff",
+            "lspKw": "lsp",
+            "eslintKw": "eslint",
+            "performanceKw": "performance"
           }
         },
         "git": {

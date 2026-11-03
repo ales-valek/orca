@@ -6,6 +6,7 @@ import { findWorktreeById } from '@/store/slices/worktree-helpers'
 import { getConnectionId } from '@/lib/connection-context'
 import { attachMonacoLspDocument } from '@/lib/monaco-lsp/monaco-lsp-attach'
 import { resolveAnnotationPathInsideWorktree } from './check-annotation-path'
+import { selectDiffLanguageIntelligenceEnabled } from './diff-language-intelligence'
 
 /** Attach the modified pane of a diff to a local language server so hover,
  *  definitions, and diagnostics reflect real project types instead of the
@@ -23,8 +24,10 @@ export function useMonacoLspForDiff(params: {
     worktreeId ? (findWorktreeById(selectWorktreesByRepo(s) ?? {}, worktreeId)?.path ?? null) : null
   )
 
+  const enabled = useAppStore(selectDiffLanguageIntelligenceEnabled)
+
   useEffect(() => {
-    if (!modifiedEditor || !worktreeId || !worktreePath) {
+    if (!enabled || !modifiedEditor || !worktreeId || !worktreePath) {
       return
     }
     if (getConnectionId(worktreeId) !== null) {
@@ -58,5 +61,5 @@ export function useMonacoLspForDiff(params: {
       detach?.()
     }
     // Why: modelIdentity re-attaches after the diff surface swaps its models.
-  }, [modifiedEditor, worktreeId, worktreePath, relativePath, language, modelIdentity])
+  }, [enabled, modifiedEditor, worktreeId, worktreePath, relativePath, language, modelIdentity])
 }

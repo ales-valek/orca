@@ -18,13 +18,14 @@ import {
 } from '../form-controls/SettingsFormControls'
 import { translate } from '@/i18n/i18n'
 import { RichMarkdownSpellcheckSetting } from './RichMarkdownSpellcheckSetting'
-import { EditorChangedLineHighlightsSetting } from './EditorChangedLineHighlightsSetting'
+import { EditorChangedLineHighlightsSetting } from '../EditorChangedLineHighlightsSetting'
 import { DiffShowWhitespaceSetting } from './DiffShowWhitespaceSetting'
 import { EditorWordWrapSetting } from './EditorWordWrapSetting'
 import { EditorFontFamilySetting } from './EditorFontFamilySetting'
 import { EditorFormatOnSaveSetting } from './EditorFormatOnSaveSetting'
 import { EditorTypographySettings } from './EditorTypographySettings'
-import { GitLineBlameSetting } from './GitLineBlameSetting'
+import { GitLineBlameSetting } from '../GitLineBlameSetting'
+import { DiffLanguageIntelligenceSetting } from '../DiffLanguageIntelligenceSetting'
 import {
   createAutoSaveDelayDraftState,
   resolveAutoSaveDelayDraftState,
@@ -382,6 +383,7 @@ export function GeneralEditorSettingsSection({
 
       <GitLineBlameSetting settings={settings} updateSettings={updateSettings} />
       <EditorChangedLineHighlightsSetting settings={settings} updateSettings={updateSettings} />
+      <DiffLanguageIntelligenceSetting settings={settings} updateSettings={updateSettings} />
 
       <RichMarkdownSpellcheckSetting settings={settings} updateSettings={updateSettings} />
 
