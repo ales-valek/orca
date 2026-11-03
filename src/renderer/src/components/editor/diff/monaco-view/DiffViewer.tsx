@@ -21,6 +21,10 @@ import { getLargeDiffRenderLimit } from '../../../../../../shared/large-diff-ren
 import { useDiffViewerLargeDiffLifecycle } from '../large-files/useDiffViewerLargeDiffLifecycle'
 import { getDiffViewerLargeDiffSaveAction } from '../large-files/diff-viewer-large-diff-save-action'
 import { useMonacoLspForDiff } from './use-monaco-lsp-for-diff'
+import {
+  getDiffValidationDecorationOptions,
+  selectDiffLanguageIntelligenceEnabled
+} from './diff-language-intelligence'
 import { useDiffViewerFirstChangeAutoScroll } from './useDiffViewerFirstChangeAutoScroll'
 import type { DiffViewerProps } from './diff-viewer-props'
 import { buildDiffEditorWhitespaceOptions } from './diff-editor-whitespace-options'
@@ -71,6 +75,7 @@ export default function DiffViewer({
 }: DiffViewerProps): React.JSX.Element {
   const diffWordWrap = useAppStore((s) => s.settings?.diffWordWrap)
   const diffShowWhitespace = useAppStore((s) => s.settings?.diffShowWhitespace)
+  const languageIntelligence = useAppStore(selectDiffLanguageIntelligenceEnabled)
   const diffCollapseUnchangedRegions = useAppStore((s) => s.settings?.diffCollapseUnchangedRegions)
   const monacoTheme = useMonacoTheme()
   const diffTypography = useEditorTypography('diff')
@@ -383,8 +388,7 @@ export default function DiffViewer({
       dropIntoEditor: { enabled: false },
       readOnly: !editable,
       originalEditable: false,
-      // Why: the default 'editable' hides language-server squiggles on read-only diffs.
-      renderValidationDecorations: 'on',
+      ...getDiffValidationDecorationOptions(languageIntelligence),
       renderSideBySide: sideBySide,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
@@ -406,7 +410,8 @@ export default function DiffViewer({
       diffTypography,
       diffWordWrap,
       diffShowWhitespace,
-      diffCollapseUnchangedRegions
+      diffCollapseUnchangedRegions,
+      languageIntelligence
     ]
   )
 

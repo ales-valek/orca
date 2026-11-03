@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { selectDiffLanguageIntelligenceEnabled } from './diff-language-intelligence'
 import type { editor } from 'monaco-editor'
 import type { GitBlameContentsSource } from '../../../../shared/git-blame'
 import { useAppStore } from '@/store'
@@ -25,8 +26,12 @@ export function useDiffPaneGitLineBlame(args: {
   const editorGitLineBlameEnabled = useAppStore(
     (state) => state.settings?.editorGitLineBlameEnabled
   )
+  const languageIntelligence = useAppStore(selectDiffLanguageIntelligenceEnabled)
   const enabled =
-    Boolean(args.worktreeId) && editorGitLineBlameEnabled !== false && args.extraEnabled !== false
+    Boolean(args.worktreeId) &&
+    editorGitLineBlameEnabled !== false &&
+    languageIntelligence &&
+    args.extraEnabled !== false
   const originalPath =
     args.originalBlamePath && args.originalBlamePath.length > 0
       ? args.originalBlamePath
