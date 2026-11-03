@@ -146,3 +146,24 @@ export function DevEnvComposerFields({
     </div>
   )
 }
+
+/** The composer's template picker and the create args it adds; renders nothing for non-Git projects. */
+export function useDevEnvComposerSection(props: { repoId: string; selectedRepoIsGit: boolean }): {
+  fields: React.JSX.Element | null
+  createArgs: { devEnv?: { templateId: string; bindings: Record<string, string> } }
+} {
+  const [value, setValue] = React.useState<DevEnvComposerValue>({ templateId: null, bindings: {} })
+  const createArgs = useMemo(
+    () =>
+      value.templateId
+        ? { devEnv: { templateId: value.templateId, bindings: value.bindings } }
+        : {},
+    [value]
+  )
+  const fields = props.selectedRepoIsGit ? (
+    <div className="px-2">
+      <DevEnvComposerFields repoId={props.repoId} value={value} onChange={setValue} />
+    </div>
+  ) : null
+  return { fields, createArgs }
+}

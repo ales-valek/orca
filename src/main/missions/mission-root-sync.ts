@@ -4,7 +4,7 @@ import type { Mission } from '../../shared/mission-types'
 import { getMissionRootDirName } from '../../shared/missions'
 import { splitWorktreeId } from '../../shared/worktree/id'
 import type { Store } from '../persistence/loading-store/store'
-import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktrees/catalog/worktree-path-comparison'
 import {
   ensureMissionRoot,
   MISSIONS_DIR_NAME,

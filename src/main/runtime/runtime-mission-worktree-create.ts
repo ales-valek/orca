@@ -6,7 +6,7 @@ import type { MissionSlot } from '../../shared/mission-types'
 import { isFolderRepo } from '../../shared/repo-kind'
 import type { Repo } from '../../shared/repo-types'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
-import { removeWorktree } from '../git/worktree'
+import { removeWorktree } from '../git/worktrees/removal/worktree-removal'
 import { assertOwnedMissionRoot } from '../missions/mission-root'
 import {
   clearMissionWorktreeCreateIntent,

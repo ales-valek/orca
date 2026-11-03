@@ -18,7 +18,7 @@ import { isRendererMissionEligibleRepo } from '../sidebar/mission-repo-eligibili
 import { HulyComponentRepoMapEditor } from './HulyComponentRepoMapEditor'
 import { HulyMultiSelect } from './HulyMultiSelect'
 import { HulyStatusRuleEditor } from './HulyStatusRuleEditor'
-import { SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
+import { SettingsSubsectionHeader, SettingsSwitchRow } from './form-controls/SettingsFormControls'
 import {
   getDefaultHulyProject,
   useHulyProjectCatalog,

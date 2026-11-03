@@ -4,7 +4,7 @@ import path from 'node:path'
 import type { Mission } from '../../shared/mission-types'
 import { runProcess } from '@orca/process-host'
 import { promptGuardShellEnv } from '../git/runner'
-import { dropIncoherentCondaActivationEnv } from '../pty/conda-activation-env'
+import { dropIncoherentCondaActivationEnv } from '../pty/shell-startup/conda-activation-env'
 import { MISSION_SETUP_LOG_NAME } from './mission-root'
 
 type ProcessResult = Awaited<ReturnType<typeof runProcess>>

@@ -1,7 +1,7 @@
 import type { MissionSlot } from '../../shared/mission-types'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
-import { areWorktreePathsEqual } from '../git/worktree-path-comparison'
+import { areWorktreePathsEqual } from '../git/worktrees/catalog/worktree-path-comparison'
 import {
   readMissionWorktreeOwnershipMarker,
   resolveMissionWorktreeBranch,

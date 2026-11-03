@@ -1,7 +1,7 @@
 import { gitReadOptionsForWorktree } from './git-runtime-options'
 import { gitExecFileAsync } from './runner'
 import { getBranchTip } from './stack-layer-git'
-import { forceDeleteLocalBranch } from './worktree-branch-removal'
+import { forceDeleteLocalBranch } from './worktrees/removal/worktree-branch-removal'
 
 /** Local branch names under `prefix` (e.g. `mission-task/referral/`); empty when git cannot list them. */
 export async function listLocalBranchesUnder(

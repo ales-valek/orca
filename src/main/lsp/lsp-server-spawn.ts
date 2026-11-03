@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { getSpawnArgsForWindows } from '../../shared/windows-batch-spawn'
-import { resolveWindowsCommand } from '../win32-utils'
+import { resolveWindowsCommand } from '../windows/windows-command-paths'
 import type { LspServerDescriptor } from './lsp-server-catalog'
 
 export type SpawnLspServer = (

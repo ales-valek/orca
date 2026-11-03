@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Why: fork custom.css row on an upstream file at its limit; splitting would rewrite upstream lines each rebase. */
 import type React from 'react'
 
 import type { GlobalSettings } from '../../../../../shared/global-settings-types'

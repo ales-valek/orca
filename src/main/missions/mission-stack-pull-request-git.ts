@@ -8,11 +8,11 @@ import {
   pushStackBranch
 } from '../git/stack-branch-push'
 import { getBranchTip, getCommitAncestry } from '../git/stack-layer-git'
-import { hasWorktreeBaseCommitRef } from '../git/worktree-base-ref-probe'
+import { hasWorktreeBaseCommitRef } from '../git/worktrees/creation/worktree-base-ref-probe'
 import { createHostedReview } from '../source-control/hosted-review-creation'
 import { detectHostedReviewProvider } from '../source-control/forge-provider'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
-import { resolveWorktreeCreateBase } from '../worktree-create-base'
+import { resolveWorktreeCreateBase } from '../workspaces/creation/worktree-create-base'
 import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'
 import type { Store } from '../persistence/loading-store/store'
 import type { MissionStackInspectionDeps } from './mission-stack-inspection'
