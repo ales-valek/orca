@@ -33,8 +33,8 @@ export const PLUGIN_LANGUAGE_PACK_MAX_BYTES = 5 * 1024 * 1024
 export const PLUGIN_VM_RECIPE_MAX_BYTES = 256 * 1024
 // Why 16 KiB: a theme is a few dozen tokens or palette slots.
 export const PLUGIN_THEME_MAX_BYTES = 16 * 1024
-// Why larger: an icon theme maps up to 512 file names and extensions.
-export const PLUGIN_ICON_THEME_MAX_BYTES = 64 * 1024
+// Why larger: an icon theme maps up to 4096 file names and extensions.
+export const PLUGIN_ICON_THEME_MAX_BYTES = 256 * 1024
 
 type DeclaredArtifact =
   | { label: string; path: string; kind: 'file'; maxBytes: number }

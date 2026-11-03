@@ -10,7 +10,7 @@ const parse = (value: unknown) => parsePluginIconThemeArtifact(JSON.stringify(va
 describe('plugin icon theme artifacts', () => {
   it('counts folder mappings toward the mapping limit', () => {
     const folderNames = Object.fromEntries(
-      Array.from({ length: 257 }, (_, index) => [`dir${index}`, 'a.svg'])
+      Array.from({ length: 2049 }, (_, index) => [`dir${index}`, 'a.svg'])
     )
     expect(() =>
       parse({ schemaVersion: 1, folderNames, folderNamesExpanded: folderNames })
