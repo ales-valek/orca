@@ -28,7 +28,7 @@ import { workspaceLifecycleKey } from '../lifecycle/workspace-lifecycle-commands
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import { applyWorkspaceCreatePluginHook } from '../../../plugins/hooks/workspace-create-plugin-hook'
 import { withProjectWorktreeCreate } from '../../../workspaces/creation/worktree-create-in-flight'
-import { assertManagedWorktreeCreateAllowed } from './managed-worktree-create-guards'
+import { assertManagedWorktreeCreateAllowed } from '../managed-worktree-create-guards'
 
 export abstract class OrcaRuntimeWithCreateManagedWorktree extends OrcaRuntimeWithGetWorktreeTerminalProvisioningHost {
   protected abstract resolveLineageForWorktreeCreate(

@@ -12,14 +12,14 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
-import WorktreeCard from './WorktreeCard'
-import { ProjectGroupNameDialog } from './ProjectGroupNameDialog'
+import WorktreeCard from './workspace-card/surface/WorktreeCard'
+import { ProjectGroupNameDialog } from './worktree-list/rows/ProjectGroupNameDialog'
 import { MissionDeleteDialog } from './MissionDeleteDialog'
 import { MissionAddProjectsDialog } from './MissionAddProjectsDialog'
 import { MissionMemberRows } from './MissionMemberRows'
 import { MissionHulyRefreshDialog } from './MissionHulyRefreshDialog'
 import { useHulyConnected } from './use-huly-connected'
-import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspace-worktree'
+import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspaces/folder-workspace-worktree'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { Mission } from '../../../../shared/mission-types'
 

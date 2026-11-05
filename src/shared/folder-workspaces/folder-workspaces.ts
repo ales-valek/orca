@@ -8,8 +8,8 @@ import { normalizeWorkspaceCreatorProvenance } from '../workspace-creator-proven
 import { getWorkspaceAttachments } from '../workspace-attachments/workspace-attachments'
 import { isSmartTier } from '../sidebar-list/sort-stamps'
 import { normalizeOrcadRetainedMarker } from '../orcad-retained-marker'
-import type { Mission } from './mission-types'
-import { missionSentinelGroupId } from './missions'
+import type { Mission } from '../mission-types'
+import { missionSentinelGroupId } from '../missions'
 
 export function normalizeFolderWorkspaceName(
   name: string | null | undefined,

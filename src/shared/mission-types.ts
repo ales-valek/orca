@@ -1,6 +1,6 @@
 import type { HulyMissionRefreshDiff } from './huly/huly-mission-refresh'
 import type { MissionLayerState, MissionRestackReport } from './mission-layer-state'
-import type { TuiAgent } from './tui-agent'
+import type { TuiAgent } from './agent-launch/catalog/tui-agent'
 
 export type MissionMember = {
   repoId: string

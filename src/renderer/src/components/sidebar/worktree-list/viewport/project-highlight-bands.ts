@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
 import type { WorktreeGroupBy } from '../../../../../../shared/sidebar-list/row-types'
 import { getRenderRowKey, type RenderRow } from '../listing/render-row'
-import { resolveProjectGroupHeaderColor } from '../../project-header-color'
-import { shouldUseHeaderTopSpacing } from './virtual-rows'
+import { resolveProjectGroupHeaderColor } from '../rows/project-header-color'
+import { getVirtualRowTransform, shouldUseHeaderTopSpacing } from './virtual-rows'
 
 const HEADER_TOP_SPACING = 4
 
@@ -51,6 +51,17 @@ export function getStickyHeaderHighlightStyle(
 ): ProjectHighlightStyle | undefined {
   const color = getProjectHighlightColorForHeader(row, groupBy)
   return color ? getProjectHighlightStyle(color) : undefined
+}
+
+export function getSectionHeaderStyle(
+  row: RenderRow,
+  groupBy: WorktreeGroupBy,
+  isActiveStickyHeader: boolean,
+  rowStart: number
+): CSSProperties | undefined {
+  return isActiveStickyHeader
+    ? getStickyHeaderHighlightStyle(row, groupBy)
+    : { transform: getVirtualRowTransform(rowStart) }
 }
 
 export function getProjectHighlightSections(

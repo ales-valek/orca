@@ -19,7 +19,7 @@ import {
 } from './left-sidebar-appearance'
 import { DEFAULT_SOURCE_CONTROL_GROUP_ORDER } from './source-control/listing/source-control-group-order'
 import { DESKTOP_TERMINAL_SCROLLBACK_ROWS_DEFAULT } from './terminal/replay/terminal-scrollback-policy'
-import { getDefaultDevEnvProxyPort } from './dev-env/dev-env-settings'
+import { getDefaultDevEnvSettings } from './dev-env/dev-env-settings'
 
 export function buildDefaultSettings(args: {
   workspaceDir: string
@@ -241,13 +241,7 @@ export function buildDefaultSettings(args: {
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     hulyProjects: {},
-    devEnvInfra: [],
-    devEnvTools: [],
-    devEnvTestRuns: { localEnv: {}, presets: [] },
-    devEnvRemoteTiers: [],
-    devEnvTemplates: [],
-    // Why: shared defaults also build in the renderer, where `process` may be absent.
-    devEnvProxyPort: getDefaultDevEnvProxyPort(globalThis.process?.platform ?? 'darwin'),
+    ...getDefaultDevEnvSettings(),
     opencodeSessionCookie: '',
     opencodeWorkspaceId: '',
     minimaxGroupId: '',

@@ -4,7 +4,7 @@ import type {
   RuntimeMissionHulyCreateResult,
   RuntimeMissionHulyRefreshResult
 } from '../../shared/mission-types'
-import type { TuiAgent } from '../../shared/tui-agent'
+import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import { HulyConnection } from '../huly/huly-connection'
 import { HulyMissionImport, type HulyMilestonePlanArgs } from '../huly/huly-mission-import'
 import { resolveHulyMilestoneId, resolveHulyProject } from '../huly/huly-milestone-selectors'

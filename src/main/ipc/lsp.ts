@@ -9,8 +9,8 @@ import {
   type LspRequestArgs
 } from '../../shared/lsp-types'
 import { createLspSessionManager } from '../lsp/lsp-session-manager'
-import { resolveAuthorizedPath } from './filesystem/filesystem-auth'
-import { isDescendantOrEqual } from './filesystem/filesystem-path-containment'
+import { resolveAuthorizedPath } from './filesystem/access/filesystem-auth'
+import { isDescendantOrEqual } from './filesystem/access/filesystem-path-containment'
 
 export function registerLspHandlers(store: Store): void {
   const manager = createLspSessionManager()

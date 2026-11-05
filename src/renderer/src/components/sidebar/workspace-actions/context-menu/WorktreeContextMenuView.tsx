@@ -37,7 +37,7 @@ import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model
 import { WorktreeStatusMenuItems } from '../../workspace-status/presentation/WorktreeStatusMenuItems'
 import { WorktreeWslHostStartMenuItem } from '../../workspace-card/host/WorktreeWslHostStartMenuItem'
 import { WorktreeContextMenuOverlays } from './WorktreeContextMenuOverlays'
-import { DevEnvWorktreeMenuItem } from '../dev-env/DevEnvWorktreeMenuItem'
+import { DevEnvWorktreeMenuItem } from '../../../dev-env/DevEnvWorktreeMenuItem'
 import {
   WORKTREE_CONTEXT_MENU_SCOPE_ATTR,
   getWorktreeParentPickerLabel,
@@ -47,7 +47,7 @@ import {
   shouldUseNativeContextMenu
 } from './worktree-context-menu-policy'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
-import { useSingleContextDeleteRestriction } from './use-single-context-delete-restriction'
+import { useSingleContextDeleteRestriction } from '../../use-single-context-delete-restriction'
 
 export default function WorktreeContextMenuView({ model }: { model: WorktreeContextMenuModel }) {
   const {

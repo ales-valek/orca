@@ -1,5 +1,5 @@
-import { normalizeGitErrorMessage } from '../../shared/git-remote-error'
-import { isSafeGitRefName } from '../../shared/git-status-upstream-ref'
+import { normalizeGitErrorMessage } from '../../shared/git/remotes/git-remote-error'
+import { isSafeGitRefName } from '../../shared/git/status/git-status-upstream-ref'
 import { gitReadOptionsForWorktree, gitOptionsForWorktree } from './git-runtime-options'
 import { gitExecFileAsync } from './runner'
 

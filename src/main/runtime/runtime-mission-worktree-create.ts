@@ -14,7 +14,7 @@ import {
   type MissionWorktreeCreateIntent
 } from '../missions/mission-worktree-create-intent'
 import { writeMissionWorktreeOwnershipMarker } from '../missions/mission-worktree-ownership-marker'
-import type { RuntimeManagedWorktreeCreateArgs } from './runtime-managed-worktree-create-types'
+import type { RuntimeManagedWorktreeCreateArgs } from './workspaces/creation/runtime-managed-worktree-create-types'
 import type { RuntimeStore } from './runtime-store-contract'
 
 export type MissionManagedWorktreeCreate = {

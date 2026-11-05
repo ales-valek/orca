@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { FolderWorkspace } from '../../../shared/folder-workspace-types'
+import type { FolderWorkspace } from '../../../shared/folder-workspaces/folder-workspace-types'
 import { useAppStore } from '@/store'
 import { folderWorkspaceKey } from '../../../shared/workspace-scope'
 import { activateAndRevealFolderWorkspace } from './worktree-activation'
@@ -53,7 +53,7 @@ describe('buildFolderWorkspaceAgentReopenStartup', () => {
       makeFolderWorkspace({ createdWithAgent: 'codex' })
     )
     expect(startup).toMatchObject({
-      command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+      command: "codex '-c' 'disable_paste_burst=true' '--dangerously-bypass-approvals-and-sandbox'",
       launchAgent: 'codex',
       telemetry: { agent_kind: 'codex', launch_source: 'sidebar', request_kind: 'resume' }
     })
@@ -139,7 +139,7 @@ describe('activateAndRevealFolderWorkspace agent reopen wiring', () => {
     expect(result).not.toBe(false)
     expect(reopenedTab).toBeDefined()
     expect(state.pendingStartupByTabId[reopenedTab!.id]).toMatchObject({
-      command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+      command: "codex '-c' 'disable_paste_burst=true' '--dangerously-bypass-approvals-and-sandbox'",
       launchAgent: 'codex',
       telemetry: { agent_kind: 'codex', launch_source: 'sidebar', request_kind: 'resume' }
     })
@@ -200,8 +200,8 @@ describe('buildFolderWorkspaceAgentReopenStartup host routing', () => {
       expectedProcess: 'codex',
       followupPrompt: null
     }))
-    vi.doMock('./tui-agent-startup', async () => ({
-      ...(await vi.importActual('./tui-agent-startup')),
+    vi.doMock('../../../shared/agent-launch/startup/tui-agent-startup', async () => ({
+      ...(await vi.importActual('../../../shared/agent-launch/startup/tui-agent-startup')),
       buildAgentStartupPlan
     }))
     const { buildFolderWorkspaceAgentReopenStartup: build } =

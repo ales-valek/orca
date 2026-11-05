@@ -23,7 +23,7 @@ import type { RuntimeStore } from '../../runtime-store-contract'
 import { attributedSparsePresetId } from '../../../ipc/sparse-preset-attribution'
 import type { WorktreeCreateTimingRecorder } from '../../../workspaces/creation/worktree-create-timing'
 import { hostWorktreeTargetForRepo } from '../../../persistence/host-qualified-worktree-meta'
-import { getNonMemberMissionSlotStamp } from './runtime-mission-worktree-create'
+import { getNonMemberMissionSlotStamp } from '../../runtime-mission-worktree-create'
 
 export async function materializeRuntimeLocalWorktree<T>(args: {
   request: RuntimeManagedWorktreeCreateArgs

@@ -280,17 +280,17 @@ describe('tab strip rows', () => {
     const first = vi.fn(() => false)
     const current = vi.fn(() => true)
     renderStrip({ onSelectTab: first })
+    const rendersBeforeHighlight = tabRenders.length
 
     renderStrip({ onSelectTab: current, highlightedTabIds: new Set(['unified-browser-1']) })
 
     expect(lastRender('browser-1').isHighlighted).toBe(true)
-    expect(tabRenders).toHaveLength(TAB_IDS.length + 1)
+    expect(tabRenders).toHaveLength(rendersBeforeHighlight + 1)
     const modifiers = { metaKey: false, ctrlKey: false, shiftKey: true }
     expect(lastRender('terminal-1').onSelect(modifiers)).toBe(true)
     expect(current).toHaveBeenCalledWith('unified-terminal-1', modifiers)
     expect(first).not.toHaveBeenCalled()
   })
-
 })
 
 /** Client-hosted rows overlay panes without changing activeTabId; suppress real-tab underlines while they are selected. */

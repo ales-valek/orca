@@ -27,11 +27,10 @@ import {
 import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
 import '../../workspace-status/presentation/workspace-status'
 import { getWorkspaceStatusFromGroupKey } from '../../../../../../shared/workspace-statuses'
-import { getVirtualRowTransform } from '../viewport/virtual-rows'
 import { getSidebarHeaderVisual } from './header-visuals'
 import { resolveProjectGroupHeaderColor } from './project-header-color'
 import { ProjectHeaderActions } from './ProjectHeaderActions'
-import { getStickyHeaderHighlightStyle } from '../viewport/project-highlight-bands'
+import { getSectionHeaderStyle } from '../viewport/project-highlight-bands'
 import {
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
@@ -168,9 +167,7 @@ export function renderWorktreeSectionHeaderRow(args: {
     badgeColor: row.repo?.badgeColor
   })
   // A pinned header's only style is its project tint; a scrolling one is placed by transform.
-  const headerStyle = isActiveStickyHeader
-    ? getStickyHeaderHighlightStyle(row, ctx.groupBy)
-    : { transform: getVirtualRowTransform(vItem.start) }
+  const headerStyle = getSectionHeaderStyle(row, ctx.groupBy, isActiveStickyHeader, vItem.start)
   const folderBackedProjectGroup =
     isProjectGroupHeader &&
     !row.repo &&

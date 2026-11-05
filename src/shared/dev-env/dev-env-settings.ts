@@ -228,6 +228,18 @@ function normalizeProxyPort(value: unknown, platform: NodeJS.Platform): number {
   return isIntegerInRange(value, 1, 65535) ? value : getDefaultDevEnvProxyPort(platform)
 }
 
+export function getDefaultDevEnvSettings(): DevEnvGlobalSettings {
+  return {
+    devEnvInfra: [],
+    devEnvTools: [],
+    devEnvTestRuns: { localEnv: {}, presets: [] },
+    devEnvRemoteTiers: [],
+    devEnvTemplates: [],
+    // Why: shared defaults also build in the renderer, where `process` may be absent.
+    devEnvProxyPort: getDefaultDevEnvProxyPort(globalThis.process?.platform ?? 'darwin')
+  }
+}
+
 export function normalizeDevEnvSettings(
   value: unknown,
   platform: NodeJS.Platform

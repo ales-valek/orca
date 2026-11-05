@@ -1,5 +1,5 @@
 import type { editor, IRange } from 'monaco-editor'
-import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
+import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
 
 export type ChangedLineRange = {
   startLineNumber: number

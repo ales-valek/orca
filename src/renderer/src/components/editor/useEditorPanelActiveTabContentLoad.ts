@@ -9,7 +9,7 @@ import { useAppStore } from '@/store'
 import type {
   GitBranchChangeEntry,
   GitBranchCompareSummary
-} from '../../../../shared/git-diff-compare-types'
+} from '../../../../shared/git/diff/git-diff-compare-types'
 import type { DiffContent, FileContent } from './editor-panel-content-types'
 import {
   getChangedLineDiffFile,

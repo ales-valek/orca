@@ -1,6 +1,6 @@
 import type { Tab, TabGroup, TabGroupLayoutNode, WorkspaceVisibleTabType } from '../tab-types'
-import { pickTabCloseSuccessor } from './tab-close-successor'
-import { pushRecentTabId } from './tab-group-history'
+import { pickTabCloseSuccessor } from '../tab-close-successor'
+import { pushRecentTabId } from '../tab-group-history'
 import type { WorkspaceSessionState } from './workspace-session-state-types'
 
 export type WorkspaceSessionTerminalTabCloseResult = {
@@ -288,4 +288,4 @@ export function closeTerminalTabInWorkspaceSession(
   }
   return { session: next, ptyIdsToKill, closed: true, pinned: false }
 }
-export { pickNextActiveTabAfterClose } from './tab-close-successor'
+export { pickNextActiveTabAfterClose } from '../tab-close-successor'

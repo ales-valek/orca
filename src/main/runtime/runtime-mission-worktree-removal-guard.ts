@@ -5,7 +5,7 @@ import { assertWorktreeIsNotMissionManaged } from '../missions/mission-removal-b
 import { assertMissionWorktreeOwnershipMarker } from '../missions/mission-worktree-ownership-marker'
 import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
 import type { RuntimeStore } from './runtime-store-contract'
-import type { RuntimeWorktreeRemovalTarget } from './runtime-worktree-selection'
+import type { RuntimeWorktreeRemovalTarget } from './workspaces/catalog/runtime-worktree-selection'
 
 export async function guardGenericMissionWorktreeRemoval(args: {
   store: RuntimeStore

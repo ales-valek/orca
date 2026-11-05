@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   CreateHostedReviewResult,
   CreateStackedHostedReviewResult
-} from '../../shared/hosted-review'
+} from '../../shared/source-control/hosted-review/hosted-review-contracts'
 import {
   assignOwnedWorktree,
   makeFakeRuntime,

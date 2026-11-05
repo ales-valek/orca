@@ -1,5 +1,5 @@
-import { runWithGitWorktreeOperationLock } from '../../shared/git-worktree-operation-lock'
-import type { GitConflictOperation } from '../../shared/git-status-types'
+import { runWithGitWorktreeOperationLock } from '../../shared/git/worktrees/git-worktree-operation-lock'
+import type { GitConflictOperation } from '../../shared/git/status/git-status-types'
 import {
   gitOptionsForWorktree,
   gitReadOptionsForWorktree,

@@ -5,7 +5,7 @@ import { useAppStore } from '@/store'
 import { findWorktreeById } from '@/store/slices/worktree-helpers'
 import { getConnectionId } from '@/lib/connection-context'
 import { attachMonacoLspDocument } from '@/lib/monaco-lsp/monaco-lsp-attach'
-import { resolveAnnotationPathInsideWorktree } from './check-annotation-path'
+import { resolveAnnotationPathInsideWorktree } from './check-details/actions/check-annotation-path'
 import { selectDiffLanguageIntelligenceEnabled } from './diff-language-intelligence'
 
 /** Attach the modified pane of a diff to a local language server so hover,

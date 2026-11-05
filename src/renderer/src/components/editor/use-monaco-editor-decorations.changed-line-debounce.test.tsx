@@ -3,7 +3,7 @@ import { act, useRef, type MutableRefObject } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { editor } from 'monaco-editor'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
+import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
 import {
   CHANGED_LINE_DECORATION_DEBOUNCE_MS,
   useMonacoEditorDecorations

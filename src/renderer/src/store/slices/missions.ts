@@ -10,8 +10,8 @@ import type {
   RuntimeMissionHulyRefreshResult
 } from '../../../../shared/mission-types'
 import type { HulyApi } from '../../../../preload/api/huly-api'
-import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import type { FolderWorkspace } from '../../../../shared/folder-workspaces/folder-workspace-types'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { AppState } from '../types'
 import { createMissionStackSlice, type MissionStackSlice } from './mission-stack-actions'

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { isValidGitBranchName } from '../../shared/git-branch-name'
 import { isNonMemberMissionSlot } from '../../shared/mission-task-stack'
 import type { MissionSlot } from '../../shared/mission-types'
-import { isTuiAgent } from '../../shared/tui-agent-config'
+import { isTuiAgent } from '../../shared/agent-launch/catalog/tui-agent-config'
 
 export const MissionCreateArgs = z.object({
   name: z.string().min(1),

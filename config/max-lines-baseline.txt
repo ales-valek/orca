@@ -7,9 +7,9 @@ inline src/main/ssh/ssh-channel-multiplexer.ts
 inline src/main/ssh/connection/ssh-connection.ts
 inline src/renderer/src/components/terminal-pane/remote-runtime-pty-transport.ts
 inline src/renderer/src/components/sidebar/worktree-list/viewport/VirtualizedWorktreeViewport.tsx
-inline src/main/runtime/runtime-local-worktree-create-candidate.ts
-inline src/renderer/src/components/editor/DiffViewer.tsx
+inline src/main/runtime/workspaces/creation/runtime-local-worktree-create-candidate.ts
+inline src/renderer/src/components/editor/diff/monaco-view/DiffViewer.tsx
 inline src/renderer/src/lib/worktree-activation.ts
 inline src/renderer/src/components/tab-bar/EditorFileTab.tsx
-inline src/renderer/src/components/right-sidebar/use-file-explorer-tree-pane-state.ts
+inline src/renderer/src/components/right-sidebar/file-explorer/tree/use-file-explorer-tree-pane-state.ts
 inline src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx

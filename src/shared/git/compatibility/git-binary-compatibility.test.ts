@@ -33,7 +33,7 @@ import { gitCredentialPromptGuardEnv } from '../commands/git-credential-prompt-e
 import { buildGitGrepArgs } from '../../text-search'
 import { parseGitRemoteFetchUrls } from '../remotes/git-remote-url-index'
 import { GIT_HISTORY_COMMIT_FORMAT, parseGitHistoryLog } from '../history/git-history-log-parser'
-import { registerGitBranchNameBinaryCompatibilityCases } from './git-branch-name-binary-compatibility.test-cases'
+import { registerGitBranchNameBinaryCompatibilityCases } from '../../git-branch-name-binary-compatibility.test-cases'
 import {
   githubPullRequestHeadLocalRef,
   gitlabMergeRequestHeadLocalRef,

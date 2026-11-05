@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { isValidGitBranchName } from '../git-branch-name'
-import { isTuiAgent } from '../tui-agent-config'
+import { isTuiAgent } from '../agent-launch/catalog/tui-agent-config'
 import { HulyOrderOverrides, HulyRepoOverrides } from './huly-params'
 import { OptionalString, requiredString } from './rpc-param-primitives'
 

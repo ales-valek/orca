@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type MutableRefObject } from 'react'
 import type { OpenFile } from '@/store/slices/editor'
 import type { useAppStore } from '@/store'
-import type { GitBranchCompareSummary } from '../../../../shared/git-diff-compare-types'
+import type { GitBranchCompareSummary } from '../../../../shared/git/diff/git-diff-compare-types'
 import type { DiffContent } from './editor-panel-content-types'
 import {
   getChangedLineDiffFile,

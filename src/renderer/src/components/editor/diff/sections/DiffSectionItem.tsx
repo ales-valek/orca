@@ -16,12 +16,12 @@ import { useDiffSectionLayoutMetrics } from './useDiffSectionLayoutMetrics'
 import { getLiveDiffSectionRenderLimit } from './diff-section-live-render-limit'
 import { useDiffSectionFallbackCleanup } from './useDiffSectionFallbackCleanup'
 import { submitDiffSectionComment } from './diff-section-comment-submit'
-import { useDiffPaneGitLineBlame } from './useDiffPaneGitLineBlame'
+import { useDiffPaneGitLineBlame } from '../../useDiffPaneGitLineBlame'
 import type { DiffSectionItemProps } from './diff-section-item-props'
 import { useDiffSectionModelLifecycle } from './use-diff-section-model-lifecycle'
 import { hasLayoutBox } from '@/hooks/virtualized-hidden-row-measurement'
 import { DiffSectionSaveConflictBar } from './DiffSectionSaveConflictBar'
-import { useMonacoLspForDiff } from './use-monaco-lsp-for-diff'
+import { useMonacoLspForDiff } from '../../use-monaco-lsp-for-diff'
 
 export function DiffSectionItem({
   section,

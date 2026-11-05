@@ -15,7 +15,7 @@ import { terminalSurfaceTombstoneSchema } from '../workspace-layout/terminal-sur
 import { parseExecutionHostId, type ExecutionHostId } from '../execution-host'
 import { isTuiAgent } from '../agent-launch/catalog/tui-agent-config'
 import { type WorkspaceKey, isWorkspaceKey } from '../workspace-scope'
-import { tabGroupSchema } from './workspace-session-tab-group-schema'
+import { tabGroupSchema } from '../workspace-session-tab-group-schema'
 import {
   browserHistoryEntriesSchema,
   workspaceDocHistoryEntriesSchema,

@@ -4,7 +4,7 @@ import { summarizeWorkspaceReviewChecks } from '../../../../../../shared/workspa
 import { canShowWorkspaceDeleteQuickAction } from '../../workspace-actions/deletion/workspace-delete-quick-action'
 import { useWorktreeCardDetailsHoverControl } from '../details/worktree-card-details-hover-state'
 import { useAppStore } from '@/store'
-import { isListedMissionSessionWorkspace } from '../../../../shared/missions'
+import { isListedMissionSessionWorkspace } from '../../../../../../shared/missions'
 import type { ResolvedWorktreeCardProps } from './worktree-card-model'
 import { useWorktreeCardActivationActions } from './use-worktree-card-activation-actions'
 import { useWorktreeCardFoundation } from './use-worktree-card-foundation'

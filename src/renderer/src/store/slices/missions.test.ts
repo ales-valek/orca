@@ -3,7 +3,7 @@ import { create, type StateCreator } from 'zustand'
 import { createMissionsSlice, missionMemberErrorKey, type MissionsSlice } from './missions'
 import { missionSlotErrorKey } from './mission-stack-actions'
 import type { Mission, MissionCreateResult } from '../../../../shared/mission-types'
-import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
+import type { FolderWorkspace } from '../../../../shared/folder-workspaces/folder-workspace-types'
 
 const missionsApi = {
   list: vi.fn(),
@@ -31,6 +31,7 @@ vi.stubGlobal('window', {
 type TestState = MissionsSlice & {
   folderWorkspaces: FolderWorkspace[]
   fetchFolderWorkspaces: ReturnType<typeof vi.fn>
+  fetchDevEnvs: ReturnType<typeof vi.fn>
   purgeWorktreeTerminalState: ReturnType<typeof vi.fn>
 }
 
@@ -45,6 +46,7 @@ function makeStore(folderWorkspaces: FolderWorkspace[] = []) {
     ...createSlice(...args),
     folderWorkspaces,
     fetchFolderWorkspaces: vi.fn(async () => {}),
+    fetchDevEnvs: vi.fn(async () => {}),
     purgeWorktreeTerminalState: vi.fn()
   }))
 }

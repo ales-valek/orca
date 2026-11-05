@@ -10,7 +10,7 @@ import {
 import { JiraIntegrationCard } from '../../integrations/task-trackers/jira-integration-card'
 import { LinearIntegrationCard } from '../../integrations/task-trackers/linear-integration-card'
 import { HulyIntegrationCard } from '../huly-integration-card'
-import { isWebClient } from '../../sidebar/worktree-card-model'
+import { isWebClient } from '../../sidebar/workspace-card/controller/worktree-card-model'
 import { useIntegrationProviderStatusRefresh } from '../../../hooks/use-integration-provider-status-refresh'
 import { translate } from '@/i18n/i18n'
 

@@ -1,6 +1,6 @@
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../shared/tab-types'
-import type { WorkspaceSessionState } from '../../../../shared/workspace-session-state-types'
-import { isValidTerminalTabId } from '../../../../shared/terminal-tab-id'
+import type { WorkspaceSessionState } from '../../../../shared/workspace-session/workspace-session-state-types'
+import { isValidTerminalTabId } from '../../../../shared/workspace-layout/terminal-tab-id'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import type { HydratedTabState } from './tabs-hydration'
 

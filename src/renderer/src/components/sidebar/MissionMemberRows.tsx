@@ -12,7 +12,7 @@ import { formatMissionMemberError } from './mission-member-error-copy'
 import { resolveMissionSlotWorktree } from './mission-stack-layers'
 import { MissionStackActionsMenu } from './MissionStackActionsMenu'
 import { MissionStackRows } from './MissionStackRows'
-import WorktreeCard from './WorktreeCard'
+import WorktreeCard from './workspace-card/surface/WorktreeCard'
 
 export function MissionMemberRows({ mission }: { mission: Mission }): React.JSX.Element {
   const repos = useAppStore((s) => s.repos)

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { translate } from '@/i18n/i18n'
 import type { AgentCatalogEntry } from '@/lib/agent-catalog'
 import type { Repo } from '../../../../shared/repo-types'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import { MissionOrchestratorRepoPicker } from './MissionOrchestratorRepoPicker'
 
 /** Name, branch, orchestrator and agent of a Mission created from a milestone. */

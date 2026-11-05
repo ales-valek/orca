@@ -1,7 +1,10 @@
 import { useAppStore } from '@/store'
 import type { ActivePluginCustomEditor } from '@/store/plugin-custom-editors'
 import type { MarkdownViewMode, OpenFile, PendingEditorReveal } from '@/store/slices/editor'
-import type { GitBranchChangeEntry, GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
+import type {
+  GitBranchChangeEntry,
+  GitDiffResult
+} from '../../../../shared/git/diff/git-diff-compare-types'
 import type { GitStatusEntry } from '../../../../shared/git/status/git-status-types'
 import { CheckRunDetailsPanel } from './check-details/panel/CheckRunDetailsPanel'
 import { CombinedDiffViewer, MarkdownPreview } from './editor-lazy-views'

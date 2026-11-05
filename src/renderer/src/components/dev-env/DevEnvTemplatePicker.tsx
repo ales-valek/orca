@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { isWebClient } from '../sidebar/worktree-card-model'
+import { isWebClient } from '../sidebar/workspace-card/controller/worktree-card-model'
 import type { DevEnvTemplate } from '../../../../shared/dev-env/dev-env-types'
 import { getDevEnvTemplateNotes } from './dev-env-template-notes'
 

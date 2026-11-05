@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TabCluster } from '../../../../../shared/tab-types'
-import type { WorkspaceSessionState } from '../../../../../shared/workspace-session-state-types'
-import { parseWorkspaceSession } from '../../../../../shared/workspace-session-schema'
+import type { WorkspaceSessionState } from '../../../../../shared/workspace-session/workspace-session-state-types'
+import { parseWorkspaceSession } from '../../../../../shared/workspace-session/workspace-session-schema'
 import { buildPersistedUnifiedTabSessionData } from '@/lib/workspace-session-unified-tabs'
 import {
   createTestStore,

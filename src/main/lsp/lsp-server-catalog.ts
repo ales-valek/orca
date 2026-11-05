@@ -1,4 +1,4 @@
-import { isCommandOnLocalPath } from '../ipc/command-path-resolver'
+import { isCommandOnLocalPath } from '../ipc/command-path/command-path-resolver'
 
 export type LspServerDescriptor = {
   serverId: string

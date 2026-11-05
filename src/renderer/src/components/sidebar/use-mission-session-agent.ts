@@ -8,8 +8,8 @@ import { useAppStore } from '@/store'
 import {
   filterEnabledTuiAgents,
   DEFAULT_DISABLED_TUI_AGENTS
-} from '../../../../shared/tui-agent-selection'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+} from '../../../../shared/agent-launch/catalog/tui-agent-selection'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 
 /** Agent picked for a new Mission's session, following the composer's selection rules. */
 export function useMissionSessionAgent(): {

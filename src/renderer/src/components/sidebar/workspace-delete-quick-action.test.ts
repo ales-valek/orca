@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canShowWorkspaceDeleteQuickAction } from './workspace-delete-quick-action'
+import { canShowWorkspaceDeleteQuickAction } from './workspace-actions/deletion/workspace-delete-quick-action'
 
 const eligible = {
   deleteModifierPressed: true,
