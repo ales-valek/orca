@@ -1,4 +1,4 @@
-import { LOCAL_COMMIT_MESSAGE_HOST_KEY } from '../../shared/commit-message-host-key'
+import { LOCAL_COMMIT_MESSAGE_HOST_KEY } from '../../shared/source-control/ai/generation/commit-message-host-key'
 import { runGenerationRequest } from '../text-generation/agent-generation-request'
 import { prepareLocalCommitMessageAgentEnv } from '../text-generation/commit-message-agent-environment'
 import { resolveTextGenerationParams } from '../text-generation/commit-message-text-generation'

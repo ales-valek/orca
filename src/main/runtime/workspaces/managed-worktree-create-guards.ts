@@ -1,6 +1,6 @@
 import type { Repo } from '../../../shared/repo-types'
 import { assertWslMoveRepoWritable } from '../../persistence/moving-wsl-projects/wsl-move-scope-guard'
-import type { RuntimeManagedWorktreeCreateArgs } from '../runtime-managed-worktree-create-types'
+import type { RuntimeManagedWorktreeCreateArgs } from './creation/runtime-managed-worktree-create-types'
 import { resolveMissionManagedWorktreeCreate } from '../runtime-mission-worktree-create'
 import type { RuntimeStore } from '../runtime-store-contract'
 

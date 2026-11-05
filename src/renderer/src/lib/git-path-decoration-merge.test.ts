@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeBranchAndWorktreeEntries } from './status-display'
+import { mergeBranchAndWorktreeEntries } from './git-path-decoration'
 
 describe('mergeBranchAndWorktreeEntries', () => {
   it('prefers the worktree entry over a higher-priority branch entry for the same path', () => {

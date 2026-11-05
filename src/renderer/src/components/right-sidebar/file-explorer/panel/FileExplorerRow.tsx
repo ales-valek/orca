@@ -20,13 +20,13 @@ import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
 import type { RuntimeFileOperationArgs } from '@/runtime/files/runtime-file-client-types'
 import { createMultiSelectDragGhost } from '../mutations/file-explorer-multi-drag-image'
 import { FileExplorerRowContextMenu } from './file-explorer-row-context-menu'
-import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
+import { getFileExplorerOperationExecutionHostId } from '../navigation/file-explorer-operation-owner'
 import {
   folderColorOverrideKey,
   resolveFolderColorOverride,
   setFolderColorOverride,
   type FolderColorHex
-} from '../../../../shared/folder-color-palette'
+} from '../../../../../../shared/folder-color-palette'
 
 export type FileExplorerRowProps = {
   node: TreeNode

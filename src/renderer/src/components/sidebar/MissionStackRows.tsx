@@ -16,7 +16,7 @@ import {
   resolveMissionSlotWorktree,
   type MissionStackLayerView
 } from './mission-stack-layers'
-import WorktreeCard from './WorktreeCard'
+import WorktreeCard from './workspace-card/surface/WorktreeCard'
 
 const EMPTY_REPORTS: never[] = []
 

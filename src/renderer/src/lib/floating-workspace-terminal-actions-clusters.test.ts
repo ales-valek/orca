@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import type { Tab, TabGroup } from '../../../shared/tab-types'
-import type { TerminalTab } from '../../../shared/terminal-tab-types'
+import type { TerminalTab } from '../../../shared/workspace-layout/terminal-tab-types'
 import { switchFloatingWorkspaceTab } from './floating-workspace-terminal-actions'
 
 const focusTerminalTabSurfaceMock = vi.hoisted(() => vi.fn())

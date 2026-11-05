@@ -11,9 +11,20 @@ import type { MissionSlot } from '../../shared/mission-types'
 import { recoverMissionWorktreeCreateIntent } from '../missions/mission-worktree-create-intent'
 import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
 import { collectMissionSlotOwnershipProofs } from '../missions/mission-slot-marker-scan'
-import { withTimeoutResult } from './runtime-async-boundaries'
-import { RESOLVED_WORKTREE_REPO_TIMEOUT_MS } from './repo-worktree-row-resolution'
+import { withTimeout } from '../../shared/promise-timeout-fallback'
+import { RESOLVED_WORKTREE_REPO_TIMEOUT_MS } from './workspaces/catalog/repo-worktree-row-resolution'
 import { localMissionWorktreeTarget } from '../missions/local-mission-worktree-target'
+
+function withTimeoutResult<T>(
+  promise: Promise<T>,
+  timeoutMs: number
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  return withTimeout(
+    promise.then((value) => ({ ok: true, value }) as const),
+    timeoutMs,
+    { ok: false }
+  )
+}
 
 export type ManagedWorktreeOwnershipInspection =
   | { status: 'found'; worktree: Worktree }

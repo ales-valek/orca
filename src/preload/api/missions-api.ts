@@ -1,4 +1,4 @@
-import type { FolderWorkspace } from '../../shared/folder-workspace-types'
+import type { FolderWorkspace } from '../../shared/folder-workspaces/folder-workspace-types'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   Mission,
@@ -11,7 +11,7 @@ import type {
   MissionStackPushResult,
   MissionTaskResult
 } from '../../shared/mission-types'
-import type { TuiAgent } from '../../shared/tui-agent'
+import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 
 export type MissionsApi = {
   list: () => Promise<Mission[]>

@@ -10,7 +10,7 @@ import { getRuntimeGitStatus } from '@/runtime/runtime-git-status-client'
 import { runtimeRpcTargetForAuthorityKey } from '@/runtime/runtime-client-target'
 import type { RuntimeClientTarget } from '../../../../../../shared/runtime-client-target'
 import { useAppStore } from '@/store'
-import type { GitStatusEntry } from '../../../../../../shared/git-status-types'
+import type { GitStatusEntry } from '../../../../../../shared/git/status/git-status-types'
 import type { NestedRepoCandidate } from '../../../../../../shared/project-group-types'
 import { mapWithConcurrency } from '../../../../../../shared/map-with-concurrency'
 import {

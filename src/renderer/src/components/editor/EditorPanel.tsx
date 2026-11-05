@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { getConnectionId } from '@/lib/workspace/ownership/connection-context'
-import { selectChangedLineHighlightsEnabled } from './editor-panel-changed-line-diff'
+import { useChangedLineDiffInputs } from './editor-panel-changed-line-diff'
 import { formatClipboardFilePath } from '@/lib/clipboard-file-path'
 import { getOpenFileRevealOwner } from '@/lib/reveal-in-file-manager'
 import { canShowWorkspaceFileBrowserAction } from '@/lib/browser/documents/file-preview'
@@ -70,9 +70,6 @@ function EditorPanelInner({
   const gitBranchEntries = useAppStore((s) =>
     selectEditorPanelGitBranchEntries(s, activeWorktreeId)
   )
-  const gitBranchCompareSummary = useAppStore((s) =>
-    activeWorktreeId ? s.gitBranchCompareSummaryByWorktree[activeWorktreeId] : undefined
-  )
   const markdownViewMode = useAppStore((s) => s.markdownViewMode)
   const markdownDefaultViewMode = useAppStore((s) => s.settings?.markdownDefaultViewMode)
   const setMarkdownViewMode = useAppStore((s) => s.setMarkdownViewMode)
@@ -94,7 +91,6 @@ function EditorPanelInner({
   const editorDrafts = useAppStore(editorDraftSelector)
   const diffDefaultView = useAppStore((s) => s.settings?.diffDefaultView)
   const updateSettings = useAppStore((s) => s.updateSettings)
-  const changedLineHighlightsEnabled = useAppStore(selectChangedLineHighlightsEnabled)
   const customEditors = useFileCustomEditors(activeFileId, activeFile?.filePath)
   const markdownReviewNotesEnabled = useAppStore((s) => isMarkdownReviewNotesEnabled(s.settings))
   const panelRef = useRef<HTMLDivElement>(null)
@@ -134,8 +130,7 @@ function EditorPanelInner({
     openFiles,
     gitStatusEntries,
     gitBranchEntries,
-    gitBranchCompareSummary,
-    changedLineHighlightsEnabled,
+    ...useChangedLineDiffInputs(activeWorktreeId),
     editorViewMode,
     isVisible
   })

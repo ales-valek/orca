@@ -1,6 +1,6 @@
 import { createMissionDevEnv } from '../dev-env/dev-env-mission-create'
 import { ipcMain, type BrowserWindow } from 'electron'
-import type { FolderWorkspace } from '../../shared/folder-workspace-types'
+import type { FolderWorkspace } from '../../shared/folder-workspaces/folder-workspace-types'
 import type { MissionRestackReport } from '../../shared/mission-layer-state'
 import type {
   Mission,

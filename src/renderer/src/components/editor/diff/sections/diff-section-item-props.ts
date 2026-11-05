@@ -3,7 +3,7 @@ import type { WorkspaceResource } from '@/lib/workspace/ownership/workspace-copy
 import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from 'react'
 import type { editor as monacoEditor } from 'monaco-editor'
 import type { DecoratedDiffComment } from '../../../diff-comments/decorated-diff-comment'
-import type { GitBlameContentsSource } from '../../../../shared/git-blame'
+import type { GitBlameContentsSource } from '../../../../../../shared/git-blame'
 import type { DiffSection } from './diff-section-types'
 
 export type DiffSectionItemProps = {

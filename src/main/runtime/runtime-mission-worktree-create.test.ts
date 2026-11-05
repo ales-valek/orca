@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Repo } from '../../shared/repo-types'
 import type { MissionSlot } from '../../shared/mission-types'
 import { resolveMissionManagedWorktreeCreate } from './runtime-mission-worktree-create'
-import type { RuntimeManagedWorktreeCreateArgs } from './runtime-managed-worktree-create-types'
+import type { RuntimeManagedWorktreeCreateArgs } from './workspaces/creation/runtime-managed-worktree-create-types'
 import type { RuntimeStore } from './runtime-store-contract'
 
 const repo: Repo = {

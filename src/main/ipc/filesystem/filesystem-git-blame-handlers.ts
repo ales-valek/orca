@@ -5,7 +5,10 @@ import { requireReachableGitRoute } from '../../providers/execution-host-provide
 import { getConnectionExecutionHostId } from '../../../shared/execution-host'
 import { resolveRegisteredWorktreePath } from '../worktrees/removal/registered-worktree-roots-cache'
 import { getLocalGitOptionsForRegisteredWorktree } from '../local-worktree-runtime-options'
-import { validateFullGitObjectId, validateGitRelativeFilePath } from './filesystem-path-containment'
+import {
+  validateFullGitObjectId,
+  validateGitRelativeFilePath
+} from './access/filesystem-path-containment'
 import type { FilesystemHandlerContext } from './filesystem-handler-context'
 
 function resolveBlameContentsSource(

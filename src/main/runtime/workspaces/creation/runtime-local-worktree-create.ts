@@ -36,12 +36,12 @@ import {
 import { resolveRuntimeSetupDecision } from './runtime-local-worktree-setup'
 import { WorktreeCreateSetupChoiceRefusedError } from './worktree-create-setup-choice-refusal'
 import type { PreparationRearmHolder } from '../../../workspaces/creation/preparation/worktree-create-preparation'
-import { assertOwnedMissionRoot } from '../missions/mission-root'
-import { writeMissionWorktreeCreateIntent } from '../missions/mission-worktree-create-intent'
+import { assertOwnedMissionRoot } from '../../../missions/mission-root'
+import { writeMissionWorktreeCreateIntent } from '../../../missions/mission-worktree-create-intent'
 import {
   resolveMissionManagedWorktreeCreate,
   stampMissionWorktreeAfterCreate
-} from './runtime-mission-worktree-create'
+} from '../../runtime-mission-worktree-create'
 import {
   localWorktreeCreateExecutionHost,
   type WorktreeCreateTimingRecorder

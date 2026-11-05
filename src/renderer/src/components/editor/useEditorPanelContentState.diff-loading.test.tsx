@@ -7,8 +7,8 @@ import type { OpenFile } from '@/store/slices/editor'
 import type {
   GitBranchChangeEntry,
   GitBranchCompareSummary
-} from '../../../../shared/git-diff-compare-types'
-import type { GitStatusEntry } from '../../../../shared/git-status-types'
+} from '../../../../shared/git/diff/git-diff-compare-types'
+import type { GitStatusEntry } from '../../../../shared/git/status/git-status-types'
 import type { DiffContent, FileContent } from './editor-panel-content-types'
 
 const mocks = vi.hoisted(() => ({
@@ -73,7 +73,7 @@ vi.mock('@/store', () => ({
 }))
 
 import { useEditorPanelContentState } from './useEditorPanelContentState'
-import { ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT } from './editor-autosave'
+import { ORCA_EDITOR_EXTERNAL_FILE_CHANGE_EVENT } from './autosave/editor-autosave'
 import { createTestStore } from '@/store/slices/store-test-helpers'
 
 type Deferred<T> = {

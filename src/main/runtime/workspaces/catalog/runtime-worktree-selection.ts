@@ -6,7 +6,7 @@ import {
 } from '../../../../shared/execution-host'
 import { splitWorktreeId } from '../../../../shared/worktree/id'
 import type { GitPushTarget } from '../../../../shared/worktree/types'
-import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
+import type { MissionWorktreeOwnershipProof } from '../../../missions/mission-worktree-ownership-marker'
 
 export type RuntimeWorktreeRemovalTarget = {
   id: string

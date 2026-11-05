@@ -5,7 +5,7 @@ import { createNonSecureContextUuid } from './non-secure-context-uuid'
 import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from './execution-host'
 import { isValidGitBranchName } from './git-branch-name'
 import { isFolderRepo } from './repo-kind'
-import { isTuiAgent } from './tui-agent-config'
+import { isTuiAgent } from './agent-launch/catalog/tui-agent-config'
 import type { Repo } from './repo-types'
 import { isWslUncPath } from './wsl-paths'
 

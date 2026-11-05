@@ -1,5 +1,5 @@
 import { LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
-import { normalizeHostedReviewBaseRef } from '../../shared/hosted-review-refs'
+import { normalizeHostedReviewBaseRef } from '../../shared/source-control/hosted-review/hosted-review-refs'
 import type { Repo } from '../../shared/repo-types'
 import { getDefaultRemote, resolveDefaultBaseRefWithLocalGit } from '../git/repo'
 import {
@@ -10,7 +10,7 @@ import {
 import { getBranchTip, getCommitAncestry } from '../git/stack-layer-git'
 import { hasWorktreeBaseCommitRef } from '../git/worktrees/creation/worktree-base-ref-probe'
 import { createHostedReview } from '../source-control/hosted-review-creation'
-import { detectHostedReviewProvider } from '../source-control/forge-provider'
+import { detectHostedReviewProvider } from '../source-control/forge-provider-detection'
 import { createStackedHostedReview } from '../source-control/stacked-hosted-review-creation'
 import { resolveWorktreeCreateBase } from '../workspaces/creation/worktree-create-base'
 import type { MissionLayerPushTips, MissionRestackReport } from '../../shared/mission-layer-state'

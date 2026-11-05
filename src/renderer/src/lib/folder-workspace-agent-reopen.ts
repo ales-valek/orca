@@ -1,14 +1,14 @@
-import type { FolderWorkspace } from '../../../shared/folder-workspace-types'
-import { isTuiAgent } from '../../../shared/tui-agent-config'
+import type { FolderWorkspace } from '../../../shared/folder-workspaces/folder-workspace-types'
+import { isTuiAgent } from '../../../shared/agent-launch/catalog/tui-agent-config'
 import {
   resolveTuiAgentLaunchArgs,
   resolveTuiAgentLaunchEnv
-} from '../../../shared/tui-agent-launch-defaults'
-import type { TuiAgent } from '../../../shared/tui-agent'
-import { getFolderWorkspaceAgentLaunchFact } from '@/components/sidebar/folder-workspace-agent-startup'
+} from '../../../shared/agent-launch/choices/tui-agent-launch-defaults'
+import type { TuiAgent } from '../../../shared/agent-launch/catalog/tui-agent'
+import { getFolderWorkspaceAgentLaunchFact } from '@/components/sidebar/workspace-creation/folder/folder-workspace-agent-startup'
 import { useAppStore } from '@/store'
 import { tuiAgentToAgentKind } from './telemetry'
-import { buildAgentStartupPlan } from './tui-agent-startup'
+import { buildAgentStartupPlan } from '../../../shared/agent-launch/startup/tui-agent-startup'
 import type { WorktreeStartupPayload } from './worktree-startup-payload'
 
 function buildAgentReopenStartupPayload(

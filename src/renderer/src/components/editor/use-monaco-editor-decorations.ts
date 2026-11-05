@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react'
 import type { editor } from 'monaco-editor'
 import type { MarkdownDocument } from '../../../../shared/file-listing/file-document'
-import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
+import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
 import {
   clearMarkdownDocCompletionDocuments,
   setMarkdownDocCompletionDocuments

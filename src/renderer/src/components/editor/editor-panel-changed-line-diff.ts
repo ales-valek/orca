@@ -1,11 +1,26 @@
+import { useAppStore } from '@/store'
 import type { OpenFile } from '@/store/slices/editor'
 import type { AppState } from '@/store/types'
-import type { GitBranchChangeEntry } from '../../../../shared/git-diff-compare-types'
-import type { GitStatusEntry } from '../../../../shared/git-status-types'
-import { canUseChangesModeForFile } from './editor-panel-file-mode'
+import type {
+  GitBranchChangeEntry,
+  GitBranchCompareSummary
+} from '../../../../shared/git/diff/git-diff-compare-types'
+import type { GitStatusEntry } from '../../../../shared/git/status/git-status-types'
+import { canUseChangesModeForFile } from './view-mode/editor-panel-file-mode'
 
 export const selectChangedLineHighlightsEnabled = (state: AppState): boolean =>
   state.settings?.editorChangedLineHighlightsEnabled ?? true
+
+export function useChangedLineDiffInputs(worktreeId: string | null | undefined): {
+  gitBranchCompareSummary: GitBranchCompareSummary | null | undefined
+  changedLineHighlightsEnabled: boolean
+} {
+  const gitBranchCompareSummary = useAppStore((s) =>
+    worktreeId ? s.gitBranchCompareSummaryByWorktree[worktreeId] : undefined
+  )
+  const changedLineHighlightsEnabled = useAppStore(selectChangedLineHighlightsEnabled)
+  return { gitBranchCompareSummary, changedLineHighlightsEnabled }
+}
 
 export function shouldLoadChangedLineDiffForEditFile(
   file: OpenFile | null,

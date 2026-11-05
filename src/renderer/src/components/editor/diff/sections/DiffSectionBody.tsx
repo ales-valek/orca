@@ -30,7 +30,7 @@ import { useAppStore } from '@/store'
 import {
   getDiffValidationDecorationOptions,
   selectDiffLanguageIntelligenceEnabled
-} from './diff-language-intelligence'
+} from '../../diff-language-intelligence'
 import { useMonacoTheme } from '@/hooks/use-monaco-theme'
 import { wholeFileDiffTintClass } from '../monaco-view/whole-file-diff-tint'
 import {

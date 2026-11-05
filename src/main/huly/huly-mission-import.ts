@@ -1,4 +1,4 @@
-import { runWithGitOperationLock } from '../../shared/git-operation-lock'
+import { runWithGitOperationLock } from '../../shared/git/commands/git-operation-lock'
 import { renderMissionBrief } from '../../shared/huly/huly-mission-brief'
 import {
   diffMissionAgainstPlan,
@@ -21,7 +21,7 @@ import type {
   MissionTaskResult
 } from '../../shared/mission-types'
 import { slugifyMissionBranch } from '../../shared/missions'
-import type { TuiAgent } from '../../shared/tui-agent'
+import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import type { MissionCreateInput } from '../ipc/mission-ipc-args'
 import type { MissionAddTaskInput } from '../missions/mission-task-operations'
 import type { HulyConnection } from './huly-connection'

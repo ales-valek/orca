@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveDefaultBaseRefViaExec } from '../../shared/git-default-base-ref'
+import { resolveDefaultBaseRefViaExec } from '../../shared/git/refs/git-default-base-ref'
 import { PLAYWRIGHT_CONFIG_FILE_PATTERN } from '../../shared/test-runs/test-run-launch-types'
 import { gitExecFileAsync } from '../git/command-runner/git-exec-file'
 

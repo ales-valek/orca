@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useLayoutEffect, useMemo, useState } from 're
 import Editor from '@monaco-editor/react'
 import type { editor, IRange } from 'monaco-editor'
 import type { MarkdownDocument } from '../../../../shared/file-listing/file-document'
-import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
+import type { GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
 import { useAppStore } from '@/store'
 import '@/lib/editor/monaco/monaco-setup'
 import { monacoTypographyOptions } from '@/lib/editor/appearance/editor-typography'

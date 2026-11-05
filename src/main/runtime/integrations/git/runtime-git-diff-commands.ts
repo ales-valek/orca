@@ -1,4 +1,4 @@
-import type { GitBlameContentsSource, GitBlameResult } from '../../shared/git-blame'
+import type { GitBlameContentsSource, GitBlameResult } from '../../../../shared/git-blame'
 import type {
   GitBranchCompareResult,
   GitCommitCompareResult,

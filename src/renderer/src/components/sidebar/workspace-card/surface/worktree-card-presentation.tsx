@@ -9,7 +9,7 @@ import {
   WorktreeCardMetaDetailsHover
 } from '../details/worktree-card-details-items'
 import type { WorktreeCardController } from '../controller/use-worktree-card-controller'
-import { DevEnvStatusBadge } from '../dev-env/DevEnvStatusBadge'
+import { DevEnvStatusBadge } from '../../../dev-env/DevEnvStatusBadge'
 
 function getVisibleContextLabel(
   projectLabel: string | undefined,

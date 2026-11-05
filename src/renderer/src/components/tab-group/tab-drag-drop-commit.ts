@@ -4,7 +4,7 @@ import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/worktree-runtime-ow
 import { useAppStore } from '../../store'
 import type { AppState } from '../../store/types'
 import { resolveHostSessionTabIdForWebSessionTab } from '../../runtime/web-session-tabs-sync/tracking-mappings'
-import { isWebTerminalSurfaceTabId } from '../../../../shared/terminal-surface-id'
+import { isWebTerminalSurfaceTabId } from '../../../../shared/workspace-layout/terminal-surface-id'
 import { mirrorWebRuntimeTabMove } from '../tab-bar/web-runtime-tab-move-mirror'
 import { resolveTabInsertion } from './tab-insertion'
 import { resolveSourceGroupRestoreOnDrop } from './tab-drag-preview-target'

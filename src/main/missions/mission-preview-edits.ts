@@ -9,7 +9,7 @@ import type { AbsorbHunk } from '../../shared/mission-absorb-plan'
 import { gitOptionsForWorktree, gitReadOptionsForWorktree } from '../git/git-runtime-options'
 import { gitExecFileAsync } from '../git/runner'
 import { bulkUnstageFiles } from '../git/source-control/staging'
-import { runWithGitWorktreeOperationLock } from '../../shared/git-worktree-operation-lock'
+import { runWithGitWorktreeOperationLock } from '../../shared/git/worktrees/git-worktree-operation-lock'
 
 /** One changed path in the preview. Text edits keep their hunks; anything else moves as a whole file. */
 export type PreviewEditFile = {

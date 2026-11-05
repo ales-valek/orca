@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseWorkspaceSession } from './workspace-session-schema'
+import { parseWorkspaceSession } from './workspace-session/workspace-session-schema'
 
 describe('parseWorkspaceSession', () => {
   it('preserves clusters and falls back to grey for an unknown color', () => {

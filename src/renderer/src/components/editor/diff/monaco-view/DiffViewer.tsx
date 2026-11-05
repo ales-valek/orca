@@ -21,11 +21,11 @@ import { LargeDiffFallback } from '../large-files/LargeDiffFallback'
 import { getLargeDiffRenderLimit } from '../../../../../../shared/large-diff-render-limit'
 import { useDiffViewerLargeDiffLifecycle } from '../large-files/useDiffViewerLargeDiffLifecycle'
 import { getDiffViewerLargeDiffSaveAction } from '../large-files/diff-viewer-large-diff-save-action'
-import { useMonacoLspForDiff } from './use-monaco-lsp-for-diff'
+import { useMonacoLspForDiff } from '../../use-monaco-lsp-for-diff'
 import {
   getDiffValidationDecorationOptions,
   selectDiffLanguageIntelligenceEnabled
-} from './diff-language-intelligence'
+} from '../../diff-language-intelligence'
 import { useDiffViewerFirstChangeAutoScroll } from './useDiffViewerFirstChangeAutoScroll'
 import type { DiffViewerProps } from './diff-viewer-props'
 import { buildDiffEditorWhitespaceOptions } from './diff-editor-whitespace-options'

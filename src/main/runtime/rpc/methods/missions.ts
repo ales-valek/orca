@@ -1,4 +1,4 @@
-import { isTuiAgent } from '../../../../shared/tui-agent-config'
+import { isTuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent-config'
 import {
   MissionAbsorbParams,
   MissionAddReposParams,

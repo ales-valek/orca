@@ -1,6 +1,6 @@
 import { getRepoExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
 import type { RemoveWorktreeResult } from '../../../shared/worktree/create-types'
-import { preservedBranchCleanupScopeKey } from '../../../shared/preserved-branch-cleanup'
+import { preservedBranchCleanupScopeKey } from '../../../shared/git/branches/preserved-branch-cleanup'
 import { finishAcceptedWorktreeRemoval } from '../../workspaces/removal/worktree-background-removal'
 import {
   assertWslMoveWorkspaceWritable,
@@ -11,7 +11,7 @@ import {
   getRuntimeWorktreeRemovalOptionsKey,
   type RemoveManagedWorktreeOptions,
   type RuntimeWorktreeRemovalTarget
-} from '../runtime-worktree-selection'
+} from './catalog/runtime-worktree-selection'
 import type { RuntimeStore } from '../runtime-store-contract'
 
 type RemovalResult = RemoveWorktreeResult & { warning?: string }

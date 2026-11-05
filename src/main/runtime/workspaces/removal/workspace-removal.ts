@@ -31,12 +31,8 @@ import { removeRuntimeUnregisteredWorktree } from './runtime-unregistered-worktr
 import { removeStaleLocalWorktreeRegistration } from '../../../workspaces/removal/local-worktree-removal-recovery'
 import { cleanupUnusedWorktreePushTargetRemote } from '../../../ipc/worktree-remote'
 import { removeRuntimeRegisteredLocalWorktree } from './runtime-registered-local-worktree-removal'
-import { missionRemovalGuard } from '../runtime-mission-worktree-removal-guard'
+import { missionRemovalGuard } from '../../runtime-mission-worktree-removal-guard'
 import { removeOrphanOrFolderWorktree } from './workspace-registration-removal'
-import {
-  assertWslMoveWorkspaceWritable,
-  isWslMoveSourceHost
-} from '../../../persistence/moving-wsl-projects/wsl-move-scope-guard'
 
 export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorkspaceMetadata {
   abstract removeWorktreeMetadataAndHistory(

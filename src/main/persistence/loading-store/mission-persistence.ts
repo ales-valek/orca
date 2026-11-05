@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import type { FolderWorkspace, WorkspaceKey } from '../../../shared/folder-workspace-types'
+import type { FolderWorkspace } from '../../../shared/folder-workspaces/folder-workspace-types'
 import type { Mission, MissionSource } from '../../../shared/mission-types'
-import { folderWorkspaceKey } from '../../../shared/workspace-scope'
+import { folderWorkspaceKey, type WorkspaceKey } from '../../../shared/workspace-scope'
 import {
   createMission,
   getNextMissionTabOrder,

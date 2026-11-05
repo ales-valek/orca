@@ -7,7 +7,7 @@ import '../../worktree-list/listing/visible-worktrees'
 import { computeVisibleWorktrees } from '../../worktree-list/listing/compute-visible-worktrees'
 import { createLiveAgentWorktreeIdsSelector } from '@/lib/worktree-activity-state'
 import { getSettingsFocusedExecutionHostId } from '../../../../../../shared/execution-host'
-import { getMissionMemberWorktreeIds } from '../../../../shared/missions'
+import { getMissionMemberWorktreeIds } from '../../../../../../shared/missions'
 import type { AppState } from '@/store/types'
 import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,

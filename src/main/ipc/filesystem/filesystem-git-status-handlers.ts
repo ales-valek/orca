@@ -115,7 +115,41 @@ export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerCo
         gitStatusCancellations.finish(event, args.requestToken, controller)
       }
     }
-  )
+    try {
+      requireReachableGitRoute(getConnectionExecutionHostId(args.connectionId))
+      // The active workspace's first status is a user act: it may start its stopped WSL distro.
+      const wakeDistro = args.wakeWslDistro
+        ? wslDistroForPath(
+            args.worktreePath,
+            getLocalGitOptionsForRegisteredWorktree(store, args.worktreePath, args.worktreePath)
+              .wslDistro
+          )
+        : null
+      const status = await runAsWslUserAct(wakeDistro, async () => {
+        // Background poll: its Git or UNC read would boot a stopped WSL distro (E9).
+        await assertWslUncPathRunning(args.worktreePath)
+        const worktreePath = args.authorizedParentPath
+          ? await resolveNestedRepositoryPath(args.worktreePath, args.authorizedParentPath, store)
+          : await resolveRegisteredWorktreePath(args.worktreePath, store)
+        // Reuse one registered-worktree lookup for frequent status polls and repo metadata reads.
+        const repo = getLocalRepoForRegisteredWorktree(store, args.worktreePath, worktreePath)
+        const gitOptions = getLocalGitOptionsForRepo(store, repo)
+        await assertWslUncPathRunning(worktreePath, gitOptions.wslDistro)
+        const sharedLinkPaths = repo ? getWorktreeSharedLinkPaths(repo) : []
+        return getStatus(worktreePath, {
+          ...options,
+          ...gitOptions,
+          ...(sharedLinkPaths.length > 0 ? { sharedLinkPaths } : {})
+        })
+      })
+      if (wakeDistro) {
+        noteWslDistroWokenForPath(args.worktreePath, wakeDistro)
+      }
+      return status
+    } finally {
+      gitStatusCancellations.finish(event, args.requestToken, controller)
+    }
+  })
 
   ipcMain.handle('git:cancelStatus', (event, args: { requestToken: string }): void => {
     gitStatusCancellations.cancel(event, args.requestToken)

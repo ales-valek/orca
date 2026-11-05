@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { CreateHostedReviewResult } from '../../shared/hosted-review'
-import type { CreateStackedHostedReviewResult } from '../../shared/hosted-review'
+import type { CreateHostedReviewResult } from '../../shared/source-control/hosted-review/hosted-review-contracts'
+import type { CreateStackedHostedReviewResult } from '../../shared/source-control/hosted-review/hosted-review-contracts'
 import type { Mission } from '../../shared/mission-types'
 import {
   createMissionStackPullRequests,

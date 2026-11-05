@@ -13,7 +13,7 @@ import type {
   RuntimeMissionShow,
   RuntimeMissionTaskResult
 } from '../../shared/mission-types'
-import type { TuiAgent } from '../../shared/tui-agent'
+import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import type { MissionOperations } from '../missions/mission-operations'
 import {
   findMissionForPath,

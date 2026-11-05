@@ -68,7 +68,7 @@ describe('useAppChromeLayout with the workspace list on the right', () => {
     setChromeState({
       activeView: 'terminal',
       activePendingCreationId: 'creation-1',
-      pendingWorktreeCreations: { 'creation-1': { id: 'creation-1' } }
+      pendingWorktreeCreations: { 'creation-1': { id: 'creation-1', loaderVisible: true } }
     })
     const { result } = renderHook(() => useAppChromeLayout())
 

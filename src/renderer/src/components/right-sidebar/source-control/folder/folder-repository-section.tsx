@@ -6,8 +6,12 @@ import { translate } from '@/i18n/i18n'
 import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { basename, dirname } from '@/lib/path'
 import { cn } from '@/lib/utils'
-import type { GitStatusEntry, GitStatusResult } from '../../../../../../shared/git-status-types'
-import { STATUS_COLORS, STATUS_LABELS } from '../../status-display'
+import type {
+  GitStatusEntry,
+  GitStatusResult
+} from '../../../../../../shared/git/status/git-status-types'
+import { STATUS_COLORS } from '@/lib/git-path-decoration'
+import { STATUS_LABELS } from '../../../../../../shared/git/status/git-status-labels'
 import type { FolderSourceControlRepository } from './folder-repository-resolution'
 
 export type FolderRepositoryStatus =

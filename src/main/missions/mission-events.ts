@@ -1,4 +1,4 @@
-import { normalizeHostedReviewBaseRef } from '../../shared/hosted-review-refs'
+import { normalizeHostedReviewBaseRef } from '../../shared/source-control/hosted-review/hosted-review-refs'
 import type { MissionEvent } from '../../shared/huly/huly-status-rules'
 import { getRepoTaskStack } from '../../shared/mission-task-stack'
 import type {

@@ -8,8 +8,8 @@ import type { GitStatusEntry } from '../../../../shared/git/status/git-status-ty
 import type {
   GitBranchChangeEntry,
   GitBranchCompareSummary
-} from '../../../../shared/git-diff-compare-types'
-import type { FileContent } from './editor-panel-content-types'
+} from '../../../../shared/git/diff/git-diff-compare-types'
+import type { DiffContent, FileContent } from './editor-panel-content-types'
 
 const mocks = vi.hoisted(() => ({
   readRuntimeFileContent: vi.fn(),
@@ -276,7 +276,8 @@ describe('useEditorPanelContentState', () => {
           mergeBase: 'merge-base'
         }),
         filePath: 'src/file.ts'
-      })
+      }),
+      expect.anything()
     )
     expect(mocks.getRuntimeGitDiff).not.toHaveBeenCalled()
   })
@@ -317,7 +318,8 @@ describe('useEditorPanelContentState', () => {
         filePath: 'file.ts',
         compareAgainstHead: true,
         staged: false
-      })
+      }),
+      expect.anything()
     )
   })
 
@@ -333,9 +335,7 @@ describe('useEditorPanelContentState', () => {
       root?.render(<HookProbe activeFile={activeFile} openFiles={[activeFile]} />)
     })
 
-    await vi.waitFor(() =>
-      expect(latestFileContents[activeFile.id]?.content).toBe('fresh content')
-    )
+    await vi.waitFor(() => expect(latestFileContents[activeFile.id]?.content).toBe('fresh content'))
     expect(mocks.getRuntimeGitDiff).not.toHaveBeenCalled()
   })
 
