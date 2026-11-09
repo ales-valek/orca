@@ -1,10 +1,10 @@
 import {
   getExecutionHostIdForWorktree,
   runtimeEnvironmentIdOrLocalUnlessTwin
-} from '@/lib/worktree-runtime-owner'
-import type { WorktreeRuntimeOwnerState } from '@/lib/worktree-runtime-owner-state'
+} from '@/lib/workspace/ownership/worktree-runtime-owner'
+import type { WorktreeRuntimeOwnerState } from '@/lib/workspace/ownership/worktree-runtime-owner-state'
 import { parseExecutionHostId } from '../../../../shared/execution-host'
-import { isWebRuntimeSessionActive } from '../../runtime/web-runtime-session-environment'
+import { isWebRuntimeSessionActive } from '../../runtime/web-session-tabs-sync/identity/web-runtime-session-environment'
 
 export type TabClusterSplitBlocker = 'remote-server'
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDefaultSettings } from '../../../shared/constants'
 import { useAppStore } from '../store'
 
-vi.mock('../components/terminal-pane/use-system-prefers-dark', () => ({
+vi.mock('../hooks/theme/use-system-prefers-dark', () => ({
   useSystemPrefersDark: () => false
 }))
 

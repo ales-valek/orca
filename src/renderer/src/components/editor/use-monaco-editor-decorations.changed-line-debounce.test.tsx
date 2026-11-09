@@ -9,7 +9,7 @@ import {
   useMonacoEditorDecorations
 } from './use-monaco-editor-decorations'
 
-vi.mock('./monaco-markdown-doc-completions', () => ({
+vi.mock('./markdown-source-tools/monaco/monaco-markdown-doc-completions', () => ({
   clearMarkdownDocCompletionDocuments: () => {},
   setMarkdownDocCompletionDocuments: () => {}
 }))

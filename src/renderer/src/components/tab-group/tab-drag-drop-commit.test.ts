@@ -10,12 +10,8 @@ import {
   clearHostSessionTabIdMappings,
   setHostSessionTabIdMapping
 } from '../../runtime/web-session-tabs-sync/tracking-mappings'
-import {
-  createTestStore,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore
-} from '../../store/slices/store-test-helpers'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { mirrorWebRuntimeTabMove } from '../tab-bar/web-runtime-tab-move-mirror'
 import { commitTabDragDrop } from './tab-drag-drop-commit'
 import type { TabGroupPanelGeometrySnapshot } from './tab-group-panel-split-target'

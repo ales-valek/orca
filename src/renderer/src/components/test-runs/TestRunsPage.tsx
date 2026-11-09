@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { FlaskConical, Play } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
-import { activateAndRevealWorktree } from '@/lib/worktree-activation'
+import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import {
   Select,
   SelectContent,

@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
-import { selectWorktreesByRepo } from '@/store/workspace-record-selectors'
 import type { editor } from 'monaco-editor'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/slices/worktree-helpers'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { getConnectionId } from '@/lib/connection-context'
 import { attachMonacoLspDocument } from '@/lib/monaco-lsp/monaco-lsp-attach'
 import { resolveAnnotationPathInsideWorktree } from './check-details/actions/check-annotation-path'
@@ -21,7 +20,7 @@ export function useMonacoLspForDiff(params: {
 }): void {
   const { modifiedEditor, relativePath, worktreeId, language, modelIdentity } = params
   const worktreePath = useAppStore((s) =>
-    worktreeId ? (findWorktreeById(selectWorktreesByRepo(s) ?? {}, worktreeId)?.path ?? null) : null
+    worktreeId ? (findWorktreeById(s, worktreeId)?.path ?? null) : null
   )
 
   const enabled = useAppStore(selectDiffLanguageIntelligenceEnabled)

@@ -1,6 +1,6 @@
 import { TAB_CLUSTER_COLORS, type TabCluster } from '../../../../../shared/tab-types'
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
-import { findGroupAndWorktree, updateGroup } from '../tab-group-state'
+import { findGroupAndWorktree, updateGroup } from './tab-group-state'
 import { createTabClusterId, isTabClusterColor } from './tab-cluster-model'
 import { normalizeTabStripSelection } from './tab-cluster-invariant'
 import {

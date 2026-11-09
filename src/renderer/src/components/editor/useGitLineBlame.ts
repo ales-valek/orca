@@ -5,9 +5,9 @@ import { getConnectionId } from '@/lib/connection-context'
 import { monaco } from '@/lib/monaco-setup'
 import { openGitBlameCommitDiff } from '@/lib/open-git-blame-commit-diff'
 import { runtimeTargetForWorkspaceOwner } from '@/lib/resolve-owner'
-import { getRuntimeGitBlame } from '@/runtime/runtime-git-diff-client'
+import { getRuntimeGitBlame } from '@/runtime/source-control/git/runtime-git-diff-client'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/slices/worktree-helpers'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { splitWorktreeIdForFilesystem } from '../../../../shared/worktree/id'
 import {
   indexBlameLinesByNumber,
@@ -134,7 +134,7 @@ export function useGitLineBlame(args: {
       }
       debounce = setTimeout(() => {
         const state = useAppStore.getState()
-        const worktree = findWorktreeById(state.worktreesByRepo, worktreeId)
+        const worktree = findWorktreeById(state, worktreeId)
         const worktreePath =
           worktree?.path ?? splitWorktreeIdForFilesystem(worktreeId)?.worktreePath ?? null
         if (!worktreePath) {

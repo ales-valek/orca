@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useAppStore } from '@/store'
-import { dispatchWorkspaceTabCommand } from '@/lib/workspace-tab-commands'
+import { dispatchWorkspaceTabCommand } from '@/lib/workspace/tabs/workspace-tab-commands'
 import { guardRunningTerminalGroupClose } from '../terminal/running-terminal-close-guard'
 import type { TabCluster, TabGroup } from '../../../../shared/tab-types'
 import {

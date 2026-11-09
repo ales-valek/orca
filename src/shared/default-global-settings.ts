@@ -17,7 +17,7 @@ import {
 import { DEFAULT_SOURCE_CONTROL_GROUP_ORDER } from './source-control/listing/source-control-group-order'
 import { DESKTOP_TERMINAL_SCROLLBACK_ROWS_DEFAULT } from './terminal/replay/terminal-scrollback-policy'
 import { NESTED_WORKER_MAX_DEPTH_DEFAULT } from './orchestration/workers/nested-worker-depth'
-import { getDefaultDevEnvSettings } from './dev-env/dev-env-settings'
+import { getForkDefaultGlobalSettings } from './fork-default-global-settings'
 
 export function buildDefaultSettings(args: {
   workspaceDir: string
@@ -55,7 +55,6 @@ export function buildDefaultSettings(args: {
     leftSidebarAppearanceMode: 'default',
     leftSidebarTintColor: DEFAULT_LEFT_SIDEBAR_TINT_COLOR,
     leftSidebarTintOpacity: DEFAULT_LEFT_SIDEBAR_TINT_OPACITY,
-    workspaceSidebarPosition: 'left',
     uiLanguage: UI_LANGUAGE_SYSTEM,
     uiLanguagePortugueseMigrationApplied: true,
     appIcon: DEFAULT_APP_ICON_ID,
@@ -65,9 +64,6 @@ export function buildDefaultSettings(args: {
     editorInsertFinalNewline: false,
     editorAutoSaveDelayMs: args.editorAutoSaveDelayMs,
     editorMinimapEnabled: false,
-    editorGitLineBlameEnabled: true,
-    editorChangedLineHighlightsEnabled: true,
-    diffLanguageIntelligenceEnabled: true,
     // Why empty: the editor keeps following the terminal font unless the user opts in.
     editorFontFamily: '',
     editorWordWrap: true,
@@ -172,8 +168,6 @@ export function buildDefaultSettings(args: {
     rightSidebarOpenByDefault: true,
     showGitIgnoredFiles: true,
     followSymlinkedDirectories: false,
-    folderColorOverrides: {},
-    customCssEnabled: false,
     sourceControlViewMode: 'list',
     sourceControlGroupOrder: DEFAULT_SOURCE_CONTROL_GROUP_ORDER,
     sourceControlCompareAgainstUpstream: false,
@@ -245,8 +239,7 @@ export function buildDefaultSettings(args: {
     visibleTaskProvidersDefaultedForJira: true,
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
-    hulyProjects: {},
-    ...getDefaultDevEnvSettings(),
+    ...getForkDefaultGlobalSettings(),
     opencodeSessionCookie: '',
     opencodeWorkspaceId: '',
     minimaxGroupId: '',

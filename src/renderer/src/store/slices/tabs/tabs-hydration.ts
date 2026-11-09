@@ -17,7 +17,7 @@ import {
 import { sanitizeRecentTabIds } from './tab-selection-history'
 import { dedupeTabOrder } from '../../../../../shared/workspace-layout/tab-order'
 import { restoresSavedContentTab } from '../../../../../shared/workspace-layout/saved-editor-tab-restore'
-import { normalizeTabGroupClusters, rekeyTabClusterMembers } from './tabs/tab-cluster-model'
+import { normalizeTabGroupClusters, rekeyTabClusterMembers } from './tab-cluster-model'
 
 export type HydratedTabState = {
   unifiedTabsByWorktree: Record<string, Tab[]>

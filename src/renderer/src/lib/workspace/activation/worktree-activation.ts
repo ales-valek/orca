@@ -42,7 +42,7 @@ import {
   recordShownTabFocus
 } from './worktree-activation-visit'
 import { selectFolderWorkspaces } from '@/store/workspaces/catalog/workspace-record-fields'
-import { buildFolderWorkspaceAgentReopenStartup } from './folder-workspace-agent-reopen'
+import { buildFolderWorkspaceAgentReopenStartup } from '../../folder-workspace-agent-reopen'
 
 import {
   workspaceActivationResult,

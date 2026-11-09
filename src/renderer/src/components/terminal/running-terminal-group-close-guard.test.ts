@@ -6,11 +6,11 @@ const { getStateMock, inspectRuntimeTerminalProcessMock } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/store', () => ({ useAppStore: { getState: getStateMock } }))
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
+vi.mock('@/runtime/hosted-terminals/inspection/runtime-terminal-process-inspection', () => ({
   inspectRuntimeTerminalProcess: inspectRuntimeTerminalProcessMock
 }))
 
-import { useRunningTerminalCloseConfirmStore } from '@/store/running-terminal-close-confirm'
+import { useRunningTerminalCloseConfirmStore } from '@/store/slices/tabs/closing/running-terminal-close-confirm'
 import {
   guardRunningTerminalGroupClose,
   RUNNING_CLOSE_PROBE_TIMEOUT_MS
@@ -224,15 +224,15 @@ describe('guardRunningTerminalGroupClose', () => {
     expect(visibleRequest()?.groupTerminals).toEqual([{ ...TERMINALS[0], copyKind: 'command' }])
   })
 
-  it('closes when every probe answers with non-live evidence', async () => {
+  it('asks before closing a bound pty it could not inspect', async () => {
     inspectRuntimeTerminalProcessMock.mockRejectedValue(new Error('ssh_disconnected'))
     const onClose = vi.fn()
 
     guard(onClose)
     await settleProbe()
 
-    expect(onClose).toHaveBeenCalledTimes(1)
-    expect(visibleRequest()).toBeNull()
+    expect(onClose).not.toHaveBeenCalled()
+    expect(visibleRequest()).not.toBeNull()
   })
 
   it('falls through to one close if raising the group confirmation throws', async () => {

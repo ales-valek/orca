@@ -9,7 +9,7 @@ import { getFolderWorkspaceAgentLaunchFact } from '@/components/sidebar/workspac
 import { useAppStore } from '@/store'
 import { tuiAgentToAgentKind } from './telemetry'
 import { buildAgentStartupPlan } from '../../../shared/agent-launch/startup/tui-agent-startup'
-import type { WorktreeStartupPayload } from './worktree-startup-payload'
+import type { WorktreeStartupPayload } from './workspace/creation/worktree-startup-payload'
 
 function buildAgentReopenStartupPayload(
   agent: TuiAgent,

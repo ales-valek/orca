@@ -6,7 +6,7 @@ import { structuredLaunchSlotIds } from '../../agent-session/launch/structured-a
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../../shared/tab-types'
 import type { WorkspaceSessionState } from '../../../../../shared/workspace-session/workspace-session-state-types'
 import type { WorkspaceSessionSnapshot } from './workspace-session'
-import { normalizeTabGroupClusters } from '../store/slices/tabs/tab-cluster-model'
+import { normalizeTabGroupClusters } from '../../../store/slices/tabs/tab-cluster-model'
 
 type PersistedUnifiedTabSessionData = Pick<
   WorkspaceSessionState,

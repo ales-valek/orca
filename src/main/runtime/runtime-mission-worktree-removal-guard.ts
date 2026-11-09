@@ -4,7 +4,7 @@ import type { Repo } from '../../shared/repo-types'
 import { assertWorktreeIsNotMissionManaged } from '../missions/mission-removal-boundary'
 import { assertMissionWorktreeOwnershipMarker } from '../missions/mission-worktree-ownership-marker'
 import type { MissionWorktreeOwnershipProof } from '../missions/mission-worktree-ownership-marker'
-import type { RuntimeStore } from './runtime-store-contract'
+import type { RuntimeStore } from './construction/runtime-store-contract'
 import type { RuntimeWorktreeRemovalTarget } from './workspaces/catalog/runtime-worktree-selection'
 
 export async function guardGenericMissionWorktreeRemoval(args: {

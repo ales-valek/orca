@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TabGroup } from '../../../shared/tab-types'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeUnifiedTab,
-  seedStore
-} from '../store/slices/store-test-helpers'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { applyWebSessionTabsSnapshot } from './web-session-tabs-sync/snapshot-api'
 import {
   ENV,
@@ -14,7 +11,7 @@ import {
   makeSnapshot,
   makeState,
   resetWebSessionTabsSyncTestState
-} from './web-session-tabs-sync-test-harness'
+} from './web-session-tabs-sync/testing/web-session-tabs-sync.test-fixture'
 
 vi.mock('../store', () => ({
   useAppStore: { setState: vi.fn() }

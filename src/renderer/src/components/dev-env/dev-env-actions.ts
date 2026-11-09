@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { detectLanguage } from '@/lib/language-detect'
 import { joinPath } from '@/lib/path'
-import { activateAndRevealWorktree } from '@/lib/worktree-activation'
+import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { useAppStore } from '@/store'
 
 /** Opens a service URL in Orca's browser inside the worktree the service runs in. */

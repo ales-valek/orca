@@ -2,7 +2,7 @@ import type { AppState } from '@/store/types'
 import { parseExecutionHostId } from '../../../../../shared/execution-host'
 import '../../../../../shared/protocol-version'
 import { BROWSER_SCREENCAST_RUNTIME_CAPABILITY } from '../../../../../shared/browser/runtime/browser-runtime-capabilities'
-import { isPseudoWorkspaceId } from '../../../shared/floating-workspace-worktree'
+import { isPseudoWorkspaceId } from '../../../../../shared/floating-workspace-worktree'
 import {
   getWorkspaceClientCreationActionPolicy,
   runtimeHostsPagesOnThisDesktop,

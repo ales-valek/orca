@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore
-} from './store-test-helpers'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { migrateHydratedEditorTabsAndGroups } from './editor/file-ids/hydrated-editor-file-ids'
 
 const WT = 'wt-1'

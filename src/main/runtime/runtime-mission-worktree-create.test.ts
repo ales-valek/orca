@@ -3,7 +3,7 @@ import type { Repo } from '../../shared/repo-types'
 import type { MissionSlot } from '../../shared/mission-types'
 import { resolveMissionManagedWorktreeCreate } from './runtime-mission-worktree-create'
 import type { RuntimeManagedWorktreeCreateArgs } from './workspaces/creation/runtime-managed-worktree-create-types'
-import type { RuntimeStore } from './runtime-store-contract'
+import type { RuntimeStore } from './construction/runtime-store-contract'
 
 const repo: Repo = {
   id: 'r1',

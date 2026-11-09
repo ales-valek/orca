@@ -1,3 +1,4 @@
+import { LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
 import type { Mission, MissionSlot } from '../../shared/mission-types'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import { splitWorktreeId } from '../../shared/worktree/id'
@@ -104,5 +105,16 @@ export function assertRepoIsNotMissionManaged(missions: Mission[], repoId: strin
     // Why: generic project removal prunes worktree metadata without updating
     // Mission membership, leaving an in-root checkout with no ownership proof.
     throw new Error(MISSION_MANAGED_MEMBER_REMOVAL_ERROR)
+  }
+}
+
+/** Missions live on the local host, so a paired host's repo row never blocks on them. */
+export function assertRepoRemovalAllowed(
+  state: { missions?: Mission[] },
+  repoId: string,
+  hostId: string | undefined
+): void {
+  if (hostId === LOCAL_EXECUTION_HOST_ID) {
+    assertRepoIsNotMissionManaged(state.missions ?? [], repoId)
   }
 }

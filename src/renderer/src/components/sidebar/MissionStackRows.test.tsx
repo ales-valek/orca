@@ -6,7 +6,7 @@ import type { MissionRestackLayer } from '../../../../shared/mission-layer-state
 import type { Mission } from '../../../../shared/mission-types'
 
 vi.mock('@/store', async () => {
-  const { createTestStore } = await import('@/store/slices/store-test-helpers')
+  const { createTestStore } = await import('@/store/testing/app-store-test-fixture')
   return { useAppStore: createTestStore() }
 })
 vi.mock('@/components/confirmation-dialog-context', () => ({
@@ -14,7 +14,8 @@ vi.mock('@/components/confirmation-dialog-context', () => ({
 }))
 
 import { useAppStore } from '@/store'
-import { makeWorktree, TEST_REPO } from '@/store/slices/store-test-helpers'
+import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
+import { TEST_REPO } from '@/store/repos/repo.test-fixture'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { MissionStackRows } from './MissionStackRows'
 

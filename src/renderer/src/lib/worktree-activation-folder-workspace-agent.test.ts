@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FolderWorkspace } from '../../../shared/folder-workspaces/folder-workspace-types'
 import { useAppStore } from '@/store'
 import { folderWorkspaceKey } from '../../../shared/workspace-scope'
-import { activateAndRevealFolderWorkspace } from './worktree-activation'
+import { activateAndRevealFolderWorkspace } from './workspace/activation/worktree-activation'
 import { buildFolderWorkspaceAgentReopenStartup } from './folder-workspace-agent-reopen'
 
 const initialAppStoreState = useAppStore.getState()

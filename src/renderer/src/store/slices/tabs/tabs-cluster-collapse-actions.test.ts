@@ -4,15 +4,10 @@ const { getStateMock } = vi.hoisted(() => ({ getStateMock: vi.fn() }))
 vi.mock('@/store', () => ({ useAppStore: { getState: getStateMock } }))
 
 import { getHiddenClusterTabIds, type TabGroup } from '../../../../../shared/tab-types'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '../store-test-helpers'
-import { createTabsSliceMockApi } from '../tabs-slice-test-harness'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
+import { createTabsSliceMockApi } from './tabs-slice-test-harness'
 import { handleSwitchRecentTab } from '@/hooks/ipc-tab-switch'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))

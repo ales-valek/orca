@@ -74,11 +74,11 @@ export function WorktreeContextMenuDeleteItems({ model }: { model: WorktreeConte
                 'Mission session — delete the mission instead.'
               )
             : singleContextDeleteRestriction === 'project-missing'
-            ? t(
-                'auto.components.sidebar.WorktreeContextMenu.e091caab15',
-                'The project could not be found'
-              )
-            : undefined
+              ? t(
+                  'auto.components.sidebar.WorktreeContextMenu.e091caab15',
+                  'The project could not be found'
+                )
+              : undefined
         }
       >
         <Trash2 className="size-3.5" />

@@ -1,14 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TAB_CLUSTER_COLORS, type TabCluster, type Tab } from '../../../../../shared/tab-types'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '../store-test-helpers'
-import { createTabsSliceMockApi } from '../tabs-slice-test-harness'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
+import { createTabsSliceMockApi } from './tabs-slice-test-harness'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
 createTabsSliceMockApi()

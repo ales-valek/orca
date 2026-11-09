@@ -3,7 +3,10 @@ import type { AppState } from '../../../types'
 import type { Tab } from '../../../../../../shared/tab-types'
 import type { RuntimeEnvironmentCallRequest } from '../../../../runtime/rpc/testing/runtime-compatibility-test-fixture'
 import { WORKTREE_REFRESH_CONCURRENCY } from './worktree-slice-constants'
-import { DEV_TOOLS_WORKTREE_ID, FLOATING_TERMINAL_WORKTREE_ID } from '../../../../../../shared/constants'
+import {
+  DEV_TOOLS_WORKTREE_ID,
+  FLOATING_TERMINAL_WORKTREE_ID
+} from '../../../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../../../shared/workspace-scope'
 import { makeDetectedResult, qualifyDetectedResult } from './worktrees-detected-listing-fixtures'
 import { purgeHydratedWorktrees } from './hydrated-worktree-purge'

@@ -3,7 +3,7 @@ import type { BrowserSlice, BrowserSliceGet, BrowserSliceSet } from '../browser-
 import { addAdditionalValidWorkspaceKeys } from '@/lib/workspace/persistence/workspace-session-hydration-keys'
 import { buildValidWorktreeIdsForSessionHydration } from '../../../../../../shared/worktree/degraded-repo-worktree-validity'
 import { destroyWorkspaceWebviews } from '../cleanup/browser-webview-cleanup'
-import { PSEUDO_WORKSPACE_IDS } from '../../../../../shared/floating-workspace-worktree'
+import { PSEUDO_WORKSPACE_IDS } from '../../../../../../shared/floating-workspace-worktree'
 import { projectHydratedBrowserSession } from './browser-hydration-state'
 import { ensureBrowserClientHostsForRestoredPages } from '@/runtime/browser/client-hosting/restored-client-hosted-browser-host-attach'
 

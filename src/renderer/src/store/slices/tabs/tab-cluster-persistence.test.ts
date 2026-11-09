@@ -2,14 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { TabCluster } from '../../../../../shared/tab-types'
 import type { WorkspaceSessionState } from '../../../../../shared/workspace-session/workspace-session-state-types'
 import { parseWorkspaceSession } from '../../../../../shared/workspace-session/workspace-session-schema'
-import { buildPersistedUnifiedTabSessionData } from '@/lib/workspace-session-unified-tabs'
-import {
-  createTestStore,
-  makeTabGroup,
-  makeUnifiedTab,
-  makeWorktree,
-  seedStore
-} from '../store-test-helpers'
+import { buildPersistedUnifiedTabSessionData } from '@/lib/workspace/persistence/workspace-session-unified-tabs'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 
 const WT = 'repo1::/tmp/feature'
 const PANE = 'pane'

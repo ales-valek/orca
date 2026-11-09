@@ -3,16 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { getStateMock } = vi.hoisted(() => ({ getStateMock: vi.fn() }))
 vi.mock('../store', () => ({ useAppStore: { getState: getStateMock } }))
 
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTab,
-  makeTabGroup,
-  makeUnifiedTab,
-  makeWorktree,
-  seedStore,
-  type TestStore
-} from '../store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTab } from '@/store/terminals/terminal-tab.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { getHiddenClusterTabIds } from '../../../shared/tab-types'
 import {
   activateCyclableTab,

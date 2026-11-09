@@ -7,7 +7,7 @@ import { HEADLESS_RUNTIME_WINDOW_ID } from '../../../shared/runtime-session-cont
 import { parsePaneKey } from '../../../shared/workspace-layout/stable-pane-id'
 import { parseWorkspaceKey } from '../../../shared/workspace-scope'
 import { getRepoIdFromWorktreeId, worktreeIdsEqual } from '../../../shared/worktree/id'
-import { OrcaRuntimeWithHulyCommands } from './orca-runtime-huly-commands'
+import { OrcaRuntimeWithHulyCommands } from '../orca-runtime-huly-commands'
 import { getRuntimeDesktopSurface } from './runtime-desktop-surface'
 import {
   getLiveAgentRowPane,

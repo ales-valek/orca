@@ -1,5 +1,5 @@
 import { useAppStore } from '@/store'
-import type { OpenFile } from '@/store/slices/editor'
+import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { AppState } from '@/store/types'
 import type {
   GitBranchChangeEntry,

@@ -1,6 +1,6 @@
 import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
-import type { WorktreeCreationRequest } from '@/lib/pending-worktree-creation'
+import type { WorktreeCreationRequest } from '@/lib/workspace/creation/pending-worktree-creation'
 import { setupCreateArgs } from '@/lib/workspace/creation/worktree-creation-hook-preparation'
 import { worktreeCreationAgentLaunchOptions } from '@/lib/workspace/creation/worktree-creation-host-agent-launch'
 import type { CreateWorktreeCallOptions } from '@/store/slices/worktrees/create/worktree-create-payload'

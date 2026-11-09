@@ -112,7 +112,15 @@ export function DiffSectionBody({
       find: monacoFindOptions,
       unicodeHighlight: buildEditorUnicodeHighlightOptions(language)
     }),
-    [isEditable, sideBySide, typography, diffWordWrap, diffShowWhitespace, language, languageIntelligence]
+    [
+      isEditable,
+      sideBySide,
+      typography,
+      diffWordWrap,
+      diffShowWhitespace,
+      language,
+      languageIntelligence
+    ]
   )
   useLayoutEffect(() => {
     diffWordWrapRef.current = diffWordWrap

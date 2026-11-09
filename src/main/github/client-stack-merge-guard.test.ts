@@ -62,15 +62,10 @@ describe('GitHub GraphQL rate-limit guard', () => {
 
   const validStackHeadSha = 'a'.repeat(40)
   const validStackBaseSha = 'b'.repeat(40)
-    const merged = vi.fn()
-    setMissionPullRequestMergedListener(merged)
-    // Why: an enqueued stack is not merged yet.
-    expect(merged).not.toHaveBeenCalled()
-
   it('tells Missions which layers a direct stack merge merged', async () => {
     const merged = vi.fn()
     setMissionPullRequestMergedListener(merged)
-    ghExecFileAsyncMock
+    clientMocks.ghExecFileAsyncMock
       .mockResolvedValueOnce({
         stdout: JSON.stringify({
           number: 202,
@@ -476,13 +471,4 @@ describe('GitHub GraphQL rate-limit guard', () => {
       )
     expect.soft(consoleWarnSpy).toHaveBeenCalledTimes(1)
   })
-    const merged = vi.fn()
-    setMissionPullRequestMergedListener(merged)
-    expect(merged).toHaveBeenCalledExactlyOnceWith({
-      repoPath: '/repo-root',
-      headBranch: 'sta-3924-stack-merge-fail-closed',
-      baseBranch: 'main',
-      mergedCount: 1,
-      headSha: validStackHeadSha
-    })
 })

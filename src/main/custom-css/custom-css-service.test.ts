@@ -1,3 +1,4 @@
+// @orca-isolated-worker -- mocks the watcher module
 import { mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { rmSync, mkdtempSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { getDefaultWorkspaceSession } from '../../../shared/constants'
+import { DEV_TOOLS_WORKTREE_ID, getDefaultWorkspaceSession } from '../../../shared/constants'
 import type { WorkspaceSessionState } from '../../../shared/workspace-session/workspace-session-state-types'
 import type { DetectedWorktreeListResult } from '../../../shared/worktree/types'
 import {
@@ -80,13 +80,6 @@ describe('main drops the layout of workspaces the catalog no longer validates', 
   })
 
   describe('at load', () => {
-        workspaceSession: sessionWith(
-          KEPT,
-          DELETED,
-          folderKey,
-          FLOATING_TERMINAL_WORKTREE_ID,
-          DEV_TOOLS_WORKTREE_ID
-        ),
     it("keeps a paired host's workspaces, whose catalog lives on that host", () => {
       writeDataFile({
         schemaVersion: 1,

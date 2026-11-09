@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AgentHookServer } from '../agent-hooks/server'
+import { AgentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { OrcaRuntimeService } from './orca-runtime'
 
 const WT = 'repo-1::/tmp/worktree-a'

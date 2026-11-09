@@ -6,12 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { AppState } from '@/store/types'
-import {
-  createTestStore,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '@/store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import type { TabCluster, TabGroup } from '../../../../shared/tab-types'
 import { TabClusterChip } from './TabClusterChip'
 import { TabClusterMenuSection } from './TabClusterMenuSection'

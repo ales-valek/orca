@@ -33,6 +33,7 @@ import { useAppStore } from '@/store/index'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { detectLanguage } from '../../../../../../shared/editor-language/editor-language-detect'
 import { openFileInBrowserTab } from '@/lib/browser/documents/file-preview'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { LocalOnlyMenuHint } from '@/components/local-only-menu-hint'
 import {

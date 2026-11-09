@@ -1,4 +1,5 @@
 import type { ComposerModalData } from './new-workspace/composer-modal-data'
+import { composerWorkspaceTarget } from '@/components/new-workspace/composer-modal-data'
 import { toast } from 'sonner'
 import {
   formatWorkspaceCreateError,
@@ -246,14 +247,7 @@ function QuickTabBody({
           prefilledName: cardProps.name,
           initialRepoId: cardProps.repoId,
           initialBaseBranch: cardProps.baseBranch,
-          initialWorkspaceTarget:
-            cardProps.selectedProjectId && cardProps.selectedRepoExecutionHostId
-              ? {
-                  projectId: cardProps.selectedProjectId,
-                  hostId: cardProps.selectedRepoExecutionHostId,
-                  projectHostSetupId: cardProps.selectedProjectHostSetupId ?? null
-                }
-              : modalData.initialWorkspaceTarget,
+          initialWorkspaceTarget: composerWorkspaceTarget(cardProps, modalData),
           linkedWorkItem: cardProps.linkedWorkItem,
           recovery: { ...quickAgentPick, agent: quickAgent, note: cardProps.note }
         }

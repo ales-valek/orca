@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { translate } from '@/i18n/i18n'
-import type { CloseTerminalDialogTerminal } from './CloseTerminalDialog'
+import type { CloseTerminalDialogTerminal } from './layout/close/CloseTerminalDialog'
 
 export function CloseTerminalGroupList({
   terminals,

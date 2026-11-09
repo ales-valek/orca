@@ -1,4 +1,4 @@
-import { OrcaRuntimeWithWindowlessTerminalActivity } from './orca-runtime-windowless-terminal-activity'
+import { OrcaRuntimeWithWindowlessTerminalActivity } from './sidebar-inputs/orca-runtime-windowless-terminal-activity'
 import { isFolderRepo } from '../../shared/repo-kind'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import type { Worktree } from '../../shared/worktree/types'

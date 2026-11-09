@@ -6,8 +6,8 @@ import type { AppState } from '@/store/types'
 import { getIndexedWorktreeMap } from '@/store/slices/worktrees/listing/worktree-catalog-index'
 import { makePaneKey } from '../../../../../../shared/workspace-layout/stable-pane-id'
 import { parseWorkspaceKey } from '../../../../../../shared/workspace-scope'
-import { getFolderWorkspaceOwnerEnv } from '../../../../shared/missions'
-import { getMissionBriefPath } from '../../../../shared/mission-source'
+import { getFolderWorkspaceOwnerEnv } from '../../../../../../shared/missions'
+import { getMissionBriefPath } from '../../../../../../shared/mission-source'
 
 export function getWorkspacePath(state: AppState, worktreeId: string): string | null {
   const parsed = parseWorkspaceKey(worktreeId)

@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { captureEditorFileOperationProvenance } from '@/lib/editor-file-operation-owner'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTabGroup,
-  makeUnifiedTab,
-  makeWorktree,
-  seedStore
-} from './store-test-helpers'
-import { carryRestoredEditorTabClusters } from './editor/actions/restored-editor-tab-clusters'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
+import { carryRestoredEditorTabClusters } from './editor/hydration/restored-editor-tab-clusters'
 import { getHiddenClusterTabIds } from '../../../../shared/tab-types'
 
 const SOURCE = 'repo1::/path/source'

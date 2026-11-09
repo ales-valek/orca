@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { AgentHookServer } from '../agent-hooks/server'
+import { AgentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { OrcaRuntimeService } from './orca-runtime'
 
 vi.mock('../telemetry/client', () => ({ track: vi.fn() }))

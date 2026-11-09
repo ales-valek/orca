@@ -1,9 +1,9 @@
 import { useAppStore } from '@/store'
-import { isListedMissionSessionWorkspace } from '../../../../shared/missions'
+import { isListedMissionSessionWorkspace } from '../../../../../../shared/missions'
 import {
   getSingleContextDeleteRestriction,
   type SingleContextDeleteRestriction
-} from './workspace-actions/context-menu/worktree-context-menu-policy'
+} from './worktree-context-menu-policy'
 
 /** Why single-workspace Delete is unavailable, reading Mission session ownership from the store. */
 export function useSingleContextDeleteRestriction(menu: {

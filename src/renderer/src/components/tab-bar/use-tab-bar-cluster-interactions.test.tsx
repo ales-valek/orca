@@ -1,18 +1,14 @@
+// @orca-isolated-worker -- mocks store-owned modules
 // @vitest-environment happy-dom
 
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Tab, TabCluster, TabGroup } from '../../../../shared/tab-types'
-import { useRunningTerminalCloseConfirmStore } from '@/store/running-terminal-close-confirm'
+import { useRunningTerminalCloseConfirmStore } from '@/store/slices/tabs/closing/running-terminal-close-confirm'
 import type { AppState } from '@/store/types'
-import {
-  createTestStore,
-  makeLayout,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '@/store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeLayout } from '@/store/terminals/terminal-tab.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import type { TabBarItem } from './tab-bar-item-model'
 import type { TabBarProps } from './tab-bar-props'
 import { useTabBarClusterInteractions } from './use-tab-bar-cluster-interactions'
@@ -27,7 +23,7 @@ vi.mock('@/store', () => ({
     getState: () => store.getState()
   })
 }))
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
+vi.mock('@/runtime/hosted-terminals/inspection/runtime-terminal-process-inspection', () => ({
   inspectRuntimeTerminalProcess: inspectRuntimeTerminalProcessMock
 }))
 

@@ -1,3 +1,4 @@
+// @orca-isolated-worker -- mocks the store module
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import type { editor } from 'monaco-editor'
@@ -6,7 +7,7 @@ import type { GitBlameResult } from '../../../../shared/git-blame'
 
 const mocks = vi.hoisted(() => ({ getRuntimeGitBlame: vi.fn() }))
 
-vi.mock('@/runtime/runtime-git-diff-client', () => ({
+vi.mock('@/runtime/source-control/git/runtime-git-diff-client', () => ({
   getRuntimeGitBlame: mocks.getRuntimeGitBlame
 }))
 vi.mock('@/lib/monaco-setup', () => ({
@@ -24,7 +25,7 @@ vi.mock('@/store', () => {
   useAppStore.getState = () => state
   return { useAppStore }
 })
-vi.mock('@/store/slices/worktree-helpers', () => ({
+vi.mock('@/store/github/refresh/worktree-refresh', () => ({
   findWorktreeById: () => ({ path: '/repo', repoId: 'repo' })
 }))
 vi.mock('@/i18n/i18n', () => ({ translate: (_key: string, fallback: string) => fallback }))

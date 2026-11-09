@@ -22,7 +22,6 @@ import {
   EMPTY_WORKSPACE_LINEAGE_BY_CHILD_KEY,
   EMPTY_WORKTREE_LINEAGE_BY_ID,
   getSharedWorkspaceStatus,
-
   isContextWorktreeDeletable,
   selectMenuScopedMap,
   shouldRemoveProjectFromContextMenu

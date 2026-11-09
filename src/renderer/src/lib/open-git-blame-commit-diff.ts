@@ -2,9 +2,9 @@ import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { getConnectionId } from '@/lib/connection-context'
 import { runtimeTargetForWorkspaceOwner } from '@/lib/resolve-owner'
-import { getRuntimeGitCommitCompare } from '@/runtime/runtime-git-diff-client'
+import { getRuntimeGitCommitCompare } from '@/runtime/source-control/git/runtime-git-diff-client'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/slices/worktree-helpers'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { isUncommittedBlameOid, type GitBlameLine } from '../../../shared/git-blame'
 import { splitWorktreeIdForFilesystem } from '../../../shared/worktree/id'
 
@@ -23,7 +23,7 @@ export async function openGitBlameCommitDiff(
   }
 
   const state = useAppStore.getState()
-  const worktree = findWorktreeById(state.worktreesByRepo, worktreeId)
+  const worktree = findWorktreeById(state, worktreeId)
   const worktreePath =
     worktree?.path ?? splitWorktreeIdForFilesystem(worktreeId)?.worktreePath ?? null
   const target = runtimeTargetForWorkspaceOwner(state, { workspaceId: worktreeId })

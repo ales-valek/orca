@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { editor } from 'monaco-editor'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/slices/worktree-helpers'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { getConnectionId } from '@/lib/connection-context'
 import { attachMonacoLspDocument } from '@/lib/monaco-lsp/monaco-lsp-attach'
 
@@ -17,7 +17,7 @@ export function useMonacoLsp(params: {
 }): void {
   const { mountedEditor, filePath, language, worktreeId, liveTail } = params
   const worktreePath = useAppStore((s) =>
-    worktreeId ? (findWorktreeById(s.worktreesByRepo, worktreeId)?.path ?? null) : null
+    worktreeId ? (findWorktreeById(s, worktreeId)?.path ?? null) : null
   )
 
   useEffect(() => {

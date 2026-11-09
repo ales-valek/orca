@@ -7,7 +7,7 @@ import type { SshPtyConsumerRecovery } from '../../../shared/ssh-types'
 import { getDefaultPersistedState } from '../../../shared/constants'
 import { pruneLocalTerminalScrollbackBuffers } from '../../../shared/workspace-session/workspace-session-terminal-buffers'
 import { pruneWorkspaceSessionBrowserHistory } from '../../../shared/workspace-session/workspace-session-browser-history'
-import { clearMissingMissionMembers } from '../../../shared/missions'
+import { sanitizeLoadedMissions } from './loaded-mission-sanitize'
 import { clearMissingProjectGroupMemberships } from '../../../shared/project-groups'
 import { migrateWorkspaceSessionTerminalScrollbackSnapshots } from '../../pty/scrollback/terminal-scrollback-snapshots'
 import { logStartupMilestone } from '../../startup/startup-diagnostics'
@@ -213,11 +213,7 @@ export class LoadedStateParsingOperations {
       this.runtime.loadNeedsSave = true
     }
     const repos = clearMissingProjectGroupMemberships(result.repos, result.projectGroups ?? [])
-    const missionSanitize = clearMissingMissionMembers(result.missions ?? [], repos)
-    result.missions = missionSanitize.missions
-    if (missionSanitize.changed) {
-      this.runtime.loadNeedsSave = true
-    }
+    sanitizeLoadedMissions(result, repos, this.runtime)
     const projectHostSetupCompatibility = mergeProjectHostSetupCompatibilityState(result, repos)
     if (!projectHostSetupCompatibilityStateEqual(result, projectHostSetupCompatibility)) {
       this.runtime.loadNeedsSave = true

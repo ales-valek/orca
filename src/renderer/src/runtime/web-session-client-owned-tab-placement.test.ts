@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TabGroup } from '../../../shared/tab-types'
-import { reconcileClientOwnedTabPlacement } from './web-session-client-owned-tab-placement'
-import type { ClientOwnedPlacementInput } from './web-session-client-owned-tab-placement'
+import { reconcileClientOwnedTabPlacement } from './web-session-tabs-sync/placement/web-session-client-owned-tab-placement'
+import type { ClientOwnedPlacementInput } from './web-session-tabs-sync/placement/web-session-client-owned-tab-placement'
 
 const pane: TabGroup = {
   id: 'pane',

@@ -1,6 +1,6 @@
 import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
 import { isMissionEligibleRepo } from '../../../../shared/missions'
-import { resolveProjectExecutionRuntime } from '../../../../shared/project-execution-runtime'
+import { resolveProjectExecutionRuntime } from '../../../../shared/execution-host/project-execution-runtime'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { Project } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'

@@ -2,7 +2,7 @@ import { recordLayoutApply } from '@/runtime/workspace-layout/commands/layout-ap
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../../shared/layout-owner-switch'
 import { tabOrderAnchor } from '../../../../../shared/workspace-layout/tab-order'
 import type { AppState } from '../../types'
-import { getTabClusterInsertionIndex } from './tabs/tab-cluster-model'
+import { getTabClusterInsertionIndex } from './tab-cluster-model'
 
 export type RecentlyClosedTabPosition = {
   tabBarIndex?: number

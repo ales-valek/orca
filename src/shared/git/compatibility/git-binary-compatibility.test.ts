@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { refreshBranchCleanupTargetRefs } from '../branches/git-branch-cleanup-fetch'
 
+import { registerGitBranchNameBinaryCompatibilityCases } from '../../git-branch-name-binary-compatibility.test-cases'
 import { GitBinaryTestFixture } from './git-binary.test-fixture'
 
 import { registerGitResolutionBinaryCompatibilityCases } from './git-resolution-binary-compatibility.test-cases'
@@ -76,5 +77,4 @@ describeBinaryCompatibility('real Git binary compatibility', () => {
 
   registerGitResolutionBinaryCompatibilityCases(runGit)
   registerGitBranchNameBinaryCompatibilityCases(runGit)
-
 })

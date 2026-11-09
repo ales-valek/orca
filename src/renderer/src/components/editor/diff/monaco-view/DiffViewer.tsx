@@ -46,7 +46,7 @@ import {
 import { useMonacoTheme } from '@/hooks/use-monaco-theme'
 import { cn } from '@/lib/utils'
 import { wholeFileDiffTintClass } from './whole-file-diff-tint'
-import { useDiffPaneGitLineBlame } from './useDiffPaneGitLineBlame'
+import { useDiffPaneGitLineBlame } from '../../useDiffPaneGitLineBlame'
 
 export default function DiffViewer({
   modelKey,

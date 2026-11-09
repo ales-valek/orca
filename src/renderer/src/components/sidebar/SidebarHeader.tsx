@@ -1,6 +1,7 @@
 import React, { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarHeaderActions } from './sidebar-header-actions'
 import { Button } from '@/components/ui/button'

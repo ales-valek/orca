@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { useTranslate } from '@/i18n/use-translate'
-import { CloseTerminalGroupList } from './CloseTerminalGroupList'
+import { CloseTerminalGroupList } from '../../CloseTerminalGroupList'
 
 export type CloseTerminalDialogCopyKind = 'command' | 'agent' | 'chat-agent'
 

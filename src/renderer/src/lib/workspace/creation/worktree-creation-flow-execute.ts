@@ -1,4 +1,4 @@
-import { prepareWorktreeCreationHooks, setupCreateArgs } from './worktree-creation-hook-preparation'
+import { prepareWorktreeCreationHooks } from './worktree-creation-hook-preparation'
 import { useAppStore } from '@/store/index'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import type { ActivateAndRevealResult } from '@/lib/workspace/activation/worktree-activation-outcome'
@@ -24,7 +24,6 @@ import { resolveBackendDraftStartup } from '@/lib/workspace/creation/worktree-dr
 import {
   recoverWorktreeLegacyPreparation,
   hostPlannableAgentLaunch,
-  worktreeCreationAgentLaunchOptions,
   windowStartupAfterCreate
 } from '@/lib/workspace/creation/worktree-creation-host-agent-launch'
 import {

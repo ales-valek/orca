@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, MoreHorizontal, PanelLeft, PanelRight } from 'lucide-react'
 import logo from '../../../../resources/logo.svg'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {

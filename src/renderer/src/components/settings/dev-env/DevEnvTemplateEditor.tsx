@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { createBrowserUuid } from '@/lib/browser-uuid'
+import { createNonSecureContextUuid as createBrowserUuid } from '../../../../../shared/non-secure-context-uuid'
 import type { DevEnvCredential, DevEnvTemplate } from '../../../../../shared/dev-env/dev-env-types'
 import {
   addDevEnvSlot,

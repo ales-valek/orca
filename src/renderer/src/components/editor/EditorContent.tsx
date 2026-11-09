@@ -3,7 +3,10 @@ import { useAppStore } from '@/store'
 import type { ActivePluginCustomEditor } from '@/store/plugins/file-editors/plugin-custom-editors'
 import type { MarkdownViewMode, OpenFile } from '@/store/slices/editor/types/open-file'
 import type { PendingEditorReveal } from '@/store/slices/editor/types/pending-editor-reveal'
-import type { GitBranchChangeEntry, GitDiffResult } from '../../../../shared/git/diff/git-diff-compare-types'
+import type {
+  GitBranchChangeEntry,
+  GitDiffResult
+} from '../../../../shared/git/diff/git-diff-compare-types'
 import type { GitStatusEntry } from '../../../../shared/git/status/git-status-types'
 import { CheckRunDetailsPanel } from './check-details/panel/CheckRunDetailsPanel'
 import { CombinedDiffViewer, MarkdownPreview } from './editor-lazy-views'

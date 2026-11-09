@@ -7,13 +7,8 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import type { TabCluster, TabGroup } from '../../../../shared/tab-types'
 import { TabClusterChip } from './TabClusterChip'
 import type { AppState } from '@/store/types'
-import {
-  createTestStore,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '@/store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
 import { createFloatingTerminalPanelDragActions } from '../floating-terminal/floating-terminal-panel-drag-actions'
 

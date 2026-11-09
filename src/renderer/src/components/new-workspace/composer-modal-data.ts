@@ -39,3 +39,21 @@ export type ComposerModalData = {
   contextualTourSource?: string
   setupGuideTourRequestId?: string
 }
+
+/** The target the composer currently shows, falling back to the one it opened with. */
+export function composerWorkspaceTarget(
+  card: {
+    selectedProjectId?: string | null
+    selectedRepoExecutionHostId?: WorkspaceCreationTargetHint['hostId'] | null
+    selectedProjectHostSetupId?: string | null
+  },
+  modalData: { initialWorkspaceTarget?: WorkspaceCreationTargetHint | null }
+): WorkspaceCreationTargetHint | null | undefined {
+  return card.selectedProjectId && card.selectedRepoExecutionHostId
+    ? {
+        projectId: card.selectedProjectId,
+        hostId: card.selectedRepoExecutionHostId,
+        projectHostSetupId: card.selectedProjectHostSetupId ?? null
+      }
+    : modalData.initialWorkspaceTarget
+}

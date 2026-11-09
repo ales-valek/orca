@@ -1,3 +1,4 @@
+import { DEV_TOOLS_WORKTREE_ID } from '../../../../../../shared/constants'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status/aggregation/worktree-agent-status'
 import type { BrowserPage } from '../../../../../../shared/browser-workspace-types'

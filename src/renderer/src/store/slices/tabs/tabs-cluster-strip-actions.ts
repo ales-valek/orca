@@ -1,6 +1,6 @@
 import type { Tab, TabGroup } from '../../../../../shared/tab-types'
 import type { TabsSlice, TabsSliceGet, TabsSliceSet } from './tabs-slice-contract'
-import { findGroupAndWorktree, updateGroup } from '../tab-group-state'
+import { findGroupAndWorktree, updateGroup } from './tab-group-state'
 import { normalizeTabClusters } from './tab-cluster-model'
 import { applyTabOrderSortValues } from '../../../../../shared/workspace-layout/tab-order'
 

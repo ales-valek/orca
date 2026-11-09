@@ -1,6 +1,6 @@
 import { getRepoIdFromWorktreeId } from '../../worktree/id'
 import { parseWorkspaceKey } from '../../workspace-scope'
-import { isPseudoWorkspaceId } from './floating-workspace-worktree'
+import { isPseudoWorkspaceId } from '../../floating-workspace-worktree'
 
 /** Which browser profile new tabs in a workspace use: the shared Default, or one Orca manages per repo or per workspace. */
 export type BrowserProfileScope = 'shared' | 'repo' | 'worktree'

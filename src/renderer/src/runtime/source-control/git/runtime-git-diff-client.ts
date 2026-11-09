@@ -3,7 +3,7 @@ import type {
   GitCommitCompareResult,
   GitDiffResult
 } from '../../../../../shared/git/diff/git-diff-compare-types'
-import type { GitBlameContentsSource, GitBlameResult } from '../../../shared/git-blame'
+import type { GitBlameContentsSource, GitBlameResult } from '../../../../../shared/git-blame'
 import { resolveLocalWorktreePath, type RuntimeGitContext } from './runtime-git-client-context'
 import { callRuntimeRpc } from '../../rpc/calls/runtime-rpc-call'
 import { toRuntimeWorktreeSelector } from '../../rpc/targets/runtime-worktree-selector'

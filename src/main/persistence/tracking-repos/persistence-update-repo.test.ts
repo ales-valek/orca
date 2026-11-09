@@ -223,5 +223,4 @@ describe('Store', () => {
 
     expect(store.getRepo('r1')!.sidebarHighlight).toBeUndefined()
   })
-
 })

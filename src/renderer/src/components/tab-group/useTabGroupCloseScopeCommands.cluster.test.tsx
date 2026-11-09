@@ -2,15 +2,10 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../../store/types'
-import {
-  createTestStore,
-  makeOpenFile,
-  makeTabGroup,
-  makeUnifiedTab,
-  makeWorktree,
-  seedStore,
-  type TestStore
-} from '../../store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
+import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { getHiddenClusterTabIds } from '../../../../shared/tab-types'
 import { useTabGroupCloseScopeCommands } from './useTabGroupCloseScopeCommands'
 import { useTabGroupTabCloseCommands } from './useTabGroupTabCloseCommands'

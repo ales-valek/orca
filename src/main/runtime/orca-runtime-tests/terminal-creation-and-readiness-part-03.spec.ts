@@ -1,4 +1,4 @@
-import 'node:fs/promises'
+import { mkdtemp } from 'node:fs/promises'
 import { describe, expect, it, vi } from 'vitest'
 import '../../preflight/agent-command-detection'
 import './runtime-test-module-registration.spec'

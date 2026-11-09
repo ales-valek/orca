@@ -7,6 +7,7 @@ import { Label } from '../../../ui/label'
 import { ColorPicker } from '../../../ui/color-picker'
 import { SettingsSwitchRow } from '../../form-controls/SettingsFormControls'
 import { cn } from '@/lib/utils'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 
 type RepositoryIconColorSectionProps = {

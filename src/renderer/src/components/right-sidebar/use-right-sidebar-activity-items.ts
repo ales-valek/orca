@@ -18,6 +18,7 @@ import {
   type PluginPanelsFetchStatus
 } from '@/store/plugins/catalog/plugin-contribution-catalog'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
 import { AgentSessionHistoryIcon } from './agent-session-history-icon'

@@ -5,13 +5,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { AppState } from '@/store/types'
-import {
-  createTestStore,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '@/store/slices/store-test-helpers'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { TabCluster } from '../../../../shared/tab-types'
 import { TabClusterContextMenu } from './TabClusterContextMenu'

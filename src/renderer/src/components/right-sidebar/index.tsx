@@ -202,9 +202,13 @@ function RightSidebarInner({
       <TooltipContent side="bottom" sideOffset={6}>
         {onLeftEdge
           ? t('menu.toggleLeftSidebar', 'Toggle Left Sidebar')
-          : t('auto.components.right.sidebar.index.9fffaf17c1', 'Toggle right sidebar ({{value0}})', {
-              value0: rightSidebarShortcut
-            })}
+          : t(
+              'auto.components.right.sidebar.index.9fffaf17c1',
+              'Toggle right sidebar ({{value0}})',
+              {
+                value0: rightSidebarShortcut
+              }
+            )}
       </TooltipContent>
     </Tooltip>
   ) : null

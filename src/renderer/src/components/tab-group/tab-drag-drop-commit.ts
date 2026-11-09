@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import type { DragEndEvent } from '@dnd-kit/core'
-import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/worktree-runtime-owner'
+import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/workspace/ownership/worktree-runtime-owner'
 import { useAppStore } from '../../store'
 import type { AppState } from '../../store/types'
 import { resolveHostSessionTabIdForWebSessionTab } from '../../runtime/web-session-tabs-sync/tracking-mappings'

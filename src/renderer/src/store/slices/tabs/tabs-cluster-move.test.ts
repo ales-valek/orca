@@ -1,13 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TabCluster } from '../../../../../shared/tab-types'
-import {
-  createTestStore,
-  makeTabGroup,
-  makeUnifiedTab,
-  seedStore,
-  type TestStore
-} from '../store-test-helpers'
-import { createTabsSliceMockApi } from '../tabs-slice-test-harness'
+import { createTestStore, seedStore, type TestStore } from '@/store/testing/app-store-test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
+import { createTabsSliceMockApi } from './tabs-slice-test-harness'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
 createTabsSliceMockApi()

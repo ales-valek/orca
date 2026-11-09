@@ -1,5 +1,6 @@
 import { memo, Suspense, useCallback, useRef } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
+import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store'
 import { usePluginViewCaptureStore } from '@/store/plugins/capture/plugin-view-capture'

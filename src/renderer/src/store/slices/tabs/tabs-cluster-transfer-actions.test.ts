@@ -6,8 +6,9 @@ import {
   type TabGroup
 } from '../../../../../shared/tab-types'
 import type { AppState } from '../../types'
-import { createTestStore, makeTabGroup, makeUnifiedTab, seedStore } from '../store-test-helpers'
-import { createTabsSliceMockApi } from '../tabs-slice-test-harness'
+import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
+import { makeTabGroup, makeUnifiedTab } from '@/store/slices/tabs/tab-group.test-fixture'
+import { createTabsSliceMockApi } from './tabs-slice-test-harness'
 
 createTabsSliceMockApi()
 

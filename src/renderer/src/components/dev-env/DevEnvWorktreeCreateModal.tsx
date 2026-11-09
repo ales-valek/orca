@@ -1,13 +1,13 @@
 import React from 'react'
 import { useAppStore } from '@/store'
-import { findWorktreeById } from '@/store/slices/worktree-helpers'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { DevEnvCreateDialog } from './DevEnvCreateDialog'
 
 /** `dev-env-create-worktree` modal: the worktree id travels in modalData. */
 export default function DevEnvWorktreeCreateModal(): React.JSX.Element | null {
   const worktree = useAppStore((s) => {
     const id = s.modalData.worktreeId
-    return typeof id === 'string' ? findWorktreeById(s.worktreesByRepo, id) : undefined
+    return typeof id === 'string' ? findWorktreeById(s, id) : undefined
   })
   const closeModal = useAppStore((s) => s.closeModal)
   if (!worktree) {

@@ -69,11 +69,14 @@ export function collectTabPtyIds(
 function guardRunningTerminalPtyClose({
   settings,
   ptyIds,
+  boundPtyIds,
   onClose,
   requestConfirm
 }: {
   settings: AppState['settings']
   ptyIds: string[]
+  /** PTYs the tab owns for certain; layout-only ids may be stale leaves. */
+  boundPtyIds: readonly string[]
   onClose: () => void
   requestConfirm: (busyPtyIds: string[], timedOut: boolean) => void
 }): void {
@@ -100,13 +103,13 @@ function guardRunningTerminalPtyClose({
       }
       // Unanswered probes are unknown, not idle; answered failures fail open like Cmd+W.
       // "Could not tell" must not kill a bound pty's work (#33265); layout-only ids are often stale leaves that never answer
-      const boundPtyIds = new Set(useAppStore.getState().ptyIdsByTabId?.[terminalTabId] ?? [])
+      const boundPtySet = new Set(boundPtyIds)
       const busyPtyIds = probes
         .filter(
           (probe) =>
             probe.timedOut ||
             probe.verdict === 'live' ||
-            (probe.verdict === 'unverifiable' && boundPtyIds.has(probe.ptyId))
+            (probe.verdict === 'unverifiable' && boundPtySet.has(probe.ptyId))
         )
         .map((probe) => probe.ptyId)
       const timedOut = probes.some((probe) => probe.timedOut)
@@ -137,6 +140,7 @@ export function guardRunningTerminalClose(params: {
   guardRunningTerminalPtyClose({
     settings: state.settings,
     ptyIds,
+    boundPtyIds: state.ptyIdsByTabId?.[terminalTabId] ?? [],
     onClose,
     requestConfirm: (busyPtyIds, timedOut) => {
       useRunningTerminalCloseConfirmStore.getState().requestRunningTerminalCloseConfirm({
@@ -168,6 +172,9 @@ export function guardRunningTerminalGroupClose(params: {
   guardRunningTerminalPtyClose({
     settings: state.settings,
     ptyIds: [...new Set(terminalPtys.flatMap((terminal) => terminal.ptyIds))],
+    boundPtyIds: terminals.flatMap(
+      (terminal) => state.ptyIdsByTabId?.[terminal.terminalTabId] ?? []
+    ),
     onClose,
     requestConfirm: (busyPtyIds) => {
       const busyPtySet = new Set(busyPtyIds)
