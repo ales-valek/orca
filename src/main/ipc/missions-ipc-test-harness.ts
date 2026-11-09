@@ -1,3 +1,4 @@
+// @orca-isolated-worker -- this harness's vi.mock calls must not meet a cached mission-root module
 import path from 'node:path'
 import { vi } from 'vitest'
 import type { Mission } from '../../shared/mission-types'

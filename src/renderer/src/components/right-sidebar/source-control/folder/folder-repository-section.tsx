@@ -3,7 +3,7 @@ import { Check, ChevronDown, FolderGit2, GitBranch, Loader2 } from 'lucide-react
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
-import { getFileTypeIcon } from '@/lib/file-type-icons'
+import { getFileTypeIcon } from '@/lib/file-icons/file-type-icons'
 import { basename, dirname } from '@/lib/path'
 import { cn } from '@/lib/utils'
 import type {

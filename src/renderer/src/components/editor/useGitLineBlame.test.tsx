@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({ getRuntimeGitBlame: vi.fn() }))
 vi.mock('@/runtime/source-control/git/runtime-git-diff-client', () => ({
   getRuntimeGitBlame: mocks.getRuntimeGitBlame
 }))
-vi.mock('@/lib/monaco-setup', () => ({
+vi.mock('@/lib/editor/monaco/monaco-setup', () => ({
   monaco: {
     editor: {
       EditorOption: { readOnly: 'readOnly', fontInfo: 'fontInfo', lineHeight: 'lineHeight' },
@@ -29,8 +29,8 @@ vi.mock('@/store/github/refresh/worktree-refresh', () => ({
   findWorktreeById: () => ({ path: '/repo', repoId: 'repo' })
 }))
 vi.mock('@/i18n/i18n', () => ({ translate: (_key: string, fallback: string) => fallback }))
-vi.mock('@/lib/connection-context', () => ({ getConnectionId: () => null }))
-vi.mock('@/lib/resolve-owner', () => ({
+vi.mock('@/lib/workspace/ownership/connection-context', () => ({ getConnectionId: () => null }))
+vi.mock('@/lib/workspace/ownership/resolve-owner', () => ({
   runtimeTargetForWorkspaceOwner: () => ({ kind: 'local' })
 }))
 vi.mock('@/lib/open-git-blame-commit-diff', () => ({ openGitBlameCommitDiff: vi.fn() }))

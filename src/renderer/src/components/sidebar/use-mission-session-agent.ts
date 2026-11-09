@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { getAgentCatalog, type AgentCatalogEntry } from '@/lib/agent-catalog'
+import { getAgentCatalog, type AgentCatalogEntry } from '@/lib/agent-catalog/agent-catalog'
 import {
   pickQuickWorkspaceAgent,
   resolveQuickWorkspaceAgentSelection

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { editor } from 'monaco-editor'
 
-vi.mock('@/lib/monaco-setup', () => ({
+vi.mock('@/lib/editor/monaco/monaco-setup', () => ({
   monaco: {
     editor: { setModelMarkers: vi.fn() },
     MarkerSeverity: { Error: 8, Warning: 4, Info: 2, Hint: 1 }

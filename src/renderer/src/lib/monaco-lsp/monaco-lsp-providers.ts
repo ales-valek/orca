@@ -1,7 +1,7 @@
 import type * as MonacoNamespace from 'monaco-editor'
 import type { IDisposable, IPosition, IRange, editor, languages } from 'monaco-editor'
 import { relativePathInsideRoot } from '../../../../shared/cross-platform-path'
-import { detectLanguage } from '@/lib/language-detect'
+import { detectLanguage } from '../../../../shared/editor-language/editor-language-detect'
 import { useAppStore } from '@/store'
 import {
   fileUriToPath,

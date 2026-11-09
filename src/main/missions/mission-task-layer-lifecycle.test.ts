@@ -1,4 +1,3 @@
-// @orca-isolated-worker -- harness mocks must not meet a cached mission-root module
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {

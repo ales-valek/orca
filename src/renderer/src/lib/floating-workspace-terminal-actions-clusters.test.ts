@@ -6,11 +6,11 @@ import { switchFloatingWorkspaceTab } from './floating-workspace-terminal-action
 
 const focusTerminalTabSurfaceMock = vi.hoisted(() => vi.fn())
 
-vi.mock('./create-untitled-markdown', () => ({
+vi.mock('./editor/file-operations/create-untitled-markdown', () => ({
   createUntitledMarkdownFileWithTemplateSelection: vi.fn()
 }))
 
-vi.mock('./connection-context', () => ({
+vi.mock('./workspace/ownership/connection-context', () => ({
   getConnectionId: vi.fn(() => null)
 }))
 

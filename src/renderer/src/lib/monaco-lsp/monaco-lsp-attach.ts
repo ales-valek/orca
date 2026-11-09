@@ -1,5 +1,5 @@
 import type { editor } from 'monaco-editor'
-import { monaco } from '@/lib/monaco-setup'
+import { monaco } from '@/lib/editor/monaco/monaco-setup'
 import { closeLspDocumentForModel, openLspDocumentForModel } from './monaco-lsp-documents'
 import { clearLspMarkers, ensureLspSupportForLanguage } from './monaco-lsp-providers'
 

@@ -14,7 +14,7 @@ import type {
 import type {
   GitBranchChangeEntry,
   GitBranchCompareSummary
-} from '../../../../shared/git-diff-compare-types'
+} from '../../../../shared/git/diff/git-diff-compare-types'
 import {
   getChangedLineDiffFile,
   shouldLoadChangedLineDiffForEditFile

@@ -1,6 +1,6 @@
 import type { IDisposable, editor } from 'monaco-editor'
 import type { LspDiagnosticSession } from '../../../../shared/lsp-types'
-import { monaco } from '@/lib/monaco-setup'
+import { monaco } from '@/lib/editor/monaco/monaco-setup'
 import { lspDiagnosticsToMonacoMarkers, lspPullDiagnosticsToItems } from './lsp-monaco-conversion'
 import { clearLspMarkerLayers, publishLspSessionMarkers } from './lsp-marker-layers'
 import { setLspFileStatus } from './monaco-lsp-status'

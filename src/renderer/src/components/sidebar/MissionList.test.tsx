@@ -13,7 +13,9 @@ vi.mock('@/store', async () => {
   return { useAppStore: createTestStore() }
 })
 
-vi.mock('@/lib/sidebar-worktree-activation', () => ({ activateWorktreeFromSidebar }))
+vi.mock('@/lib/workspace/activation/sidebar-worktree-activation', () => ({
+  activateWorktreeFromSidebar
+}))
 vi.mock('@/components/confirmation-dialog-context', () => ({
   useConfirmationDialog: () => confirmMissionMemberRemoval
 }))

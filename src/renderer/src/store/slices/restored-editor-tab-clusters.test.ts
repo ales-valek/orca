@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { captureEditorFileOperationProvenance } from '@/lib/editor-file-operation-owner'
+import { captureEditorFileOperationProvenance } from '@/lib/editor/file-operations/editor-file-operation-provenance'
 import { createTestStore, seedStore } from '@/store/testing/app-store-test-fixture'
 import { makeWorktree } from '@/store/slices/worktrees/worktree.test-fixture'
 import { makeOpenFile } from '@/store/slices/editor/types/open-file.test-fixture'

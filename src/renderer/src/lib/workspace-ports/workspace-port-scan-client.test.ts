@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WorkspacePort } from '../../../../shared/workspace-ports'
 
-vi.mock('@/runtime/runtime-rpc-client', () => ({
-  callRuntimeRpc: vi.fn(),
-  RuntimeRpcCallError: class RuntimeRpcCallError extends Error {
-    code = 'unknown'
-  }
-}))
+vi.mock('@/runtime/rpc/calls/runtime-rpc-call', () => ({ callRuntimeRpc: vi.fn() }))
 
 const scan = vi.fn()
 vi.stubGlobal('window', { api: { workspacePorts: { scan } } })
